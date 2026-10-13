@@ -260,7 +260,7 @@ class VenueReadinessChecklistTest extends TestCase
         $connectionId = (int) $created->json('data.id');
         $connection = ReceivingConnection::findOrFail($connectionId);
         $secret = 'whsec_'.Str::random(48);
-        $this->postJson($baseUrl."/{$connectionId}/credential", ['hmac_secret' => $secret])->assertOk();
+        $this->postJson($baseUrl."/{$connectionId}/credential", ['webhook_api_key' => $secret])->assertOk();
 
         $payload = [
             'id' => 'readiness-'.Str::uuid(),
@@ -271,11 +271,9 @@ class VenueReadinessChecklistTest extends TestCase
             'referenceCode' => 'VERIFY',
         ];
         $rawBody = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-        $timestamp = (string) now()->timestamp;
         $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
-            'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
-            'HTTP_X_SEPAY_SIGNATURE' => 'sha256='.hash_hmac('sha256', $timestamp.'.'.$rawBody, $secret),
+            'HTTP_AUTHORIZATION' => 'Apikey '.$secret,
         ], $rawBody)->assertOk();
 
         $this->postJson($baseUrl."/{$connectionId}/select")

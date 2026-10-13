@@ -354,7 +354,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
         $connection = ReceivingConnection::findOrFail($connectionId);
 
         $this->postJson("/api/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection/{$connectionId}/credential", [
-            'hmac_secret' => $initialSecret,
+            'webhook_api_key' => $initialSecret,
         ])->assertOk()->assertJsonPath('data.credential_version', 1);
 
         // Complete initial verification
@@ -376,7 +376,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
         // Owner rotates secret to Secret V2
         $rotatedSecret = 'whsec_v2_'.Str::random(40);
         $rotateResponse = $this->postJson("/api/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/receiving-connection/{$connectionId}/credential", [
-            'hmac_secret' => $rotatedSecret,
+            'webhook_api_key' => $rotatedSecret,
         ])->assertOk();
 
         $rotateResponse->assertJsonPath('data.credential_version', 2)
@@ -729,7 +729,7 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
         $secret = 'whsec_'.Str::random(48);
 
         $this->postJson($url."/{$connection->id}/credential", [
-            'hmac_secret' => $secret,
+            'webhook_api_key' => $secret,
         ])->assertOk();
 
         // Complete sandbox verification event
@@ -750,13 +750,9 @@ class ProviderSandboxAndOperationalReadinessTest extends TestCase
     private function sendSePayWebhook(ReceivingConnection $connection, string $secret, array $payload)
     {
         $rawBody = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-        $timestamp = (string) now()->timestamp;
-        $signature = 'sha256='.hash_hmac('sha256', $timestamp.'.'.$rawBody, $secret);
-
         $response = $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
-            'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
-            'HTTP_X_SEPAY_SIGNATURE' => $signature,
+            'HTTP_AUTHORIZATION' => 'Apikey '.$secret,
         ], $rawBody);
 
         if ($response->isSuccessful()) {

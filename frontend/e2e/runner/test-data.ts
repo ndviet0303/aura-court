@@ -545,7 +545,6 @@ export interface SyntheticWebhookOptions {
   transactionDate?: string
   currency?: string
   transactionId?: string
-  timestamp?: number
   tamperSignature?: boolean
   posOrderId?: number
 }
@@ -656,7 +655,7 @@ function sendProductionPosWebhook(
       fwrite(STDERR, "Production POS webhook credential is not configured.\\n");
       exit(1);
     }
-    $client = curl_init('https://court-api.ziet.dev/api/webhooks/sepay');
+    $client = curl_init('https://court-api.ziet.dev/api/v1/webhooks/sepay');
     curl_setopt_array($client, [
       CURLOPT_POST => true, CURLOPT_POSTFIELDS => $scope['rawBody'],
       CURLOPT_HTTPHEADER => $headers, CURLOPT_RETURNTRANSFER => true,
@@ -685,7 +684,6 @@ export async function sendSyntheticPaymentWebhook(
   manifest: RunManifest,
   options: SyntheticWebhookOptions,
 ): Promise<SyntheticWebhookResponse> {
-  const timestamp = String(options.timestamp || Math.floor(Date.now() / 1000))
   const rawBody = JSON.stringify({
     id: options.transactionId || `TXN-SEPAY-${Date.now()}`,
     transactionDate: options.transactionDate || formatVietnamDate(new Date(Date.now() + 5000)),
@@ -701,26 +699,21 @@ export async function sendSyntheticPaymentWebhook(
     return sendProductionPosWebhook(manifest, options, rawBody)
   }
   const webhookUrl = isPos
-    ? `${manifest.backend.url}/api/webhooks/sepay`
-    : `${manifest.backend.url}/api/webhooks/sepay/connections/${options.routingId}`
-  const secret = isPos ? 'test_sepay_hmac_secret_e2e' : options.secret
-  const signatureHash = crypto
-    .createHmac('sha256', secret)
-    .update(isPos ? rawBody : `${timestamp}.${rawBody}`)
-    .digest('hex')
-
-  const signature = options.tamperSignature
-    ? 'sha256=0000000000000000000000000000000000000000000000000000000000000000'
-    : isPos
-      ? signatureHash
-      : `sha256=${signatureHash}`
-
+    ? `${manifest.backend.url}/api/v1/webhooks/sepay`
+    : `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${options.routingId}`
   const headers: Record<string, string> = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
-    'X-SePay-Timestamp': timestamp,
-    'X-SePay-Signature': signature,
-    Authorization: 'Apikey test_sepay_api_key_e2e',
+  }
+  if (isPos) {
+    // The platform webhook keeps its own HMAC contract.
+    headers['X-SePay-Signature'] = options.tamperSignature
+      ? 'sha256=0000000000000000000000000000000000000000000000000000000000000000'
+      : crypto.createHmac('sha256', 'test_sepay_hmac_secret_e2e').update(rawBody).digest('hex')
+    headers.Authorization = 'Apikey test_sepay_api_key_e2e'
+  } else {
+    // Owner connections authenticate exactly as SePay sends them: Authorization: Apikey <key>.
+    headers.Authorization = `Apikey ${options.tamperSignature ? `wrong_${options.secret}` : options.secret}`
   }
 
   const response = await fetch(webhookUrl, {

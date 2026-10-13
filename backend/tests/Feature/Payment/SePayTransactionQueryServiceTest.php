@@ -120,8 +120,8 @@ class SePayTransactionQueryServiceTest extends TestCase
         ])->assertCreated();
 
         $connection = ReceivingConnection::findOrFail((int) $created->json('data.id'));
-        $hmacSecret = 'whsec_'.Str::random(48);
-        $this->postJson($url."/{$connection->id}/credential", ['hmac_secret' => $hmacSecret])->assertOk();
+        $webhookApiKey = 'whsec_'.Str::random(48);
+        $this->postJson($url."/{$connection->id}/credential", ['webhook_api_key' => $webhookApiKey])->assertOk();
         $payload = [
             'id' => 'query-verification-'.Str::uuid(),
             'transactionDate' => now()->addSeconds(5)->toIso8601String(),
@@ -131,12 +131,9 @@ class SePayTransactionQueryServiceTest extends TestCase
             'referenceCode' => 'VERIFY-QUERY',
         ];
         $rawBody = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-        $timestamp = (string) now()->timestamp;
-        $signature = 'sha256='.hash_hmac('sha256', $timestamp.'.'.$rawBody, $hmacSecret);
         $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
-            'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
-            'HTTP_X_SEPAY_SIGNATURE' => $signature,
+            'HTTP_AUTHORIZATION' => 'Apikey '.$webhookApiKey,
         ], $rawBody)->assertOk();
 
         $receipt = OwnerPaymentReceipt::where('provider_event_id', (string) $payload['id'])->firstOrFail();
@@ -145,7 +142,7 @@ class SePayTransactionQueryServiceTest extends TestCase
         }
         $this->postJson($url."/{$connection->id}/select")->assertOk()->assertJsonPath('data.is_selected', true);
 
-        return [$connection->fresh(), $hmacSecret];
+        return [$connection->fresh(), $webhookApiKey];
     }
 
     private function connectionUrl(Venue $venue): string

@@ -1920,8 +1920,8 @@ export default {
         verifyBeforeSelecting: 'Verify this account before selecting it for new payments.',
         saveFailed: 'Could not save the receiving account.',
         secretSaved:
-          'HMAC secret saved. Send an authenticated inbound event to verify this connection.',
-        secretFailed: 'Could not save the HMAC secret.',
+          'Webhook API key saved. Send one inbound transfer to the account to verify this connection.',
+        secretFailed: 'Could not save the webhook API key.',
         apiTokenSaved: 'SePay API token saved securely.',
         apiTokenFailed: 'Could not save the SePay API token.',
         syncComplete: 'Checked {count} SePay transaction(s).',
@@ -1944,10 +1944,11 @@ export default {
         saving: 'Saving…',
         saveAccount: 'Save receiver details',
         sepaySetup: 'SePay webhook setup',
-        hmacSecret: 'SePay HMAC-SHA256 secret',
-        saveHmacSecret: 'Save or rotate secret',
+        webhookApiKey:
+          'SePay webhook API key (Api_Key authentication, at least 32 letters, digits, _ or -)',
+        saveWebhookApiKey: 'Save or rotate API key',
         secretNeverShown:
-          'The secret is encrypted and will not be displayed after saving. Rotating it requires a new verification event.',
+          'The API key is encrypted and will not be displayed after saving. Rotating it requires a new verification event.',
         optionalQuery: 'Optional transaction query',
         queryApiNote:
           'Add a SePay API token for server-side recovery when a webhook is missed. This is optional; the webhook remains the primary notification.',

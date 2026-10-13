@@ -48,7 +48,7 @@ class ReceivingConnectionController extends Controller
 
         return response()->json([
             'data' => ReceivingConnectionResource::make($connection),
-            'message' => 'Receiving connection created. Configure SePay and set its HMAC secret to continue verification.',
+            'message' => 'Receiving connection created. Configure the SePay webhook with Api_Key authentication and save the same key here to continue verification.',
         ], 201);
     }
 
@@ -67,7 +67,7 @@ class ReceivingConnectionController extends Controller
         $connection = $connections->rotateCredential(
             $connection,
             $request->user(),
-            $request->validated('hmac_secret')
+            $request->validated('webhook_api_key')
         );
 
         return response()->json([

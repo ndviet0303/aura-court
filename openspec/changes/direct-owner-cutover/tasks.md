@@ -1,6 +1,6 @@
 ## 0. Điều kiện trước khi bắt đầu
 
-- [ ] 0.1 Tạo nhánh `feat/direct-owner-cutover` từ `main` (checkout hiện đang detached ở `339decd3`).
+- [x] 0.1 Tạo nhánh `feat/direct-owner-cutover` từ `main` (tạo từ `688e440f` ngày 2026-10-13).
   - Mọi lệnh artisan và test chỉ chạy trên DB `*_test` hoặc `booking_demo_btprod`.
   - Không dùng `backend/.env` vì file này trỏ vào prod.
 - [ ] 0.2 Người dùng tự điền bốn biến vào `backend/.env.btprod` (file này gitignored): `SEED_DEMO_RECEIVER_BANK`, `SEED_DEMO_RECEIVER_ACCOUNT`, `SEED_DEMO_RECEIVER_NAME`, `SEED_DEMO_RECEIVER_WEBHOOK_KEY`.
@@ -9,33 +9,38 @@
 
 ## 1. Cờ tính năng và stack (design 1)
 
-- [ ] 1.1 Sửa `.gitlab-ci.yml` (dòng 148–153): đặt `FEATURE_DIRECT_OWNER_PAYMENTS=true` và `"PILOT_ORGANIZATION_IDS=*"`.
+- [x] 1.1 Sửa `.gitlab-ci.yml` (dòng 148–153): đặt `FEATURE_DIRECT_OWNER_PAYMENTS=true` và `"PILOT_ORGANIZATION_IDS=*"`.
   - Giữ ngoặc kép để shell không glob dấu `*`.
   - Các cờ khác giữ nguyên. Dockerfile vẫn hardcode `FEATURE_MARKETPLACE_PAYOUTS=false`.
-- [ ] 1.2 Xóa các dòng `FEATURE_*` và `PILOT_ORGANIZATION_IDS` (dòng 39–45) khỏi anchor `x-booking-runtime-environment` trong `devops/portainer/booking_app.stack.yml`.
-- [ ] 1.3 Test `FeatureFlagService` với `pilot_organizations = ['*']`:
+- [x] 1.2 Xóa các dòng `FEATURE_*` và `PILOT_ORGANIZATION_IDS` (dòng 39–45) khỏi anchor `x-booking-runtime-environment` trong `devops/portainer/booking_app.stack.yml`.
+- [x] 1.3 Test `FeatureFlagService` với `pilot_organizations = ['*']`:
   - một tổ chức vừa tạo có `direct_owner_payments` bật;
   - `marketplace_payouts` vẫn tắt khi cờ cấu hình là false.
+  - Test: `tests/Feature/Infrastructure/FeatureFlagWildcardPilotTest.php`. `FeatureFlagService` đã hỗ trợ `*` nên không sửa code.
 
 ## 2. Webhook SePay xác thực bằng Api_Key (design 2)
 
-- [ ] 2.1 `SePayReceivingConnectionService::verifyInboundWebhook`: xác thực header `Authorization: Apikey <key>`.
+- [x] 2.1 `SePayReceivingConnectionService::verifyInboundWebhook`: xác thực header `Authorization: Apikey <key>`.
   - So khớp với credential đã giải mã của kết nối bằng `hash_equals`.
   - Thiếu header hoặc sai key thì trả 401 và không ghi evidence.
   - Xóa cửa sổ timestamp và code HMAC.
   - Đổi nhãn evidence `webhook_hmac` thành `webhook_api_key`.
   - Các bước khác giữ nguyên: khớp tài khoản nhận, validate payload, chống trùng theo event id của từng kết nối.
-- [ ] 2.2 `ReceivingConnectionWebhookController`:
+  - Header được tách bằng `^Apikey\s+(\S+)$` (không phân biệt hoa thường); credential lỗi giải mã hoặc `credential_version = 0` cũng trả 401. Nhãn `receiver_selected` cũng đổi sang `webhook_api_key`.
+- [x] 2.2 `ReceivingConnectionWebhookController`:
   - Bỏ đọc `X-SePay-Timestamp` và `X-SePay-Signature`, chuyển header `Authorization` vào service.
   - Không log header `Authorization` ở bất kỳ đâu, kể cả trong middleware ghi request (nếu có).
-- [ ] 2.3 Hướng dẫn cài đặt trên API và UI phải ghi đúng những gì chủ sân dán vào SePay:
+  - Không có middleware nào ghi header request; controller chỉ chuyển header vào service.
+- [x] 2.3 Hướng dẫn cài đặt trên API và UI phải ghi đúng những gì chủ sân dán vào SePay:
   - URL `…/api/v1/webhooks/sepay/connections/{routingId}`;
   - kiểu xác thực Api_Key;
   - sự kiện In_only;
   - mẫu mã thanh toán: tiền tố `AC`, hậu tố 18–18 ký tự, NumberAndLetter.
+  - Trường của `POST …/credential` đổi từ `hmac_secret` thành `webhook_api_key` (min 32, max 512, chỉ `[A-Za-z0-9_-]`). Không giữ tên cũ (no shim).
+  - `onboarding` trả `authentication: Api_Key`, `authorization_header`, `event: In_only`, `payment_code {prefix AC, 18–18, NumberAndLetter}` và hướng dẫn vi/en tương ứng. `data-testid` trên UI đổi thành `webhook-api-key-input` / `save-webhook-api-key`.
 
   File cần sửa: `ReceivingConnectionResource`, `ReceivingConnectionController`, `RotateReceivingConnectionCredentialRequest`, `OwnerReceivingConnectionPanel.vue`, i18n vi/en.
-- [ ] 2.4 Test backend:
+- [x] 2.4 Test backend:
   - Đổi helper gửi webhook sang header `Authorization: Apikey` trong mọi test gọi `webhooks/sepay/connections/`. Hiện có 16 file, liệt kê bằng `grep -rl 'webhooks/sepay/connections' backend/tests`.
   - Test của webhook nền tảng (`webhooks/sepay`, ví dụ `TenantWalletDepositTest`) giữ nguyên.
   - Thêm các case:
@@ -43,10 +48,14 @@
     - sai key: 401;
     - đúng key nhưng sai `accountNumber`: không khớp nghĩa vụ nào;
     - cùng event id gửi hai lần: chỉ tạo một receipt.
-- [ ] 2.5 Playwright:
+  - Case mới nằm trong `OwnerReceivingConnectionTest` (thiếu header / sai key / sai scheme: 401, không evidence, không receipt, không log; đúng key + sai `accountNumber`: receipt `foreign_receiver`, attempt vẫn pending) và một assertion một-receipt cho event id gửi hai lần. Case "body bị sửa" trong `OwnerPaymentAttemptServiceTest` không còn ý nghĩa với Api_Key nên đổi thành case sai key.
+- [x] 2.5 Playwright:
   - `frontend/e2e/runner/test-data.ts` (khoảng dòng 654–727) gửi `Authorization: Apikey` thay cho HMAC.
   - Cập nhật `p1-receiving-connections`, `p1-recurring-series` và `p1-split-payments`. `p1-resale-marketplace` viết lại ở 7.9.
   - Key dùng trong test chỉ gồm ký tự `[A-Za-z0-9_-]` và dài ít nhất 10 ký tự, để `sanitize-traces.ts` và `sanitize_zip.py` che được.
+  - Helper và các spec cũng sửa URL về `/api/v1/webhooks/sepay[...]` (đang trỏ nhầm sang đường dẫn không version, sẽ 404). Bỏ tùy chọn `timestamp` của helper (gỡ hai dòng dùng nó trong `p0-cancellation-refund-reschedule`, spec này sẽ bị xóa ở 3.x).
+  - `p1-legacy-wallet-direct-cohort` gọi thẳng `verifyInboundWebhook` nên cũng đổi sang `'Apikey ' . $secret`.
+  - Chưa chạy Playwright.
 
 ## 3. Bỏ hủy sân, hoàn tiền và dời lịch (design 7)
 

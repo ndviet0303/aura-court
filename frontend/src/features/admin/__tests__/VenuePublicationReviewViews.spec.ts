@@ -41,7 +41,7 @@ describe('VenueReadinessModal', () => {
         query_api_configured: false,
         query_api_version: 0,
         verified_at: '2026-09-25T00:00:00Z',
-        webhook_url: 'https://api.example.test/api/webhooks/sepay/connections/route-9',
+        webhook_url: 'https://api.example.test/api/v1/webhooks/sepay/connections/route-9',
         onboarding: { instructions_vi: ['Bước kiểm tra'], instructions_en: ['Verification step'] },
       },
     } as any)
@@ -166,7 +166,7 @@ describe('VenueReadinessModal', () => {
         credential_configured: false,
         query_api_configured: false,
         query_api_version: 0,
-        webhook_url: 'https://api.example.test/api/webhooks/sepay/connections/route-10',
+        webhook_url: 'https://api.example.test/api/v1/webhooks/sepay/connections/route-10',
         onboarding: { instructions_vi: ['Bước kiểm tra'], instructions_en: ['Verification step'] },
       },
       message: 'created',
@@ -225,7 +225,7 @@ describe('VenueReadinessModal', () => {
         credential_configured: true,
         query_api_configured: false,
         query_api_version: 0,
-        webhook_url: 'https://api.example.test/api/webhooks/sepay/connections/route-9',
+        webhook_url: 'https://api.example.test/api/v1/webhooks/sepay/connections/route-9',
         onboarding: { instructions_vi: ['Bước kiểm tra'], instructions_en: ['Verification step'] },
       },
       message: 'rotated',
@@ -242,19 +242,19 @@ describe('VenueReadinessModal', () => {
     await flushPromises()
 
     await wrapper
-      .get('[data-testid="hmac-secret-input"]')
-      .setValue('whsec_test_secret_value_which_is_long_enough')
-    await wrapper.get('[data-testid="save-hmac-secret"]').trigger('click')
+      .get('[data-testid="webhook-api-key-input"]')
+      .setValue('test_webhook_api_key_value_long_enough_0001')
+    await wrapper.get('[data-testid="save-webhook-api-key"]').trigger('click')
     await flushPromises()
 
     expect(venuePublicationApi.rotateReceivingCredential).toHaveBeenCalledWith(
       2,
       10,
       9,
-      'whsec_test_secret_value_which_is_long_enough',
+      'test_webhook_api_key_value_long_enough_0001',
     )
     expect(
-      (wrapper.get('[data-testid="hmac-secret-input"]').element as HTMLInputElement).value,
+      (wrapper.get('[data-testid="webhook-api-key-input"]').element as HTMLInputElement).value,
     ).toBe('')
     expect(wrapper.text()).toContain('Đang chờ giao dịch kiểm tra')
   })
@@ -282,7 +282,7 @@ describe('VenueReadinessModal', () => {
         query_api_configured: false,
         query_api_version: 0,
         verified_at: '2026-09-25T00:00:00Z',
-        webhook_url: 'https://api.example.test/api/webhooks/sepay/connections/route-9',
+        webhook_url: 'https://api.example.test/api/v1/webhooks/sepay/connections/route-9',
         onboarding: { instructions_vi: ['Bước kiểm tra'], instructions_en: ['Verification step'] },
       },
     } as any)

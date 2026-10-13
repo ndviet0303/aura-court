@@ -347,7 +347,6 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
 
     // 2. Pay Share 1 via SePay webhook
     const sendWebhook = async (ref: string, amount: number, eventId: string) => {
-      const timestamp = String(Math.floor(Date.now() / 1000))
       const payload = JSON.stringify({
         id: eventId,
         transactionDate: arranged.transaction_date,
@@ -359,7 +358,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
         referenceCode: 'BANK-' + eventId,
       })
 
-      const signatureScript = `
+      const authorizationScript = `
         require "vendor/autoload.php";
         $app = require_once "bootstrap/app.php";
         $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
@@ -368,21 +367,19 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
         use App\\Models\\ReceivingConnection;
         $conn = ReceivingConnection::where('routing_id', '${arranged.connection_routing_id}')->firstOrFail();
         $secret = $conn->webhook_secret_ciphertext ? \\Illuminate\\Support\\Facades\\Crypt::decryptString($conn->webhook_secret_ciphertext) : 'test-secret';
-        $sig = hash_hmac('sha256', '${timestamp}.' . '${payload}', $secret);
-        echo 'sha256=' . $sig;
+        echo 'Apikey ' . $secret;
       `
-      const signature = execFileSync('php', ['-r', signatureScript], {
+      const authorization = execFileSync('php', ['-r', authorizationScript], {
         cwd: backendDir,
         env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
         encoding: 'utf-8',
       }).trim()
 
       const res = await page.request.post(
-        `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+        `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
         {
           headers: {
-            'X-SePay-Timestamp': timestamp,
-            'X-SePay-Signature': signature,
+            Authorization: authorization,
             'Content-Type': 'application/json',
           },
           data: payload,
@@ -643,7 +640,6 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
     }
 
     // 2. Pay Share 1 (120,000 VND) via SePay webhook
-    const timestamp = String(Math.floor(Date.now() / 1000))
     const eventId1 = 'SPLIT-COV-1-' + Date.now()
     const payload1 = JSON.stringify({
       id: eventId1,
@@ -656,7 +652,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       referenceCode: 'BANK-' + eventId1,
     })
 
-    const signatureScript = `
+    const authorizationScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
@@ -665,21 +661,19 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       use App\\Models\\ReceivingConnection;
       $conn = ReceivingConnection::where('routing_id', '${arranged.connection_routing_id}')->firstOrFail();
       $secret = $conn->webhook_secret_ciphertext ? \\Illuminate\\Support\\Facades\\Crypt::decryptString($conn->webhook_secret_ciphertext) : 'test-secret';
-      $sig = hash_hmac('sha256', '${timestamp}.' . '${payload1}', $secret);
-      echo 'sha256=' . $sig;
+      echo 'Apikey ' . $secret;
     `
-    const signature1 = execFileSync('php', ['-r', signatureScript], {
+    const authorization1 = execFileSync('php', ['-r', authorizationScript], {
       cwd: backendDir,
       env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
       encoding: 'utf-8',
     }).trim()
 
     await page.request.post(
-      `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
       {
         headers: {
-          'X-SePay-Timestamp': timestamp,
-          'X-SePay-Signature': signature1,
+          Authorization: authorization1,
           'Content-Type': 'application/json',
         },
         data: payload1,
@@ -760,7 +754,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       referenceCode: 'BANK-' + eventIdCover,
     })
 
-    const signatureScriptCover = `
+    const authorizationScriptCover = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
@@ -769,21 +763,19 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       use App\\Models\\ReceivingConnection;
       $conn = ReceivingConnection::where('routing_id', '${arranged.connection_routing_id}')->firstOrFail();
       $secret = $conn->webhook_secret_ciphertext ? \\Illuminate\\Support\\Facades\\Crypt::decryptString($conn->webhook_secret_ciphertext) : 'test-secret';
-      $sig = hash_hmac('sha256', '${timestamp}.' . '${payloadCover}', $secret);
-      echo 'sha256=' . $sig;
+      echo 'Apikey ' . $secret;
     `
-    const signatureCover = execFileSync('php', ['-r', signatureScriptCover], {
+    const authorizationCover = execFileSync('php', ['-r', authorizationScriptCover], {
       cwd: backendDir,
       env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
       encoding: 'utf-8',
     }).trim()
 
     await page.request.post(
-      `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
       {
         headers: {
-          'X-SePay-Timestamp': timestamp,
-          'X-SePay-Signature': signatureCover,
+          Authorization: authorizationCover,
           'Content-Type': 'application/json',
         },
         data: payloadCover,
@@ -984,7 +976,6 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
     }
 
     // 2. Pay Share 1 via SePay webhook
-    const timestamp = String(Math.floor(Date.now() / 1000))
     const eventIdExp = 'SPLIT-EXP-1-' + Date.now()
     const payloadExp = JSON.stringify({
       id: eventIdExp,
@@ -997,7 +988,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       referenceCode: 'BANK-' + eventIdExp,
     })
 
-    const signatureScriptExp = `
+    const authorizationScriptExp = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
@@ -1006,21 +997,19 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       use App\\Models\\ReceivingConnection;
       $conn = ReceivingConnection::where('routing_id', '${arranged.connection_routing_id}')->firstOrFail();
       $secret = $conn->webhook_secret_ciphertext ? \\Illuminate\\Support\\Facades\\Crypt::decryptString($conn->webhook_secret_ciphertext) : 'test-secret';
-      $sig = hash_hmac('sha256', '${timestamp}.' . '${payloadExp}', $secret);
-      echo 'sha256=' . $sig;
+      echo 'Apikey ' . $secret;
     `
-    const signatureExp = execFileSync('php', ['-r', signatureScriptExp], {
+    const authorizationExp = execFileSync('php', ['-r', authorizationScriptExp], {
       cwd: backendDir,
       env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
       encoding: 'utf-8',
     }).trim()
 
     await page.request.post(
-      `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
       {
         headers: {
-          'X-SePay-Timestamp': timestamp,
-          'X-SePay-Signature': signatureExp,
+          Authorization: authorizationExp,
           'Content-Type': 'application/json',
         },
         data: payloadExp,

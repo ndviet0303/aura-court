@@ -337,10 +337,8 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
         'transferAmount' => 200000,
       ];
       $raw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-      $timestamp = (string) now()->timestamp;
       $secret = \\Illuminate\\Support\\Facades\\Crypt::decryptString($connection->webhook_secret_ciphertext);
-      $signature = 'sha256=' . hash_hmac('sha256', $timestamp . '.' . $raw, $secret);
-      $verified = app(\\App\\Services\\Payment\\SePayReceivingConnectionService::class)->verifyInboundWebhook($connection, $timestamp, $signature, $raw);
+      $verified = app(\\App\\Services\\Payment\\SePayReceivingConnectionService::class)->verifyInboundWebhook($connection, 'Apikey ' . $secret, $raw);
       $receipt = $payments->receiveVerifiedEvent($connection, $verified);
       $payments->processReceipt($receipt->id);
       $receipt->refresh();

@@ -1917,8 +1917,8 @@ export default {
         verifyBeforeSelecting: 'Hãy xác minh tài khoản trước khi chọn nhận thanh toán mới.',
         saveFailed: 'Không thể lưu tài khoản nhận tiền.',
         secretSaved:
-          'Đã lưu secret HMAC. Hãy gửi một giao dịch vào có xác thực để kiểm tra kết nối.',
-        secretFailed: 'Không thể lưu secret HMAC.',
+          'Đã lưu API key webhook. Hãy chuyển một giao dịch vào tài khoản để kiểm tra kết nối.',
+        secretFailed: 'Không thể lưu API key webhook.',
         apiTokenSaved: 'Đã lưu API token SePay an toàn.',
         apiTokenFailed: 'Không thể lưu API token SePay.',
         syncComplete: 'Đã kiểm tra {count} giao dịch SePay.',
@@ -1930,7 +1930,7 @@ export default {
           revoked: 'Đã thu hồi',
           superseded: 'Đã thay thế',
         },
-        credentialVersion: 'Phiên bản secret webhook {version}',
+        credentialVersion: 'Phiên bản API key webhook {version}',
         bankCode: 'Mã ngân hàng',
         accountName: 'Tên chủ tài khoản',
         accountNumber: 'Số tài khoản ngân hàng',
@@ -1940,10 +1940,11 @@ export default {
         saving: 'Đang lưu…',
         saveAccount: 'Lưu tài khoản nhận tiền',
         sepaySetup: 'Cấu hình webhook SePay',
-        hmacSecret: 'Secret HMAC-SHA256 SePay',
-        saveHmacSecret: 'Lưu hoặc xoay vòng secret',
+        webhookApiKey:
+          'API key webhook SePay (kiểu xác thực Api_Key, ít nhất 32 ký tự chữ, số, _ hoặc -)',
+        saveWebhookApiKey: 'Lưu hoặc xoay vòng API key',
         secretNeverShown:
-          'Secret được mã hóa và không hiển thị lại sau khi lưu. Xoay vòng yêu cầu xác minh lại.',
+          'API key được mã hóa và không hiển thị lại sau khi lưu. Xoay vòng yêu cầu xác minh lại.',
         optionalQuery: 'Truy vấn giao dịch tùy chọn',
         queryApiNote:
           'Thêm API token SePay để máy chủ đối soát khi webhook bị lỡ. Đây là tùy chọn; webhook vẫn là thông báo chính.',

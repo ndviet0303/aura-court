@@ -193,7 +193,7 @@ class OwnerReservationPaymentTest extends TestCase
         ])->assertCreated();
         $connection = ReceivingConnection::findOrFail((int) $created->json('data.id'));
         $secret = 'whsec_'.Str::random(48);
-        $this->postJson($url."/{$connection->id}/credential", ['hmac_secret' => $secret])->assertOk();
+        $this->postJson($url."/{$connection->id}/credential", ['webhook_api_key' => $secret])->assertOk();
         $this->sendEvent($connection, $secret, [
             'id' => 'verify-'.Str::uuid(),
             'transactionDate' => now()->toIso8601String(),
@@ -210,12 +210,9 @@ class OwnerReservationPaymentTest extends TestCase
     private function sendEvent(ReceivingConnection $connection, string $secret, array $payload)
     {
         $rawBody = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-        $timestamp = (string) now()->timestamp;
-        $signature = 'sha256='.hash_hmac('sha256', $timestamp.'.'.$rawBody, $secret);
         $response = $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
-            'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
-            'HTTP_X_SEPAY_SIGNATURE' => $signature,
+            'HTTP_AUTHORIZATION' => 'Apikey '.$secret,
         ], $rawBody);
 
         if ($response->isSuccessful()) {

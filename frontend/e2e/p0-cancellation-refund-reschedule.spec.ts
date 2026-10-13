@@ -1294,7 +1294,6 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
 
     const webhookTransactionId = `TXN-IDEMP-${Date.now()}`
     const webhookTransactionDate = formatVietnamDate(new Date(Date.now() + 5000))
-    const webhookTimestamp = Math.floor(Date.now() / 1000)
 
     const initialWebhookRes = await sendSyntheticPaymentWebhook(manifest, {
       routingId: venue1A.routingId,
@@ -1304,7 +1303,6 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       code: paymentInfo.attempt_reference,
       transactionId: webhookTransactionId,
       transactionDate: webhookTransactionDate,
-      timestamp: webhookTimestamp,
     })
     expect(initialWebhookRes.statusCode).toBe(200)
 
@@ -1318,7 +1316,6 @@ test.describe('P0: Hủy đặt sân, Nghĩa vụ hoàn tiền & Đổi lịch c
       code: paymentInfo.attempt_reference,
       transactionId: webhookTransactionId,
       transactionDate: webhookTransactionDate,
-      timestamp: webhookTimestamp,
     })
     expect(duplicateWebhookRes.statusCode).toBe(200)
 

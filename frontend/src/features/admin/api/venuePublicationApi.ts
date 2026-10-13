@@ -127,11 +127,11 @@ export const venuePublicationApi = {
     organizationId: number,
     venueId: number,
     connectionId: number,
-    hmacSecret: string,
+    webhookApiKey: string,
   ) =>
     api.post<{ data: OwnerReceivingConnection; message: string }>(
       `/partner/organizations/${organizationId}/venues/${venueId}/receiving-connection/${connectionId}/credential`,
-      { hmac_secret: hmacSecret },
+      { webhook_api_key: webhookApiKey },
     ),
 
   selectReceivingConnection: async (

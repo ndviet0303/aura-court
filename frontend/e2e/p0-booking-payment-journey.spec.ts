@@ -312,7 +312,7 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
     }
 
-    // 6. Test invalid authentication (tampered HMAC signature): rejected with HTTP 401
+    // 6. Test invalid authentication (wrong Api_Key): rejected with HTTP 401
     const invalidSigRes = await sendSyntheticPaymentWebhook(manifest, {
       routingId: venue1A.routingId,
       secret,

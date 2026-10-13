@@ -326,11 +326,9 @@ class PartialBenefitReservationTest extends TestCase
             'referenceCode' => 'BANK-'.$eventId,
         ];
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-        $timestamp = (string) now()->timestamp;
         $response = $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
-            'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
-            'HTTP_X_SEPAY_SIGNATURE' => 'sha256='.hash_hmac('sha256', $timestamp.'.'.$raw, $secret),
+            'HTTP_AUTHORIZATION' => 'Apikey '.$secret,
         ], $raw);
         $response->assertOk();
         $receipt = OwnerPaymentReceipt::where('provider_event_id', $eventId)->firstOrFail();
