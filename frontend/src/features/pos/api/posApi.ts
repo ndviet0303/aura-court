@@ -1,6 +1,7 @@
 import { api } from '@/core/api/client'
 import { venueClockRange } from '@/core/utils/venueTime'
 import type { Product, PosShift, CustomerProfile, CourtReservation } from '../types/pos'
+import type { ReservationPaymentAttempt } from '@/features/booking/api/bookingApi'
 
 export const posApi = {
   getProducts: async (): Promise<Product[]> => {
@@ -80,22 +81,11 @@ export const posApi = {
   },
 
   getOrder: async (orderId: number | string) => {
-    return await api.get<{ order: any; receipt: any }>(`/pos/orders/${orderId}`)
-  },
-
-  confirmQrPayment: async (
-    orderId: number | string,
-    payload: {
-      external_transaction_id?: string
-      amount?: number
-      provider?: string
-      notes?: string
-    } = {},
-  ) => {
-    return await api.post<{ order: any; receipt: any }>(
-      `/pos/orders/${orderId}/confirm-qr`,
-      payload,
-    )
+    return await api.get<{
+      order: any
+      receipt: any
+      payment_attempt: ReservationPaymentAttempt | null
+    }>(`/pos/orders/${orderId}`)
   },
 
   cancelQrPayment: async (orderId: number | string, payload: { reason?: string } = {}) => {

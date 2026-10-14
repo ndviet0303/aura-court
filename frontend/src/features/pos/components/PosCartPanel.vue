@@ -24,6 +24,8 @@ const props = defineProps<{
   processingCheckout?: boolean
   disabled?: boolean
   activeTab?: any
+  hideQr?: boolean
+  hideWallet?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -45,6 +47,16 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const tenders = computed(() =>
+  (
+    [
+      ['cash', 'payments', 'admin.pos.payCash'],
+      ['qr', 'qr_code_scanner', 'admin.pos.payQr'],
+      ['wallet', 'account_balance_wallet', 'admin.pos.payWallet'],
+      ['court_tab', 'sports_tennis', 'admin.pos.payCourtTab'],
+    ] as const
+  ).filter(([key]) => !(key === 'qr' && props.hideQr) && !(key === 'wallet' && props.hideWallet)),
+)
 const quickCashScrollRef = ref<HTMLElement | null>(null)
 
 function cycleItemVat(idx: number, currentVat: number) {
@@ -306,43 +318,15 @@ function handleCourtChange(val: string | number) {
       <!-- Payment Method Selector -->
       <div class="payment-methods-grid">
         <button
+          v-for="[key, icon, label] in tenders"
+          :key="key"
           type="button"
           class="pay-method-btn"
-          :class="{ active: paymentMethod === 'cash' }"
-          @click="emit('update:paymentMethod', 'cash')"
+          :class="{ active: paymentMethod === key }"
+          @click="emit('update:paymentMethod', key)"
         >
-          <span class="material-symbols-outlined method-icon">payments</span>
-          <span class="method-text">{{ t('admin.pos.payCash') }}</span>
-        </button>
-
-        <button
-          type="button"
-          class="pay-method-btn"
-          :class="{ active: paymentMethod === 'qr' }"
-          @click="emit('update:paymentMethod', 'qr')"
-        >
-          <span class="material-symbols-outlined method-icon">qr_code_scanner</span>
-          <span class="method-text">{{ t('admin.pos.payQr') }}</span>
-        </button>
-
-        <button
-          type="button"
-          class="pay-method-btn"
-          :class="{ active: paymentMethod === 'wallet' }"
-          @click="emit('update:paymentMethod', 'wallet')"
-        >
-          <span class="material-symbols-outlined method-icon">account_balance_wallet</span>
-          <span class="method-text">{{ t('admin.pos.payWallet') }}</span>
-        </button>
-
-        <button
-          type="button"
-          class="pay-method-btn"
-          :class="{ active: paymentMethod === 'court_tab' }"
-          @click="emit('update:paymentMethod', 'court_tab')"
-        >
-          <span class="material-symbols-outlined method-icon">sports_tennis</span>
-          <span class="method-text">{{ t('admin.pos.payCourtTab') }}</span>
+          <span class="material-symbols-outlined method-icon">{{ icon }}</span>
+          <span class="method-text">{{ t(label) }}</span>
         </button>
       </div>
 

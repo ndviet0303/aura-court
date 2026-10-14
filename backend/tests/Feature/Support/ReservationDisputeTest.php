@@ -8,19 +8,16 @@ use App\Models\Court;
 use App\Models\DisputeCase;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\OwnerRefundObligation;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
 use App\Models\User;
 use App\Models\Venue;
-use App\Services\Payment\OwnerRefundService;
 use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class ReservationDisputeTest extends TestCase
@@ -143,78 +140,6 @@ class ReservationDisputeTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'admin']))->getJson("/api/admin/disputes/{$id}")
             ->assertOk()
             ->assertJsonPath('data.reservation_code', $booking->code);
-    }
-
-    public function test_refund_ruling_on_a_mirrored_booking_uses_the_mirror_slots(): void
-    {
-        $booking = Booking::create(['code' => 'BK-ARB-'.uniqid(), 'user_id' => $this->customer->id, 'court_id' => $this->court->id, 'total_amount' => 100000, 'status' => 'confirmed', 'payment_model' => 'direct_owner_v1']);
-        $bookingSlot = BookingSlot::create([
-            'booking_id' => $booking->id,
-            'court_id' => $this->court->id,
-            'starts_at' => now()->subDays(2)->setTime(10, 0),
-            'ends_at' => now()->subDays(2)->setTime(11, 0),
-            'unit_price' => 100000,
-            'status' => 'confirmed',
-        ]);
-        // Separate sequences: push mirror slot ids away from booking slot ids so a mixed-up id cannot pass by coincidence.
-        DB::statement("SELECT setval(pg_get_serial_sequence('reservation_slots', 'id'), ?)", [$bookingSlot->id + 1000]);
-        $mirror = Reservation::withoutGlobalScope('tenant_isolation')->findOrFail(app(LegacyBookingBackfillService::class)->backfillBooking($booking)->reservation_id);
-        $mirrorSlotIds = $mirror->slots()->withoutGlobalScope('tenant_isolation')->pluck('id')->all();
-        $disputeId = $this->file($this->customer, ['reservation_id' => $mirror->id])
-            ->assertCreated()
-            ->assertJsonPath('data.booking_id', $booking->id)
-            ->json('data.id');
-
-        $this->actingAs(User::factory()->create(['role' => 'admin']))->postJson("/api/admin/disputes/{$disputeId}/arbitrate", [
-            'decision' => 'resolve_and_refund',
-            'refund_amount' => 100000,
-            'refund_method' => 'owner_direct',
-        ])->assertOk();
-
-        $obligation = OwnerRefundObligation::withoutGlobalScope('tenant_isolation')->findOrFail(DisputeCase::findOrFail($disputeId)->refund_obligation_id);
-        $this->assertSame($mirror->id, (int) $obligation->reservation_id);
-        $this->assertSame($booking->id, (int) $obligation->booking_id);
-        $this->assertSame($mirrorSlotIds, $obligation->slot_ids);
-        $refunds = app(OwnerRefundService::class);
-        $this->assertSame([$bookingSlot->id], $refunds->serialize($obligation)['legacy_slot_ids']->all());
-        try {
-            $refunds->quote($mirror, $this->customer, $mirrorSlotIds);
-            $this->fail('A second refund on a slot the ruling already covers must be rejected.');
-        } catch (HttpException $e) {
-            $this->assertSame(409, $e->getStatusCode());
-        }
-    }
-
-    public function test_refund_ruling_on_a_reservation_only_dispute_links_the_reservation(): void
-    {
-        $reservation = $this->reservation(now()->subDays(2));
-        $dispute = DisputeCase::create([
-            'dispute_code' => 'DSP-RSV-REFUND',
-            'reservation_id' => $reservation->id,
-            'reference_type' => 'reservation',
-            'reference_id' => $reservation->id,
-            'dispute_type' => 'court_quality',
-            'title' => 'Court flooded',
-            'summary' => 'The court was flooded during the whole slot.',
-            'status' => 'investigating',
-            'complainant_id' => $this->customer->id,
-            'complainant_name' => $this->customer->name,
-        ]);
-        $admin = User::factory()->create(['role' => 'admin']);
-
-        $this->actingAs($admin)->postJson("/api/admin/disputes/{$dispute->id}/arbitrate", [
-            'decision' => 'resolve_and_refund',
-            'refund_amount' => 100000,
-            'refund_method' => 'owner_direct',
-        ])->assertOk();
-
-        $obligation = OwnerRefundObligation::withoutGlobalScope('tenant_isolation')->findOrFail($dispute->fresh()->refund_obligation_id);
-        $this->assertSame($reservation->id, (int) $obligation->reservation_id);
-        $this->assertNull($obligation->booking_id);
-        $this->assertSame($this->org->id, (int) $obligation->organization_id);
-        $this->assertSame($this->venue->id, (int) $obligation->venue_id);
-        $this->assertSame($this->owner->id, (int) $obligation->payer_id);
-        $this->assertSame($reservation->slots()->pluck('id')->all(), $obligation->slot_ids);
     }
 
     public function test_is_disputed_matches_the_reservation_id_not_an_unrelated_booking_with_the_same_id(): void

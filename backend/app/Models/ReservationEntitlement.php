@@ -22,6 +22,7 @@ class ReservationEntitlement extends Model
         ];
     }
 
+    /** @return BelongsTo<Reservation, $this> */
     public function reservation(): BelongsTo
     {
         return $this->belongsTo(Reservation::class);
@@ -37,6 +38,7 @@ class ReservationEntitlement extends Model
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsTo<Court, $this> */
     public function court(): BelongsTo
     {
         return $this->belongsTo(Court::class);

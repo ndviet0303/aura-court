@@ -8,6 +8,7 @@ use App\Models\Court;
 use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
+use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\ReservationSlot;
 use App\Models\SportZone;
@@ -124,6 +125,8 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             'google_maps_url' => 'https://maps.google.com/?q=danang',
             'is_active' => true,
         ]);
+        // Only priced courts are public; an organization-wide rule prices every court.
+        PriceRule::create(['organization_id' => $org->id, 'type' => 'base', 'price' => 100000, 'is_active' => true]);
         $zone = SportZone::create([
             'venue_id' => $venue->id,
             'name' => 'Badminton Zone',
@@ -196,6 +199,8 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             'status' => 'published',
             'is_active' => true,
         ]);
+        // Only priced courts are public; an organization-wide rule prices every court.
+        PriceRule::create(['organization_id' => $org->id, 'type' => 'base', 'price' => 100000, 'is_active' => true]);
         $court = Court::create([
             'venue_id' => $venue->id,
             'name' => 'Original Court',
@@ -224,6 +229,8 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             'address' => '22 Court Street',
             'is_active' => true,
         ]);
+        // Only priced courts are public; an organization-wide rule prices every court.
+        PriceRule::create(['organization_id' => $org->id, 'type' => 'base', 'price' => 100000, 'is_active' => true]);
         SportZone::create([
             'venue_id' => $venue->id,
             'name' => 'Badminton Zone',

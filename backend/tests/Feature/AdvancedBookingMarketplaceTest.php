@@ -7,12 +7,14 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PriceRule;
 use App\Models\Reservation;
+use App\Models\ReservationEntitlement;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Booking\RecurringSeriesService;
 use App\Services\Payment\SplitPaymentService;
 use App\Services\Payment\WalletPaymentService;
 use App\Services\Social\MarketplaceService;
+use App\Services\Social\PeerToPeerResaleService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -46,20 +48,25 @@ class AdvancedBookingMarketplaceTest extends TestCase
         $this->assertNotEmpty($result->invoices);
     }
 
-    public function test_marketplace_refund_failure_compensates_and_relists_without_transfer(): void
+    public function test_reselling_one_hour_of_a_two_hour_booking_keeps_the_other_hour_with_the_seller(): void
     {
         [$organization, $seller, $court] = $this->tenant();
         $buyer = User::factory()->create();
         OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $buyer->id, 'role' => 'customer', 'status' => 'active']);
-        $reservation = $this->reservation($organization, $seller, $court->id, true);
-        $entitlement = $reservation->entitlements()->firstOrFail();
-        $listing = app(MarketplaceService::class)->list($entitlement, $seller, $entitlement->amount);
+        $reservation = $this->reservation($organization, $seller, $court->id, true, 2);
+        [$first, $second] = $reservation->entitlements->sortBy('starts_at')->values()->all();
 
-        $transfer = app(MarketplaceService::class)->purchase($listing, $buyer, 'marketplace-failure-1', 'buyer-payment-1', null, false);
+        $listing = app(MarketplaceService::class)->list($second, $seller, $second->amount, ['bank_code' => 'TPB', 'account_number' => '0123456789', 'account_name' => 'SELLER']);
+        $resale = app(PeerToPeerResaleService::class);
+        $resale->lock($listing, $buyer);
+        $resale->paymentSent($listing, $buyer);
+        $state = $resale->confirmReceipt($listing, $seller);
 
-        $this->assertSame('compensated', $transfer->status);
-        $this->assertSame('listed', $listing->fresh()->status);
-        $this->assertDatabaseCount('reservation_entitlements', 1);
+        $this->assertSame('sold', $state['status']);
+        $this->assertSame('transferred', $second->fresh()->status);
+        $this->assertSame(['active', $seller->id], [$first->fresh()->status, $first->fresh()->user_id]);
+        $this->assertSame($seller->id, $reservation->fresh()->user_id);
+        $this->assertTrue(ReservationEntitlement::where('user_id', $buyer->id)->where('starts_at', $second->starts_at)->where('status', 'active')->exists());
     }
 
     /** @return array{0:Organization,1:User,2:Court} */
@@ -90,10 +97,11 @@ class AdvancedBookingMarketplaceTest extends TestCase
         return [$organization, $user, $court];
     }
 
-    private function reservation(Organization $organization, User $user, int $courtId, bool $future = false): Reservation
+    private function reservation(Organization $organization, User $user, int $courtId, bool $future = false, int $hours = 1): Reservation
     {
         $date = now(config('app.timezone'))->addDays($future ? 4 : 2)->setTime(8, 0);
-        $response = $this->actingAs($user)->withHeaders(['X-Organization-ID' => (string) $organization->id, 'Idempotency-Key' => uniqid('reservation-')])->postJson('/api/reservations', ['court_id' => $courtId, 'slots' => [$date->toIso8601String()]]);
+        $slots = array_map(fn (int $hour) => $date->copy()->addHours($hour)->toIso8601String(), range(0, $hours - 1));
+        $response = $this->actingAs($user)->withHeaders(['X-Organization-ID' => (string) $organization->id, 'Idempotency-Key' => uniqid('reservation-')])->postJson('/api/reservations', ['court_id' => $courtId, 'slots' => $slots]);
         $response->assertCreated();
         $reservation = Reservation::where('code', $response->json('reservation.code'))->firstOrFail();
         $this->actingAs($user)->withHeaders(['X-Organization-ID' => (string) $organization->id, 'Idempotency-Key' => uniqid('confirm-')])->postJson('/api/reservations/'.$reservation->code.'/confirm')->assertOk();

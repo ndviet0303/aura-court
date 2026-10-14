@@ -30,6 +30,7 @@
 - [x] 3.1 Đưa `V2ReservationView` vào router (route chi tiết reservation, có guard auth như route booking hiện tại).
 - [x] 3.2 Checkout sân: `useCourtSchedule` gọi quote → hold/checkout của `useV2Reservations` thay cho `bookingStore.createBooking`, xong thì chuyển tới chi tiết reservation kèm modal thanh toán.
 - [x] 3.3 Lịch sử: `useUserBookings` đọc danh sách reservation. `BookingCancelModal` và `BookingRescheduleModal` bỏ prop `v2` và luôn gọi V2.
+  - Sau đó change `direct-owner-cutover` xóa hẳn `BookingCancelModal` và `BookingRescheduleModal` (không còn hủy hay dời lịch).
 - [x] 3.4 Review gửi `reservation_code`; dispute gửi `reservation_id`.
 - [x] 3.5 Admin dashboard: danh sách booking dùng `GET api/v2/admin/reservations`; reports giữ nguyên path.
 - [x] 3.6 Bỏ chỗ dùng capability `v2_reservations_enabled`. Sửa ghi chú rollback trong `docs/readiness/06_*`: rollback bằng cách redeploy, không bằng flag.
@@ -43,6 +44,7 @@
   - dời lịch đắt hơn và rẻ hơn;
   - review;
   - dispute.
+  - Sau đó `direct-owner-cutover` bỏ luồng hủy và dời lịch, nên các case "huỷ" và "dời lịch đắt hơn và rẻ hơn" không còn.
 - [x] 3.8 Static gates của frontend pass: type-check, ESLint, oxlint, Prettier, unit test, test kiến trúc. Không được tăng allowlist.
 
 ## 4. Phase A — release
@@ -76,6 +78,7 @@
 - [x] 6.1 Ghi lại sự phê duyệt của chủ dự án cho Phase C trong change: ai duyệt, ngày nào, dựa trên snapshot nào.
   - Design C1: chủ dự án duyệt ngày 2026-10-13, dựa trên precheck 5.3 trên prod. Cùng lúc chọn bỏ số phiên bản khỏi API (design C5).
 - [x] 6.2 Bỏ các route V1 booking: `GET/POST bookings`, `bookings/recurring`, `GET bookings/{code}`, `bookings/{code}/sync-v2`, `legacy/reservations/{reservation}`, `payment-status`, `GET/POST payment`, `refund-quote`, `GET/POST refund-requests`, `reschedule-preview`, `reschedule-requests`, `coupon`, `calendar.ics`, `admin/bookings`, `admin/bookings/{booking}/no-show`.
+  - Sau đó `direct-owner-cutover` xóa nốt các route hoàn tiền và dời lịch của reservation.
 - [x] 6.3 Xoá code chỉ phục vụ V1:
   - `checkoutV1` và các helper riêng của nó, `CreateBooking`;
   - phần V1 của `BookingController`, `LegacyBookingAdapterController`;
@@ -85,6 +88,7 @@
   - `ExpirePendingBookings`, `NotifyExpiringBookings` và lịch chạy của chúng trong `routes/console.php`.
   - `ExpirePendingBookings` được giữ lại làm sweep cho reservation, bỏ phần V1 (design C3).
 - [x] 6.4 Bỏ mọi caller `syncProjection`: `ExpirePendingBookings`, `OwnerRefundService`, `SplitPaymentService`, `OwnerPaymentAttemptService`, `RescheduleService`, `PosService`, `ServiceTabService`. Bỏ luôn nhánh backfill trong `AttendanceService` (khoảng dòng 81–95).
+  - Sau đó `direct-owner-cutover` xóa hẳn `OwnerRefundService` và `RescheduleService`.
 - [x] 6.5 Bỏ nhánh truy vấn `booking_slots` ở 6 chỗ kiểm tra trùng lịch: `SlotSelectionPolicy`, `CourtCommitmentConflictService`, `PriceQuoteService`, `RecurringSeriesService`, `MatchService`, `AvailabilityController`.
 - [x] 6.6 Sửa `E2EArrangeTestDataCommand` và `E2EExpireHoldsCommand` để không còn ghi hay expire booking V1.
 - [x] 6.7 Frontend: xoá các lời gọi V1 trong `bookingApi`, `bookingStore.createBooking`, phần V1 của `usePaymentProcessing`, route `/payment/:code`, và code chết (`profileApi.getBookings`, `adminApi.updatePayment/markNoShow`, `bookingApi.createRecurring`).
@@ -93,6 +97,7 @@
   - mỗi route ở 6.2 trả 404 và không tạo hay đổi dòng nào trong `bookings`, `booking_slots`, `payments`, `reservations`, `idempotency_records`, `notifications`;
   - booking legacy vẫn đọc được qua reservation, với code, số tiền và trạng thái gốc;
   - webhook SePay cho POS và nạp ví vẫn ghi `payments` và vẫn chống trùng.
+    - Sau đó `direct-owner-cutover` chuyển POS QR sang lượt thanh toán `pos_order` của chủ sân; webhook nền tảng không còn ghi `payments` cho POS.
   - Có trong `tests/Feature/Readiness/RetiredV1BookingRoutesTest.php`, kèm `reservation_slots` và `price_quotes` trong danh sách bảng theo dõi, và test cho kịch bản "Stale client calls a versioned path" (`/api/v1`, `/api/v2` → 404, không ghi gì). Coupon trên reservation có trong `tests/Feature/Booking/ReservationCouponTest.php`.
 - [x] 6.9 Xoá test chỉ phục vụ endpoint V1 đã bỏ. Giữ test dùng `Booking` làm dữ liệu lịch sử. Cập nhật allowlist kiến trúc và baseline PHPStan cho các entry không còn khớp (chỉ được giảm).
   - Allowlist kiến trúc và baseline PHPStan đã cập nhật (chỉ giảm; baseline 740 → 700 entry). Việc sửa test dừng giữa chừng theo yêu cầu owner (2026-10-13, "bỏ qua test chỉ sửa thôi check sau"): nhóm checkout/ví/loyalty xong 6/9 file; nhóm slot policy/lịch và nhóm tài khoản/hết hạn/lịch sử còn dở. Cần chạy lại cả bộ PHPUnit để biết test nào còn fail.

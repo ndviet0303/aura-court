@@ -118,15 +118,7 @@ class ReservationPaymentService
         if ($status === OwnerPaymentAttempt::STATUS_PENDING && $attempt->expires_at?->isPast()) {
             $status = OwnerPaymentAttempt::STATUS_EXPIRED;
         }
-        $bankCode = strtoupper((string) $receiver['bank_code']);
-        $bankCode = $bankCode === 'MBBANK' ? 'MB' : $bankCode;
         $accountNumber = (string) $receiver['account_number'];
-        $query = http_build_query([
-            'amount' => (int) $attempt->amount,
-            'addInfo' => $attempt->reference,
-            'accountName' => (string) $receiver['account_name'],
-        ], '', '&', PHP_QUERY_RFC3986);
-        $qrPath = rawurlencode($bankCode).'-'.rawurlencode($accountNumber).'-compact2.png';
 
         return [
             'id' => (int) $attempt->id,
@@ -143,7 +135,7 @@ class ReservationPaymentService
                 'account_name' => $receiver['account_name'],
                 'account_number' => $accountNumber,
             ],
-            'qr_url' => 'https://img.vietqr.io/image/'.$qrPath.'?'.$query,
+            'qr_url' => VietQrImage::url((string) $receiver['bank_code'], $accountNumber, (string) $receiver['account_name'], (int) $attempt->amount, (string) $attempt->reference),
         ];
     }
 }

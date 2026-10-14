@@ -47,17 +47,6 @@ export type VenueBookingPolicySettings = {
     max_duration_minutes: number
     require_continuity: boolean
   }
-  cancellation: {
-    deadline_hours: number
-    fee_type: 'none' | 'fixed' | 'percentage'
-    fee_value: number
-    refund_due_hours: number
-  }
-  change: {
-    deadline_hours: number
-    fee_type: 'none' | 'fixed' | 'percentage'
-    fee_value: number
-  }
   arrival: {
     early_minutes: number
     late_grace_minutes: number
@@ -72,9 +61,7 @@ export type VenueBookingPolicySettings = {
     cutoff_hours: number
     max_consideration_percent: number
     free_transfer_allowed: boolean
-    seller_reimbursement_required: boolean
   }
-  ancillary_credit_policy: 'retain' | 'refund' | 'prorate'
 }
 
 export type VenueBookingPolicyVersion = {

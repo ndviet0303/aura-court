@@ -153,4 +153,38 @@ describe('Navbar', () => {
       wrapper.unmount()
     },
   )
+
+  it.each([true, false])(
+    'shows the Aura wallet entry points only when wallet_enabled is %s',
+    async (walletEnabled) => {
+      const auth = useAuthStore()
+      auth.loading = false
+      auth.loaded = true
+      auth.user = {
+        id: 3,
+        name: 'Wallet User',
+        email: 'wallet@example.com',
+        role: 'customer',
+        email_verified_at: '2026-01-01',
+        capabilities: { wallet_enabled: walletEnabled },
+      }
+      const fetchBalance = vi
+        .spyOn(useBookingStore(), 'fetchWalletBalance')
+        .mockResolvedValue(undefined as never)
+
+      const wrapper = createWrapper()
+      expect(wrapper.find('.nav-wallet-pill').exists()).toBe(walletEnabled)
+
+      await wrapper.find('.user-dropdown-trigger').trigger('click')
+      expect(wrapper.find('.dropdown-wallet-card').exists()).toBe(walletEnabled)
+      expect(fetchBalance.mock.calls.length > 0).toBe(walletEnabled)
+
+      await wrapper.find('.mobile-menu-btn').trigger('click')
+      expect(document.querySelector('.mobile-drawer-panel a[href="/wallet"]') !== null).toBe(
+        walletEnabled,
+      )
+
+      wrapper.unmount()
+    },
+  )
 })

@@ -5,7 +5,7 @@ import { getActorCredentials } from './runner/auth.ts'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 
-test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, Thiếu tiền & Nghĩa vụ hoàn trả @p1', () => {
+test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, Thiếu tiền & Hết hạn @p1', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       sessionStorage.setItem('aura_demo_warned', 'true')
@@ -347,7 +347,6 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
 
     // 2. Pay Share 1 via SePay webhook
     const sendWebhook = async (ref: string, amount: number, eventId: string) => {
-      const timestamp = String(Math.floor(Date.now() / 1000))
       const payload = JSON.stringify({
         id: eventId,
         transactionDate: arranged.transaction_date,
@@ -359,7 +358,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
         referenceCode: 'BANK-' + eventId,
       })
 
-      const signatureScript = `
+      const authorizationScript = `
         require "vendor/autoload.php";
         $app = require_once "bootstrap/app.php";
         $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
@@ -368,21 +367,19 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
         use App\\Models\\ReceivingConnection;
         $conn = ReceivingConnection::where('routing_id', '${arranged.connection_routing_id}')->firstOrFail();
         $secret = $conn->webhook_secret_ciphertext ? \\Illuminate\\Support\\Facades\\Crypt::decryptString($conn->webhook_secret_ciphertext) : 'test-secret';
-        $sig = hash_hmac('sha256', '${timestamp}.' . '${payload}', $secret);
-        echo 'sha256=' . $sig;
+        echo 'Apikey ' . $secret;
       `
-      const signature = execFileSync('php', ['-r', signatureScript], {
+      const authorization = execFileSync('php', ['-r', authorizationScript], {
         cwd: backendDir,
         env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
         encoding: 'utf-8',
       }).trim()
 
       const res = await page.request.post(
-        `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+        `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
         {
           headers: {
-            'X-SePay-Timestamp': timestamp,
-            'X-SePay-Signature': signature,
+            Authorization: authorization,
             'Content-Type': 'application/json',
           },
           data: payload,
@@ -643,7 +640,6 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
     }
 
     // 2. Pay Share 1 (120,000 VND) via SePay webhook
-    const timestamp = String(Math.floor(Date.now() / 1000))
     const eventId1 = 'SPLIT-COV-1-' + Date.now()
     const payload1 = JSON.stringify({
       id: eventId1,
@@ -656,7 +652,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       referenceCode: 'BANK-' + eventId1,
     })
 
-    const signatureScript = `
+    const authorizationScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
@@ -665,21 +661,19 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       use App\\Models\\ReceivingConnection;
       $conn = ReceivingConnection::where('routing_id', '${arranged.connection_routing_id}')->firstOrFail();
       $secret = $conn->webhook_secret_ciphertext ? \\Illuminate\\Support\\Facades\\Crypt::decryptString($conn->webhook_secret_ciphertext) : 'test-secret';
-      $sig = hash_hmac('sha256', '${timestamp}.' . '${payload1}', $secret);
-      echo 'sha256=' . $sig;
+      echo 'Apikey ' . $secret;
     `
-    const signature1 = execFileSync('php', ['-r', signatureScript], {
+    const authorization1 = execFileSync('php', ['-r', authorizationScript], {
       cwd: backendDir,
       env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
       encoding: 'utf-8',
     }).trim()
 
     await page.request.post(
-      `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
       {
         headers: {
-          'X-SePay-Timestamp': timestamp,
-          'X-SePay-Signature': signature1,
+          Authorization: authorization1,
           'Content-Type': 'application/json',
         },
         data: payload1,
@@ -760,7 +754,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       referenceCode: 'BANK-' + eventIdCover,
     })
 
-    const signatureScriptCover = `
+    const authorizationScriptCover = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
@@ -769,21 +763,19 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       use App\\Models\\ReceivingConnection;
       $conn = ReceivingConnection::where('routing_id', '${arranged.connection_routing_id}')->firstOrFail();
       $secret = $conn->webhook_secret_ciphertext ? \\Illuminate\\Support\\Facades\\Crypt::decryptString($conn->webhook_secret_ciphertext) : 'test-secret';
-      $sig = hash_hmac('sha256', '${timestamp}.' . '${payloadCover}', $secret);
-      echo 'sha256=' . $sig;
+      echo 'Apikey ' . $secret;
     `
-    const signatureCover = execFileSync('php', ['-r', signatureScriptCover], {
+    const authorizationCover = execFileSync('php', ['-r', authorizationScriptCover], {
       cwd: backendDir,
       env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
       encoding: 'utf-8',
     }).trim()
 
     await page.request.post(
-      `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
       {
         headers: {
-          'X-SePay-Timestamp': timestamp,
-          'X-SePay-Signature': signatureCover,
+          Authorization: authorizationCover,
           'Content-Type': 'application/json',
         },
         data: payloadCover,
@@ -856,7 +848,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
     expect(finalCoveredState.s2_payer_id).toBe(finalCoveredState.host_id) // Paid by host!
   })
 
-  test('8.2.4: Nhóm chia tiền hết hạn: Nhóm chưa đủ tiền hết hạn -> giải phóng giữ chỗ, giữ nghĩa vụ hoàn cho người thực trả', async ({
+  test('8.2.4: Nhóm chia tiền hết hạn: Nhóm chưa đủ tiền hết hạn -> giải phóng giữ chỗ, ghi ngoại lệ tài chính cho phần đã trả', async ({
     page,
   }) => {
     const manifest = getTestManifest()
@@ -984,7 +976,6 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
     }
 
     // 2. Pay Share 1 via SePay webhook
-    const timestamp = String(Math.floor(Date.now() / 1000))
     const eventIdExp = 'SPLIT-EXP-1-' + Date.now()
     const payloadExp = JSON.stringify({
       id: eventIdExp,
@@ -997,7 +988,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       referenceCode: 'BANK-' + eventIdExp,
     })
 
-    const signatureScriptExp = `
+    const authorizationScriptExp = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
@@ -1006,21 +997,19 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       use App\\Models\\ReceivingConnection;
       $conn = ReceivingConnection::where('routing_id', '${arranged.connection_routing_id}')->firstOrFail();
       $secret = $conn->webhook_secret_ciphertext ? \\Illuminate\\Support\\Facades\\Crypt::decryptString($conn->webhook_secret_ciphertext) : 'test-secret';
-      $sig = hash_hmac('sha256', '${timestamp}.' . '${payloadExp}', $secret);
-      echo 'sha256=' . $sig;
+      echo 'Apikey ' . $secret;
     `
-    const signatureExp = execFileSync('php', ['-r', signatureScriptExp], {
+    const authorizationExp = execFileSync('php', ['-r', authorizationScriptExp], {
       cwd: backendDir,
       env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
       encoding: 'utf-8',
     }).trim()
 
     await page.request.post(
-      `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
       {
         headers: {
-          'X-SePay-Timestamp': timestamp,
-          'X-SePay-Signature': signatureExp,
+          Authorization: authorizationExp,
           'Content-Type': 'application/json',
         },
         data: payloadExp,
@@ -1054,6 +1043,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
+      use App\\Models\\FinanceException;
       use App\\Models\\OwnerPaymentAttempt;
       use App\\Models\\Reservation;
       use App\\Models\\SplitGroup;
@@ -1074,8 +1064,11 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       $s2 = SplitShare::find(${arranged.share2_id});
       $attempt2 = OwnerPaymentAttempt::where('purpose_id', 'split_group:' . $group->id . ':share:' . $s2->id)->first();
 
-      // Trace refund obligations
-      $refundAllocations = $service->refundAllocations($freshGroup);
+      // The paid share stays traceable as one finance exception, never a refund obligation
+      $s1Exceptions = FinanceException::withoutGlobalScopes()
+        ->where('type', 'split_expired_paid_share')
+        ->where('reference', 'split-share:' . $s1->id)
+        ->get();
 
       echo json_encode([
         'expired_count' => $expiredCount,
@@ -1084,9 +1077,9 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
         's1_status' => $s1->status,
         's2_status' => $s2->status,
         'attempt2_status' => $attempt2?->status,
-        'has_s1_refund_obligation' => isset($refundAllocations[$s1->id]),
-        's1_refund_amount' => $refundAllocations[$s1->id]['amount'] ?? 0,
-        's1_refund_reference' => $refundAllocations[$s1->id]['payment_reference'] ?? null,
+        's1_exception_count' => $s1Exceptions->count(),
+        's1_exception_amount' => $s1Exceptions->first()?->amount ?? 0,
+        's1_exception_payment_reference' => $s1Exceptions->first()?->links['payment_reference'] ?? null,
       ]);
     `
 
@@ -1103,9 +1096,9 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       s1_status: string
       s2_status: string
       attempt2_status: string
-      has_s1_refund_obligation: boolean
-      s1_refund_amount: number
-      s1_refund_reference: string | null
+      s1_exception_count: number
+      s1_exception_amount: number
+      s1_exception_payment_reference: string | null
     }
 
     expect(expiredState.expired_count).toBe(1)
@@ -1114,11 +1107,11 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
     expect(expiredState.s2_status).toBe('expired') // Unpaid share expired!
     expect(expiredState.attempt2_status).toBe('expired') // Unpaid attempt expired!
 
-    // Paid Share 1 is retained as a traceable refund obligation for the actual payer!
+    // Paid Share 1 stays traceable as one finance exception the owner settles outside the platform
     expect(expiredState.s1_status).toBe('paid')
-    expect(expiredState.has_s1_refund_obligation).toBe(true)
-    expect(expiredState.s1_refund_amount).toBe(100000)
-    expect(expiredState.s1_refund_reference).toBeDefined()
+    expect(expiredState.s1_exception_count).toBe(1)
+    expect(expiredState.s1_exception_amount).toBe(100000)
+    expect(expiredState.s1_exception_payment_reference).toBeTruthy()
   })
 
   test('8.2.5: Bảo mật: Mã tham chiếu chưa xác minh hoặc người lạ cố tình bù tiền bị từ chối', async () => {

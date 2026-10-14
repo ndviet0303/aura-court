@@ -32,7 +32,7 @@ const bankCode = ref('MBBank')
 const accountName = ref('')
 const accountNumber = ref('')
 const legalOwnerConfirmed = ref(false)
-const hmacSecret = ref('')
+const webhookApiKey = ref('')
 const apiToken = ref('')
 const providerAccountId = ref('')
 const evidence = ref<ReceivingConnectionEvidenceItem[]>([])
@@ -111,8 +111,8 @@ async function selectConnection() {
   }
 }
 
-async function rotateHmacSecret() {
-  if (!props.connection || !hmacSecret.value) return
+async function rotateWebhookApiKey() {
+  if (!props.connection || !webhookApiKey.value) return
   saving.value = true
   error.value = ''
   notice.value = ''
@@ -121,9 +121,9 @@ async function rotateHmacSecret() {
       props.organizationId,
       props.venueId,
       props.connection.id,
-      hmacSecret.value,
+      webhookApiKey.value,
     )
-    hmacSecret.value = ''
+    webhookApiKey.value = ''
     notice.value = t('admin.venues.receivingConnection.secretSaved')
     emit('updated', result.data)
   } catch (cause) {
@@ -398,26 +398,26 @@ async function syncTransactions() {
 
       <div class="space-y-2">
         <label class="block space-y-1 text-xs font-medium text-gray-700 dark:text-gray-300">
-          <span>{{ t('admin.venues.receivingConnection.hmacSecret') }}</span>
+          <span>{{ t('admin.venues.receivingConnection.webhookApiKey') }}</span>
           <input
-            v-model="hmacSecret"
+            v-model="webhookApiKey"
             type="password"
             autocomplete="new-password"
             class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
-            data-testid="hmac-secret-input"
+            data-testid="webhook-api-key-input"
           />
         </label>
         <button
           type="button"
-          :disabled="saving || hmacSecret.length < 32"
+          :disabled="saving || webhookApiKey.length < 32"
           class="rounded-lg border border-emerald-600 px-3 py-2 text-xs font-semibold text-emerald-700 disabled:opacity-50 dark:text-emerald-300"
-          data-testid="save-hmac-secret"
-          @click="rotateHmacSecret"
+          data-testid="save-webhook-api-key"
+          @click="rotateWebhookApiKey"
         >
           {{
             saving
               ? t('admin.venues.receivingConnection.saving')
-              : t('admin.venues.receivingConnection.saveHmacSecret')
+              : t('admin.venues.receivingConnection.saveWebhookApiKey')
           }}
         </button>
         <p class="text-[11px] text-gray-500 dark:text-gray-400">

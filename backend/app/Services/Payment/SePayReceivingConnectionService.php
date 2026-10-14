@@ -114,34 +114,23 @@ class SePayReceivingConnectionService
         $this->recordEvidence($connection, 'receiver_selected', $actor->id, (int) $connection->credential_version, [
             'venue_id' => (int) $connection->venue_id,
             'selected_at' => now()->toIso8601String(),
-        ], credentialType: 'webhook_hmac');
+        ], credentialType: 'webhook_api_key');
     }
 
     public function verifyInboundWebhook(
         ReceivingConnection $connection,
-        string $timestamp,
-        string $signature,
+        string $authorization,
         string $rawBody
     ): array {
         abort_if(strlen($rawBody) > 65536, 413, 'Webhook payload is too large.');
-        abort_unless(preg_match('/^\d{10,13}$/', $timestamp) === 1, 401, 'Invalid webhook timestamp.');
-
-        $timestampSeconds = (int) $timestamp;
-        if (strlen($timestamp) === 13) {
-            $timestampSeconds = intdiv($timestampSeconds, 1000);
-        }
-        abort_unless(abs(now()->timestamp - $timestampSeconds) <= 300, 401, 'Webhook timestamp is outside the allowed window.');
-
-        abort_unless(preg_match('/^sha256=[a-f0-9]{64}$/i', $signature) === 1, 401, 'Invalid webhook signature.');
+        abort_unless(preg_match('/^Apikey\s+(\S+)$/i', trim($authorization), $match) === 1, 401, 'Invalid webhook credential.');
         try {
             $secret = $connection->webhookSecret();
         } catch (DecryptException) {
-            abort(401, 'Invalid webhook signature.');
+            abort(401, 'Invalid webhook credential.');
         }
-        abort_unless($secret !== null && $connection->credential_version > 0, 401, 'Invalid webhook signature.');
-
-        $expected = 'sha256='.hash_hmac('sha256', $timestamp.'.'.$rawBody, $secret);
-        abort_unless(hash_equals($expected, strtolower($signature)), 401, 'Invalid webhook signature.');
+        abort_unless($secret !== null && $connection->credential_version > 0, 401, 'Invalid webhook credential.');
+        abort_unless(hash_equals($secret, $match[1]), 401, 'Invalid webhook credential.');
 
         try {
             $payload = json_decode($rawBody, true, 512, JSON_THROW_ON_ERROR);
@@ -179,7 +168,7 @@ class SePayReceivingConnectionService
                 $fingerprint,
                 $payloadFingerprint,
                 $credentialVersion,
-                'webhook_hmac',
+                'webhook_api_key',
                 $rawBody,
                 $receiverMatches
             );

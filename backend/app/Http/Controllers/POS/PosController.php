@@ -13,6 +13,7 @@ use App\Models\ShiftReconciliation;
 use App\Models\StockMovement;
 use App\Models\TenantMembershipPlan;
 use App\Services\Infrastructure\IdempotencyService;
+use App\Services\POS\PosQrPaymentService;
 use App\Services\POS\PosService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -21,7 +22,7 @@ class PosController extends Controller
 {
     use ResolvesOrganization;
 
-    public function __construct(private readonly PosService $pos, private readonly IdempotencyService $idempotency) {}
+    public function __construct(private readonly PosService $pos, private readonly IdempotencyService $idempotency, private readonly PosQrPaymentService $posQr) {}
 
     public function products(Request $request)
     {
@@ -273,6 +274,7 @@ class PosController extends Controller
             return response()->json([
                 'order' => $order,
                 'receipt' => $order->receipt,
+                'payment_attempt' => $this->posQr->instructionsFor($order),
             ], 201);
         });
     }
@@ -285,28 +287,8 @@ class PosController extends Controller
         return response()->json([
             'order' => $order->load(['items', 'payments', 'customer:id,name,email,phone', 'cashier:id,name']),
             'receipt' => $order->receipt,
+            'payment_attempt' => $this->posQr->instructionsFor($order),
         ]);
-    }
-
-    public function confirmQrPayment(Request $request, PosOrder $order)
-    {
-        $organization = $this->organization($request);
-        abort_unless($order->organization_id === $organization->id, 404);
-        $data = $request->validate([
-            'external_transaction_id' => 'nullable|string|max:160',
-            'amount' => 'nullable|integer|min:1',
-            'provider' => 'nullable|string|max:50',
-            'notes' => 'nullable|string|max:500',
-        ]);
-
-        return $this->idempotency->run($request, function () use ($order, $data) {
-            $confirmed = $this->pos->confirmQrPayment($order, $data);
-
-            return response()->json([
-                'order' => $confirmed,
-                'receipt' => $confirmed->receipt,
-            ]);
-        });
     }
 
     public function cancelQrPayment(Request $request, PosOrder $order)
@@ -616,6 +598,8 @@ class PosController extends Controller
             $shift->total_sales = $totalSales;
             $shift->orders_count = $orders->count();
             $shift->expected_cash = $shift->opening_cash + $cashSales + $cashInflows - $cashOutflows - $cashRefunds;
+            // The POS hides QR tender unless the shift's venue has a verified owner receiving connection.
+            $shift->setAttribute('qr_available', $this->posQr->connectionFor($organization->id, $this->posQr->venueIdFor($request->user(), $organization->id, $shift->venue_id)) !== null);
         }
 
         return response()->json(['shift' => $shift]);

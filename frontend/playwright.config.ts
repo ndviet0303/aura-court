@@ -122,7 +122,7 @@ export default defineConfig({
     {
       name: 'Khu 4: Đặt sân & Thanh toán trực tiếp',
       testMatch:
-        /(p0-booking-payment-journey|p0-cancellation-refund-reschedule|p1-recurring-series|p1-split-payments|p1-resale-marketplace|p1-legacy-wallet-direct-cohort)\.spec\.ts/,
+        /(p0-booking-payment-journey|p1-recurring-series|p1-split-payments|p1-resale-marketplace|p1-legacy-wallet-direct-cohort)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], timezoneId: 'Asia/Ho_Chi_Minh', locale: 'vi-VN' },
     },
     {

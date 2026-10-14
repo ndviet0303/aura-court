@@ -408,7 +408,12 @@ const router = createRouter({
           path: 'payouts',
           name: 'admin-payouts',
           component: () => import('@/features/finance/views/AdminPayoutsView.vue'),
-          meta: { platformAdmin: true, titleKey: 'seo.adminPayoutsTitle', indexable: false },
+          meta: {
+            platformAdmin: true,
+            capability: 'marketplace_payouts',
+            titleKey: 'seo.adminPayoutsTitle',
+            indexable: false,
+          },
         },
         {
           path: 'tournaments',
@@ -464,13 +469,23 @@ const router = createRouter({
           path: 'financial-exceptions',
           name: 'admin-financial-exceptions',
           component: () => import('@/features/admin/views/AdminFinancialExceptionsView.vue'),
-          meta: { platformAdmin: true, titleKey: 'seo.adminExceptionsTitle', indexable: false },
+          meta: {
+            platformAdmin: true,
+            capability: 'marketplace_payouts',
+            titleKey: 'seo.adminExceptionsTitle',
+            indexable: false,
+          },
         },
         {
           path: 'reconciliation',
           name: 'admin-reconciliation',
           component: () => import('@/features/admin/views/AdminFinancialReconciliationView.vue'),
-          meta: { platformAdmin: true, titleKey: 'seo.adminReconciliationTitle', indexable: false },
+          meta: {
+            platformAdmin: true,
+            capability: 'marketplace_payouts',
+            titleKey: 'seo.adminReconciliationTitle',
+            indexable: false,
+          },
         },
         {
           path: 'kyc',
@@ -526,6 +541,8 @@ router.beforeEach(async (to) => {
     await auth.load()
   }
   if (to.meta.auth && !auth.user) return { name: 'login', query: { redirect: to.fullPath } }
+  // The server turns the legacy wallet off for direct-owner cohorts (`/auth/me` capabilities).
+  if (to.name === 'wallet' && !auth.walletEnabled) return { name: 'home' }
 
   if (to.meta.guestOnly && auth.user) {
     const redirectParam = typeof to.query.redirect === 'string' ? to.query.redirect : null

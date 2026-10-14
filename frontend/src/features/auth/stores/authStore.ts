@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { authApi } from '../api/authApi'
 import type { User, RegisterPayload, OnboardingPayload, UpdateProfilePayload } from '../types/auth'
@@ -7,6 +7,11 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const loading = ref(false)
   const loaded = ref(false)
+  // The server turns the legacy wallet off for direct-owner cohorts (`/auth/me` capabilities).
+  const walletEnabled = computed(() => {
+    const capabilities = user.value?.capabilities
+    return !Array.isArray(capabilities) && capabilities?.wallet_enabled === true
+  })
 
   async function load(force = false) {
     if (loaded.value && !force) return user.value
@@ -24,9 +29,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(email: string, password: string) {
     const result = await authApi.login({ email, password })
-    user.value = result.user
+    // The login payload carries no capabilities (wallet_enabled, venues); /auth/me is the full user.
+    user.value = await authApi.me().catch(() => result.user)
     loaded.value = true
-    return result.user
+    return user.value
   }
 
   async function register(
@@ -99,6 +105,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     loading,
     loaded,
+    walletEnabled,
     load,
     login,
     register,

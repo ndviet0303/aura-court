@@ -5,9 +5,9 @@ import type { Court } from '../../types/court'
 
 defineProps<{
   court: Court
-  basePrice: number
+  basePrice: number | null
   selectedDuration: number
-  estimatedTotal: number
+  estimatedTotal: number | null
   durationOptions: Array<{ value: number; label: string }>
 }>()
 
@@ -18,7 +18,7 @@ const emit = defineEmits<{
 
 <template>
   <div class="sticky-booking-card">
-    <div class="card-price-header">
+    <div v-if="basePrice !== null" class="card-price-header">
       <span class="price-lbl">{{ $t('courtDetail.rateLabel') }}</span>
       <div class="price-val">
         <strong class="price-num text-pink font-mono">{{ formatCurrency(basePrice) }}</strong>
@@ -44,7 +44,7 @@ const emit = defineEmits<{
     </div>
 
     <!-- Estimate Summary -->
-    <div class="estimate-box">
+    <div v-if="estimatedTotal !== null" class="estimate-box">
       <span>{{ $t('courtDetail.estimatedTotal', { duration: selectedDuration }) }}:</span>
       <strong class="estimate-amount text-pink font-mono">{{
         formatCurrency(estimatedTotal)

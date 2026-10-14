@@ -104,6 +104,33 @@ describe('CourtDetailView', () => {
     expect(wrapper.find('.estimate-amount').text()).toContain('200.000')
   })
 
+  it('shows no invented price for a court without price slots', () => {
+    const store = useBookingStore()
+    store.courts = [
+      {
+        id: 1,
+        name: 'Sân 01',
+        slug: 'san-01',
+        venue: {
+          id: 1,
+          name: 'Aura Center',
+          slug: 'aura-center',
+          address: 'Quận 2',
+          google_maps_url: null,
+          is_active: true,
+          share_url: '',
+        },
+        price_slots: [],
+      },
+    ]
+
+    const wrapper = mount(CourtDetailView, { global: { plugins: [i18n] } })
+
+    expect(wrapper.find('.price-num').exists()).toBe(false)
+    expect(wrapper.find('.estimate-amount').exists()).toBe(false)
+    expect(wrapper.find('.btn-book-now').exists()).toBe(true)
+  })
+
   it('opens and closes the photo gallery modal', async () => {
     const store = useBookingStore()
     store.courts = [

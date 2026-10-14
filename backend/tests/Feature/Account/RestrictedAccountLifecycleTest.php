@@ -13,6 +13,7 @@ use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use App\Services\Payment\WalletPaymentService;
 use App\Services\Social\MarketplaceService;
+use App\Services\Social\PeerToPeerResaleService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -284,7 +285,7 @@ class RestrictedAccountLifecycleTest extends TestCase
         $listing = $marketplace->list($entitlement, $seller, 100000);
 
         try {
-            $marketplace->purchase($listing, $buyer, 'idemp-'.uniqid(), 'pay-ref-'.uniqid());
+            app(PeerToPeerResaleService::class)->lock($listing, $buyer);
             $this->fail('Restricted buyer should be blocked from purchasing.');
         } catch (HttpException $e) {
             $this->assertEquals(403, $e->getStatusCode());

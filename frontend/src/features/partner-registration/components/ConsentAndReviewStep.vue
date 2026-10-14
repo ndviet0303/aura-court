@@ -25,7 +25,7 @@ const consentOptions: Array<{ type: PartnerConsentType; label: string }> = [
   {
     type: 'settlement_refund_terms',
     label:
-      'Tôi chấp nhận trách nhiệm thanh toán trực tiếp và xử lý hoàn tiền theo chính sách đã công bố.',
+      'Tôi nhận tiền thanh toán trực tiếp từ khách và tự xử lý các khoản tiền đến muộn hoặc sai lệch ngoài hệ thống.',
   },
   {
     type: 'data_processing_agreement',

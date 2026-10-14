@@ -12,17 +12,6 @@ type PolicyDraft = {
     max_duration_minutes: string
     require_continuity: string
   }
-  cancellation: {
-    deadline_hours: string
-    fee_type: string
-    fee_value: string
-    refund_due_hours: string
-  }
-  change: {
-    deadline_hours: string
-    fee_type: string
-    fee_value: string
-  }
   arrival: {
     early_minutes: string
     late_grace_minutes: string
@@ -37,9 +26,7 @@ type PolicyDraft = {
     cutoff_hours: string
     max_consideration_percent: string
     free_transfer_allowed: string
-    seller_reimbursement_required: string
   }
-  ancillary_credit_policy: string
 }
 
 const props = defineProps<{
@@ -65,17 +52,9 @@ function emptyDraft(): PolicyDraft {
       max_duration_minutes: '',
       require_continuity: '',
     },
-    cancellation: { deadline_hours: '', fee_type: '', fee_value: '', refund_due_hours: '' },
-    change: { deadline_hours: '', fee_type: '', fee_value: '' },
     arrival: { early_minutes: '', late_grace_minutes: '', no_show_after_minutes: '' },
     recurring: { payment_policy: '', conflict_policy: '', overdue_release_hours: '' },
-    transfer: {
-      cutoff_hours: '',
-      max_consideration_percent: '',
-      free_transfer_allowed: '',
-      seller_reimbursement_required: '',
-    },
-    ancillary_credit_policy: '',
+    transfer: { cutoff_hours: '', max_consideration_percent: '', free_transfer_allowed: '' },
   }
 }
 
@@ -95,17 +74,6 @@ watch(
             max_duration_minutes: String(settings.booking.max_duration_minutes),
             require_continuity: String(settings.booking.require_continuity),
           },
-          cancellation: {
-            deadline_hours: String(settings.cancellation.deadline_hours),
-            fee_type: settings.cancellation.fee_type,
-            fee_value: String(settings.cancellation.fee_value),
-            refund_due_hours: String(settings.cancellation.refund_due_hours),
-          },
-          change: {
-            deadline_hours: String(settings.change.deadline_hours),
-            fee_type: settings.change.fee_type,
-            fee_value: String(settings.change.fee_value),
-          },
           arrival: {
             early_minutes: String(settings.arrival.early_minutes),
             late_grace_minutes: String(settings.arrival.late_grace_minutes),
@@ -120,9 +88,7 @@ watch(
             cutoff_hours: String(settings.transfer.cutoff_hours),
             max_consideration_percent: String(settings.transfer.max_consideration_percent),
             free_transfer_allowed: String(settings.transfer.free_transfer_allowed),
-            seller_reimbursement_required: String(settings.transfer.seller_reimbursement_required),
           },
-          ancillary_credit_policy: settings.ancillary_credit_policy,
         }
       : emptyDraft()
   },
@@ -137,13 +103,6 @@ function save() {
     draft.value.booking.min_duration_minutes,
     draft.value.booking.max_duration_minutes,
     draft.value.booking.require_continuity,
-    draft.value.cancellation.deadline_hours,
-    draft.value.cancellation.fee_type,
-    draft.value.cancellation.fee_value,
-    draft.value.cancellation.refund_due_hours,
-    draft.value.change.deadline_hours,
-    draft.value.change.fee_type,
-    draft.value.change.fee_value,
     draft.value.arrival.early_minutes,
     draft.value.arrival.late_grace_minutes,
     draft.value.arrival.no_show_after_minutes,
@@ -153,8 +112,6 @@ function save() {
     draft.value.transfer.cutoff_hours,
     draft.value.transfer.max_consideration_percent,
     draft.value.transfer.free_transfer_allowed,
-    draft.value.transfer.seller_reimbursement_required,
-    draft.value.ancillary_credit_policy,
   ]
 
   if (values.some((value) => value === '')) {
@@ -170,18 +127,6 @@ function save() {
       min_duration_minutes: number(draft.value.booking.min_duration_minutes),
       max_duration_minutes: number(draft.value.booking.max_duration_minutes),
       require_continuity: draft.value.booking.require_continuity === 'true',
-    },
-    cancellation: {
-      deadline_hours: number(draft.value.cancellation.deadline_hours),
-      fee_type: draft.value.cancellation
-        .fee_type as VenueBookingPolicySettings['cancellation']['fee_type'],
-      fee_value: number(draft.value.cancellation.fee_value),
-      refund_due_hours: number(draft.value.cancellation.refund_due_hours),
-    },
-    change: {
-      deadline_hours: number(draft.value.change.deadline_hours),
-      fee_type: draft.value.change.fee_type as VenueBookingPolicySettings['change']['fee_type'],
-      fee_value: number(draft.value.change.fee_value),
     },
     arrival: {
       early_minutes: number(draft.value.arrival.early_minutes),
@@ -199,23 +144,11 @@ function save() {
       cutoff_hours: number(draft.value.transfer.cutoff_hours),
       max_consideration_percent: number(draft.value.transfer.max_consideration_percent),
       free_transfer_allowed: draft.value.transfer.free_transfer_allowed === 'true',
-      seller_reimbursement_required: draft.value.transfer.seller_reimbursement_required === 'true',
     },
-    ancillary_credit_policy: draft.value
-      .ancillary_credit_policy as VenueBookingPolicySettings['ancillary_credit_policy'],
   }
 
   if (settings.booking.min_duration_minutes > settings.booking.max_duration_minutes) {
     validationError.value = t('admin.venues.bookingPolicyDurationInvalid')
-    return
-  }
-  if (
-    (settings.cancellation.fee_type === 'percentage' && settings.cancellation.fee_value > 100) ||
-    (settings.change.fee_type === 'percentage' && settings.change.fee_value > 100) ||
-    (settings.cancellation.fee_type === 'none' && settings.cancellation.fee_value !== 0) ||
-    (settings.change.fee_type === 'none' && settings.change.fee_value !== 0)
-  ) {
-    validationError.value = t('admin.venues.bookingPolicyFeeInvalid')
     return
   }
 
@@ -283,60 +216,6 @@ function save() {
             <option value="false">{{ t('admin.venues.bookingPolicyNo') }}</option>
           </select></label
         >
-      </fieldset>
-      <fieldset>
-        <legend>{{ t('admin.venues.bookingPolicyCancellation') }}</legend>
-        <label
-          >{{ t('admin.venues.bookingPolicyCancelDeadline')
-          }}<input
-            v-model="draft.cancellation.deadline_hours"
-            type="number"
-            min="0"
-            max="8760"
-            required
-        /></label>
-        <label
-          >{{ t('admin.venues.bookingPolicyCancelFeeType')
-          }}<select v-model="draft.cancellation.fee_type" required>
-            <option value="">—</option>
-            <option value="none">{{ t('admin.venues.bookingPolicyFeeNone') }}</option>
-            <option value="fixed">{{ t('admin.venues.bookingPolicyFeeFixed') }}</option>
-            <option value="percentage">{{ t('admin.venues.bookingPolicyFeePercent') }}</option>
-          </select></label
-        >
-        <label
-          >{{ t('admin.venues.bookingPolicyCancelFeeValue')
-          }}<input v-model="draft.cancellation.fee_value" type="number" min="0" required
-        /></label>
-        <label
-          >{{ t('admin.venues.bookingPolicyRefundDue')
-          }}<input
-            v-model="draft.cancellation.refund_due_hours"
-            type="number"
-            min="1"
-            max="720"
-            required
-        /></label>
-      </fieldset>
-      <fieldset>
-        <legend>{{ t('admin.venues.bookingPolicyChange') }}</legend>
-        <label
-          >{{ t('admin.venues.bookingPolicyChangeDeadline')
-          }}<input v-model="draft.change.deadline_hours" type="number" min="0" max="8760" required
-        /></label>
-        <label
-          >{{ t('admin.venues.bookingPolicyChangeFeeType')
-          }}<select v-model="draft.change.fee_type" required>
-            <option value="">—</option>
-            <option value="none">{{ t('admin.venues.bookingPolicyFeeNone') }}</option>
-            <option value="fixed">{{ t('admin.venues.bookingPolicyFeeFixed') }}</option>
-            <option value="percentage">{{ t('admin.venues.bookingPolicyFeePercent') }}</option>
-          </select></label
-        >
-        <label
-          >{{ t('admin.venues.bookingPolicyChangeFeeValue')
-          }}<input v-model="draft.change.fee_value" type="number" min="0" required
-        /></label>
       </fieldset>
       <fieldset>
         <legend>{{ t('admin.venues.bookingPolicyArrival') }}</legend>
@@ -414,26 +293,6 @@ function save() {
             <option value="">—</option>
             <option value="true">{{ t('admin.venues.bookingPolicyYes') }}</option>
             <option value="false">{{ t('admin.venues.bookingPolicyNo') }}</option>
-          </select></label
-        >
-        <label
-          >{{ t('admin.venues.bookingPolicySellerRefund')
-          }}<select v-model="draft.transfer.seller_reimbursement_required" required>
-            <option value="">—</option>
-            <option value="true">{{ t('admin.venues.bookingPolicyYes') }}</option>
-            <option value="false">{{ t('admin.venues.bookingPolicyNo') }}</option>
-          </select></label
-        >
-      </fieldset>
-      <fieldset>
-        <legend>{{ t('admin.venues.bookingPolicyAncillary') }}</legend>
-        <label
-          >{{ t('admin.venues.bookingPolicyAncillaryHandling')
-          }}<select v-model="draft.ancillary_credit_policy" required>
-            <option value="">—</option>
-            <option value="retain">{{ t('admin.venues.bookingPolicyRetain') }}</option>
-            <option value="refund">{{ t('admin.venues.bookingPolicyRefund') }}</option>
-            <option value="prorate">{{ t('admin.venues.bookingPolicyProrate') }}</option>
           </select></label
         >
       </fieldset>

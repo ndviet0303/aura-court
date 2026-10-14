@@ -21,6 +21,7 @@ class PriceQuoteService
     public function __construct(
         private readonly VenueOperatingCalendar $operatingCalendar,
         private readonly DiscountService $discounts,
+        private readonly CourtPriceRuleService $priceRules,
     ) {}
 
     private const PRECEDENCE = [
@@ -143,15 +144,7 @@ class PriceQuoteService
         $court->loadMissing(['venue', 'sportZone']);
         $duration ??= (int) ($court->sportZone?->slot_duration ?: 60);
         $timezone = $court->venue?->timezone ?: config('app.timezone');
-        $organizationId = (int) ($court->venue?->organization_id ?? 0);
-        $rules = PriceRule::query()
-            ->where('organization_id', $organizationId)
-            ->where('is_active', true)
-            ->where(fn ($query) => $query->whereNull('court_id')->orWhere('court_id', $court->id))
-            ->where(fn ($query) => $query->whereNull('sport_zone_id')->orWhere('sport_zone_id', $court->sport_zone_id))
-            ->where(fn ($query) => $query->whereNull('venue_id')->orWhere('venue_id', $court->venue_id))
-            ->get();
-        $legacyRules = CourtPriceSlot::query()->where('court_id', $court->id)->where('is_active', true)->get();
+        ['rules' => $rules, 'slots' => $legacyRules] = $this->priceRules->forCourt($court);
 
         return collect($times)->map(function ($value) use ($court, $rules, $legacyRules, $duration, $timezone, $skipUnpriced): ?array {
             $time = $value instanceof \DateTimeInterface

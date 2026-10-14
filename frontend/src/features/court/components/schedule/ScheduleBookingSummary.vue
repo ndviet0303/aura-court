@@ -128,10 +128,6 @@ const formattedDate = computed(() => {
         <span class="material-symbols-outlined perk-icon">bolt</span>
         <span>{{ $t('schedule.instantHoldPerk') }}</span>
       </div>
-      <div class="perk-item">
-        <span class="material-symbols-outlined perk-icon">policy</span>
-        <span>{{ $t('schedule.flexReschedulePerk') }}</span>
-      </div>
     </div>
 
     <!-- Feedback Notice Alert -->

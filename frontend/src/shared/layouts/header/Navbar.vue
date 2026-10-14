@@ -19,16 +19,17 @@ const router = useRouter()
 const topbar = ref<HTMLElement | null>(null)
 const isMobileMenuOpen = ref(false)
 
+// The server turns the legacy wallet off for direct-owner cohorts (`/auth/me` capabilities).
 onMounted(() => {
-  if (auth.user) {
+  if (auth.walletEnabled) {
     bookingStore.fetchWalletBalance().catch(() => {})
   }
 })
 
 watch(
   () => auth.user,
-  (user) => {
-    if (user) {
+  () => {
+    if (auth.walletEnabled) {
       bookingStore.fetchWalletBalance().catch(() => {})
     }
   },
@@ -64,7 +65,7 @@ watch(() => route.path, closeMobileMenu)
       <div class="nav-right">
         <!-- Wallet Balance Pill (when authenticated) -->
         <RouterLink
-          v-if="auth.user"
+          v-if="auth.walletEnabled"
           to="/wallet"
           class="nav-wallet-pill"
           :title="`Số dư ví: ${formatCurrency(bookingStore.walletBalance)} · Bấm để quản lý ví`"

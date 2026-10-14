@@ -2,25 +2,21 @@
 
 namespace App\Services\Tournament;
 
+use App\Models\AuditLog;
+use App\Models\OwnerPaymentAttempt;
 use App\Models\Tournament;
 use App\Models\TournamentEvent;
 use App\Models\TournamentFixture;
 use App\Models\TournamentParticipant;
 use App\Models\TournamentStanding;
 use App\Models\User;
-use App\Services\Finance\FinancialPostingService;
 use App\Services\Infrastructure\OutboxService;
-use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class TournamentService
 {
-    public function __construct(
-        private readonly OutboxService $outbox,
-        private readonly WalletPaymentService $walletPayment,
-        private readonly FinancialPostingService $financialPosting
-    ) {}
+    public function __construct(private readonly OutboxService $outbox) {}
 
     public static function parseEntryFee(mixed $fee): int
     {
@@ -36,16 +32,17 @@ class TournamentService
         return 0;
     }
 
-    public function createAndGenerate(User $creator, int $organizationId, string $name, string $format, array $seedUserIds = [], array $settings = []): Tournament
+    public function createAndGenerate(User $creator, int $organizationId, string $name, string $format, array $seedUserIds = [], array $settings = [], ?int $venueId = null): Tournament
     {
         abort_unless(in_array($format, ['single_elimination', 'round_robin'], true), 422, 'Only single-elimination and round-robin tournaments are supported.');
 
-        return DB::transaction(function () use ($creator, $organizationId, $name, $format, $seedUserIds, $settings): Tournament {
+        return DB::transaction(function () use ($creator, $organizationId, $name, $format, $seedUserIds, $settings, $venueId): Tournament {
             $hasParticipants = count($seedUserIds) >= 2;
             $status = $hasParticipants ? 'ready' : 'open';
 
             $tournament = Tournament::create([
                 'organization_id' => $organizationId,
+                'venue_id' => $venueId,
                 'created_by' => $creator->id,
                 'name' => $name,
                 'format' => $format,
@@ -81,140 +78,57 @@ class TournamentService
         });
     }
 
+    /** Latest moment a player can still enter: the registration deadline or kick-off, whichever is first. */
+    public static function registrationClosesAt(Tournament $tournament): ?Carbon
+    {
+        $deadline = $tournament->settings['registration_deadline'] ?? ($tournament->registration_deadline ?? null);
+        $closes = array_filter([$deadline ? Carbon::parse($deadline) : null, $tournament->starts_at?->copy()]);
+
+        return $closes ? min($closes) : null;
+    }
+
     /**
-     * Common admission validation helper.
+     * Admission rules shared by free entry, paid entry and organizer adds. Live paid holds take capacity too.
+     * A confirmed payment skips the time checks: its transfer already landed before its attempt expiry, which is capped at closing.
      */
-    private function validateAdmission(Tournament $tournament): void
+    public function validateAdmission(Tournament $tournament, ?int $payingAttemptId = null): void
     {
         abort_if($tournament->status === 'finalized', 409, 'Tournament is finalized. Cannot add participants.');
         abort_unless(in_array($tournament->status, ['draft', 'open', 'ready'], true), 409, 'Tournament is not open for registration.');
 
-        if ($tournament->starts_at && now()->gt($tournament->starts_at)) {
-            abort(422, 'Tournament has already started.');
-        }
-
-        $deadline = $tournament->settings['registration_deadline'] ?? ($tournament->registration_deadline ?? null);
-        if ($deadline && now()->gt(Carbon::parse($deadline))) {
-            abort(422, 'Registration deadline has passed.');
+        if ($payingAttemptId === null) {
+            abort_if($tournament->starts_at && now()->gt($tournament->starts_at), 422, 'Tournament has already started.');
+            $closes = self::registrationClosesAt($tournament);
+            abort_if($closes && now()->gt($closes), 422, 'Registration deadline has passed.');
         }
 
         $maxParticipants = (int) ($tournament->settings['max_participants'] ?? 16);
         $activeCount = $tournament->participants()->whereNotIn('status', ['withdrawn', 'rejected'])->count();
-        abort_if($activeCount >= $maxParticipants, 409, 'Tournament has reached maximum participant capacity.');
+        $held = OwnerPaymentAttempt::query()
+            ->where('organization_id', $tournament->organization_id)
+            ->where('purpose', 'tournament_registration')
+            ->where('purpose_id', $tournament->uuid)
+            ->where('status', OwnerPaymentAttempt::STATUS_PENDING)
+            ->where('expires_at', '>', now())
+            ->when($payingAttemptId, fn ($query) => $query->whereKeyNot($payingAttemptId))
+            ->count();
+        abort_if($activeCount + $held >= $maxParticipants, 409, 'Tournament has reached maximum participant capacity.');
     }
 
-    public function register(Tournament $tournament, User $user, array $data = []): array
+    /** Free entry only; a paid tournament registers through TournamentRegistrationPaymentService once the owner receipt lands. */
+    public function register(Tournament $tournament, User $user): array
     {
         return DB::transaction(function () use ($tournament, $user): array {
             $tournament = Tournament::query()->whereKey($tournament->id)->lockForUpdate()->firstOrFail();
 
-            $existing = TournamentParticipant::where('tournament_id', $tournament->id)
-                ->where('user_id', $user->id)
-                ->first();
-
-            $entryFee = self::parseEntryFee($tournament->settings['entry_fee'] ?? 0);
-
-            if ($existing && ! in_array($existing->status, ['withdrawn', 'rejected'], true)) {
-                return [
-                    'participant' => $existing->load('user'),
-                    'already_registered' => true,
-                    'receipt' => [
-                        'receipt_code' => "RCP-TRN-{$tournament->id}-{$existing->id}",
-                        'tournament_id' => $tournament->id,
-                        'tournament_name' => $tournament->name,
-                        'participant_id' => $existing->id,
-                        'entry_fee' => $entryFee,
-                        'currency' => 'VND',
-                        'status' => 'confirmed',
-                        'registered_at' => $existing->created_at?->toIso8601String() ?? now()->toIso8601String(),
-                    ],
-                ];
+            $existing = $this->activeParticipant($tournament, $user->id);
+            if ($existing) {
+                return ['participant' => $existing->load('user'), 'already_registered' => true];
             }
-
-            // Common admission validation
+            abort_if(self::parseEntryFee($tournament->settings['entry_fee'] ?? 0) > 0, 409, 'Giải có phí đăng ký: vui lòng thanh toán qua QR của chủ sân.');
             $this->validateAdmission($tournament);
 
-            $wallet = null;
-            if ($entryFee > 0) {
-                $wallet = $this->walletPayment->getOrCreateWallet($user->id, $tournament->organization_id);
-                $this->walletPayment->debit(
-                    $wallet,
-                    $entryFee,
-                    'tournament_registration',
-                    $tournament->id,
-                    "Phí đăng ký giải đấu: {$tournament->name}"
-                );
-            }
-
-            $maxSeed = (int) $tournament->participants()->max('seed');
-            $seed = $existing ? $existing->seed : ($maxSeed + 1);
-            if ($existing) {
-                $existing->update([
-                    'status' => 'registered',
-                    'seed' => $seed,
-                    'checked_in_at' => null,
-                ]);
-                $participant = $existing->fresh();
-            } else {
-                $participant = TournamentParticipant::create([
-                    'organization_id' => $tournament->organization_id,
-                    'tournament_id' => $tournament->id,
-                    'user_id' => $user->id,
-                    'seed' => $seed,
-                    'status' => 'registered',
-                ]);
-            }
-
-            TournamentStanding::firstOrCreate([
-                'organization_id' => $tournament->organization_id,
-                'tournament_id' => $tournament->id,
-                'participant_id' => $participant->id,
-            ]);
-
-            if ($entryFee > 0 && $wallet) {
-                $this->financialPosting->postTournamentRegistrationPayment(
-                    $tournament->organization_id,
-                    $tournament->id,
-                    $participant->id,
-                    $entryFee,
-                    $wallet->id
-                );
-            }
-
-            DB::afterCommit(function () use ($tournament, $participant, $user) {
-                $this->outbox->enqueue([
-                    'organization_id' => $tournament->organization_id,
-                    'message_key' => "tournament_participant:{$tournament->id}:{$participant->id}",
-                    'channel' => 'notification',
-                    'event_type' => 'tournament.participant_registered',
-                    'aggregate_type' => Tournament::class,
-                    'aggregate_id' => $tournament->id,
-                ], [
-                    'user_id' => $user->id,
-                    'notification' => [
-                        'title' => 'Đăng ký giải đấu thành công',
-                        'body' => "Bạn đã được ghi danh tham gia giải đấu: {$tournament->name}",
-                        'type' => 'tournament_update',
-                        'source_id' => $tournament->id,
-                        'tournament_id' => $tournament->id,
-                    ],
-                ]);
-            });
-
-            return [
-                'participant' => $participant->load('user'),
-                'already_registered' => false,
-                'receipt' => [
-                    'receipt_code' => "RCP-TRN-{$tournament->id}-{$participant->id}",
-                    'tournament_id' => $tournament->id,
-                    'tournament_name' => $tournament->name,
-                    'participant_id' => $participant->id,
-                    'entry_fee' => $entryFee,
-                    'currency' => 'VND',
-                    'status' => 'confirmed',
-                    'registered_at' => $participant->created_at?->toIso8601String() ?? now()->toIso8601String(),
-                ],
-            ];
+            return ['participant' => $this->admit($tournament, $user->id)->load('user'), 'already_registered' => false];
         });
     }
 
@@ -222,100 +136,89 @@ class TournamentService
     {
         return DB::transaction(function () use ($tournament, $actor, $data): TournamentParticipant {
             $tournament = Tournament::query()->whereKey($tournament->id)->lockForUpdate()->firstOrFail();
-
-            // Common admission validation
             $this->validateAdmission($tournament);
 
             $targetUserId = (int) ($data['user_id'] ?? $actor->id);
+            abort_if($this->activeParticipant($tournament, $targetUserId) !== null, 422, 'Participant is already registered.');
 
-            $existing = TournamentParticipant::where('tournament_id', $tournament->id)
-                ->where('user_id', $targetUserId)
-                ->first();
-
-            if ($existing && ! in_array($existing->status, ['withdrawn', 'rejected'], true)) {
-                abort(422, 'Participant is already registered.');
-            }
-
-            $entryFee = self::parseEntryFee($tournament->settings['entry_fee'] ?? 0);
+            // The organizer adding a player to a paid tournament collects nothing, so the waiver is explicit and audited.
             $waiverReason = null;
-            $wallet = null;
-
-            if ($entryFee > 0) {
-                $isWaived = ! empty($data['fee_waiver']);
-                if ($isWaived) {
-                    $waiverReason = $data['waiver_reason'] ?? null;
-                    abort_if(empty($waiverReason) || ! is_string($waiverReason) || trim($waiverReason) === '', 422, 'Waiver reason is required when fee is waived.');
-                } else {
-                    $wallet = $this->walletPayment->getOrCreateWallet($targetUserId, $tournament->organization_id);
-                    $this->walletPayment->debit(
-                        $wallet,
-                        $entryFee,
-                        'tournament_registration',
-                        $tournament->id,
-                        "Phí đăng ký giải đấu: {$tournament->name}"
-                    );
-                }
+            if (self::parseEntryFee($tournament->settings['entry_fee'] ?? 0) > 0) {
+                $waiverReason = is_string($data['waiver_reason'] ?? null) ? trim($data['waiver_reason']) : '';
+                abort_if($waiverReason === '', 422, 'Waiver reason is required to add a player to a paid tournament.');
             }
 
-            $maxSeed = (int) $tournament->participants()->max('seed');
-            $seed = $data['seed'] ?? ($existing ? $existing->seed : ($maxSeed + 1));
-            if ($existing) {
-                $existing->update([
-                    'status' => 'registered',
-                    'seed' => $seed,
-                    'checked_in_at' => null,
-                    'waiver_reason' => $waiverReason,
-                ]);
-                $participant = $existing->fresh();
-            } else {
-                $participant = TournamentParticipant::create([
-                    'organization_id' => $tournament->organization_id,
-                    'tournament_id' => $tournament->id,
-                    'user_id' => $targetUserId,
-                    'seed' => $seed,
-                    'status' => 'registered',
-                    'waiver_reason' => $waiverReason,
+            $participant = $this->admit($tournament, $targetUserId, $waiverReason, isset($data['seed']) ? (int) $data['seed'] : null);
+            if ($waiverReason !== null) {
+                AuditLog::create([
+                    'user_id' => $actor->id,
+                    'action' => 'tournament.entry_fee_waived',
+                    'auditable_type' => TournamentParticipant::class,
+                    'auditable_id' => $participant->id,
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                    'metadata' => ['tournament_id' => $tournament->id, 'user_id' => $targetUserId, 'waiver_reason' => $waiverReason],
                 ]);
             }
-
-            TournamentStanding::firstOrCreate([
-                'organization_id' => $tournament->organization_id,
-                'tournament_id' => $tournament->id,
-                'participant_id' => $participant->id,
-            ]);
-
-            if ($entryFee > 0 && $wallet) {
-                $this->financialPosting->postTournamentRegistrationPayment(
-                    $tournament->organization_id,
-                    $tournament->id,
-                    $participant->id,
-                    $entryFee,
-                    $wallet->id
-                );
-            }
-
-            DB::afterCommit(function () use ($tournament, $participant, $targetUserId) {
-                $this->outbox->enqueue([
-                    'organization_id' => $tournament->organization_id,
-                    'message_key' => "tournament_participant:{$tournament->id}:{$participant->id}",
-                    'channel' => 'notification',
-                    'event_type' => 'tournament.participant_registered',
-                    'aggregate_type' => Tournament::class,
-                    'aggregate_id' => $tournament->id,
-                ], [
-                    'user_id' => $targetUserId,
-                    'notification' => [
-                        'title' => 'Đăng ký giải đấu thành công',
-                        'body' => "Bạn đã được ghi danh tham gia giải đấu: {$tournament->name}",
-                        'type' => 'tournament_update',
-                        'source_id' => $tournament->id,
-                        'tournament_id' => $tournament->id,
-                    ],
-                ]);
-            });
 
             return $participant;
         });
+    }
+
+    public function activeParticipant(Tournament $tournament, int $userId): ?TournamentParticipant
+    {
+        return TournamentParticipant::where('tournament_id', $tournament->id)
+            ->where('user_id', $userId)
+            ->whereNotIn('status', ['withdrawn', 'rejected'])
+            ->first();
+    }
+
+    /** Registers the player (re-activating a withdrawn entry), opens their standing and notifies them. The caller holds the tournament lock. */
+    public function admit(Tournament $tournament, int $userId, ?string $waiverReason = null, ?int $seed = null): TournamentParticipant
+    {
+        $existing = TournamentParticipant::where('tournament_id', $tournament->id)->where('user_id', $userId)->first();
+        $seed ??= $existing ? $existing->seed : ((int) $tournament->participants()->max('seed') + 1);
+        if ($existing) {
+            $existing->update(['status' => 'registered', 'seed' => $seed, 'checked_in_at' => null, 'waiver_reason' => $waiverReason]);
+            $participant = $existing->fresh();
+        } else {
+            $participant = TournamentParticipant::create([
+                'organization_id' => $tournament->organization_id,
+                'tournament_id' => $tournament->id,
+                'user_id' => $userId,
+                'seed' => $seed,
+                'status' => 'registered',
+                'waiver_reason' => $waiverReason,
+            ]);
+        }
+
+        TournamentStanding::firstOrCreate([
+            'organization_id' => $tournament->organization_id,
+            'tournament_id' => $tournament->id,
+            'participant_id' => $participant->id,
+        ]);
+
+        DB::afterCommit(function () use ($tournament, $participant, $userId) {
+            $this->outbox->enqueue([
+                'organization_id' => $tournament->organization_id,
+                'message_key' => "tournament_participant:{$tournament->id}:{$participant->id}",
+                'channel' => 'notification',
+                'event_type' => 'tournament.participant_registered',
+                'aggregate_type' => Tournament::class,
+                'aggregate_id' => $tournament->id,
+            ], [
+                'user_id' => $userId,
+                'notification' => [
+                    'title' => 'Đăng ký giải đấu thành công',
+                    'body' => "Bạn đã được ghi danh tham gia giải đấu: {$tournament->name}",
+                    'type' => 'tournament_update',
+                    'source_id' => $tournament->id,
+                    'tournament_id' => $tournament->id,
+                ],
+            ]);
+        });
+
+        return $participant;
     }
 
     public function checkIn(TournamentParticipant $participant, User $user, mixed $status = null, ?bool $checkedIn = null): TournamentParticipant

@@ -11,6 +11,8 @@ use App\Models\ServiceTabItem;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\Finance\FinancialPostingService;
+use App\Services\Infrastructure\FeatureFlagService;
+use App\Services\Payment\WalletAvailabilityService;
 use App\Services\Payment\WalletPaymentService;
 use App\Services\Reservation\LegacyBookingBackfillService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -21,7 +23,9 @@ class ServiceTabService
     public function __construct(
         private readonly FinancialPostingService $financials,
         private readonly WalletPaymentService $walletPayments,
+        private readonly WalletAvailabilityService $walletAvailability,
         private readonly LegacyBookingBackfillService $backfill,
+        private readonly FeatureFlagService $features,
     ) {}
 
     public function getReservedQuantity(int $productId): int
@@ -244,7 +248,10 @@ class ServiceTabService
 
     public function settleTab(User $cashier, int $organizationId, int $tabId, array $paymentData): array
     {
-        // 1. Enforce active open shift for cashier
+        $method = (string) ($paymentData['payment_method'] ?? 'cash');
+        $this->walletAvailability->assertAvailable($organizationId, $method === 'wallet');
+        // A tab QR completed on the cashier's word; direct cohorts ring counter QR up as a POS order instead.
+        abort_if($method === 'qr' && $this->features->enabled('direct_owner_payments', $organizationId), 409, 'Tab dịch vụ ở cơ sở thanh toán trực tiếp chỉ nhận tiền mặt. Muốn thu bằng QR, hãy tạo đơn POS.');
         $activeShift = CashShift::query()
             ->where('organization_id', $organizationId)
             ->where('cashier_id', $cashier->id)
@@ -252,7 +259,7 @@ class ServiceTabService
             ->first();
         abort_unless($activeShift !== null, 409, 'Cashier does not have an active open shift.');
 
-        return DB::transaction(function () use ($cashier, $organizationId, $tabId, $paymentData): array {
+        return DB::transaction(function () use ($cashier, $organizationId, $tabId, $paymentData, $method): array {
             $tab = ServiceTab::query()
                 ->where('organization_id', $organizationId)
                 ->whereKey($tabId)
@@ -283,7 +290,6 @@ class ServiceTabService
                 ->get();
 
             $totalAmount = (int) $tab->total_amount;
-            $method = (string) ($paymentData['payment_method'] ?? 'cash');
             abort_unless(in_array($method, ['cash', 'wallet', 'qr'], true), 422, 'Invalid payment method.');
 
             $reservation = $tab->reservation()->with('user')->first();
@@ -292,7 +298,7 @@ class ServiceTabService
                 : $reservation?->user;
 
             $cashTendered = null;
-            $changeDue = null;
+            $changeDue = 0;
 
             if ($method === 'cash') {
                 $cashTendered = (int) ($paymentData['cash_tendered'] ?? $totalAmount);
@@ -303,9 +309,6 @@ class ServiceTabService
                 $wallet = $this->walletPayments->getOrCreateWallet($customer->id, $organizationId);
                 abort_unless((int) $wallet->balance >= $totalAmount, 422, 'Số dư ví của khách hàng không đủ để thanh toán tab dịch vụ.');
                 $this->walletPayments->debit($wallet, $totalAmount, 'pos_tab_settlement', $tab->id, "Thanh toán tab dịch vụ #{$tab->id}");
-                $changeDue = 0;
-            } else {
-                $changeDue = 0;
             }
             $orderCode = 'TAB-POS-'.strtoupper(uniqid());
 
@@ -336,10 +339,8 @@ class ServiceTabService
             foreach ($reservedItems as $item) {
                 $product = PosProduct::query()->whereKey($item->product_id)->lockForUpdate()->firstOrFail();
 
-                // Atomically decrement actual product stock
                 $product->decrement('stock_quantity', $item->quantity);
 
-                // Create sale stock movement
                 StockMovement::create([
                     'organization_id' => $organizationId,
                     'product_id' => $product->id,
@@ -359,7 +360,6 @@ class ServiceTabService
                     ],
                 ]);
 
-                // Update item status
                 $item->update(['status' => ServiceTabItem::STATUS_SETTLED]);
 
                 $order->items()->create([

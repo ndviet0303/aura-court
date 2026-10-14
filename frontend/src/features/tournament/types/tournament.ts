@@ -1,3 +1,5 @@
+import type { ReservationPaymentAttempt } from '@/features/booking/api/bookingApi'
+
 export interface Fixture {
   id: number
   round: number
@@ -92,4 +94,19 @@ export interface TournamentRegistrationPayload {
   notes?: string
   checked_in?: boolean
   [key: string]: any
+}
+
+/** GET tournaments/{id}/registration: the caller's registration, or the owner-QR payment that will create it. */
+export type TournamentRegistrationStatus = {
+  registered: boolean
+  participant: Participant | null
+  receipt: Record<string, unknown> | null
+  payment: ReservationPaymentAttempt | null
+}
+
+export type TournamentCustomerOption = {
+  user_id: number
+  name: string
+  phone: string
+  email: string
 }

@@ -67,6 +67,7 @@ class Venue extends Model
             ?? 'Asia/Ho_Chi_Minh';
     }
 
+    /** @return BelongsTo<Organization, $this> */
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
@@ -97,11 +98,13 @@ class Venue extends Model
         return $this->hasMany(VenueBookingPolicy::class)->orderByDesc('version');
     }
 
+    /** @return HasOne<VenueBookingPolicy, $this> */
     public function currentBookingPolicy(): HasOne
     {
         return $this->hasOne(VenueBookingPolicy::class)->latestOfMany('version');
     }
 
+    /** @return BelongsTo<ReceivingConnection, $this> */
     public function currentReceivingConnection(): BelongsTo
     {
         return $this->belongsTo(ReceivingConnection::class, 'current_receiving_connection_id');

@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useUserBookings } from '../composables/useUserBookings'
-import type { Reservation } from '../types/reservation'
 
 import BookingHistoryHero from '../components/history/BookingHistoryHero.vue'
 import BookingHistoryTabs from '../components/history/BookingHistoryTabs.vue'
 import UserBookingCard from '../components/history/UserBookingCard.vue'
 import BookingReviewModal from '../components/history/BookingReviewModal.vue'
 import BookingQrCheckInModal from '../components/history/BookingQrCheckInModal.vue'
-import BookingCancelModal from '../components/history/BookingCancelModal.vue'
-import BookingRescheduleModal from '../components/history/BookingRescheduleModal.vue'
 
 const {
   activeTab,
@@ -38,19 +35,6 @@ const {
   submitReview,
 } = useUserBookings()
 
-const cancelBooking = ref<Reservation | null>(null)
-const rescheduleBooking = ref<Reservation | null>(null)
-
-function openCancel(b: Reservation) {
-  cancelBooking.value = b
-}
-function openReschedule(b: Reservation) {
-  rescheduleBooking.value = b
-}
-function onChangeApplied() {
-  load()
-}
-
 onMounted(() => {
   load()
 })
@@ -71,7 +55,7 @@ onMounted(() => {
       <span>{{ error }}</span>
     </div>
 
-    <!-- Booking Policy Notice (policy-aware cancellation/reschedule) -->
+    <!-- Booking Policy Notice (bookings are final; resale is the only remedy) -->
     <div class="policy-notice">
       <span class="material-symbols-outlined alert-icon">info</span>
       <span>{{ $t('booking.policyNotice') }}</span>
@@ -123,8 +107,6 @@ onMounted(() => {
         :booking="b"
         @qr="openQr"
         @review="openReview"
-        @cancel="openCancel"
-        @reschedule="openReschedule"
       />
     </div>
 
@@ -142,22 +124,6 @@ onMounted(() => {
       @update:rating="reviewRating = $event"
       @update:body="reviewBody = $event"
       @submit="submitReview"
-    />
-
-    <!-- Cancellation / partial-cancel refund modal -->
-    <BookingCancelModal
-      :show="!!cancelBooking"
-      :booking="cancelBooking"
-      @close="cancelBooking = null"
-      @updated="onChangeApplied"
-    />
-
-    <!-- Reschedule modal -->
-    <BookingRescheduleModal
-      :show="!!rescheduleBooking"
-      :booking="rescheduleBooking"
-      @close="rescheduleBooking = null"
-      @updated="onChangeApplied"
     />
   </div>
 </template>

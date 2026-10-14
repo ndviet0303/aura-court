@@ -63,11 +63,6 @@ import { RouterLink } from 'vue-router'
               <RouterLink to="/terms#court-rules">{{ $t('common.footer.courtRules') }}</RouterLink>
             </li>
             <li>
-              <RouterLink to="/terms#refund-policy">{{
-                $t('common.footer.refundPolicy')
-              }}</RouterLink>
-            </li>
-            <li>
               <RouterLink to="/terms">{{ $t('common.footer.termsOfService') }}</RouterLink>
             </li>
             <li>

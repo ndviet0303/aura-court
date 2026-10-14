@@ -9,7 +9,6 @@ use App\Models\TournamentEvent;
 use App\Models\TournamentGrant;
 use App\Models\TournamentStanding;
 use App\Models\User;
-use App\Models\WalletAccount;
 use App\Services\Tournament\TournamentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -34,14 +33,6 @@ class TournamentCompleteLifecycleTest extends TestCase
 
     private User $player4;
 
-    private WalletAccount $wallet1;
-
-    private WalletAccount $wallet2;
-
-    private WalletAccount $wallet3;
-
-    private WalletAccount $wallet4;
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -54,7 +45,6 @@ class TournamentCompleteLifecycleTest extends TestCase
         config([
             'features.pilot_organizations' => [(string) $this->organization->id],
             'features.flags.social_matchmaking_tournaments' => true,
-            'features.flags.tenant_pos_and_wallet' => true,
         ]);
 
         $this->owner = User::factory()->create(['name' => 'Org Owner']);
@@ -88,26 +78,12 @@ class TournamentCompleteLifecycleTest extends TestCase
             'role' => 'customer',
             'status' => 'active',
         ]);
-        $this->wallet1 = WalletAccount::create([
-            'organization_id' => $this->organization->id,
-            'user_id' => $this->player1->id,
-            'currency' => 'VND',
-            'balance' => 500000,
-            'status' => 'active',
-        ]);
 
         $this->player2 = User::factory()->create(['name' => 'Player 2']);
         OrganizationMember::create([
             'organization_id' => $this->organization->id,
             'user_id' => $this->player2->id,
             'role' => 'customer',
-            'status' => 'active',
-        ]);
-        $this->wallet2 = WalletAccount::create([
-            'organization_id' => $this->organization->id,
-            'user_id' => $this->player2->id,
-            'currency' => 'VND',
-            'balance' => 500000,
             'status' => 'active',
         ]);
 
@@ -118,26 +94,12 @@ class TournamentCompleteLifecycleTest extends TestCase
             'role' => 'customer',
             'status' => 'active',
         ]);
-        $this->wallet3 = WalletAccount::create([
-            'organization_id' => $this->organization->id,
-            'user_id' => $this->player3->id,
-            'currency' => 'VND',
-            'balance' => 500000,
-            'status' => 'active',
-        ]);
 
         $this->player4 = User::factory()->create(['name' => 'Player 4']);
         OrganizationMember::create([
             'organization_id' => $this->organization->id,
             'user_id' => $this->player4->id,
             'role' => 'customer',
-            'status' => 'active',
-        ]);
-        $this->wallet4 = WalletAccount::create([
-            'organization_id' => $this->organization->id,
-            'user_id' => $this->player4->id,
-            'currency' => 'VND',
-            'balance' => 500000,
             'status' => 'active',
         ]);
     }
@@ -257,7 +219,7 @@ class TournamentCompleteLifecycleTest extends TestCase
      * Task 10.2 [D64]: Unified admission:
      * - Rejects registration if deadline has passed (422) or tournament already started (422).
      * - Capacity check limits active participants.
-     * - Entry fee requires wallet payment for self-registration or explicit fee waiver with reason for admin.
+     * - An organizer adding a player to a paid tournament must record a waiver reason.
      */
     public function test_unified_admission_checks_deadline_capacity_fee_and_waiver(): void
     {
@@ -336,12 +298,11 @@ class TournamentCompleteLifecycleTest extends TestCase
             ],
         ]);
 
-        // Admin adds participant with fee_waiver: true BUT empty waiver_reason -> 422
+        // Admin adds a participant to a paid tournament with an empty waiver_reason -> 422
         $waiverFail = $this->actingAs($this->owner)
             ->withHeaders($this->headers('wf-'))
             ->postJson("/api/tournaments/{$paidTourney->id}/participants", [
                 'user_id' => $this->player1->id,
-                'fee_waiver' => true,
                 'waiver_reason' => '',
             ]);
         $waiverFail->assertStatus(422);
@@ -351,7 +312,6 @@ class TournamentCompleteLifecycleTest extends TestCase
             ->withHeaders($this->headers('wo-'))
             ->postJson("/api/tournaments/{$paidTourney->id}/participants", [
                 'user_id' => $this->player1->id,
-                'fee_waiver' => true,
                 'waiver_reason' => 'Wildcard invitation from tournament director',
             ]);
         $waiverOk->assertStatus(201);

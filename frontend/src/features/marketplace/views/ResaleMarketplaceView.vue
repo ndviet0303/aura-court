@@ -21,9 +21,7 @@ const {
   searchQuery,
   sortBy,
   availableVenues,
-  isBuyModalOpen,
   selectedListingToBuy,
-  buyPaymentMethod,
   isSellModalOpen,
   selectedSlotToSell,
   askingPriceInput,
@@ -32,10 +30,11 @@ const {
   userSlots,
   filteredListings,
   refreshAll,
+  loadMyListings,
   resetFilters,
   openBuyModal,
+  closeBuyModal,
   openSellModal,
-  confirmBuy,
   confirmSell,
   cancelListing,
 } = useResaleMarketplace()
@@ -231,18 +230,15 @@ const {
         :processing="processingAction"
         @withdraw="cancelListing"
         @create-new="activeTab = 'sell'"
+        @refresh="loadMyListings"
       />
     </section>
 
     <!-- Modals -->
     <MarketplaceBuyModal
-      :show="isBuyModalOpen"
       :listing="selectedListingToBuy"
-      :payment-method="buyPaymentMethod"
-      :processing="processingAction"
-      @close="isBuyModalOpen = false"
-      @update:payment-method="buyPaymentMethod = $event"
-      @confirm="confirmBuy"
+      @close="closeBuyModal"
+      @changed="refreshAll"
     />
 
     <MarketplaceSellModal

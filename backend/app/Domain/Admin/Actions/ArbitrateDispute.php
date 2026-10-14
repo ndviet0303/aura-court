@@ -6,12 +6,8 @@ use App\Contracts\Repositories\AuditLogRepositoryInterface;
 use App\Contracts\Repositories\DisputeRepositoryInterface;
 use App\Domain\Admin\DTOs\ArbitrateDisputeData;
 use App\Models\DisputeCase;
-use App\Models\OwnerRefundObligation;
-use App\Models\Venue;
 use App\Services\Infrastructure\OutboxService;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 class ArbitrateDispute
@@ -35,7 +31,7 @@ class ArbitrateDispute
 
         return DB::transaction(function () use ($dispute, $data) {
             $newStatus = match ($data->decision) {
-                'resolve_and_refund', 'resolve' => 'resolved',
+                'resolve' => 'resolved',
                 'dismiss' => 'dismissed',
                 'investigate_further' => 'investigating',
                 default => 'resolved',
@@ -56,100 +52,14 @@ class ArbitrateDispute
                 $currentVersion++;
             }
 
-            // Linked OwnerRefundObligation on resolve_and_refund
-            $refundObligationId = $dispute->refund_obligation_id;
-            $payerId = null;
-            if ($data->decision === 'resolve_and_refund') {
-                $obligation = null;
-                if ($refundObligationId) {
-                    $obligation = OwnerRefundObligation::find($refundObligationId);
-                }
-
-                if (! $obligation) {
-                    // OwnerRefundService reads slot_ids as slots of reservation_id (mirror slots for a mapped booking),
-                    // so only a dispute without a reservation falls back to its historical booking.
-                    $source = $dispute->reservation_id ? $dispute->reservation : $dispute->booking;
-                    $court = $source?->court;
-                    $orgId = $dispute->organization_id ?? $court?->venue?->organization_id;
-                    $venueId = $dispute->venue_id ?? $court?->venue_id;
-                    if (! $venueId && $orgId) {
-                        $venueId = Venue::where('organization_id', $orgId)->value('id');
-                    }
-
-                    // organizations has no user_id column: the owner comes from organization_members.
-                    $payerId = $dispute->respondent_id
-                        ?? ($orgId ? $this->disputeRepository->findRespondentIdForOrganization($orgId) : null)
-                        ?? $data->reviewerId;
-
-                    $slotIds = $source?->slots()->withoutGlobalScope('tenant_isolation')->pluck('id')->all() ?? [];
-                    $recipientData = [
-                        'name' => $dispute->complainant_name ?? 'Complainant',
-                        'user_id' => $dispute->complainant_id,
-                        'phone' => $dispute->complainant_phone,
-                    ];
-
-                    $obligation = OwnerRefundObligation::create([
-                        'organization_id' => $orgId,
-                        'venue_id' => $venueId,
-                        'booking_id' => $dispute->booking_id,
-                        'reservation_id' => $dispute->reservation_id,
-                        'payer_id' => $payerId,
-                        'reference_code' => 'REF-DSP-'.strtoupper(Str::random(10)),
-                        'idempotency_key' => "dispute_refund_{$dispute->id}_v{$currentVersion}",
-                        'request_fingerprint' => hash('sha256', "dispute_refund_{$dispute->id}_v{$currentVersion}"),
-                        'slot_ids' => $slotIds,
-                        'gross_amount' => (int) $data->refundAmount,
-                        'fee_amount' => 0,
-                        'amount' => (int) $data->refundAmount,
-                        'currency' => $dispute->currency ?? 'VND',
-                        'status' => OwnerRefundObligation::STATUS_APPROVED,
-                        'reason' => $data->notes ?: ("Phán quyết hoàn tiền tranh chấp {$dispute->dispute_code}"),
-                        'policy_snapshot' => [
-                            'dispute_code' => $dispute->dispute_code,
-                            'arbitrated_at' => now()->toIso8601String(),
-                        ],
-                        'recipient_ciphertext' => Crypt::encryptString(json_encode($recipientData, JSON_THROW_ON_ERROR)),
-                        'due_at' => now()->addDays(7),
-                        'requested_at' => now(),
-                        'approved_at' => now(),
-                        'requested_by' => $data->reviewerId,
-                        'approved_by' => $data->reviewerId,
-                    ]);
-                } else {
-                    $payerId = $obligation->payer_id;
-                    $obligation->update([
-                        'amount' => (int) $data->refundAmount,
-                        'gross_amount' => (int) $data->refundAmount,
-                        'reason' => $data->notes ?: $obligation->reason,
-                    ]);
-                }
-
-                $refundObligationId = $obligation->id;
-            }
-
             $events = $dispute->timeline_events ?? [];
             $events[] = [
                 'event' => 'dispute_arbitrated',
                 'actor_id' => $data->reviewerId,
                 'decision' => $data->decision,
                 'version' => $currentVersion,
-                'refund_obligation_id' => $refundObligationId,
                 'timestamp' => now()->toIso8601String(),
             ];
-
-            if ($data->decision === 'resolve_and_refund') {
-                $events[] = [
-                    'event' => 'refund_task_created',
-                    'task_type' => 'owner_refund_execution',
-                    'obligation_id' => $refundObligationId,
-                    'status' => 'pending_financial_evidence',
-                    'responsible_actor_id' => $payerId,
-                    'amount' => (int) $data->refundAmount,
-                    'due_at' => now()->addDays(7)->toIso8601String(),
-                    'payment_completed' => false,
-                    'timestamp' => now()->toIso8601String(),
-                ];
-            }
 
             $updatePayload = [
                 'status' => $newStatus,
@@ -166,7 +76,6 @@ class ArbitrateDispute
                 'digital_signature_hash' => $data->digitalSignatureHash,
                 'decision_history' => $history,
                 'decision_version' => $currentVersion,
-                'refund_obligation_id' => $refundObligationId,
                 'timeline_events' => $events,
             ];
 

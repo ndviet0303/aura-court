@@ -110,9 +110,7 @@ export interface DisputeFilterParams {
 }
 
 export interface ArbitrateDisputePayload {
-  decision: 'resolve_and_refund' | 'resolve' | 'dismiss' | 'investigate_further'
-  refundMethod?: 'wallet' | 'payos_bank' | 'partial_wallet' | 'none'
-  refundAmount?: number
+  decision: 'resolve' | 'dismiss' | 'investigate_further'
   compensationType?: 'voucher_20' | 'voucher_50' | 'reputation_points' | 'none'
   compensationValue?: string
   penaltyNotes?: string

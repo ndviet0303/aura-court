@@ -1,7 +1,6 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminApi } from '../api/adminApi'
-import { refundReviewApi, type RefundObligation } from '../api/refundReviewApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { resolveLocalizedText } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
@@ -42,7 +41,6 @@ export function useAdminManageCourts() {
   const courts = ref<Court[]>([])
   const venues = ref<Venue[]>([])
   const sportZones = ref<SportZone[]>([])
-  const refunds = ref<RefundObligation[]>([])
   const coupons = ref<Coupon[]>([])
   const error = ref('')
   const notice = ref('')
@@ -53,7 +51,6 @@ export function useAdminManageCourts() {
   const searchQuery = ref('')
   const selectedVenueFilter = ref<number | 'all'>('all')
   const statusFilter = ref<'all' | 'active' | 'inactive'>('all')
-  const activeTab = ref<'courts' | 'refunds'>('courts')
 
   // Modals & Sub-states
   const showCourtModal = ref(false)
@@ -126,16 +123,6 @@ export function useAdminManageCourts() {
     notice.value = ''
   }
 
-  async function loadRefunds() {
-    const orgId = activeOrganizationId()
-    if (!orgId) {
-      refunds.value = []
-      return
-    }
-    const res = await refundReviewApi.listRefundInbox(orgId)
-    refunds.value = res.data || []
-  }
-
   async function load() {
     loading.value = true
     clearAlerts()
@@ -145,7 +132,6 @@ export function useAdminManageCourts() {
         adminApi.getVenues(),
         adminApi.getSportZones(),
         adminApi.getCoupons<{ data: Coupon[] } | Coupon[]>(activeOrganizationId()),
-        loadRefunds(),
       ])
       courts.value = loadedCourts || []
       venues.value = loadedVenues || []
@@ -341,7 +327,6 @@ export function useAdminManageCourts() {
     courts,
     venues,
     sportZones,
-    refunds,
     coupons,
     error,
     notice,
@@ -350,7 +335,6 @@ export function useAdminManageCourts() {
     searchQuery,
     selectedVenueFilter,
     statusFilter,
-    activeTab,
     showCourtModal,
     editingCourtId,
     courtForm,
@@ -367,7 +351,6 @@ export function useAdminManageCourts() {
     venueFilterOptions,
     statusFilterOptions,
     load,
-    loadRefunds,
     toggleCourtStatus,
     openCreateCourtModal,
     openEditCourtModal,

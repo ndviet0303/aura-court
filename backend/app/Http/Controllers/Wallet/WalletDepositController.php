@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Wallet;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\PaymentIntent;
-use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\TenantContext;
+use App\Services\Payment\WalletAvailabilityService;
 use App\Services\Payment\WalletPaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,7 +17,7 @@ class WalletDepositController extends Controller
     public function __construct(
         private readonly WalletPaymentService $walletPayments,
         private readonly TenantContext $tenantContext,
-        private readonly FeatureFlagService $features,
+        private readonly WalletAvailabilityService $walletAvailability,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -100,13 +100,7 @@ class WalletDepositController extends Controller
             }
         }
 
-        if ($this->features->enabled('direct_owner_payments', (int) $orgId)) {
-            return response()->json([
-                'message' => 'Pooled wallet top-ups are disabled for this direct-payment cohort. Pay the venue owner directly.',
-                'code' => 'DIRECT_OWNER_PAYMENTS_ENABLED',
-                'organization_id' => (int) $orgId,
-            ], 409);
-        }
+        $this->walletAvailability->assertAvailable((int) $orgId);
 
         $wallet = $this->walletPayments->getOrCreateWallet($user->id, (int) $orgId);
 

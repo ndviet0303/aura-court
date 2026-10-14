@@ -9,6 +9,7 @@ use App\Models\Court;
 use App\Models\Organization;
 use App\Models\Venue;
 use App\Services\Infrastructure\FeatureFlagService;
+use App\Services\Reservation\CourtPriceRuleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -50,6 +51,7 @@ class CourtController extends Controller
             $features = app(FeatureFlagService::class);
             $venueEligibilityCache = [];
             $filteredCourts = [];
+            $pricedCourtIds = app(CourtPriceRuleService::class)->pricedCourtIds($courtsQuery);
 
             foreach ($courtsQuery as $court) {
                 $venueId = (int) $court->venue_id;
@@ -59,7 +61,7 @@ class CourtController extends Controller
                         : false;
                 }
 
-                if ($venueEligibilityCache[$venueId] && $court->is_active) {
+                if ($venueEligibilityCache[$venueId] && $court->is_active && isset($pricedCourtIds[$court->id])) {
                     $courtArray = $court->toArray();
                     $organizationId = (int) ($courtArray['venue']['organization_id'] ?? 0);
                     $courtArray['venue']['payment_model'] = $features->enabled('direct_owner_payments', $organizationId)

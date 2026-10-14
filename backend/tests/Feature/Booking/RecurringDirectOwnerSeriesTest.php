@@ -9,7 +9,6 @@ use App\Models\OrganizationMember;
 use App\Models\OwnerPaymentAllocation;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
-use App\Models\OwnerRefundAllocation;
 use App\Models\OwnerRefundObligation;
 use App\Models\PriceRule;
 use App\Models\ReceivingConnection;
@@ -423,7 +422,7 @@ class RecurringDirectOwnerSeriesTest extends TestCase
         ]);
     }
 
-    public function test_admin_cancel_releases_future_inventory_voids_open_periods_and_refunds_paid_ones(): void
+    public function test_admin_cancel_releases_only_unpaid_future_inventory_and_keeps_paid_sessions(): void
     {
         $fixture = $this->tenant();
         $preview = $this->preview($fixture, $this->monthlyPayload(3));
@@ -445,43 +444,28 @@ class RecurringDirectOwnerSeriesTest extends TestCase
             ->assertJsonPath('status', 'cancelled');
         $cancel();
 
-        $this->assertSame(['confirmed', 'released', 'released'], RecurringOccurrence::where('recurring_series_id', $seriesId)->orderBy('sequence')->pluck('status')->all());
-        $this->assertSame('confirmed', $occurrences[0]->reservation->fresh()->status);
-        $this->assertGreaterThan(0, ReservationSlot::where('reservation_id', $occurrences[0]->reservation_id)->where('status', 'confirmed')->count());
-        $this->assertGreaterThan(0, ReservationEntitlement::where('reservation_id', $occurrences[0]->reservation_id)->where('status', 'active')->count());
-        foreach ([$occurrences[1], $occurrences[2]] as $released) {
-            $this->assertSame('cancelled', $released->reservation->fresh()->status);
-            $this->assertSame(0, ReservationSlot::where('reservation_id', $released->reservation_id)->whereIn('status', ['held', 'confirmed'])->count());
-            $this->assertGreaterThan(0, ReservationSlot::where('reservation_id', $released->reservation_id)->where('status', 'cancelled')->count());
-            $this->assertSame(0, ReservationEntitlement::where('reservation_id', $released->reservation_id)->whereIn('status', ['held', 'active'])->count());
-            $this->assertGreaterThan(0, ReservationEntitlement::where('reservation_id', $released->reservation_id)->where('status', 'cancelled')->count());
+        // Paid sessions stay booked; only the unpaid future session returns to inventory. Nothing is refunded.
+        $this->assertSame(['confirmed', 'confirmed', 'released'], RecurringOccurrence::where('recurring_series_id', $seriesId)->orderBy('sequence')->pluck('status')->all());
+        foreach ([$occurrences[0], $occurrences[1]] as $kept) {
+            $this->assertSame('confirmed', $kept->reservation->fresh()->status);
+            $this->assertGreaterThan(0, ReservationSlot::where('reservation_id', $kept->reservation_id)->where('status', 'confirmed')->count());
+            $this->assertGreaterThan(0, ReservationEntitlement::where('reservation_id', $kept->reservation_id)->where('status', 'active')->count());
         }
+        $released = $occurrences[2];
+        $this->assertSame('cancelled', $released->reservation->fresh()->status);
+        $this->assertSame(0, ReservationSlot::where('reservation_id', $released->reservation_id)->whereIn('status', ['held', 'confirmed'])->count());
+        $this->assertSame(0, ReservationEntitlement::where('reservation_id', $released->reservation_id)->whereIn('status', ['held', 'active'])->count());
 
         $this->assertSame(['paid', 'paid', 'cancelled'], MonthlyInvoice::where('recurring_series_id', $seriesId)->orderBy('period_start')->pluck('status')->all());
         $this->assertSame(OwnerPaymentAttempt::STATUS_PAID, $attempts[1]->fresh()->status);
         $this->assertSame(OwnerPaymentAttempt::STATUS_EXPIRED, $attempts[2]->fresh()->status);
-
-        // Only the released paid session is owed back, as an owner-executed refund; never a wallet credit.
-        $refund = OwnerRefundObligation::sole();
-        $this->assertSame(OwnerRefundObligation::STATUS_APPROVED, $refund->status);
-        $this->assertSame((int) $attempts[1]->id, (int) $refund->payment_attempt_id);
-        $this->assertSame((int) $occurrences[1]->amount, (int) $refund->amount);
-        $this->assertSame((int) $occurrences[1]->amount, (int) $refund->gross_amount);
-        $this->assertSame(0, (int) $refund->fee_amount);
-        $this->assertSame((int) $fixture['payer']->id, (int) $refund->payer_id);
-        $this->assertSame((int) $fixture['owner']->id, (int) $refund->approved_by);
-        $allocation = OwnerPaymentAllocation::where('payment_attempt_id', $attempts[1]->id)->sole();
-        $this->assertSame(
-            [(int) $allocation->id => (int) $refund->amount],
-            $refund->allocations->mapWithKeys(fn ($share) => [(int) $share->owner_payment_allocation_id => (int) $share->amount])->all()
-        );
-        $this->assertSame(['approved'], $refund->evidence->pluck('event_type')->all());
-        $this->assertSame([(int) $refund->id], RecurringSeries::find($seriesId)->metadata['refund_obligation_ids']);
+        $this->assertSame(0, OwnerRefundObligation::count());
+        $this->assertDatabaseCount('finance_exceptions', 0);
         $this->assertDatabaseCount('wallet_transactions', 0);
 
         $cancel();
-        $this->assertSame(1, OwnerRefundObligation::count());
-        $this->assertSame(1, OwnerRefundAllocation::count());
+        $this->assertSame(['confirmed', 'confirmed', 'released'], RecurringOccurrence::where('recurring_series_id', $seriesId)->orderBy('sequence')->pluck('status')->all());
+        $this->assertSame(0, OwnerRefundObligation::count());
     }
 
     public function test_admin_cancel_releases_inventory_when_the_owner_works_in_another_organization(): void
@@ -511,7 +495,7 @@ class RecurringDirectOwnerSeriesTest extends TestCase
         $this->assertSame('cancelled', MonthlyInvoice::withoutGlobalScopes()->where('recurring_series_id', $seriesId)->sole()->status);
     }
 
-    public function test_admin_cancel_of_a_period_paid_without_verified_receipt_opens_a_finance_exception(): void
+    public function test_admin_cancel_keeps_a_period_marked_paid_without_a_verified_receipt(): void
     {
         $fixture = $this->tenant();
         $preview = $this->preview($fixture, $this->monthlyPayload(1));
@@ -527,90 +511,13 @@ class RecurringDirectOwnerSeriesTest extends TestCase
             ->postJson("/api/admin/contracts/{$seriesId}/cancel")
             ->assertOk();
 
-        $this->assertSame('released', RecurringOccurrence::where('recurring_series_id', $seriesId)->sole()->status);
+        // A period marked paid counts as paid: its session is not released and nothing is refunded.
+        $occurrence = RecurringOccurrence::where('recurring_series_id', $seriesId)->sole();
+        $this->assertNotSame('released', $occurrence->status);
+        $this->assertNotSame('cancelled', $occurrence->reservation->fresh()->status);
         $this->assertSame('paid', $invoice->fresh()->status);
         $this->assertSame(0, OwnerRefundObligation::count());
-        $this->assertDatabaseHas('finance_exceptions', [
-            'type' => 'recurring_unverified_paid_release',
-            'reference' => 'monthly-invoice:'.$invoice->id,
-            'amount' => (int) $invoice->amount,
-            'status' => 'open',
-        ]);
-    }
-
-    public function test_repair_finishes_a_contract_the_old_admin_path_cancelled(): void
-    {
-        $fixture = $this->tenant();
-        $preview = $this->preview($fixture, $this->monthlyPayload(3));
-        $seriesId = (int) $this->createSeries($fixture, array_merge($this->monthlyPayload(3), [
-            'accepted' => $this->acceptedFrom($preview),
-        ]), 'repair-1')->assertCreated()->json('series.id');
-        $invoices = MonthlyInvoice::where('recurring_series_id', $seriesId)->orderBy('period_start')->get();
-        $attempts = $invoices->map(fn (MonthlyInvoice $invoice) => OwnerPaymentAttempt::where('purpose_id', 'rec_series:'.$seriesId.':invoice:'.$invoice->id)->firstOrFail());
-        $this->sendOwnerPayment($fixture, $attempts[0]->reference, (int) $invoices[0]->amount, 'repair-paid-1');
-        $this->sendOwnerPayment($fixture, $attempts[1]->reference, (int) $invoices[1]->amount, 'repair-paid-2');
-        $occurrences = RecurringOccurrence::where('recurring_series_id', $seriesId)->orderBy('sequence')->get();
-
-        // What the pre-fix admin cancel wrote the day before the first session, then the sweep's delinquent flip.
-        $this->travelTo($occurrences[0]->starts_at->copy()->subDay());
-        $cancelledAt = now()->toDateTimeString();
-        $series = RecurringSeries::findOrFail($seriesId);
-        $series->update(['status' => 'delinquent', 'metadata' => array_merge($series->metadata, [
-            'cancelled_at' => now()->toIso8601String(),
-            'cancel_reason' => 'Khách dừng hợp đồng',
-        ])]);
-        RecurringOccurrence::where('recurring_series_id', $seriesId)->where('starts_at', '>', now())->update(['status' => 'released', 'released_at' => now()]);
-        $admin = User::factory()->create(['role' => 'platform_admin']);
-
-        // The first session has started on its still-valid booking: reported for review, never released or refunded.
-        $this->travelTo($occurrences[0]->starts_at->copy()->addHour());
-        $this->artisan('contracts:repair-legacy-cancel', ['--actor' => $admin->id])
-            ->expectsTable(
-                ['Series', 'Organization', 'Status before', 'Sessions released', 'Invoices voided', 'Refund obligations', 'Refund amount', 'Started sessions to review'],
-                [[$seriesId, $fixture['organization']->id, 'delinquent', 2, 1, 1, (int) $occurrences[1]->amount, 1]]
-            )
-            ->expectsOutputToContain('would repair 1 contract(s)')
-            ->assertExitCode(0);
-        $this->assertSame('confirmed', $occurrences[1]->reservation->fresh()->status);
-        $this->assertSame('pending', $invoices[2]->fresh()->status);
-        $this->assertSame(OwnerPaymentAttempt::STATUS_PENDING, $attempts[2]->fresh()->status);
-        $this->assertSame(0, OwnerRefundObligation::count());
-
-        $this->artisan('contracts:repair-legacy-cancel', ['--actor' => $admin->id, '--apply' => true])
-            ->expectsOutputToContain('Repaired 1 contract(s)')
-            ->assertExitCode(0);
-
-        $this->assertSame('confirmed', $occurrences[0]->reservation->fresh()->status);
-        foreach ([$occurrences[1], $occurrences[2]] as $released) {
-            $this->assertSame('cancelled', $released->reservation->fresh()->status);
-            $this->assertSame(0, ReservationSlot::where('reservation_id', $released->reservation_id)->whereIn('status', ['held', 'confirmed'])->count());
-            $this->assertSame(0, ReservationEntitlement::where('reservation_id', $released->reservation_id)->whereIn('status', ['held', 'active'])->count());
-            $this->assertSame($cancelledAt, $released->fresh()->released_at->toDateTimeString());
-        }
-        $this->assertSame(['paid', 'paid', 'cancelled'], MonthlyInvoice::where('recurring_series_id', $seriesId)->orderBy('period_start')->pluck('status')->all());
-        $this->assertSame(OwnerPaymentAttempt::STATUS_EXPIRED, $attempts[2]->fresh()->status);
-        $refund = OwnerRefundObligation::sole();
-        $this->assertSame(OwnerRefundObligation::STATUS_APPROVED, $refund->status);
-        $this->assertSame((int) $attempts[1]->id, (int) $refund->payment_attempt_id);
-        $this->assertSame((int) $occurrences[1]->amount, (int) $refund->amount);
-        $this->assertSame((int) $admin->id, (int) $refund->approved_by);
-        $this->assertSame('Khách dừng hợp đồng', $refund->reason);
-        $series->refresh();
-        $this->assertSame('cancelled', $series->status);
-        $this->assertSame([(int) $refund->id], $series->metadata['refund_obligation_ids']);
-        $this->assertDatabaseCount('wallet_transactions', 0);
-
-        $this->artisan('contracts:repair-legacy-cancel', ['--actor' => $admin->id, '--apply' => true])
-            ->expectsOutputToContain('Repaired 0 contract(s)')
-            ->assertExitCode(0);
-        $this->assertSame(1, OwnerRefundObligation::count());
-    }
-
-    public function test_repair_refuses_an_actor_who_is_not_a_platform_admin(): void
-    {
-        $this->artisan('contracts:repair-legacy-cancel', ['--actor' => User::factory()->create()->id, '--apply' => true])
-            ->expectsOutputToContain('--actor must be the id of a platform admin.')
-            ->assertExitCode(1);
+        $this->assertDatabaseCount('finance_exceptions', 0);
     }
 
     public function test_overdue_sweep_keeps_a_cancelled_contract_cancelled(): void
@@ -834,11 +741,9 @@ class RecurringDirectOwnerSeriesTest extends TestCase
             'referenceCode' => 'BANK-'.$eventId,
         ];
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-        $timestamp = (string) now()->timestamp;
         $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
-            'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
-            'HTTP_X_SEPAY_SIGNATURE' => 'sha256='.hash_hmac('sha256', $timestamp.'.'.$raw, $fixture['secret']),
+            'HTTP_AUTHORIZATION' => 'Apikey '.$fixture['secret'],
         ], $raw)->assertOk();
 
         $receipt = OwnerPaymentReceipt::where('provider_event_id', $eventId)->firstOrFail();

@@ -50,11 +50,7 @@ describe('ReservationView deep link to a V1 mirror', () => {
     const wrapper = mount(ReservationView, {
       global: {
         plugins: [i18n],
-        stubs: {
-          QuoteCalculatorCard: true,
-          BookingCancelModal: true,
-          BookingRescheduleModal: true,
-        },
+        stubs: { QuoteCalculatorCard: true },
       },
     })
     await flushPromises()

@@ -696,7 +696,6 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
     expect(arranged.has_inv2).toBe(true)
 
     // 2. Simulate QR payment for Period 1 invoice via SePay webhook
-    const timestamp = String(Math.floor(Date.now() / 1000))
     const eventId = 'REC-PAY-' + Date.now()
     const webhookPayload = JSON.stringify({
       id: eventId,
@@ -709,7 +708,7 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       referenceCode: 'BANK-' + eventId,
     })
 
-    const signatureScript = `
+    const authorizationScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
@@ -718,21 +717,19 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       use App\\Models\\ReceivingConnection;
       $conn = ReceivingConnection::where('routing_id', '${arranged.connection_routing_id}')->firstOrFail();
       $secret = $conn->webhook_secret_ciphertext ? \\Illuminate\\Support\\Facades\\Crypt::decryptString($conn->webhook_secret_ciphertext) : 'test-secret';
-      $sig = hash_hmac('sha256', '${timestamp}.' . '${webhookPayload}', $secret);
-      echo 'sha256=' . $sig;
+      echo 'Apikey ' . $secret;
     `
-    const signature = execFileSync('php', ['-r', signatureScript], {
+    const authorization = execFileSync('php', ['-r', authorizationScript], {
       cwd: backendDir,
       env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
       encoding: 'utf-8',
     }).trim()
 
     const webhookRes = await page.request.post(
-      `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.connection_routing_id}`,
+      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.connection_routing_id}`,
       {
         headers: {
-          'X-SePay-Timestamp': timestamp,
-          'X-SePay-Signature': signature,
+          Authorization: authorization,
           'Content-Type': 'application/json',
         },
         data: webhookPayload,

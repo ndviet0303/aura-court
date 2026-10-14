@@ -92,7 +92,7 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
     await expect(readinessModal).toContainText('điều kiện còn thiếu')
   })
 
-  test('7.5.2: Tạo kết nối nhận tiền, đổi thông tin xác thực (HMAC & API token) qua giao diện', async ({
+  test('7.5.2: Tạo kết nối nhận tiền, đổi thông tin xác thực (Api_Key & API token) qua giao diện', async ({
     page,
   }) => {
     const manifest = getTestManifest()
@@ -165,11 +165,11 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
     await expect(configuredSection).toBeVisible({ timeout: 10000 })
     await expect(panel.locator('[data-testid="receiving-connection-status"]')).toBeVisible()
 
-    // 6. Rotate HMAC secret via UI
+    // 6. Rotate the webhook API key via UI
     await panel
-      .locator('[data-testid="hmac-secret-input"]')
+      .locator('[data-testid="webhook-api-key-input"]')
       .fill('new_secret_key_v2_1234567890abcdef_32chars')
-    await panel.locator('[data-testid="save-hmac-secret"]').click()
+    await panel.locator('[data-testid="save-webhook-api-key"]').click()
 
     // Success notice appears
     await expect(panel.locator('.bg-emerald-50')).toBeVisible({ timeout: 10000 })
@@ -284,9 +284,7 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
       }),
     ) as { venue_id: number; venue_slug: string; rc_id: number; routing_id: string }
 
-    // 2. Exercise real signed inbound webhook to verify the receiving connection
-    const crypto = await import('node:crypto')
-    const timestamp = String(Math.floor(Date.now() / 1000))
+    // 2. Exercise a real Api_Key-authenticated inbound webhook to verify the receiving connection
     const rawBody = JSON.stringify({
       id: `TXN_VERIFY_${Date.now()}`,
       transactionDate: '2026-09-30 11:20:00',
@@ -294,19 +292,11 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
       transferType: 'in',
       transferAmount: 50000,
     })
-    const signature =
-      'sha256=' +
-      crypto
-        .createHmac('sha256', 'verified_secret_123')
-        .update(`${timestamp}.${rawBody}`)
-        .digest('hex')
-
     const webhookRes = await page.request.post(
-      `${manifest.backend.url}/api/webhooks/sepay/connections/${arranged.routing_id}`,
+      `${manifest.backend.url}/api/v1/webhooks/sepay/connections/${arranged.routing_id}`,
       {
         headers: {
-          'X-SePay-Timestamp': timestamp,
-          'X-SePay-Signature': signature,
+          Authorization: 'Apikey verified_secret_123',
           'Content-Type': 'application/json',
         },
         data: rawBody,
@@ -487,7 +477,7 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
         return await api.post(
           `/partner/organizations/${orgId}/venues/${venueId}/receiving-connection/${connId}/credential`,
           {
-            hmac_secret: 'brand_new_secret_after_attempt_was_created',
+            webhook_api_key: 'brand_new_secret_after_attempt_was_created',
           },
         )
       },
@@ -581,7 +571,7 @@ test.describe('P1: Vòng đời tài khoản nhận tiền, Xác thực, Thay đ
           await api.post(
             `/partner/organizations/${orgId}/venues/${venueId}/receiving-connection/${connId}/credential`,
             {
-              hmac_secret: 'unauthorized_hack',
+              webhook_api_key: 'unauthorized_hack',
             },
           )
           return false

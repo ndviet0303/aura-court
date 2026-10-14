@@ -14,7 +14,9 @@ trait ResolvesOrganization
     protected function organization(Request $request): Organization
     {
         $user = $request->user();
-        abort_unless($user, 401, 'Unauthenticated.');
+        if (! $user) {
+            abort(401, 'Unauthenticated.');
+        }
 
         $context = app(TenantContext::class);
         $organization = $context->getOrganization();

@@ -22,6 +22,7 @@ import { AuraButton } from '@/shared/components'
 import { useTenantCapabilities } from '@/features/admin/composables/useTenantCapabilities'
 
 const {
+  isEnabled,
   isPosEnabled,
   isPosDisabled,
   fetchFailed: capabilityFetchFailed,
@@ -117,7 +118,11 @@ async function handleSettleTab(tabId: number) {
   processingCheckout.value = true
   try {
     const res = await posApi.settleTab(tabId, {
-      payment_method: paymentMethod.value === 'court_tab' ? 'cash' : (paymentMethod.value as any),
+      // Direct-owner cohorts settle tabs in cash only; counter QR is rung up as a POS order.
+      payment_method:
+        paymentMethod.value === 'court_tab' || isEnabled('direct_owner_payments')
+          ? 'cash'
+          : (paymentMethod.value as any),
       cash_tendered: paymentMethod.value === 'cash' ? cashTendered.value : undefined,
       customer_id: selectedCustomer.value?.id,
     })
@@ -338,9 +343,10 @@ async function handleCheckout() {
     const orderObj = response?.order || response
 
     if (orderObj?.status === 'pending_payment') {
-      pendingQrOrder.value = orderObj
+      pendingQrOrder.value = { ...orderObj, payment_attempt: response?.payment_attempt }
       showQrModal.value = true
       showNotice(t('admin.pos.qrOrderWaiting'))
+      watchPendingQr(orderObj.id)
       return
     }
 
@@ -423,53 +429,44 @@ async function handleCheckout() {
   }
 }
 
-async function handleConfirmQr() {
-  if (!pendingQrOrder.value) return
-  try {
-    processingCheckout.value = true
-    const response = await posApi.confirmQrPayment(pendingQrOrder.value.id)
-    const confirmedReceipt = response?.receipt || response?.order?.receipt || response?.order
+let qrPoll: ReturnType<typeof setInterval> | undefined
+function stopQrPoll() {
+  clearInterval(qrPoll)
+  qrPoll = undefined
+}
 
-    cart.value.forEach((item) => {
-      adjustProductStock(item.product.id, -item.quantity)
-    })
-
-    currentReceipt.value = confirmedReceipt || {
-      order_code: pendingQrOrder.value.payment_reference || `POS-${pendingQrOrder.value.id}`,
-      created_at: d(new Date(), 'datetime'),
-      cashier_name: auth.user?.name || 'Thu ngân',
-      customer_name: selectedCustomer.value?.name,
-      grand_total: pendingQrOrder.value.total_amount,
-      payment_method: 'qr',
-      items: cart.value.map((c) => ({
-        name: c.product.name,
-        quantity: c.quantity,
-        price: c.product.price,
-        total: c.product.price * c.quantity * (c.rental_hours || 1),
-      })),
-      subtotal: subtotal.value,
-      discount_amount: discountAmount.value,
-      tax_amount: taxAmount.value,
-      vat_breakdown: vatBreakdown.value,
+// Only the venue owner's verified bank receipt completes a QR order; poll it until it lands or lapses.
+function watchPendingQr(orderId: number) {
+  stopQrPoll()
+  qrPoll = setInterval(async () => {
+    const response = await posApi.getOrder(orderId).catch(() => null)
+    if (response?.order?.status === 'completed') finishQrOrder(response)
+    if (response?.order?.status === 'cancelled') {
+      stopQrPoll()
+      showQrModal.value = false
+      pendingQrOrder.value = null
+      showError(t('admin.pos.qrExpiredNotice'))
     }
+  }, 3000)
+}
 
-    showQrModal.value = false
-    pendingQrOrder.value = null
-    showReceiptModal.value = true
-    clearCart()
-    resetCheckoutKey()
-    showNotice(t('admin.pos.orderSuccess'))
-  } catch (e) {
-    showError(errorMessage(e, t('admin.pos.qrConfirmFailed')))
-  } finally {
-    processingCheckout.value = false
-  }
+function finishQrOrder(response: { receipt: OrderReceipt }) {
+  stopQrPoll()
+  cart.value.forEach((item) => adjustProductStock(item.product.id, -item.quantity))
+  currentReceipt.value = response.receipt
+  showQrModal.value = false
+  pendingQrOrder.value = null
+  showReceiptModal.value = true
+  clearCart()
+  resetCheckoutKey()
+  showNotice(t('admin.pos.orderSuccess'))
 }
 
 async function handleCancelQr() {
   if (!pendingQrOrder.value) return
   try {
     await posApi.cancelQrPayment(pendingQrOrder.value.id, { reason: 'cashier_cancelled' })
+    stopQrPoll()
     showQrModal.value = false
     pendingQrOrder.value = null
     showNotice(t('admin.pos.qrCancelledNotice'))
@@ -549,6 +546,7 @@ onMounted(async () => {
   await initPosData()
 })
 onUnmounted(() => {
+  stopQrPoll()
   window.removeEventListener('keydown', handleKeydown)
 })
 </script>
@@ -632,6 +630,8 @@ onUnmounted(() => {
           @update-rental-hours="updateRentalHours"
           @remove-from-cart="removeFromCart"
           :disabled="!isPosEnabled"
+          :hide-qr="!activeShift?.qr_available"
+          :hide-wallet="isEnabled('direct_owner_payments')"
           @clear-cart="clearCart"
           @checkout="handleCheckout"
           @open-customer-search-modal="showCustomerModal = true"
@@ -653,7 +653,6 @@ onUnmounted(() => {
       :order="pendingQrOrder"
       :loading="processingCheckout"
       @close="showQrModal = false"
-      @confirm="handleConfirmQr"
       @cancel="handleCancelQr"
     />
     <PosShiftModal

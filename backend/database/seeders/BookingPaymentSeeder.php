@@ -6,8 +6,6 @@ use App\Models\Booking;
 use App\Models\BookingAttendance;
 use App\Models\BookingSlot;
 use App\Models\Court;
-use App\Models\Payment;
-use App\Models\Refund;
 use App\Models\Reservation;
 use App\Models\Review;
 use App\Models\User;
@@ -17,18 +15,20 @@ use App\Services\Reservation\PriceQuoteService;
 use Carbon\Carbon;
 use Database\Seeders\Concerns\FindsFreeCourtTime;
 use Database\Seeders\Concerns\KeepsWakingHours;
+use Database\Seeders\Concerns\PaysVenueOwner;
 use Illuminate\Database\Seeder;
 
 class BookingPaymentSeeder extends Seeder
 {
     use FindsFreeCourtTime;
     use KeepsWakingHours;
+    use PaysVenueOwner;
 
     /**
      * One row per booking DEMO-BK-NNN, in play-time order:
      * [court slug, customer (0 = user@example.com, N = khachNN), day offset from today or 'weekend', start hour, hours, kind, review rating, waitlist customers].
-     * Kinds: played, no_show, refunded, cancelled (unpaid), expired, today (played once it has ended), upcoming (bank transfer),
-     * pending (transfer awaiting manual review), refund_pending.
+     * Kinds: played, no_show, expired (checkout never paid), today (played once it has ended), upcoming.
+     * Paid bookings were paid by bank transfer straight to the venue owner; there is no cancellation, refund or reschedule.
      */
     private const SCHEDULE = [
         ['san-pickleball-3-sunset-tay-ho', 1, -22, 17, 2, 'played', 5],
@@ -41,26 +41,26 @@ class BookingPaymentSeeder extends Seeder
         ['san-pickleball-1-neon-cau-giay', 19, -14, 8, 1, 'played', 3],
         ['san-tennis-pmh-ho-ban-nguyet', 2, -13, 7, 2, 'played'],
         ['san-9-tham-victor-tay-ho', 9, -12, 7, 1, 'played', 5],
-        ['san-bong-da-5v5-sai-gon-central', 16, -12, 18, 1, 'refunded'],
+        ['san-bong-da-5v5-sai-gon-central', 16, -12, 18, 1, 'played'],
         ['san-bong-da-mini-pmh', 23, -11, 18, 1, 'played'],
-        ['san-6-khan-dai-quan-ngua', 6, -11, 20, 1, 'cancelled'],
+        ['san-6-khan-dai-quan-ngua', 6, -11, 20, 1, 'expired'],
         ['san-pickleball-pmh-2', 13, -10, 18, 2, 'played'],
         ['san-bong-ro-1-streetball-tay-ho', 20, -10, 19, 2, 'no_show'],
         ['san-tennis-3-mat-cung-landmark', 3, -9, 17, 1, 'played', 5],
         ['san-1-tham-bwf-cau-giay', 0, -9, 7, 1, 'played'],
         ['san-8-pro-replay-quan-ngua', 10, -8, 19, 2, 'played', 4],
-        ['san-bong-ban-2-stiga-master-quan-ngua', 17, -8, 18, 1, 'refunded'],
+        ['san-bong-ban-2-stiga-master-quan-ngua', 17, -8, 18, 1, 'played'],
         ['san-bong-da-5v5-sai-gon-central', 24, -7, 20, 1, 'played', 5],
         ['san-bong-ban-2-stiga-master-quan-ngua', 7, -7, 15, 2, 'played', 4],
         ['san-bong-da-7v7-c1-quan-ngua', 14, -6, 19, 2, 'played', 5],
         ['san-pickleball-2-dynamic-cau-giay', 21, -6, 19, 1, 'no_show'],
-        ['san-pickleball-1-neon-cau-giay', 0, -6, 18, 1, 'refunded'],
+        ['san-pickleball-1-neon-cau-giay', 0, -6, 18, 1, 'played'],
         ['san-6-khan-dai-quan-ngua', 4, -5, 17, 1, 'played'],
         ['san-pickleball-pmh-1', 11, -5, 16, 1, 'played', 5],
         ['san-bong-da-7v7-c1-quan-ngua', 18, -5, 18, 1, 'expired'],
         ['san-5-vip-tournament-cau-giay', 1, -4, 20, 2, 'played', 5],
         ['san-tennis-1-dat-nen-tay-ho', 8, -4, 6, 2, 'played', 4],
-        ['san-11-sai-gon-central-bwf', 15, -4, 19, 1, 'refunded'],
+        ['san-11-sai-gon-central-bwf', 15, -4, 19, 1, 'played'],
         ['san-pickleball-4-rooftop-saigon', 22, -3, 19, 2, 'played', 5],
         ['san-bong-chuyen-1-taraflex-landmark', 5, -3, 19, 2, 'played', 4],
         ['san-tennis-2-hard-court-tay-ho', 0, -3, 18, 2, 'played', 5],
@@ -84,44 +84,32 @@ class BookingPaymentSeeder extends Seeder
         ['san-5-vip-tournament-cau-giay', 21, 2, 19, 2, 'upcoming'],
         ['san-bong-da-5v5-a2-quan-ngua', 4, 2, 20, 1, 'upcoming'],
         ['san-bong-ban-1-double-fish-cau-giay', 11, 2, 18, 1, 'upcoming'],
-        ['san-3-tieu-chuan-cau-giay', 18, 2, 7, 1, 'cancelled'],
+        ['san-3-tieu-chuan-cau-giay', 18, 2, 7, 1, 'expired'],
         ['san-8-pro-replay-quan-ngua', 1, 3, 18, 1, 'upcoming', null, [6]],
         ['san-bong-da-mini-pmh', 8, 3, 19, 1, 'upcoming'],
         ['san-bong-ro-in-house-nba-landmark', 15, 3, 19, 2, 'upcoming', null, [20]],
-        ['san-bong-ban-2-stiga-master-quan-ngua', 22, 3, 19, 1, 'refund_pending'],
+        ['san-bong-ban-2-stiga-master-quan-ngua', 22, 3, 19, 1, 'upcoming'],
         ['san-pickleball-pmh-1', 5, 4, 17, 2, 'upcoming'],
         ['san-bong-da-7v7-c1-quan-ngua', 12, 4, 19, 2, 'upcoming', null, [0, 17]],
-        ['san-bong-da-5v5-a1-quan-ngua', 19, 4, 18, 1, 'refund_pending'],
+        ['san-bong-da-5v5-a1-quan-ngua', 19, 4, 18, 1, 'upcoming'],
         ['san-11-sai-gon-central-bwf', 2, 5, 20, 2, 'upcoming'],
         ['san-tennis-3-mat-cung-landmark', 9, 5, 17, 2, 'upcoming', null, [14]],
         ['san-pickleball-4-rooftop-saigon', 16, 6, 19, 1, 'upcoming'],
         ['san-bong-chuyen-1-taraflex-landmark', 23, 6, 19, 2, 'upcoming'],
-        ['san-9-tham-victor-tay-ho', 6, 6, 19, 1, 'pending'],
-        ['san-pickleball-pmh-2', 13, 7, 18, 2, 'pending'],
+        ['san-9-tham-victor-tay-ho', 6, 6, 19, 1, 'upcoming'],
+        ['san-pickleball-pmh-2', 13, 7, 18, 2, 'upcoming'],
         ['san-bong-da-5v5-sai-gon-central', 20, 8, 18, 1, 'upcoming'],
-        ['san-bong-ro-1-streetball-tay-ho', 3, 8, 17, 1, 'pending'],
+        ['san-bong-ro-1-streetball-tay-ho', 3, 8, 17, 1, 'upcoming'],
         ['san-tennis-pmh-ho-ban-nguyet', 10, 9, 7, 1, 'upcoming'],
-        ['san-bong-chuyen-1-taraflex-landmark', 17, 9, 18, 2, 'cancelled'],
+        ['san-bong-chuyen-1-taraflex-landmark', 17, 9, 18, 2, 'expired'],
         ['san-bong-ro-1-streetball-tay-ho', 24, 10, 18, 2, 'upcoming'],
     ];
 
-    private const STATUS = [
-        'played' => 'confirmed', 'upcoming' => 'confirmed', 'no_show' => 'no_show',
-        'refunded' => 'refunded', 'refund_pending' => 'refund_pending', 'cancelled' => 'cancelled',
-        'expired' => 'expired', 'pending' => 'pending_payment',
-    ];
+    private const STATUS = ['played' => 'confirmed', 'upcoming' => 'confirmed', 'no_show' => 'no_show', 'expired' => 'expired'];
 
-    private const SLOT_STATUS = ['confirmed' => 'confirmed', 'no_show' => 'confirmed', 'pending_payment' => 'held', 'expired' => 'expired'];
+    private const SLOT_STATUS = ['confirmed' => 'confirmed', 'no_show' => 'confirmed', 'expired' => 'expired'];
 
     private const CHECK_IN_STAFF = ['aura-court' => 'staff@demo.auracourt.vn', 'hoang-gia-phu-my-hung' => 'owner.hoanggia@demo.auracourt.vn'];
-
-    private const CANCELLATION_REASONS = [
-        'Khách bận việc đột xuất, xin hủy lịch.',
-        'Đội không đủ người, hẹn dời sang tuần sau.',
-        'Trời mưa lớn, nhóm quyết định hủy buổi chơi.',
-        'Khách đặt nhầm khung giờ, đã đặt lại giờ khác.',
-        'Khách bị chấn thương nhẹ, cần nghỉ tập vài hôm.',
-    ];
 
     private const REVIEWS = [
         'badminton' => [
@@ -215,27 +203,13 @@ class BookingPaymentSeeder extends Seeder
                 $kind = $end->lte($now) ? 'played' : 'upcoming';
             }
 
-            $createdAt = match ($kind) {
-                'refunded' => $start->copy()->subDays(4)->subHours($index % 10),
-                'refund_pending' => $now->copy()->subDays(3)->subHours($index % 10),
-                // Booked a day or more ahead and never "just now": later seeders date match posts and feed items from it.
-                default => $start->copy()->subHours(26 + ($index * 11) % 70)->min($now->copy()->subDay()->subMinutes(($index * 47) % 1440)),
-            };
+            // Booked a day or more ahead and never "just now": later seeders date match posts and feed items from it.
+            $createdAt = $start->copy()->subHours(26 + ($index * 11) % 70)->min($now->copy()->subDay()->subMinutes(($index * 47) % 1440));
             // Only ever earlier, so the booking stays a day ahead, and far enough that its 15-minute checkout ends before midnight.
             $checkoutEnd = $createdAt->copy()->addMinutes(15);
             $createdAt = $this->awake($checkoutEnd, before: $checkoutEnd)->subMinutes(15);
-            $paidAt = match ($kind) {
-                'played', 'upcoming', 'no_show', 'refunded', 'refund_pending' => $createdAt->copy()->addMinutes(3 + $index % 9),
-                default => null,
-            };
-            $cancelledAt = match ($kind) {
-                'cancelled' => $createdAt->copy()->addMinutes(6),
-                'refunded' => $this->awake($start->copy()->subHours(30), $paidAt),
-                'refund_pending' => $this->awake($now->copy()->subHours(6 + $index % 12), $paidAt),
-                default => null,
-            };
-            $refundedAt = $kind === 'refunded' ? $this->awake($cancelledAt->copy()->addHours(18), $cancelledAt) : null;
-            $this->assertTimeline($code, $now, $start, $paidAt, [$createdAt, $paidAt, $cancelledAt, $refundedAt]);
+            $paidAt = $kind === 'expired' ? null : $createdAt->copy()->addMinutes(3 + $index % 9);
+            $this->assertTimeline($code, $now, $start, $paidAt, [$createdAt, $paidAt]);
 
             $status = self::STATUS[$kind];
             $booking = Booking::forceCreate([
@@ -244,18 +218,12 @@ class BookingPaymentSeeder extends Seeder
                 'court_id' => $court->id,
                 'total_amount' => $total,
                 'status' => $status,
-                'payment_model' => 'legacy_wallet_v1',
-                'payment_expires_at' => match ($kind) {
-                    'pending' => $start->copy()->subHours(2),
-                    'cancelled', 'expired' => $createdAt->copy()->addMinutes(15),
-                    default => null,
-                },
-                'cancelled_at' => $cancelledAt,
-                'cancellation_reason' => $cancelledAt ? self::CANCELLATION_REASONS[$index % count(self::CANCELLATION_REASONS)] : null,
+                'payment_model' => 'direct_owner_v1',
+                'payment_expires_at' => $kind === 'expired' ? $createdAt->copy()->addMinutes(15) : null,
                 'price_snapshot' => $snapshots,
                 'metadata' => ['venue_id' => $venue->id, 'organization_id' => $organizationId],
                 'created_at' => $createdAt,
-                'updated_at' => $refundedAt ?? $cancelledAt ?? $paidAt ?? $createdAt,
+                'updated_at' => $paidAt ?? $createdAt,
             ]);
 
             foreach ($slotStarts as $position => $slotStart) {
@@ -265,7 +233,7 @@ class BookingPaymentSeeder extends Seeder
                     'starts_at' => $slotStart,
                     'ends_at' => $slotStart->copy()->addHour(),
                     'unit_price' => $snapshots[$position]['unit_price'],
-                    'status' => self::SLOT_STATUS[$status] ?? 'cancelled',
+                    'status' => self::SLOT_STATUS[$status],
                     'created_at' => $createdAt,
                     'updated_at' => $createdAt,
                 ]);
@@ -276,45 +244,11 @@ class BookingPaymentSeeder extends Seeder
             $reservation = Reservation::withoutGlobalScope('tenant_isolation')->findOrFail($mapping->reservation_id);
             $reservation->forceFill(array_filter([
                 'confirmed_at' => $status === 'confirmed' ? $paidAt : null,
-                'cancelled_at' => $cancelledAt,
                 'metadata' => $kind === 'played' ? [...(array) $reservation->metadata, 'operational_status' => 'completed'] : null,
             ]))->saveQuietly();
 
-            if ($paidAt || $kind === 'pending') {
-                // A pending booking has a bank transfer whose content missed the booking code, waiting for manual review.
-                $receivedAt = $paidAt ?? $createdAt->copy()->addMinutes(12);
-                Payment::forceCreate([
-                    'booking_id' => $booking->id,
-                    'provider' => 'sepay',
-                    'external_transaction_id' => sprintf('DEMO-TX-%03d', $index + 1),
-                    'amount' => $total,
-                    'transfer_code' => $code,
-                    'status' => $kind === 'pending' ? 'manual_review' : 'paid',
-                    'payload' => [
-                        'gateway' => 'MBBank',
-                        'transferAmount' => $total,
-                        'content' => $kind === 'pending' ? 'CK tien san '.$start->format('d/m H:i') : $code,
-                        'source' => 'demo_seed',
-                    ],
-                    'received_at' => $receivedAt,
-                    'created_at' => $receivedAt,
-                    'updated_at' => $receivedAt,
-                ]);
-            }
-
-            if ($kind === 'refunded' || $kind === 'refund_pending') {
-                Refund::forceCreate([
-                    'booking_id' => $booking->id,
-                    'amount' => $total,
-                    'status' => $kind === 'refunded' ? 'processed' : 'pending',
-                    'note' => $kind === 'refunded'
-                        ? 'Đã hoàn 100% tiền sân qua chuyển khoản do khách hủy trước giờ chơi.'
-                        : 'Khách hủy trước giờ chơi, chờ duyệt hoàn tiền.',
-                    'processed_by' => $kind === 'refunded' ? $users->get('admin@auracourt.vn')?->id : null,
-                    'processed_at' => $refundedAt,
-                    'created_at' => $cancelledAt,
-                    'updated_at' => $refundedAt ?? $cancelledAt,
-                ]);
+            if ($paidAt) {
+                $this->payOwner($venue, $customer, 'booking', $reservation->code, $total, $createdAt, $paidAt);
             }
 
             if ($kind === 'played') {
@@ -380,7 +314,7 @@ class BookingPaymentSeeder extends Seeder
         return $number === 0 ? 'user@example.com' : sprintf('khach%02d@demo.auracourt.vn', $number);
     }
 
-    /** @param  array<int, Carbon|null>  $moments  created, paid, cancelled, refunded */
+    /** @param  array<int, Carbon|null>  $moments  created, paid */
     private function assertTimeline(string $code, Carbon $now, Carbon $start, ?Carbon $paidAt, array $moments): void
     {
         $moments = array_values(array_filter($moments));

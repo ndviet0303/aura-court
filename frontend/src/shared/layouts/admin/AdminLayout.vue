@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { setAppLocale, type AppLocale } from '@/i18n'
 import { applySeo } from '@/lib/seo'
+import { useTenantCapabilities } from '@/features/admin/composables/useTenantCapabilities'
+import CapabilityRouteView from './CapabilityRouteView.vue'
 
 interface NavItem {
   id: string
@@ -24,6 +26,7 @@ interface NavGroup {
 
 const { t, locale } = useI18n()
 const auth = useAuthStore()
+const { isPayoutsEnabled } = useTenantCapabilities()
 
 const route = useRoute()
 
@@ -38,9 +41,9 @@ function toggleLanguage(target: AppLocale) {
   applySeo(route)
 }
 
-const userInitial = computed(() => {
-  return (auth.user?.name || auth.user?.email || 'A').slice(0, 1).toUpperCase()
-})
+const userInitial = computed(() =>
+  (auth.user?.name || auth.user?.email || 'A').slice(0, 1).toUpperCase(),
+)
 
 const userRoleText = computed(() => {
   if (auth.user?.role === 'admin') {
@@ -242,7 +245,7 @@ function isItemPermitted(item: NavItem): boolean {
   if (item.path === '/admin/organization' || item.path === '/admin/staff') {
     return !!isOwner
   }
-  // Finance (payouts, reconciliation, exceptions) and KYC/disputes remain platform admin only
+  // Finance and KYC/disputes stay platform admin only; finance also needs marketplace_payouts
   return false
 }
 
@@ -252,7 +255,7 @@ const permittedNavGroups = computed(() => {
       ...group,
       items: group.items.filter(isItemPermitted),
     }))
-    .filter((group) => group.items.length > 0)
+    .filter((group) => group.items.length > 0 && (group.id !== 'finance' || isPayoutsEnabled.value))
 })
 
 const isDashboardPermitted = computed(() => {
@@ -302,10 +305,6 @@ watch(
   },
   { immediate: true },
 )
-
-onMounted(() => {
-  expandActiveGroup()
-})
 
 // Search filter logic
 const isSearching = computed(() => searchQuery.value.trim().length > 0)
@@ -586,7 +585,7 @@ const searchResults = computed<SearchResultItem[]>(() => {
       <!-- Page Content Slot / Nested RouterView -->
       <div class="admin-page-content">
         <slot>
-          <RouterView />
+          <CapabilityRouteView />
         </slot>
       </div>
     </div>

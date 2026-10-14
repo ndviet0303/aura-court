@@ -210,29 +210,23 @@ class OwnerPaymentAttemptServiceTest extends TestCase
             $this->assertSame($event['status'], $receipt->status);
         }
 
-        $tampered = [
-            'id' => 'tampered-900',
+        $wrongKey = json_encode([
+            'id' => 'wrong-key-900',
             'transactionDate' => now()->addSeconds(5)->toIso8601String(),
             'accountNumber' => '0123456789',
             'code' => 'AC-BOOK-900',
             'transferType' => 'in',
             'transferAmount' => 100000,
-            'referenceCode' => 'BANK-TAMPERED',
-        ];
-        $rawBody = json_encode($tampered, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-        $timestamp = (string) now()->timestamp;
-        $signature = 'sha256='.hash_hmac('sha256', $timestamp.'.'.$rawBody, $secret);
-        $tampered['transferAmount'] = 100001;
-        $changedBody = json_encode($tampered, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+            'referenceCode' => 'BANK-WRONG-KEY',
+        ], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $this->call('POST', $this->webhookUrl($connection), [], [], [], [
             'CONTENT_TYPE' => 'application/json',
-            'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
-            'HTTP_X_SEPAY_SIGNATURE' => $signature,
-        ], $changedBody)->assertUnauthorized();
+            'HTTP_AUTHORIZATION' => 'Apikey '.$secret.'-wrong',
+        ], $wrongKey)->assertUnauthorized();
 
         $attempt->refresh();
         $this->assertSame(OwnerPaymentAttempt::STATUS_PENDING, $attempt->status);
-        $this->assertDatabaseMissing('owner_payment_receipts', ['provider_event_id' => 'tampered-900']);
+        $this->assertDatabaseMissing('owner_payment_receipts', ['provider_event_id' => 'wrong-key-900']);
         $this->assertDatabaseCount('owner_payment_allocations', 0);
     }
 
@@ -243,7 +237,7 @@ class OwnerPaymentAttemptServiceTest extends TestCase
         $venue = $fixture['org1']['venue1'];
         Sanctum::actingAs($owner);
         [$connection, $secret] = $this->createVerifiedConnection($venue);
-        [$verification, $rawBody, $timestamp, $signature] = $this->verifiedEvent($connection, $secret, [
+        [$verification, $rawBody, $authorization] = $this->verifiedEvent($connection, $secret, [
             'id' => 'lost-response-event',
             'transactionDate' => now()->subMinute()->toIso8601String(),
             'accountNumber' => '0123456789',
@@ -254,9 +248,9 @@ class OwnerPaymentAttemptServiceTest extends TestCase
         ]);
         $verificationService = app(SePayReceivingConnectionService::class);
         $payments = app(OwnerPaymentAttemptService::class);
-        $verified = $verificationService->verifyInboundWebhook($connection, $timestamp, $signature, $rawBody);
+        $verified = $verificationService->verifyInboundWebhook($connection, $authorization, $rawBody);
         $receipt = $payments->receiveVerifiedEvent($connection, $verified);
-        $replayVerified = $verificationService->verifyInboundWebhook($connection, $timestamp, $signature, $rawBody);
+        $replayVerified = $verificationService->verifyInboundWebhook($connection, $authorization, $rawBody);
         $replayedReceipt = $payments->receiveVerifiedEvent($connection, $replayVerified);
 
         $this->assertSame($receipt->id, $replayedReceipt->id);
@@ -303,7 +297,7 @@ class OwnerPaymentAttemptServiceTest extends TestCase
         $venue = $fixture['org1']['venue1'];
         Sanctum::actingAs($owner);
         [$connection, $secret] = $this->createVerifiedConnection($venue);
-        [$unused, $rawBody, $timestamp, $signature] = $this->verifiedEvent($connection, $secret, [
+        [$unused, $rawBody, $authorization] = $this->verifiedEvent($connection, $secret, [
             'id' => 'exhausted-event',
             'transactionDate' => now()->addSeconds(5)->toIso8601String(),
             'accountNumber' => '0123456789',
@@ -311,7 +305,7 @@ class OwnerPaymentAttemptServiceTest extends TestCase
             'transferAmount' => 100000,
             'referenceCode' => 'BANK-EXHAUSTED',
         ]);
-        $verified = app(SePayReceivingConnectionService::class)->verifyInboundWebhook($connection, $timestamp, $signature, $rawBody);
+        $verified = app(SePayReceivingConnectionService::class)->verifyInboundWebhook($connection, $authorization, $rawBody);
         $receipt = app(OwnerPaymentAttemptService::class)->receiveVerifiedEvent($connection, $verified);
         $payments = app(OwnerPaymentAttemptService::class);
 
@@ -470,7 +464,7 @@ class OwnerPaymentAttemptServiceTest extends TestCase
 
         $connection = ReceivingConnection::findOrFail((int) $created->json('data.id'));
         $secret = 'whsec_'.Str::random(48);
-        $this->postJson($url."/{$connection->id}/credential", ['hmac_secret' => $secret])->assertOk();
+        $this->postJson($url."/{$connection->id}/credential", ['webhook_api_key' => $secret])->assertOk();
 
         $verificationEvent = [
             'id' => 'verify-'.Str::uuid(),
@@ -489,13 +483,9 @@ class OwnerPaymentAttemptServiceTest extends TestCase
     private function sendEvent(ReceivingConnection $connection, string $secret, array $payload)
     {
         $rawBody = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-        $timestamp = (string) now()->timestamp;
-        $signature = 'sha256='.hash_hmac('sha256', $timestamp.'.'.$rawBody, $secret);
-
         $response = $this->call('POST', $this->webhookUrl($connection), [], [], [], [
             'CONTENT_TYPE' => 'application/json',
-            'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
-            'HTTP_X_SEPAY_SIGNATURE' => $signature,
+            'HTTP_AUTHORIZATION' => 'Apikey '.$secret,
         ], $rawBody);
 
         if ($response->isSuccessful()) {
@@ -511,11 +501,10 @@ class OwnerPaymentAttemptServiceTest extends TestCase
     private function verifiedEvent(ReceivingConnection $connection, string $secret, array $payload): array
     {
         $rawBody = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-        $timestamp = (string) now()->timestamp;
-        $signature = 'sha256='.hash_hmac('sha256', $timestamp.'.'.$rawBody, $secret);
-        $verified = app(SePayReceivingConnectionService::class)->verifyInboundWebhook($connection, $timestamp, $signature, $rawBody);
+        $authorization = 'Apikey '.$secret;
+        $verified = app(SePayReceivingConnectionService::class)->verifyInboundWebhook($connection, $authorization, $rawBody);
 
-        return [$verified, $rawBody, $timestamp, $signature];
+        return [$verified, $rawBody, $authorization];
     }
 
     private function webhookUrl(ReceivingConnection $connection): string

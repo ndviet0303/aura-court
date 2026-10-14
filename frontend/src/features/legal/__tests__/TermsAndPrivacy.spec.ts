@@ -16,7 +16,7 @@ describe('Legal Pages', () => {
     })
     expect(wrapper.find('h1').text()).toContain('Điều khoản dịch vụ')
     expect(wrapper.find('#general').exists()).toBe(true)
-    expect(wrapper.find('#refund-policy').exists()).toBe(true)
+    expect(wrapper.find('#refund-policy').exists()).toBe(false)
     expect(wrapper.find('#court-rules').exists()).toBe(true)
   })
 

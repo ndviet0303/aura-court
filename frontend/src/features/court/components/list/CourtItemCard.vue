@@ -10,6 +10,9 @@ const props = defineProps<{
   index: number
 }>()
 
+// No invented price: a court without a configured price shows none.
+const fromPrice = computed(() => props.court.price_slots?.[0]?.price ?? null)
+
 const sportTag = computed(() => {
   if (props.court.sport_zone?.name) {
     return props.court.sport_zone.name
@@ -81,10 +84,10 @@ function handleImageError(event: Event) {
       </div>
 
       <div class="card-bottom">
-        <div class="pricing-box">
+        <div v-if="fromPrice !== null" class="pricing-box">
           <span class="p-lbl">{{ $t('courts.fromPrice') }}</span>
           <strong class="p-val text-pink font-mono">
-            {{ formatCurrency(court.price_slots?.[0]?.price || 120000) }}
+            {{ formatCurrency(fromPrice) }}
             <small class="p-unit">/h</small>
           </strong>
         </div>

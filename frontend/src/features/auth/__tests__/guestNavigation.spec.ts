@@ -231,6 +231,27 @@ describe('Guest Navigation and Auth Destination Rules', () => {
       expect(router.currentRoute.value.path).toBe('/')
     })
 
+    it.each([
+      [true, '/wallet'],
+      [false, '/'],
+    ])('opens /wallet only when wallet_enabled is %s', async (walletEnabled, expectedPath) => {
+      const auth = useAuthStore()
+      auth.user = {
+        id: 3,
+        name: 'Wallet Customer',
+        email: 'wallet@example.com',
+        role: 'customer',
+        onboarded: true,
+        capabilities: { wallet_enabled: walletEnabled },
+      }
+      auth.loaded = true
+
+      await router.push('/courts')
+      await router.push('/wallet')
+
+      expect(router.currentRoute.value.path).toBe(expectedPath)
+    })
+
     it('redirects authenticated onboarded admin away from /login to /admin/organization by default', async () => {
       const auth = useAuthStore()
       auth.user = {

@@ -16,8 +16,8 @@ use App\Http\Requests\Admin\StoreDisputeRequest;
 use App\Http\Resources\Admin\DisputeCaseResource;
 use App\Models\DisputeCase;
 use App\Models\OrganizationMember;
-use App\Models\OwnerRefundObligation;
 use App\Models\Reservation;
+use App\Services\Social\PeerToPeerResaleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -31,6 +31,7 @@ class AdminDisputeController extends Controller
         private readonly ArbitrateDispute $arbitrateDispute,
         private readonly DisputeRepositoryInterface $disputeRepository,
         private readonly NotifyDisputeFiled $notifyDisputeFiled,
+        private readonly PeerToPeerResaleService $resale,
     ) {}
 
     public function index(ListDisputeRequest $request): AnonymousResourceCollection
@@ -89,7 +90,6 @@ class AdminDisputeController extends Controller
         $updated = $this->arbitrateDispute->execute($dto);
 
         $messages = [
-            'resolve_and_refund' => 'Đã ban hành phán quyết và tạo nghĩa vụ hoàn tiền chờ chủ cơ sở thực hiện.',
             'resolve' => 'Đã ban hành phán quyết và giải quyết tranh chấp.',
             'dismiss' => 'Đã bác bỏ khiếu nại và lưu vết kiểm toán.',
             'investigate_further' => 'Đã chuyển trạng thái yêu cầu điều tra bổ sung.',
@@ -139,9 +139,6 @@ class AdminDisputeController extends Controller
         }
 
         $severity = $data['severity'] ?? 'medium';
-        if (! $severity) {
-            $severity = 'medium';
-        }
         $evidence = $data['evidence'] ?? [];
         $isEvidenceEmpty = empty($evidence);
         $requiresEvidence = in_array($severity, ['high', 'urgent'], true) || $data['dispute_type'] === 'court_quality';
@@ -157,7 +154,7 @@ class AdminDisputeController extends Controller
         }
 
         $disputeCode = 'DSP-'.strtoupper(Str::random(10));
-        $court = $reservation?->court;
+        $court = $reservation->court ?? (($data['reference_type'] ?? null) === 'marketplace_listing' ? $this->resale->disputeCourt((int) ($data['reference_id'] ?? 0), $user) : null);
         $venue = $court?->venue;
         $org = $venue?->organization;
 
@@ -323,13 +320,6 @@ class AdminDisputeController extends Controller
             $isAuthorizedOwner = $dispute->organization_id
                 && $user->hasRoleInOrganization($dispute->organization_id, [OrganizationMember::ROLE_ORGANIZATION_OWNER]);
             abort_unless($isAuthorizedOwner, 403, 'Bạn không có quyền đóng tranh chấp này.');
-        }
-
-        if ($dispute->refund_obligation_id) {
-            $obligation = OwnerRefundObligation::find($dispute->refund_obligation_id);
-            if ($obligation && ! in_array($obligation->status, ['acknowledged', 'rejected'], true)) {
-                abort(409, 'Cannot close dispute: pending refund obligation must be executed or settled first.');
-            }
         }
 
         $events = $dispute->timeline_events ?? [];

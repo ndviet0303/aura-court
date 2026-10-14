@@ -12,8 +12,8 @@ use App\Models\Reservation;
 use App\Models\User;
 use App\Services\Booking\RecurringSeriesService;
 use App\Services\Finance\FinancialPostingService;
-use App\Services\Reservation\RescheduleService;
-use App\Services\Social\MarketplaceService;
+use App\Services\POS\PosQrPaymentService;
+use App\Services\Tournament\TournamentRegistrationPaymentService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\QueryException;
@@ -24,14 +24,14 @@ class OwnerPaymentAttemptService
 {
     public function __construct(private readonly FinancialPostingService $financials) {}
 
-    private const PURPOSES = [
-        'booking',
-        'booking_change',
-        'recurring_period',
-        'split_share',
-        'pos_order',
-        'transfer_consideration',
-        'tournament_registration',
+    private const PURPOSES = ['booking', 'recurring_period', 'split_share', 'pos_order', 'tournament_registration'];
+
+    /** Purposes confirmed by their own service: [service, check that locks and re-reads it, exception when it is gone]. */
+    private const CONFIRMERS = [
+        'recurring_period' => [RecurringSeriesService::class, 'hasConfirmablePeriod', 'recurring_hold_unavailable'],
+        'split_share' => [SplitPaymentService::class, 'hasConfirmableShare', 'split_share_unavailable'],
+        'pos_order' => [PosQrPaymentService::class, 'hasConfirmableOrder', 'pos_order_unavailable'],
+        'tournament_registration' => [TournamentRegistrationPaymentService::class, 'hasConfirmableRegistration', 'tournament_registration_unavailable'],
     ];
 
     public function createAttempt(
@@ -278,10 +278,7 @@ class OwnerPaymentAttemptService
             $status = OwnerPaymentReceipt::STATUS_UNMATCHED;
             $exceptionCode = null;
             $bookingReservation = null;
-            $rescheduleReplacement = null;
-            $recurringAttempt = null;
-            $splitShareAttempt = null;
-            $transferAttempt = null;
+            $confirmer = null;
             if (! $receiverMatches) {
                 $status = OwnerPaymentReceipt::STATUS_EXCEPTION;
                 $exceptionCode = 'foreign_receiver';
@@ -323,42 +320,13 @@ class OwnerPaymentAttemptService
                         $status = OwnerPaymentReceipt::STATUS_EXCEPTION;
                         $exceptionCode = 'reservation_hold_unavailable';
                     }
-                } elseif ($status === OwnerPaymentReceipt::STATUS_ALLOCATED && $attempt->purpose === 'booking_change') {
-                    $rescheduleReplacement = Reservation::query()
-                        ->withoutGlobalScope('tenant_isolation')
-                        ->where('organization_id', $attempt->organization_id)
-                        ->where('code', $attempt->purpose_id)
-                        ->lockForUpdate()
-                        ->first();
-                    if (! $rescheduleReplacement
-                        || (int) $rescheduleReplacement->user_id !== (int) $attempt->user_id
-                        || $rescheduleReplacement->payment_model !== 'direct_owner_v1'
-                        || $rescheduleReplacement->status !== 'held'
-                        || ! is_string(data_get($rescheduleReplacement->metadata, 'reschedule_of'))) {
-                        $rescheduleReplacement = null;
+                } elseif ($status === OwnerPaymentReceipt::STATUS_ALLOCATED && isset(self::CONFIRMERS[$attempt->purpose])) {
+                    [$service, $check, $unavailable] = self::CONFIRMERS[$attempt->purpose];
+                    $confirmer = app($service);
+                    if (! $confirmer->{$check}($attempt)) {
+                        $confirmer = null;
                         $status = OwnerPaymentReceipt::STATUS_EXCEPTION;
-                        $exceptionCode = 'reschedule_replacement_unavailable';
-                    }
-                } elseif ($status === OwnerPaymentReceipt::STATUS_ALLOCATED && $attempt->purpose === 'recurring_period') {
-                    if (app(RecurringSeriesService::class)->hasConfirmablePeriod($attempt)) {
-                        $recurringAttempt = $attempt;
-                    } else {
-                        $status = OwnerPaymentReceipt::STATUS_EXCEPTION;
-                        $exceptionCode = 'recurring_hold_unavailable';
-                    }
-                } elseif ($status === OwnerPaymentReceipt::STATUS_ALLOCATED && $attempt->purpose === 'split_share') {
-                    if (app(SplitPaymentService::class)->hasConfirmableShare($attempt)) {
-                        $splitShareAttempt = $attempt;
-                    } else {
-                        $status = OwnerPaymentReceipt::STATUS_EXCEPTION;
-                        $exceptionCode = 'split_share_unavailable';
-                    }
-                } elseif ($status === OwnerPaymentReceipt::STATUS_ALLOCATED && $attempt->purpose === 'transfer_consideration') {
-                    if (app(MarketplaceService::class)->hasConfirmableListing($attempt)) {
-                        $transferAttempt = $attempt;
-                    } else {
-                        $status = OwnerPaymentReceipt::STATUS_EXCEPTION;
-                        $exceptionCode = 'transfer_listing_unavailable';
+                        $exceptionCode = $unavailable;
                     }
                 }
             }
@@ -404,18 +372,7 @@ class OwnerPaymentAttemptService
                     $bookingReservation->slots()->where('status', 'held')->update(['status' => 'confirmed']);
                     $bookingReservation->entitlements()->where('status', 'held')->update(['status' => 'active']);
                 }
-                if ($rescheduleReplacement) {
-                    app(RescheduleService::class)->commitSwap($rescheduleReplacement);
-                }
-                if ($recurringAttempt) {
-                    app(RecurringSeriesService::class)->confirmPaidAttempt($allocation, $receipt->event_at);
-                }
-                if ($splitShareAttempt) {
-                    app(SplitPaymentService::class)->confirmPaidAttempt($allocation, $receipt->event_at);
-                }
-                if ($transferAttempt) {
-                    app(MarketplaceService::class)->confirmPaidAttempt($allocation, $receipt->event_at);
-                }
+                $confirmer?->confirmPaidAttempt($allocation, $receipt->event_at);
                 $this->financials->postDirectOwnerReceipt($receipt);
             } elseif ($exceptionCode !== null) {
                 $this->recordReceiptException($receipt, $exceptionCode);
@@ -500,6 +457,9 @@ class OwnerPaymentAttemptService
         } elseif ($eventAt->gt($attempt->expires_at)) {
             $status = 'late';
             $exceptionCode = 'transfer_after_expiry';
+        } elseif (! in_array($attempt->purpose, self::PURPOSES, true)) {
+            $status = 'exception';
+            $exceptionCode = 'unsupported_purpose';
         } elseif ($attempt->status !== OwnerPaymentAttempt::STATUS_PENDING) {
             $status = 'exception';
             $exceptionCode = 'attempt_not_pending';

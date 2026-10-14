@@ -12,6 +12,7 @@ use App\Http\Controllers\Attendance\AttendanceController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Booking\AdvancedBookingController;
 use App\Http\Controllers\Booking\AvailabilityController;
+use App\Http\Controllers\Booking\ResaleListingController;
 use App\Http\Controllers\Booking\WaitlistController;
 use App\Http\Controllers\Court\CourtController;
 use App\Http\Controllers\Court\ReviewController;
@@ -28,14 +29,12 @@ use App\Http\Controllers\Partner\PartnerDocumentController;
 use App\Http\Controllers\Partner\PartnerVenueController;
 use App\Http\Controllers\Partner\PartnerVenueScheduleController;
 use App\Http\Controllers\Partner\ReceivingConnectionController;
-use App\Http\Controllers\Payment\OwnerRefundController;
 use App\Http\Controllers\POS\PosController;
 use App\Http\Controllers\POS\ServiceTabController;
 use App\Http\Controllers\Promotion\PromotionController;
 use App\Http\Controllers\Reservation\AdminReservationController;
 use App\Http\Controllers\Reservation\MyReservationController;
 use App\Http\Controllers\Reservation\PriceRuleController;
-use App\Http\Controllers\Reservation\RescheduleController;
 use App\Http\Controllers\Reservation\ReservationController;
 use App\Http\Controllers\Social\CommunityFeedController;
 use App\Http\Controllers\Social\FriendshipController;
@@ -53,6 +52,7 @@ use App\Http\Middleware\ResolveTenantContext;
 use App\Http\Middleware\SimulateDemoMutations;
 use App\Models\HostKyc;
 use App\Models\User;
+use App\Services\Payment\WalletAvailabilityService;
 use App\Services\Payment\WalletPaymentService;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
@@ -142,6 +142,7 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
                 'partner_status' => $primaryOrg?->partner_status ?? $latestKyc?->status,
                 'has_partner_application' => $latestKyc !== null,
                 'partner_application_status' => $latestKyc?->status,
+                'wallet_enabled' => app(WalletAvailabilityService::class)->enabledFor($user),
             ],
         ]));
     });
@@ -335,7 +336,6 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             Route::post('courts/{court}/blocks', [AdminController::class, 'blocks']);
             Route::get('courts/{court}/blocks', [AdminController::class, 'blocksIndex']);
             Route::delete('courts/{court}/blocks/{block}', [AdminController::class, 'destroyBlock']);
-            Route::get('refunds', [AdminController::class, 'refunds']);
             Route::get('reports', [AdminController::class, 'report']);
             Route::get('reports.csv', [AdminController::class, 'reportCsv']);
             Route::get('reports/csv', [AdminController::class, 'reportCsv']);
@@ -387,16 +387,6 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
         Route::get('reservations/{reservation}', [ReservationController::class, 'show']);
         Route::get('reservations/{reservation}/payment', [ReservationController::class, 'payment']);
         Route::post('reservations/{reservation}/payment', [ReservationController::class, 'createPayment'])->middleware('verified');
-        Route::get('reservations/{reservation}/refund-quote', [OwnerRefundController::class, 'quote']);
-        Route::get('reservations/{reservation}/refund-requests', [OwnerRefundController::class, 'index']);
-        Route::post('reservations/{reservation}/refund-requests', [OwnerRefundController::class, 'request'])->middleware('verified');
-        Route::post('reservations/{reservation}/reschedule-preview', [RescheduleController::class, 'preview']);
-        Route::post('reservations/{reservation}/reschedule-requests', [RescheduleController::class, 'request'])->middleware('verified');
-        Route::get('refund-requests', [OwnerRefundController::class, 'inbox']);
-        Route::post('refund-requests/{refund}/approve', [OwnerRefundController::class, 'approve']);
-        Route::post('refund-requests/{refund}/reject', [OwnerRefundController::class, 'reject']);
-        Route::post('refund-requests/{refund}/report-execution', [OwnerRefundController::class, 'reportExecution']);
-        Route::post('refund-requests/{refund}/acknowledge', [OwnerRefundController::class, 'acknowledge'])->middleware('verified');
         Route::post('reservations/{reservation}/confirm', [ReservationController::class, 'confirm'])->middleware('verified');
         Route::post('loyalty/preview', [LoyaltyController::class, 'preview']);
         Route::post('loyalty/redeem', [LoyaltyController::class, 'redeem']);
@@ -430,9 +420,12 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
 
         Route::middleware('feature:marketplace_slot_resale')->group(function () {
             Route::get('marketplace/listings', [AdvancedBookingController::class, 'listings']);
-            Route::post('marketplace/entitlements/{entitlement}/list', [AdvancedBookingController::class, 'createListing']);
-            Route::post('marketplace/listings/{listing}/checkout', [AdvancedBookingController::class, 'checkoutListing']);
-            Route::post('marketplace/listings/{listing}/purchase', [AdvancedBookingController::class, 'purchaseListing']);
+            Route::post('marketplace/entitlements/{entitlement}/list', [ResaleListingController::class, 'store']);
+            Route::get('marketplace/listings/{listing}', [ResaleListingController::class, 'show']);
+            Route::post('marketplace/listings/{listing}/checkout', [ResaleListingController::class, 'lock']);
+            Route::post('marketplace/listings/{listing}/payment-sent', [ResaleListingController::class, 'paymentSent']);
+            Route::post('marketplace/listings/{listing}/release', [ResaleListingController::class, 'release']);
+            Route::post('marketplace/listings/{listing}/confirm-receipt', [ResaleListingController::class, 'confirmReceipt']);
             Route::post('marketplace/listings/{listing}/withdraw', [AdvancedBookingController::class, 'withdrawListing']);
         });
 
@@ -515,7 +508,6 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::post('pos/quote', [PosController::class, 'quote'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::post('pos/orders', [PosController::class, 'completeOrder'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::get('pos/orders/{order}', [PosController::class, 'showOrder'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
-            Route::post('pos/orders/{order}/confirm-qr', [PosController::class, 'confirmQrPayment'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::post('pos/orders/{order}/cancel-qr', [PosController::class, 'cancelQrPayment'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::post('pos/orders/{order}/receipt/print', [PosController::class, 'printReceipt'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
             Route::post('pos/orders/{order}/receipt/send', [PosController::class, 'sendReceipt'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');

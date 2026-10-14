@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Booking;
 use App\Models\Court;
+use App\Models\EntitlementTransfer;
 use App\Models\Journal;
 use App\Models\MarketplaceListing;
 use App\Models\Organization;
@@ -18,7 +19,7 @@ use App\Models\WalletAccount;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\Finance\LedgerService;
 use App\Services\Finance\SettlementService;
-use App\Services\Social\MarketplaceService;
+use App\Services\Social\PeerToPeerResaleService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -29,8 +30,6 @@ class ZeroCommissionRetirementRegressionTest extends TestCase
     private FinancialPostingService $financials;
 
     private LedgerService $ledger;
-
-    private MarketplaceService $marketplace;
 
     private SettlementService $settlements;
 
@@ -51,7 +50,6 @@ class ZeroCommissionRetirementRegressionTest extends TestCase
         parent::setUp();
         $this->financials = app(FinancialPostingService::class);
         $this->ledger = app(LedgerService::class);
-        $this->marketplace = app(MarketplaceService::class);
         $this->settlements = app(SettlementService::class);
 
         $this->organization = Organization::create([
@@ -264,7 +262,7 @@ class ZeroCommissionRetirementRegressionTest extends TestCase
         $this->assertSame(2000, $journal->metadata['provider_fee']);
     }
 
-    public function test_unsold_marketplace_listing_with_stored_five_percent_fee_purchases_commission_free(): void
+    public function test_unsold_marketplace_listing_with_stored_five_percent_fee_sells_peer_to_peer_without_fee(): void
     {
         config(['marketplace.fee_bps' => 500]);
 
@@ -309,31 +307,22 @@ class ZeroCommissionRetirementRegressionTest extends TestCase
             'cutoff_at' => $entitlement->starts_at->copy()->subHours(2),
         ]);
 
-        $transfer = $this->marketplace->purchase(
-            $listing,
-            $this->buyer,
-            'idemp-mkt-zero-01',
-            'buyer-pay-ref-01',
-            'seller-ref-ref-01',
-            true
-        );
+        $listing->setSellerReceiver(['bank_code' => 'TPB', 'account_number' => '0123456789', 'account_name' => 'SELLER ONE']);
+        $listing->save();
 
+        // Peer-to-peer: the buyer is asked for exactly the asking price and pays the seller directly.
+        $resale = app(PeerToPeerResaleService::class);
+        $state = $resale->lock($listing, $this->buyer);
+        $this->assertSame(200000, $state['payment']['amount']);
+        $resale->confirmReceipt($listing, $this->seller);
+
+        $transfer = EntitlementTransfer::where('marketplace_listing_id', $listing->id)->firstOrFail();
         $this->assertSame('completed', $transfer->status);
         $this->assertSame(200000, $transfer->buyer_amount);
         $this->assertSame(0, $transfer->marketplace_fee);
-        $this->assertSame(200000, $transfer->seller_refund);
-
-        $accounts = $this->ledger->systemAccounts($this->organization->id);
-        $journal = Journal::where('event_type', 'marketplace.sale')
-            ->where('event_id', "marketplace:{$listing->id}")
-            ->firstOrFail();
-
-        $this->assertSame(200000, $journal->total_debit);
-        $this->assertSame(200000, $journal->total_credit);
-
-        $commissionEntry = $journal->entries()->where('account_id', $accounts['platform_commission']->id)->first();
-        $this->assertNull($commissionEntry);
-        $this->assertSame(0, $journal->metadata['marketplace_fee']);
+        $this->assertSame(0, $transfer->seller_refund);
+        $this->assertSame('peer_to_peer', $transfer->metadata['settlement_mode']);
+        $this->assertFalse(Journal::where('event_type', 'marketplace.sale')->where('event_id', "marketplace:{$listing->id}")->exists());
     }
 
     public function test_replayed_historical_event_preserves_original_journal_and_commission(): void

@@ -25,8 +25,7 @@ class ReceivingConnectionWebhookController extends Controller
 
         $verified = $connections->verifyInboundWebhook(
             $connection,
-            (string) $request->header('X-SePay-Timestamp', ''),
-            (string) $request->header('X-SePay-Signature', ''),
+            (string) $request->header('Authorization', ''),
             $request->getContent()
         );
         $receipt = $payments->receiveVerifiedEvent($connection, $verified);

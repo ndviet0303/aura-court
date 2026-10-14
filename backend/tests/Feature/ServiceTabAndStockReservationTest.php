@@ -476,4 +476,43 @@ class ServiceTabAndStockReservationTest extends TestCase
             ]);
         $settleRes->assertStatus(422);
     }
+
+    public function test_direct_cohort_settles_tabs_in_cash_only_without_mutation(): void
+    {
+        config(['features.flags.direct_owner_payments' => true]);
+        $reservation = $this->createReservation();
+        $this->openShift();
+        $walletService = app(WalletPaymentService::class);
+        $wallet = $walletService->getOrCreateWallet($this->customer->id, $this->tenant->id);
+        $walletService->credit($wallet, 200000, 'test_fund', 1, 'Top up');
+        $this->actingAs($this->staff)
+            ->withHeaders($this->headers())
+            ->postJson('/api/service-tabs', [
+                'reservation_id' => $reservation->id,
+                'items' => [['product_id' => $this->gripProduct->id, 'quantity' => 1]],
+            ])
+            ->assertCreated();
+        $tab = ServiceTab::where('reservation_id', $reservation->id)->firstOrFail();
+
+        $this->actingAs($this->cashier)
+            ->withHeaders($this->headers())
+            ->postJson("/api/service-tabs/{$tab->id}/settle", ['payment_method' => 'wallet', 'customer_id' => $this->customer->id])
+            ->assertConflict()
+            ->assertJsonPath('code', 'DIRECT_OWNER_PAYMENTS_ENABLED');
+        $this->actingAs($this->cashier)
+            ->withHeaders($this->headers())
+            ->postJson("/api/service-tabs/{$tab->id}/settle", ['payment_method' => 'qr'])
+            ->assertConflict()
+            ->assertJsonPath('message', 'Tab dịch vụ ở cơ sở thanh toán trực tiếp chỉ nhận tiền mặt. Muốn thu bằng QR, hãy tạo đơn POS.');
+
+        $this->assertSame(ServiceTab::STATUS_UNPAID, $tab->fresh()->status);
+        $this->assertSame(200000, (int) $wallet->fresh()->balance);
+        $this->assertSame(0, PosOrder::count());
+
+        $this->actingAs($this->cashier)
+            ->withHeaders($this->headers())
+            ->postJson("/api/service-tabs/{$tab->id}/settle", ['payment_method' => 'cash'])
+            ->assertOk();
+        $this->assertSame(ServiceTab::STATUS_SETTLED, $tab->fresh()->status);
+    }
 }

@@ -1,23 +1,54 @@
 import { api } from '@/core/api/client'
-import type { PurchaseListingPayload, CreateListingPayload } from '../types/marketplace'
+import type {
+  ApiResaleListing,
+  CreateListingPayload,
+  ResaleSourceReservation,
+  ResaleState,
+} from '../types/marketplace'
+
+const listing = (id: number) => `/marketplace/listings/${id}`
 
 export const marketplaceApi = {
-  getListings: <T = any>(params?: { mine?: boolean; page?: number }) => {
-    const query = new URLSearchParams()
-    if (params?.mine) query.append('mine', '1')
-    if (params?.page) query.append('page', String(params.page))
-    const qs = query.toString() ? `?${query.toString()}` : ''
-    return api.get<T>(`/marketplace/listings${qs}`)
-  },
+  getListings: (params?: { mine?: boolean; page?: number }) =>
+    api.get<{ data: ApiResaleListing[] }>('/marketplace/listings', {
+      params: { mine: params?.mine ? 1 : undefined, page: params?.page },
+    }),
 
-  purchaseListing: <T = unknown>(listingId: number | string, payload: PurchaseListingPayload) =>
-    api.post<T>(`/marketplace/listings/${listingId}/purchase`, payload),
+  listEntitlement: (entitlementId: number, payload: CreateListingPayload) =>
+    api.post<{ listing: ApiResaleListing }>(
+      `/marketplace/entitlements/${entitlementId}/list`,
+      payload,
+    ),
 
-  listEntitlement: (entitlementId: number | string, payload: CreateListingPayload) =>
-    api.post(`/marketplace/entitlements/${entitlementId}/list`, payload),
+  withdrawListing: (listingId: number) =>
+    api.post<{ listing: ApiResaleListing }>(`${listing(listingId)}/withdraw`),
 
-  withdrawListing: (listingId: number | string) =>
-    api.post(`/marketplace/listings/${listingId}/withdraw`),
+  // Peer-to-peer lock: the buyer pays the seller directly; the seller confirms receipt.
+  getListingState: (listingId: number) => api.get<ResaleState>(listing(listingId)),
 
-  getUserReservations: <T = any>() => api.get<T>('/reservations'),
+  lockListing: (listingId: number, acceptFreeTransfer = false) =>
+    api.post<ResaleState>(
+      `${listing(listingId)}/checkout`,
+      acceptFreeTransfer ? { accept_free_transfer: true } : {},
+    ),
+
+  reportPaymentSent: (listingId: number) =>
+    api.post<ResaleState>(`${listing(listingId)}/payment-sent`),
+
+  releaseLock: (listingId: number, reason?: string) =>
+    api.post<ResaleState>(`${listing(listingId)}/release`, reason ? { reason } : {}),
+
+  confirmReceipt: (listingId: number) =>
+    api.post<ResaleState>(`${listing(listingId)}/confirm-receipt`),
+
+  openPaymentDispute: (listingId: number, title: string, summary: string) =>
+    api.post<unknown>('/disputes', {
+      title,
+      summary,
+      dispute_type: 'payment_issue',
+      reference_type: 'marketplace_listing',
+      reference_id: listingId,
+    }),
+
+  getUserReservations: () => api.get<{ data: ResaleSourceReservation[] }>('/reservations'),
 }

@@ -8,6 +8,7 @@ import {
   arrangeCourt,
   arrangePosStock,
   sendSyntheticPaymentWebhook,
+  formatVietnamDate,
 } from './runner/test-data.ts'
 import { getActorCredentials } from './runner/auth.ts'
 
@@ -302,7 +303,13 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     const qrModal = page.locator('.qr-modal-card')
     await expect(qrModal).toBeVisible({ timeout: 15000 })
     await expect(qrModal).toContainText('Đang chờ chuyển khoản')
-    // 7. NEGATIVE PROOF: Attempting client-only confirm before payment receipt MUST fail with 422
+    // The QR names the venue owner's verified account and a server-issued AC reference.
+    expect(paymentRef).toMatch(/^AC[A-Z0-9]{18}$/)
+    expect(qrOrderData?.payment_attempt?.receiver?.account_number).toBe('0987654321')
+    await expect(qrModal).toContainText('0987654321')
+    await expect(qrModal).toContainText(paymentRef)
+    // 7. NEGATIVE PROOF: there is no cashier confirm; the route is gone and the modal has no confirm button
+    await expect(qrModal.locator('.btn-confirm')).toHaveCount(0)
     const unverifiedAttempt = await withE2EApi(
       page,
       async ({ api }, oId) => {
@@ -318,7 +325,7 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
       orderId,
     )
     expect(unverifiedAttempt.success).toBe(false)
-    expect(unverifiedAttempt.status).toBe(422)
+    expect(unverifiedAttempt.status).toBe(404)
 
     // Stock remains 25 while pending and unverified
     const checkPendingScript = `
@@ -349,24 +356,27 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
 
     // 8. Send genuine synthetic payment webhook matching order payment_reference
     const totalAmount = Number(qrOrderData?.order?.total_amount || 220000)
+    const webhookTxnId = `TXN-POS-QR-${manifest.runId}-${orderId}`
+    // A provider retry resends the identical body, so both deliveries share one transaction date
+    const transactionDate = formatVietnamDate(new Date(Date.now() + 5000))
     const webhookRes = await sendSyntheticPaymentWebhook(manifest, {
       routingId: venue1A.routingId,
       secret: `whsec_e2e_1a_${manifest.runId}`,
       accountNumber: '0987654321',
       amount: totalAmount,
       code: paymentRef,
-      posOrderId: Number(orderId),
+      transactionId: webhookTxnId,
+      transactionDate,
     })
     expect(
       webhookRes.ok,
       `Webhook failed with status ${webhookRes.statusCode}: ${JSON.stringify(webhookRes.body)}`,
     ).toBe(true)
-    // 9. Close QR modal as payment has completed via verified webhook
-    const closeQrBtn = page.locator('.qr-modal-card .modal-close-btn')
-    if (await closeQrBtn.isVisible()) {
-      await closeQrBtn.click()
-    }
-    await expect(qrModal).not.toBeVisible({ timeout: 10000 })
+    // 9. The POS polls the order: the verified owner receipt closes the QR modal and shows the receipt
+    await expect(qrModal).not.toBeVisible({ timeout: 20000 })
+    const receiptCloseBtn = page.locator('.modal-card .modal-close-btn')
+    await expect(receiptCloseBtn).toBeVisible({ timeout: 10000 })
+    await receiptCloseBtn.click()
 
     // 10. Database check: order is completed, stock decremented to 24
     const checkPaidScript = `
@@ -395,20 +405,18 @@ test.describe('P0: Quầy POS, Ca làm việc & Tab dịch vụ tại sân (Mụ
     expect(paidState.status).toBe('completed')
     expect(paidState.stock).toBe(24)
 
-    // 10. Idempotency verification: re-confirming already completed order does NOT decrement stock again
-    await withE2EApi(
-      page,
-      async ({ api }, oId) => {
-        try {
-          const res = await api.post(`/pos/orders/${oId}/confirm-qr`, {})
-          return { success: true, data: res.data }
-        } catch (err: any) {
-          return { success: false, status: err?.status }
-        }
-      },
-      orderId,
-    )
-    // Re-confirm is either rejected as already paid or returns existing receipt without double stock decrement
+    // 10. Idempotency verification: the same bank event delivered again does NOT decrement stock again
+    const replayRes = await sendSyntheticPaymentWebhook(manifest, {
+      routingId: venue1A.routingId,
+      secret: `whsec_e2e_1a_${manifest.runId}`,
+      accountNumber: '0987654321',
+      amount: totalAmount,
+      code: paymentRef,
+      transactionId: webhookTxnId,
+      transactionDate,
+    })
+    expect(replayRes.ok).toBe(true)
+    // A replayed receipt is deduplicated by provider event id, so stock moves once
     const checkRetryScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";

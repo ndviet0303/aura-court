@@ -16,28 +16,24 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
 
-    // 1. Guest visits protected route /wallet
-    await page.goto('/wallet', { waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL(/.*login.*redirect=.*wallet/, { timeout: 15000 })
+    // 1. Guest visits protected route /profile (the wallet is capability-gated, so not used here)
+    await page.goto('/profile', { waitUntil: 'domcontentloaded' })
+    await expect(page).toHaveURL(/.*login.*redirect=.*profile/, { timeout: 15000 })
 
     // 2. Complete login with return path
     await page.locator('input[type="email"], input[name="email"]').fill(customer.email)
     await page.locator('input[type="password"], input[name="password"]').fill(customer.password)
     await page.locator('button[type="submit"].auth-submit-btn').click()
 
-    // 3. Return path followed: redirected to /wallet
+    // 3. Return path followed: redirected to /profile
     await expect(page).not.toHaveURL(/\/login/, { timeout: 20000 })
-    await expect(page).toHaveURL((url) => url.pathname === '/wallet', { timeout: 20000 })
-    await expect(page.locator('.wallet-view-page, .wallet-view').first()).toBeVisible({
-      timeout: 20000,
-    })
+    await expect(page).toHaveURL((url) => url.pathname === '/profile', { timeout: 20000 })
+    await expect(page.locator('.profile-view-page').first()).toBeVisible({ timeout: 20000 })
 
     // 4. Reload page preserves session persistence
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL((url) => url.pathname === '/wallet', { timeout: 15000 })
-    await expect(page.locator('.wallet-view-page, .wallet-view').first()).toBeVisible({
-      timeout: 15000,
-    })
+    await expect(page).toHaveURL((url) => url.pathname === '/profile', { timeout: 15000 })
+    await expect(page.locator('.profile-view-page').first()).toBeVisible({ timeout: 15000 })
     // 5. Logout cleans up session and restores guard via UI
     const userTrigger = page
       .locator('.user-dropdown-trigger, .user-profile-trigger, .user-avatar-btn')
@@ -48,9 +44,9 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     await expect(logoutBtn).toBeVisible({ timeout: 10000 })
     await logoutBtn.click()
     await expect(page).toHaveURL(/\/login/, { timeout: 15000 })
-    // After logout, visiting protected route /wallet must redirect to login again
-    await page.goto('/wallet', { waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL(/.*login.*redirect=.*wallet/, { timeout: 15000 })
+    // After logout, visiting protected route /profile must redirect to login again
+    await page.goto('/profile', { waitUntil: 'domcontentloaded' })
+    await expect(page).toHaveURL(/.*login.*redirect=.*profile/, { timeout: 15000 })
   })
 
   test('3.2.2: Chuyển hướng khách vãng lai và kiểm tra lỗi khi nhập sai mật khẩu', async ({
@@ -197,8 +193,14 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     await adminPage.goto('/admin/kyc', { waitUntil: 'domcontentloaded' })
     await expect(adminPage).toHaveURL(/.*admin\/kyc/, { timeout: 15000 })
 
+    // The e2e stack leaves marketplace_payouts off: the finance page reports itself unavailable
+    // and the Finance group is absent from the sidebar.
     await adminPage.goto('/admin/payouts', { waitUntil: 'domcontentloaded' })
     await expect(adminPage).toHaveURL(/.*admin\/payouts/, { timeout: 15000 })
+    await expect(adminPage.locator('[data-testid="capability-unavailable"]')).toBeVisible({
+      timeout: 15000,
+    })
+    await expect(adminPage.locator('a[href="/admin/payouts"]')).toHaveCount(0)
     await adminCtx.close()
 
     // 2. Tenant Owner: denied on platform routes

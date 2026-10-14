@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { AuraButton } from '@/shared/components'
+import type { ReservationPaymentAttempt } from '@/features/booking/api/bookingApi'
 import type { TournamentItem, TournamentRegistrationPayload } from '../types/tournament'
+import TournamentPaymentPanel from './TournamentPaymentPanel.vue'
 
 defineProps<{
   show: boolean
   tournament: TournamentItem | null
   loading?: boolean
+  payment?: ReservationPaymentAttempt | null
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'submit', payload: TournamentRegistrationPayload): void
+  (e: 'paid'): void
 }>()
 
 const name = ref('')
@@ -46,7 +50,9 @@ function handleSubmit() {
             <span class="material-symbols-outlined">how_to_reg</span>
           </div>
           <div>
-            <h3 class="modal-title">{{ $t('tournament.registerModalTitle') }}</h3>
+            <h3 class="modal-title">
+              {{ payment ? $t('tournament.paymentTitle') : $t('tournament.registerModalTitle') }}
+            </h3>
             <p class="modal-sub">{{ $t('tournament.registerModalSub') }}</p>
           </div>
         </div>
@@ -81,8 +87,13 @@ function handleSubmit() {
           </div>
         </div>
 
-        <!-- Registration Form -->
-        <form class="reg-form" @submit.prevent="handleSubmit">
+        <TournamentPaymentPanel
+          v-if="payment"
+          :tournament-id="tournament.uuid || tournament.id"
+          :payment="payment"
+          @paid="emit('paid')"
+        />
+        <form v-else class="reg-form" @submit.prevent="handleSubmit">
           <div class="form-group">
             <label class="form-label" for="reg-athlete-name">
               {{ $t('tournament.athleteCaptainLabel') }} <span class="required">*</span>
@@ -156,6 +167,7 @@ function handleSubmit() {
         </AuraButton>
 
         <AuraButton
+          v-if="!payment"
           variant="primary"
           size="md"
           icon="check_circle"

@@ -148,6 +148,20 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     await expect(page.locator('.status-badge.confirmed')).toBeVisible({ timeout: 15000 })
     await expect(page.locator('[data-testid="reservation-payment-modal"]')).toHaveCount(0)
 
+    // 11b. A paid booking is final: /booking offers resale only, never cancel, refund or reschedule
+    await page.goto('/booking', { waitUntil: 'domcontentloaded' })
+    const paidCard = page.locator('.user-booking-card').filter({ hasText: `#${reservationCode}` })
+    await expect(paidCard).toBeVisible({ timeout: 15000 })
+    await expect(paidCard.locator('[data-testid="booking-resale-btn"]')).toHaveAttribute(
+      'href',
+      '/resale',
+    )
+    await expect(paidCard.locator('[data-testid="booking-cancel-btn"]')).toHaveCount(0)
+    await expect(paidCard.locator('[data-testid="booking-reschedule-btn"]')).toHaveCount(0)
+    await expect(paidCard.getByRole('button', { name: /hủy|huỷ|hoàn tiền|đổi lịch/i })).toHaveCount(
+      0,
+    )
+
     // 12. Query authoritative backend database to prove single booking and single payment allocation
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
     const backendEnv = {
@@ -312,7 +326,7 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       FEATURE_DIRECT_OWNER_PAYMENTS: 'true',
     }
 
-    // 6. Test invalid authentication (tampered HMAC signature): rejected with HTTP 401
+    // 6. Test invalid authentication (wrong Api_Key): rejected with HTTP 401
     const invalidSigRes = await sendSyntheticPaymentWebhook(manifest, {
       routingId: venue1A.routingId,
       secret,
@@ -782,7 +796,7 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     expect(lateState.receipt_exception).toBe('transfer_after_expiry')
     // No allocation occurred
     expect(lateState.allocation_count).toBe(0)
-    // Open high-severity finance exception recorded for refund obligation
+    // Open high-severity finance exception: the owner settles the late money outside the platform
     expect(lateState.finance_exception_status).toBe('open')
     expect(lateState.finance_exception_severity).toBe('high')
 

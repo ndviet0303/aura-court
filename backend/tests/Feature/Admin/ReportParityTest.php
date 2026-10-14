@@ -15,7 +15,6 @@ use App\Models\Refund;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Venue;
-use App\Services\Payment\OwnerRefundService;
 use App\Services\Payment\WalletPaymentService;
 use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
@@ -127,11 +126,12 @@ class ReportParityTest extends TestCase
         $this->nativeReservation($orgA, $a2, 'held', [['2026-03-14 10:00', 150000]]);
         $rsvB = $this->nativeReservation($orgB, $b1, 'confirmed', [['2026-03-13 10:00', 200000]]);
 
-        // V1 cancellation through an approved owner refund: the mirror and its slots cancel, the frozen booking row stays.
+        // Historical V1 cancellation through an approved owner refund: the mirror and its slots were cancelled, the frozen booking row stays.
         $mirror = $this->mirrorOf($v1Cancelled);
-        $approved = $this->ownerRefund($mirror, 'requested', 100000, 90000, 'REF-PARITY-APPROVED', $v1Cancelled->id);
-        app(OwnerRefundService::class)->approve($approved, $this->ownerA);
-        $this->assertSame('cancelled', $mirror->fresh()->status);
+        $this->ownerRefund($mirror, 'approved', 100000, 90000, 'REF-PARITY-APPROVED', $v1Cancelled->id)
+            ->update(['approved_by' => $this->ownerA->id, 'approved_at' => now()]);
+        $mirror->slots()->update(['status' => 'cancelled']);
+        $mirror->forceFill(['status' => 'cancelled', 'cancelled_at' => now()])->save();
         $this->ownerRefund($rsvA, 'requested', 40000, 40000, 'REF-PARITY-REQUESTED');
         $this->ownerRefund($rsvB, 'acknowledged', 50000, 50000, 'REF-PARITY-ACK');
 

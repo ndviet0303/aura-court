@@ -56,6 +56,8 @@ export interface CustomerProfile {
 
 export interface PosShift {
   id: number
+  // The venue has a verified owner receiving connection, so QR tender is offered.
+  qr_available?: boolean
   cashier_id?: number
   cashier_name?: string
   cashier?: {

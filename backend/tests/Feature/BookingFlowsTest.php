@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
 use App\Models\PlatformSubscription;
+use App\Models\PriceRule;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Payment\WalletPaymentService;
@@ -115,6 +116,7 @@ class BookingFlowsTest extends TestCase
         $this->fundUserWallet($user, 500000);
         $venue = Venue::firstOrFail();
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Validation', 'is_active' => true]);
+        PriceRule::create(['organization_id' => $venue->organization_id, 'court_id' => $court->id, 'type' => 'base', 'price' => 100000, 'is_active' => true]);
         $past = now()->subDay()->setTime(10, 0);
 
         $this->actingAs($user)->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$past->toIso8601String()]])->assertUnprocessable();

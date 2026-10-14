@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { TournamentAdminData, Participant, FixtureMatch } from '../../types/tournamentAdmin'
-import { SkeletonLoader } from '@/shared/components'
+import { AuraButton, SkeletonLoader } from '@/shared/components'
+import TournamentAddParticipantModal from './TournamentAddParticipantModal.vue'
 
 const props = defineProps<{
   tournament: TournamentAdminData
@@ -11,7 +12,11 @@ const props = defineProps<{
   loading?: boolean
 }>()
 
+const emit = defineEmits<{ (e: 'participant-added'): void }>()
+
 const { t } = useI18n()
+const addingParticipant = ref(false)
+const paid = computed(() => /[1-9]/.test(props.tournament.entryFee ?? ''))
 
 const totalParticipants = computed(() => props.participants?.length || 0)
 const totalMatches = computed(() => props.matches?.length || 0)
@@ -47,7 +52,23 @@ const venueLabel = computed(() => {
         <h3 class="overview-title">{{ t('admin.tournaments.overviewTitle') }}</h3>
         <p class="overview-sub">{{ t('admin.tournaments.overviewSub') }}</p>
       </div>
+      <AuraButton
+        class="add-participant-btn"
+        variant="secondary"
+        size="sm"
+        icon="person_add"
+        @click="addingParticipant = true"
+      >
+        {{ t('admin.tournaments.addParticipantBtn') }}
+      </AuraButton>
     </div>
+    <TournamentAddParticipantModal
+      :show="addingParticipant"
+      :tournament-id="tournament.id"
+      :paid="paid"
+      @close="addingParticipant = false"
+      @added="((addingParticipant = false), emit('participant-added'))"
+    />
 
     <!-- KPI Cards with Skeleton Loading -->
     <div v-if="loading" class="kpi-cards-grid">
@@ -133,6 +154,10 @@ const venueLabel = computed(() => {
   border-radius: 16px;
   border: 1px solid var(--outline, #e2e8f0);
   padding: 20px;
+}
+
+.add-participant-btn {
+  margin-left: auto;
 }
 
 .title-with-icon {

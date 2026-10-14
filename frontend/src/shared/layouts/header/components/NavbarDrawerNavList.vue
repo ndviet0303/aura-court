@@ -37,12 +37,14 @@ const isCommunityActive = computed(() => {
   )
 })
 
-const bookingItems = [
+const bookingItems = computed(() => [
   { to: '/courts', icon: 'stadium', key: 'nav.courts' },
   { to: '/booking', icon: 'calendar_month', key: 'nav.booking' },
   { to: '/recurring-booking', icon: 'event_repeat', key: 'nav.recurringBooking' },
-  { to: '/wallet', icon: 'account_balance_wallet', key: 'nav.wallet' },
-]
+  ...(auth.walletEnabled
+    ? [{ to: '/wallet', icon: 'account_balance_wallet', key: 'nav.wallet' }]
+    : []),
+])
 
 const communityItems = [
   { to: '/resale', icon: 'swap_horiz', key: 'nav.resale' },

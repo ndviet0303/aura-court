@@ -30,7 +30,7 @@ const emit = defineEmits<{
 
       <div class="hero-badges">
         <div class="trust-pill">
-          <span class="material-symbols-outlined icon-trust">verified_user</span>
+          <span class="material-symbols-outlined icon-trust">swap_horiz</span>
           <span>{{ $t('resale.escrowBadge') }}</span>
         </div>
         <div class="trust-pill">

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Contracts\Repositories\CourtBlockRepositoryInterface;
 use App\Contracts\Repositories\PaymentRepositoryInterface;
-use App\Contracts\Repositories\RefundRepositoryInterface;
 use App\Contracts\Repositories\VenueRepositoryInterface;
 use App\Contracts\Storage\FileStorageServiceInterface;
 use App\Domain\Admin\Actions\CreateVenue;
@@ -40,7 +39,6 @@ class AdminController extends Controller
         private readonly VenueRepositoryInterface $venues,
         private readonly CourtBlockRepositoryInterface $courtBlocks,
         private readonly PaymentRepositoryInterface $payments,
-        private readonly RefundRepositoryInterface $refunds,
         private readonly AuditLogger $audits,
         private readonly FileStorageServiceInterface $fileStorage,
         private readonly CreateVenue $createVenueAction,
@@ -347,11 +345,6 @@ class AdminController extends Controller
         $this->audits->record(request(), 'court_block.deleted', $block, ['court_id' => $court->id]);
 
         return ['message' => 'Đã mở khóa lịch sân.'];
-    }
-
-    public function refunds(Request $request)
-    {
-        return $this->refunds->paginateHistory(30);
     }
 
     public function payments(Request $request)

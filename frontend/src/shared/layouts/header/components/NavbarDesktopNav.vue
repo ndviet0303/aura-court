@@ -45,9 +45,7 @@ function handleOutsideClick(event: MouseEvent) {
 }
 
 function handleEscape(event: KeyboardEvent) {
-  if (event.key === 'Escape') {
-    closeMenu()
-  }
+  if (event.key === 'Escape') closeMenu()
 }
 
 watch(() => route.path, closeMenu)
@@ -140,7 +138,13 @@ const partnerRoute = computed(() =>
             <span class="material-symbols-outlined">event_repeat</span>
             <span>{{ $t('nav.recurringBooking') }}</span>
           </RouterLink>
-          <RouterLink to="/wallet" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
+          <RouterLink
+            v-if="auth.walletEnabled"
+            to="/wallet"
+            class="nav-dropdown-item"
+            role="menuitem"
+            @click="closeMenu"
+          >
             <span class="material-symbols-outlined">account_balance_wallet</span>
             <span>{{ $t('nav.wallet') }}</span>
           </RouterLink>

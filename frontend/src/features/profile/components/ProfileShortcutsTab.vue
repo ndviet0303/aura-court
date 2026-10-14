@@ -64,6 +64,7 @@ const userShortcuts = [
     color: '#10b981',
   },
 ]
+const shown = computed(() => userShortcuts.filter((s) => auth.walletEnabled || s.key !== 'Wallet'))
 </script>
 
 <template>
@@ -98,9 +99,8 @@ const userShortcuts = [
       </div>
     </RouterLink>
 
-    <!-- Balanced 2-Column User Shortcuts Grid -->
     <div class="shortcuts-grid">
-      <RouterLink v-for="s in userShortcuts" :key="s.path" :to="s.path" class="shortcut-card">
+      <RouterLink v-for="s in shown" :key="s.path" :to="s.path" class="shortcut-card">
         <div class="shortcut-icon-box" :style="{ color: s.color, backgroundColor: `${s.color}15` }">
           <span class="material-symbols-outlined">{{ s.icon }}</span>
         </div>

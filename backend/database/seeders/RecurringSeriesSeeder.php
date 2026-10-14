@@ -14,17 +14,21 @@ use App\Services\Booking\RecurringSeriesService;
 use App\Services\Reservation\PriceQuoteService;
 use Carbon\Carbon;
 use Database\Seeders\Concerns\FindsFreeCourtTime;
+use Database\Seeders\Concerns\PaysVenueOwner;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 
 class RecurringSeriesSeeder extends Seeder
 {
     use FindsFreeCourtTime;
+    use PaysVenueOwner;
 
     /**
      * [contract no, club, club phone, contact (khachNN), court slug, ISO weekdays, start hour, hours, first month (relative to this month), months, state].
      * active: paid up to the coming period, later periods pending; overdue: this month's invoice went unpaid, so its sessions were released;
-     * cancelled: ended early, later sessions released and nothing invoiced after the cancellation.
+     * cancelled: ended early like RecurringReleaseService::cancelSeries, so paid periods stay booked, the unpaid sessions after
+     * them were released and nothing was invoiced after the cancellation. Paid invoices were paid to the venue owner's connection.
      */
     private const CONTRACTS = [
         [1, 'CLB Cầu Lông Tân Bình Pro', '0908 123 456', 22, 'san-11-sai-gon-central-bwf', [1, 3], 19, 2, -2, 4, 'active'],
@@ -54,10 +58,11 @@ class RecurringSeriesSeeder extends Seeder
             }
 
             $signedAt = $from->copy()->subDays(9 + $no)->setTime(9 + $no, 30);
-            // overdue: the hourly sweep after this month's due date released the whole period; cancelled: two days before that due date.
+            // overdue: the hourly sweep after this month's due date released the whole period; cancelled: two days before that
+            // due date, releasing only this month's unpaid sessions.
             [$releaseFrom, $releasedAt] = match ($state) {
                 'overdue' => [$thisMonth->copy(), $thisMonth->copy()->subDays(7)->addHour()],
-                'cancelled' => [$thisMonth->copy()->subDays(9)->setTime(10, 0), $thisMonth->copy()->subDays(9)->setTime(10, 0)],
+                'cancelled' => [$thisMonth->copy(), $thisMonth->copy()->subDays(9)->setTime(10, 0)],
                 default => [null, null],
             };
             $plan = fn (Court $candidate, int $at): array => $recurring->generateOccurrences(
@@ -158,7 +163,7 @@ class RecurringSeriesSeeder extends Seeder
                     'total_amount' => $session['amount'],
                     'confirmed_at' => $signedAt,
                     'cancelled_at' => $released ? $releasedAt : null,
-                    'payment_model' => 'legacy_wallet_v1',
+                    'payment_model' => 'direct_owner_v1',
                     'metadata' => ['type' => 'recurring_series', 'series_id' => $series->id],
                     'created_at' => $signedAt,
                     'updated_at' => $changedAt,
@@ -206,7 +211,8 @@ class RecurringSeriesSeeder extends Seeder
             }
 
             foreach ($invoices as $month => $invoice) {
-                MonthlyInvoice::forceCreate([
+                $reference = $invoice['paid_at'] ? 'AC'.Str::upper(Str::random(18)) : null;
+                $monthly = MonthlyInvoice::forceCreate([
                     'uuid' => Uuid::uuid5(Uuid::NAMESPACE_URL, "auracourt-demo/invoice/{$contractCode}/{$month}")->toString(),
                     'organization_id' => $series->organization_id,
                     'recurring_series_id' => $series->id,
@@ -215,12 +221,15 @@ class RecurringSeriesSeeder extends Seeder
                     'due_at' => $invoice['due_at'],
                     'amount' => $invoice['amount'],
                     'status' => $invoice['status'],
-                    'payment_reference' => $invoice['paid_at'] ? sprintf('CK %s T%s', $contractCode, $invoice['period_start']->format('m/Y')) : null,
+                    'payment_reference' => $reference,
                     'paid_at' => $invoice['paid_at'],
                     'overdue_at' => $invoice['status'] === 'overdue' ? $releasedAt : null,
                     'created_at' => $signedAt,
                     'updated_at' => $invoice['paid_at'] ?? ($invoice['status'] === 'overdue' ? $releasedAt : $signedAt),
                 ]);
+                if ($reference) {
+                    $this->payOwner($court->venue, $contact, 'recurring_period', "rec_series:{$series->id}:invoice:{$monthly->id}", $invoice['amount'], $invoice['paid_at']->copy()->subMinutes(4), $invoice['paid_at'], $reference);
+                }
             }
         }
     }

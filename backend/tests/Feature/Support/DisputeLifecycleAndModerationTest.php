@@ -19,6 +19,8 @@ use App\Models\User;
 use App\Models\Venue;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class DisputeLifecycleAndModerationTest extends TestCase
@@ -498,9 +500,10 @@ class DisputeLifecycleAndModerationTest extends TestCase
     }
 
     /**
-     * Test 5: Decision versions and linked OwnerRefundObligation: obligation created in approved status, NOT auto-paid.
+     * Test 5: A judgment in favour of the payer records the finding and notifies both parties; it creates no refund
+     * obligation or task, claims no money moved, and the retired resolve_and_refund decision is rejected.
      */
-    public function test_decision_creates_owner_refund_obligation_in_approved_status_not_autopaid(): void
+    public function test_refund_judgment_records_the_finding_without_a_refund_obligation(): void
     {
         $booking = $this->createBooking($this->customerAlice, $this->courtA);
         $dispute = $this->createDisputeCase(
@@ -513,46 +516,41 @@ class DisputeLifecycleAndModerationTest extends TestCase
             $booking
         );
 
-        $arbitrateRes = $this->actingAs($this->platformAdmin)
+        $this->actingAs($this->platformAdmin)
             ->postJson("/api/admin/disputes/{$dispute->id}/arbitrate", [
                 'decision' => 'resolve_and_refund',
                 'refund_amount' => 200000,
-                'refund_method' => 'owner_direct',
-                'notes' => 'Chấp thuận hoàn lại 200,000 VND cho khách do sân lỗi.',
+                'notes' => 'Quyết định đã bị gỡ bỏ.',
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('decision');
+        $this->assertSame('investigating', $dispute->fresh()->status);
+
+        $arbitrateRes = $this->actingAs($this->platformAdmin)
+            ->postJson("/api/admin/disputes/{$dispute->id}/arbitrate", [
+                'decision' => 'resolve',
+                'refund_amount' => 200000,
+                'notes' => 'Chủ sân nợ khách 200,000 VND do sân lỗi; hai bên tự thanh toán ngoài hệ thống.',
             ]);
 
         $arbitrateRes->assertOk();
-        $this->assertSame('Đã ban hành phán quyết và tạo nghĩa vụ hoàn tiền chờ chủ cơ sở thực hiện.', $arbitrateRes->json('message'));
-        $this->assertFalse(str_contains($arbitrateRes->json('message'), 'thành công'));
+        $this->assertSame('Đã ban hành phán quyết và giải quyết tranh chấp.', $arbitrateRes->json('message'));
         $this->assertSame('resolved', $arbitrateRes->json('data.status'));
-        $this->assertFalse($arbitrateRes->json('data.payment_completed'));
-        $this->assertSame('approved', $arbitrateRes->json('data.refund_obligation_status'));
+        $this->assertSame(200000, $arbitrateRes->json('data.refund_amount'));
+        $this->assertArrayNotHasKey('payment_completed', $arbitrateRes->json('data'));
 
         $dispute->refresh();
-
-        $this->assertSame('resolved', $dispute->status);
-        $obligation = OwnerRefundObligation::findOrFail($dispute->refund_obligation_id);
-        $this->assertEquals(200000, $obligation->amount);
-        $this->assertEquals($this->tenantA->id, $obligation->organization_id);
-        $this->assertEquals($this->venueA->id, $obligation->venue_id);
-        $this->assertEquals($this->ownerA->id, $obligation->payer_id);
-
-        // CRITICAL CHECK: Status is APPROVED, NOT paid or acknowledged!
-        $this->assertSame(OwnerRefundObligation::STATUS_APPROVED, $obligation->status);
-        $this->assertNull($obligation->recipient_acknowledged_at);
-        $this->assertNull($obligation->owner_reported_at);
-
-        // Outbox notification sent to complainant and respondent
-        $this->assertDatabaseHas('outbox_messages', [
-            'event_type' => 'dispute.arbitrated',
-            'aggregate_id' => $dispute->id,
-        ]);
+        $this->assertSame('resolve', $dispute->resolution_decision);
+        $this->assertNull($dispute->refund_obligation_id);
+        $this->assertSame(0, OwnerRefundObligation::count());
+        $this->assertNotContains('refund_task_created', collect($dispute->timeline_events)->pluck('event')->all());
+        $this->assertSame(2, DB::table('outbox_messages')->where('event_type', 'dispute.arbitrated')->where('aggregate_id', $dispute->id)->count());
     }
 
     /**
-     * Test 6: Close gate: blocks closure (409) while refund obligation is pending; allows closure after obligation is acknowledged.
+     * Test 6: A historical dispute still linked to an unsettled refund obligation can be closed; the obligation stays as history.
      */
-    public function test_close_gate_blocks_pending_obligation_and_allows_after_settlement(): void
+    public function test_close_is_not_gated_on_a_historical_refund_obligation(): void
     {
         $booking = $this->createBooking($this->customerAlice, $this->courtA);
         $dispute = $this->createDisputeCase(
@@ -560,92 +558,26 @@ class DisputeLifecycleAndModerationTest extends TestCase
             $this->venueA,
             $this->customerAlice,
             $this->ownerA,
-            'investigating',
+            'resolved',
             'DSP-GATE-1',
             $booking
         );
+        $obligation = OwnerRefundObligation::create([
+            'organization_id' => $this->tenantA->id, 'venue_id' => $this->venueA->id, 'booking_id' => $booking->id,
+            'payer_id' => $this->ownerA->id, 'reference_code' => 'REF-DSP-HISTORY', 'idempotency_key' => 'dispute_refund_history',
+            'request_fingerprint' => hash('sha256', 'dispute_refund_history'), 'slot_ids' => [], 'gross_amount' => 150000,
+            'fee_amount' => 0, 'amount' => 150000, 'currency' => 'VND', 'status' => OwnerRefundObligation::STATUS_APPROVED,
+            'reason' => 'Historical dispute refund', 'policy_snapshot' => [], 'recipient_ciphertext' => Crypt::encryptString('{}'),
+            'due_at' => now()->addDays(7), 'requested_at' => now(), 'approved_at' => now(), 'requested_by' => $this->platformAdmin->id,
+        ]);
+        $dispute->update(['resolution_decision' => 'resolve_and_refund', 'refund_obligation_id' => $obligation->id]);
 
-        // Arbitrate with refund
-        $arbRes = $this->actingAs($this->platformAdmin)
-            ->postJson("/api/disputes/{$dispute->id}/arbitrate", [
-                'decision' => 'resolve_and_refund',
-                'refund_amount' => 150000,
-                'notes' => 'Hoàn tiền cho khách hàng',
-            ]);
-        $arbRes->assertOk();
-
-        $dispute->refresh();
-        $this->assertSame('resolved', $dispute->status);
-        $this->assertTrue($arbRes->json('data.has_pending_execution'));
-
-        $obligation = OwnerRefundObligation::findOrFail($dispute->refund_obligation_id);
-        $this->assertSame(OwnerRefundObligation::STATUS_APPROVED, $obligation->status);
-
-        // 1. Trying to close while obligation is still in 'approved' status -> 409 Conflict
         $closeRes = $this->actingAs($this->platformAdmin)
             ->postJson("/api/admin/disputes/{$dispute->id}/close");
 
-        $closeRes->assertStatus(409)
-            ->assertJsonFragment([
-                'message' => 'Cannot close dispute: pending refund obligation must be executed or settled first.',
-            ]);
-        $this->assertSame('resolved', $dispute->fresh()->status);
-
-        // 2. Owner acknowledges / settles the obligation
-        $obligation->update([
-            'status' => OwnerRefundObligation::STATUS_ACKNOWLEDGED,
-            'recipient_acknowledged_at' => now(),
-        ]);
-
-        // 3. Close dispute now succeeds when obligation is acknowledged
-        $closeSuccessRes = $this->actingAs($this->platformAdmin)
-            ->postJson("/api/admin/disputes/{$dispute->id}/close");
-
-        $closeSuccessRes->assertOk();
-        $this->assertFalse($closeSuccessRes->json('data.has_pending_execution'));
-        $dispute->refresh();
-        $this->assertSame('closed', $dispute->status);
-
-        $events = $dispute->timeline_events ?? [];
-        $lastEvent = end($events);
-        $this->assertSame('dispute_closed', $lastEvent['event']);
-
-        // 4. Verify closing also works when obligation is rejected
-        $booking2 = $this->createBooking($this->customerAlice, $this->courtA, now()->subDays(3)->setTime(16, 0));
-        $disputeRejected = $this->createDisputeCase(
-            $this->tenantA,
-            $this->venueA,
-            $this->customerAlice,
-            $this->ownerA,
-            'investigating',
-            'DSP-GATE-2',
-            $booking2
-        );
-
-        $arbRes2 = $this->actingAs($this->platformAdmin)
-            ->postJson("/api/disputes/{$disputeRejected->id}/arbitrate", [
-                'decision' => 'resolve_and_refund',
-                'refund_amount' => 100000,
-                'notes' => 'Hoàn tiền cho vụ việc thứ hai',
-            ]);
-        $arbRes2->assertOk();
-        $disputeRejected->refresh();
-        $this->assertSame('resolved', $disputeRejected->status);
-        $this->assertTrue($arbRes2->json('data.has_pending_execution'));
-        $obligation2 = OwnerRefundObligation::findOrFail($disputeRejected->refund_obligation_id);
-        $obligation2->update([
-            'status' => OwnerRefundObligation::STATUS_REJECTED,
-            'rejected_at' => now(),
-            'rejected_by' => $this->ownerA->id,
-        ]);
-
-        $closeRejectedRes = $this->actingAs($this->platformAdmin)
-            ->postJson("/api/admin/disputes/{$disputeRejected->id}/close");
-
-        $closeRejectedRes->assertOk();
-        $this->assertFalse($closeRejectedRes->json('data.has_pending_execution'));
-        $disputeRejected->refresh();
-        $this->assertSame('closed', $disputeRejected->status);
+        $closeRes->assertOk()->assertJsonPath('data.refund_obligation_id', $obligation->id);
+        $this->assertSame('closed', $dispute->fresh()->status);
+        $this->assertSame(OwnerRefundObligation::STATUS_APPROVED, $obligation->fresh()->status);
     }
 
     /**
@@ -800,37 +732,6 @@ class DisputeLifecycleAndModerationTest extends TestCase
             ->assertOk();
 
         $this->assertContains('dispute.arbitrated', $this->ownerA->notifications()->get()->pluck('data.event'));
-    }
-
-    /**
-     * Test 10: A refund judgment on a dispute stored without a respondent charges the organization's active owner.
-     */
-    public function test_refund_judgment_without_respondent_charges_active_organization_owner(): void
-    {
-        $activeOwner = $this->replaceOwner($this->tenantA, $this->ownerA);
-        $booking = $this->createBooking($this->customerAlice, $this->courtA);
-        $dispute = $this->createDisputeCase(
-            $this->tenantA,
-            $this->venueA,
-            $this->customerAlice,
-            $this->ownerA,
-            'investigating',
-            'DSP-NO-RESPONDENT',
-            $booking
-        );
-        $dispute->update(['respondent_id' => null]);
-
-        $this->actingAs($this->platformAdmin)
-            ->postJson("/api/admin/disputes/{$dispute->id}/arbitrate", [
-                'decision' => 'resolve_and_refund',
-                'refund_amount' => 150000,
-                'refund_method' => 'owner_direct',
-                'notes' => 'Hoàn tiền cho khách do sân lỗi.',
-            ])
-            ->assertOk();
-
-        $obligation = OwnerRefundObligation::findOrFail($dispute->fresh()->refund_obligation_id);
-        $this->assertEquals($activeOwner->id, $obligation->payer_id);
     }
 
     /**

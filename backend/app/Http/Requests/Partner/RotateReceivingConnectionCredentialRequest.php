@@ -31,7 +31,7 @@ class RotateReceivingConnectionCredentialRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'hmac_secret' => ['required', 'string', 'min:32', 'max:512'],
+            'webhook_api_key' => ['required', 'string', 'min:32', 'max:512', 'regex:/^[A-Za-z0-9_-]+$/'],
             'bank_password' => ['prohibited'],
             'bank_login_password' => ['prohibited'],
             'api_key' => ['prohibited'],

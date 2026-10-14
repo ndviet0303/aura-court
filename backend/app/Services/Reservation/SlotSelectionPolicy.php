@@ -17,8 +17,8 @@ use Illuminate\Validation\ValidationException;
  * This is the single source of truth for "Active inventory exclusivity"
  * (reservations-and-pricing spec): interval duration, venue calendar,
  * book-ahead horizon, continuity policy and true-interval overlap are checked
- * atomically at allocation and replacement, so V1/V2/reschedule reject the same
- * selections consistently.
+ * atomically at allocation, so every booking path rejects the same selections
+ * consistently.
  *
  * Overlap/calendar/past always apply. Horizon/duration/continuity apply only
  * when the venue's live booking policy defines them; venues without a policy
@@ -33,13 +33,9 @@ class SlotSelectionPolicy
 
     /**
      * @param  array<int, array{start: \DateTimeInterface|string, end: \DateTimeInterface|string}>  $intervals
-     * @param  int|null  $excludeReservationId  reservation whose own slots are ignored (reschedule replacement)
      */
-    public function assertAllowed(
-        Court $court,
-        array $intervals,
-        ?int $excludeReservationId = null,
-    ): void {
+    public function assertAllowed(Court $court, array $intervals): void
+    {
         if ($intervals === []) {
             return;
         }
@@ -125,7 +121,6 @@ class SlotSelectionPolicy
                 ->where('starts_at', '<', $endUtc)
                 ->where('ends_at', '>', $startUtc)
                 ->whereIn('status', ['held', 'confirmed'])
-                ->when($excludeReservationId !== null, fn ($query) => $query->where('reservation_id', '!=', $excludeReservationId))
                 ->whereHas('reservation', fn ($reservation) => $reservation->whereIn('status', ['held', 'confirmed']))
                 ->exists();
             if ($reservationConflict) {
@@ -137,15 +132,7 @@ class SlotSelectionPolicy
                 ->where('starts_at', '<', $endUtc)
                 ->where('ends_at', '>', $startUtc)
                 ->whereIn('status', ['open', 'active'])
-                ->where(function ($q) use ($excludeReservationId) {
-                    $q->where('is_owner_hosted', true)
-                        ->orWhere(function ($sub) use ($excludeReservationId) {
-                            $sub->whereNull('reservation_id');
-                            if ($excludeReservationId !== null) {
-                                $sub->orWhere('reservation_id', '!=', $excludeReservationId);
-                            }
-                        });
-                })
+                ->where(fn ($q) => $q->where('is_owner_hosted', true)->orWhereNull('reservation_id'))
                 ->exists();
             if ($matchConflict) {
                 abort(409, 'Court interval is reserved for a community/hosted activity.');

@@ -10,6 +10,7 @@ export interface TenantCapabilities {
   marketplace_slot_resale?: boolean
   social_matchmaking_tournaments?: boolean
   tenant_pos_and_wallet?: boolean
+  direct_owner_payments?: boolean
   [key: string]: boolean | undefined
 }
 

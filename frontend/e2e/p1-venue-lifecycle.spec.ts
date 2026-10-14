@@ -156,17 +156,6 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
               max_duration_minutes: 180,
               require_continuity: true,
             },
-            cancellation: {
-              deadline_hours: 12,
-              fee_type: 'none',
-              fee_value: 0,
-              refund_due_hours: 24,
-            },
-            change: {
-              deadline_hours: 6,
-              fee_type: 'none',
-              fee_value: 0,
-            },
             arrival: {
               early_minutes: 15,
               late_grace_minutes: 15,
@@ -182,9 +171,7 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
               cutoff_hours: 2,
               max_consideration_percent: 100,
               free_transfer_allowed: true,
-              seller_reimbursement_required: false,
             },
-            ancillary_credit_policy: 'refund',
           },
         })
       },
@@ -366,17 +353,6 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
             'max_duration_minutes' => 180,
             'require_continuity' => true,
           ],
-          'cancellation' => [
-            'deadline_hours' => 12,
-            'fee_type' => 'none',
-            'fee_value' => 0,
-            'refund_due_hours' => 24,
-          ],
-          'change' => [
-            'deadline_hours' => 6,
-            'fee_type' => 'none',
-            'fee_value' => 0,
-          ],
           'arrival' => [
             'early_minutes' => 15,
             'late_grace_minutes' => 15,
@@ -392,9 +368,7 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
             'cutoff_hours' => 2,
             'max_consideration_percent' => 100,
             'free_transfer_allowed' => true,
-            'seller_reimbursement_required' => false,
           ],
-          'ancillary_credit_policy' => 'refund',
         ],
       ]);
 

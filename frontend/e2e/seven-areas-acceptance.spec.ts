@@ -25,9 +25,9 @@ test.describe('Ma trận kiểm thử chấp nhận 7 phân hệ chức năng @s
     await expect(page.locator('[role="alert"], .error-banner').first()).toBeVisible({
       timeout: 10000,
     })
-    // Unauthenticated guard on protected route redirects to login
-    await page.goto('/wallet', { waitUntil: 'domcontentloaded' })
-    await expect(page).toHaveURL(/.*login.*redirect=.*wallet/)
+    // Unauthenticated guard on protected route redirects to login (the wallet is capability-gated)
+    await page.goto('/profile', { waitUntil: 'domcontentloaded' })
+    await expect(page).toHaveURL(/.*login.*redirect=.*profile/)
   })
 
   test('Khu 2: Danh mục và lịch sân - duyệt sân, tìm kiếm và điều hướng chi tiết', async ({

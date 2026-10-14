@@ -4,6 +4,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import PosView from '../views/PosView.vue'
 import { i18n } from '@/i18n'
 import { posApi } from '../api/posApi'
+import { api } from '@/core/api/client'
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ query: {}, params: {} }),
@@ -33,6 +34,9 @@ vi.mock('../api/posApi', () => ({
     createProduct: vi.fn(),
     adjustStock: vi.fn(),
     completeOrder: vi.fn(),
+    getOrder: vi.fn(),
+    cancelQrPayment: vi.fn(),
+    getTab: vi.fn(),
     getShifts: vi.fn(),
     getActiveShift: vi.fn(),
     openShift: vi.fn(),
@@ -158,5 +162,62 @@ describe('PosView (/admin/pos)', () => {
     await shiftBtn.trigger('click')
 
     expect(wrapper.text()).toContain('Quản Lý Ca Thu Ngân')
+  })
+  it('shows the owner QR without a manual confirm and completes when the receipt lands', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+    vi.mocked(api.get).mockResolvedValueOnce({
+      organization_id: 1,
+      capabilities: { tenant_pos_and_wallet: true, direct_owner_payments: true },
+      role: 'cashier',
+      is_platform_admin: false,
+    })
+    vi.mocked(posApi.getActiveShift).mockResolvedValue({
+      id: 7,
+      status: 'open',
+      qr_available: true,
+      opened_at: '2026-10-14 08:00:00',
+    })
+    const order = { id: 9, status: 'pending_payment', total_amount: 15000 }
+    vi.mocked(posApi.completeOrder).mockResolvedValue({
+      order,
+      payment_attempt: {
+        reference: 'ACOWNERREF',
+        amount: 15000,
+        qr_url: 'https://img.vietqr.io/image/MB-0987654321-compact2.png',
+        receiver: { bank_code: 'MB', account_number: '0987654321', account_name: 'CHU SAN' },
+      },
+    })
+    vi.mocked(posApi.getOrder).mockResolvedValue({
+      order: { ...order, status: 'completed' },
+      receipt: { order_code: 'ACOWNERREF', payment_method: 'qr', items: [], grand_total: 15000 },
+      payment_attempt: null,
+    })
+
+    const wrapper = mount(PosView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    const tenders = wrapper.findAll('.pay-method-btn')
+    expect(tenders.map((b) => b.find('.method-text').text())).not.toContain(
+      i18n.global.t('admin.pos.payWallet'),
+    )
+    await wrapper.findAll('.product-card')[0]!.trigger('click')
+    await tenders
+      .find((b) => b.find('.method-text').text() === i18n.global.t('admin.pos.payQr'))!
+      .trigger('click')
+    await wrapper.find('.checkout-submit-btn').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('0987654321')
+    expect(wrapper.text()).toContain('ACOWNERREF')
+    expect(wrapper.find('.btn-confirm').exists()).toBe(false)
+
+    await vi.advanceTimersByTimeAsync(3000)
+    await flushPromises()
+
+    expect(posApi.getOrder).toHaveBeenCalledWith(9)
+    expect(wrapper.find('.qr-modal-card').exists()).toBe(false)
+    expect(wrapper.find('.cart-count-badge').exists()).toBe(false)
+    wrapper.unmount()
+    vi.useRealTimers()
   })
 })

@@ -6,6 +6,7 @@ use App\Domain\Partner\Services\PartnerRolloutService;
 use App\Domain\Subscription\Actions\EvaluatePlatformEntitlement;
 use App\Models\Court;
 use App\Models\Venue;
+use App\Services\Reservation\CourtPriceRuleService;
 use Illuminate\Validation\ValidationException;
 
 class VerifyEffectiveBookingEligibility
@@ -14,6 +15,7 @@ class VerifyEffectiveBookingEligibility
 
     public function __construct(
         private readonly EvaluatePlatformEntitlement $entitlementEvaluator,
+        private readonly CourtPriceRuleService $priceRules,
     ) {}
 
     public function getEntitlement(int $orgId): array
@@ -53,6 +55,16 @@ class VerifyEffectiveBookingEligibility
             return $venueEligibility + [
                 'court' => $courtModel,
                 'is_nonpublic' => ! $courtModel->venue->isPublished() || ! $courtModel->venue->is_active,
+            ];
+        }
+
+        if (! $this->priceRules->isPriced($courtModel)) {
+            return [
+                'eligible' => false,
+                'reason' => 'COURT_UNPRICED',
+                'message' => 'Sân chưa được cấu hình giá.',
+                'court' => $courtModel,
+                'is_nonpublic' => true,
             ];
         }
 

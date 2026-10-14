@@ -41,7 +41,7 @@ const { t } = useI18n()
         <span>{{ t('admin.disputes.btnRelocate') }}</span>
       </button>
 
-      <!-- Button 3: Main Action - Arbitrate & Refund -->
+      <!-- Button 3: Main Action - Arbitrate -->
       <button
         type="button"
         class="btn-arbitrate"

@@ -24,6 +24,8 @@ const {
   filteredTournaments,
   resetFilters,
   registerAthlete,
+  registrationPayment,
+  registrationPaid,
 } = useTournamentsList()
 </script>
 
@@ -68,7 +70,6 @@ const {
       </div>
     </header>
 
-    <!-- Feedback Notice Alerts -->
     <transition name="fade">
       <div v-if="notice" class="alert-pill-success" role="status">
         <span class="material-symbols-outlined alert-ico">check_circle</span>
@@ -83,13 +84,11 @@ const {
       </div>
     </transition>
 
-    <!-- Circuit Leaderboard (when API data exists) -->
     <CircuitLeaderboardCard
       v-if="circuitLeaderboard && circuitLeaderboard.length > 0"
       :leaderboard="circuitLeaderboard"
     />
 
-    <!-- Filters Toolbar -->
     <TournamentFilters
       :active-tab="activeTab"
       :search-query="searchQuery"
@@ -105,7 +104,6 @@ const {
       @reset="resetFilters"
     />
 
-    <!-- Skeleton Loading State -->
     <div v-if="loading" class="tournaments-grid">
       <div v-for="i in 6" :key="i" class="tournament-skeleton-card">
         <SkeletonLoader type="rect" width="100%" height="190px" rounded="18px 18px 0 0" />
@@ -149,8 +147,10 @@ const {
       :show="!!selectedTournamentForRegister"
       :tournament="selectedTournamentForRegister"
       :loading="processing"
+      :payment="registrationPayment"
       @close="selectedTournamentForRegister = null"
       @submit="registerAthlete"
+      @paid="registrationPaid"
     />
 
     <!-- Quick Mini Bracket Preview Modal -->

@@ -15,7 +15,6 @@ use App\Models\OrganizationMember;
 use App\Models\OwnerPaymentAllocation;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
-use App\Models\OwnerRefundObligation;
 use App\Models\PlatformPaymentAttempt;
 use App\Models\PlatformPlan;
 use App\Models\PlatformProviderReceipt;
@@ -35,12 +34,12 @@ use App\Models\User;
 use App\Models\Venue;
 use App\Models\VenueBookingPolicy;
 use App\Services\Payment\OwnerPaymentAttemptService;
-use App\Services\Payment\OwnerRefundService;
 use App\Services\Payment\ProviderEventHandler;
 use App\Services\Payment\SplitPaymentService;
 use App\Services\Payment\WalletPaymentService;
 use App\Services\POS\PosService;
 use App\Services\Social\MarketplaceService;
+use App\Services\Social\PeerToPeerResaleService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
@@ -52,7 +51,7 @@ use Tests\TestCase;
 /**
  * Task 13.3 — Comprehensive Concurrency and Retry Invariants Acceptance Suite
  *
- * Verifies zero double effects across 9 concurrency and idempotent retry scenarios:
+ * Verifies zero double effects across 8 concurrency and idempotent retry scenarios:
  * 1. Court overlap: Contending attempts on the exact same court and slot.
  * 2. Points & Coupon use: Concurrent usage of the same coupon or user point balance.
  * 3. Final stock in POS: 1 unit remaining in inventory under concurrent purchases.
@@ -60,7 +59,6 @@ use Tests\TestCase;
  * 5. Marketplace transfer: Concurrent purchases for the same secondary listing.
  * 6. Recurring series invoice: Idempotent provider webhook replay for recurring invoice.
  * 7. Platform subscription: Duplicate webhook delivery for same provider transaction.
- * 8. Refund limit: Booking with total amount 200,000 VND under excess or concurrent refunds.
  * 9. Last tournament place: Tournament with max participants reaching capacity.
  */
 class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
@@ -422,7 +420,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
     // SCENARIO 5: Marketplace Transfer
     // =========================================================================
 
-    public function test_scenario_5_marketplace_transfer_concurrent_purchases_yields_exactly_one_winner(): void
+    public function test_scenario_5_marketplace_concurrent_locks_yield_exactly_one_buyer_and_one_transfer(): void
     {
         $fixture = $this->setupTenantWithReceivingConnection();
         config(['features.flags.marketplace_slot_resale' => true]);
@@ -439,57 +437,31 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
         $sellerEntitlement = $reservation->entitlements()->firstOrFail();
         $this->assertSame(200000, $sellerEntitlement->amount);
 
-        $marketplace = app(MarketplaceService::class);
-        $listing = $marketplace->list($sellerEntitlement, $seller, 150000);
+        $listing = app(MarketplaceService::class)->list($sellerEntitlement, $seller, 150000, ['bank_code' => 'TPB', 'account_number' => '0123456789', 'account_name' => 'SELLER']);
         $this->assertSame('listed', $listing->status);
+        $lock = fn (User $buyer, string $key) => $this->actingAs($buyer)
+            ->withHeaders(['X-Organization-ID' => (string) $org->id, 'Idempotency-Key' => $key])
+            ->postJson('/api/marketplace/listings/'.$listing->id.'/checkout');
 
-        // Buyer 1 initiates checkout to get payment attempt
-        $attempt1 = $marketplace->checkout($listing, $buyer1);
+        // Buyer 1 locks first; buyer 2 racing for the same listing gets 409 and never sees the seller's account
+        $lock($buyer1, 'resale-lock-buyer-1')->assertOk()->assertJsonPath('receiver.account_number', '0123456789');
+        $res2 = $lock($buyer2, 'resale-lock-buyer-2')->assertStatus(409);
+        $this->assertStringNotContainsString('0123456789', (string) $res2->getContent());
 
-        // Buyer 1 pays via verified SePay webhook
-        $this->sendOwnerPayment($fixture, $attempt1->reference, 150000, 'buyer1-pay-evt');
-        $this->assertSame(OwnerPaymentAttempt::STATUS_PAID, $attempt1->fresh()->status);
-
-        // Owner executes seller reimbursement
-        $executionRef = 'ACREIMB'.Str::upper(Str::random(12));
-        $this->sendOwnerPayment($fixture, $executionRef, 150000, 'seller-reimb-evt');
-
-        // Buyer 1 commits purchase
-        $res1 = $this->actingAs($buyer1)
-            ->withHeaders([
-                'X-Organization-ID' => (string) $org->id,
-                'Idempotency-Key' => 'transfer-commit-buyer-1',
-            ])
-            ->postJson('/api/marketplace/listings/'.$listing->id.'/purchase', [
-                'buyer_payment_reference' => $attempt1->reference,
-                'seller_refund_reference' => $executionRef,
-                'seller_refund_accepted' => true,
-            ]);
-        $res1->assertOk();
-        $this->assertSame('completed', $res1->json('transfer.status'));
+        // Buyer 1 pays the seller directly; the seller confirms receipt exactly once
+        $resale = app(PeerToPeerResaleService::class);
+        $resale->paymentSent($listing, $buyer1);
+        $resale->confirmReceipt($listing, $seller);
         $this->assertSame('sold', $listing->fresh()->status);
-
-        // Buyer 2 concurrently attempts to purchase the same listing -> REJECTED with 409
-        $res2 = $this->actingAs($buyer2)
-            ->withHeaders([
-                'X-Organization-ID' => (string) $org->id,
-                'Idempotency-Key' => 'transfer-commit-buyer-2',
-            ])
-            ->postJson('/api/marketplace/listings/'.$listing->id.'/purchase', [
-                'buyer_payment_reference' => $attempt1->reference,
-                'seller_refund_reference' => $executionRef,
-                'seller_refund_accepted' => true,
-            ]);
-        $res2->assertStatus(409);
-        $this->assertStringContainsString('no longer available', (string) $res2->getContent());
-
-        // Also direct service call must reject
-        try {
-            $marketplace->purchase($listing->fresh(), $buyer2, 'direct-purchase-race', $attempt1->reference, $executionRef, true);
-            $this->fail('Expected purchase on sold listing to throw HttpException 409.');
-        } catch (HttpException $e) {
-            $this->assertSame(409, $e->getStatusCode());
+        foreach ([fn () => $resale->confirmReceipt($listing, $seller), fn () => $resale->lock($listing, $buyer2)] as $retry) {
+            try {
+                $retry();
+                $this->fail('Expected a sold listing to refuse another transfer.');
+            } catch (HttpException $e) {
+                $this->assertSame(409, $e->getStatusCode());
+            }
         }
+        $lock($buyer2, 'resale-lock-buyer-2-again')->assertStatus(409);
 
         // Invariants:
         // - Exactly 1 completed transfer
@@ -713,191 +685,45 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
     }
 
     // =========================================================================
-    // SCENARIO 8: Refund Limit
-    // =========================================================================
-
-    public function test_scenario_8_refund_limit_and_concurrent_requests_capped_at_original_amount(): void
-    {
-        $fixture = $this->setupTenantWithReceivingConnection();
-        $payer = $fixture['payer'];
-        $org = $fixture['organization'];
-
-        // Booking with total amount 200,000 VND
-        $slotTime = now(config('app.timezone'))->addDays(3)->setTime(10, 0);
-        $reservation = $this->createConfirmedReservation($fixture, 200000, $slotTime);
-        $slot = $reservation->slots()->firstOrFail();
-        $this->assertSame(200000, $reservation->total_amount);
-
-        // Policy allows full refund (fee_type: none)
-        $policy = $fixture['venue']->currentBookingPolicy;
-        $policy->update([
-            'settings' => array_merge($policy->settings, [
-                'cancellation' => [
-                    'deadline_hours' => 24,
-                    'fee_type' => 'none',
-                    'fee_value' => 0,
-                    'refund_due_hours' => 48,
-                ],
-            ]),
-        ]);
-
-        $recipient = [
-            'bank_code' => 'MBBank',
-            'account_name' => 'Payer Refund Account',
-            'account_number' => '0987654321',
-        ];
-
-        // 1. Initial valid refund request for the 200,000 VND slot
-        $res1 = $this->actingAs($payer)
-            ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson("/api/reservations/{$reservation->code}/refund-requests", [
-                'slot_ids' => [$slot->id],
-                'reason' => 'Customer schedule change',
-                'idempotency_key' => 'refund-req-initial-1',
-                'recipient' => $recipient,
-            ]);
-        $res1->assertCreated();
-        $this->assertSame(200000, (int) $res1->json('data.refund_amount'));
-
-        // 2. Concurrent refund request on the same slot / booking -> REJECTED with 409 conflict
-        $res2 = $this->actingAs($payer)
-            ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson("/api/reservations/{$reservation->code}/refund-requests", [
-                'slot_ids' => [$slot->id],
-                'reason' => 'Duplicate refund request attempt',
-                'idempotency_key' => 'refund-req-duplicate-2',
-                'recipient' => $recipient,
-            ]);
-        $this->assertTrue(in_array($res2->status(), [409, 422], true), "Expected 409 or 422, got {$res2->status()}");
-
-        // 3. Attempting refund exceeding 200,000 VND (e.g. 300,000 VND reschedule difference) -> REJECTED
-        $refundService = app(OwnerRefundService::class);
-        try {
-            $refundService->requestForReschedule($reservation, $payer, 300000, $recipient, 'resched-excess-1', 'RES-NEW-CODE');
-            $this->fail('Expected refund exceeding received amount to be rejected.');
-        } catch (HttpException $e) {
-            $this->assertTrue(in_array($e->getStatusCode(), [409, 422], true));
-            $this->assertStringContainsString('exceeds the amount received', $e->getMessage());
-        }
-
-        // 4. Attempting reschedule refund difference with <= 0 amount -> REJECTED with 422
-        try {
-            $refundService->requestForReschedule($reservation, $payer, 0, $recipient, 'resched-zero-1', 'RES-NEW-CODE');
-            $this->fail('Expected zero refund difference to be rejected.');
-        } catch (HttpException $e) {
-            $this->assertSame(422, $e->getStatusCode());
-            $this->assertStringContainsString('greater than zero', $e->getMessage());
-        }
-
-        // 5. Attempting cash refund without recipient bank account -> REJECTED with 422
-        $resMissingRecipient = $this->actingAs($payer)
-            ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson("/api/reservations/{$reservation->code}/refund-requests", [
-                'slot_ids' => [$slot->id],
-                'reason' => 'No bank account provided',
-                'idempotency_key' => 'refund-no-recipient-1',
-                'recipient' => [],
-            ]);
-        $this->assertSame(422, $resMissingRecipient->status());
-
-        // Invariants:
-        // - Total refunded obligations capped at original 200,000 VND amount
-        $totalRefundObligations = (int) OwnerRefundObligation::where('reservation_id', $reservation->id)->sum('amount');
-        $this->assertSame(200000, $totalRefundObligations, 'Total refund obligations must be capped at original 200,000 VND.');
-
-        // - Exactly 1 refund obligation created for this reservation
-        $this->assertSame(1, OwnerRefundObligation::where('reservation_id', $reservation->id)->count(), 'Exactly 1 refund obligation can be created.');
-    }
-
-    // =========================================================================
     // SCENARIO 9: Last Tournament Place
     // =========================================================================
 
     public function test_scenario_9_last_tournament_place_capacity_reached_rejects_concurrent_entrant(): void
     {
-        $org = Organization::create([
-            'name' => 'Tournament Org',
-            'slug' => 'tournament-org-'.Str::lower(Str::random(8)),
-            'status' => 'active',
-            'partner_status' => 'approved',
-        ]);
-        $owner = User::factory()->create(['role' => 'customer']);
-        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $owner->id, 'role' => 'organization_owner', 'status' => 'active']);
+        $fixture = $this->setupTenantWithReceivingConnection();
+        $org = $fixture['organization'];
+        $players = User::factory()->count(3)->create(['role' => 'customer']);
+        foreach ($players as $player) {
+            OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $player->id, 'role' => 'customer', 'status' => 'active']);
+        }
+        config(['features.flags.social_matchmaking_tournaments' => true]);
 
-        $player1 = User::factory()->create(['role' => 'customer']);
-        $player2 = User::factory()->create(['role' => 'customer']);
-        $player3 = User::factory()->create(['role' => 'customer']);
-        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $player1->id, 'role' => 'customer', 'status' => 'active']);
-        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $player2->id, 'role' => 'customer', 'status' => 'active']);
-        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $player3->id, 'role' => 'customer', 'status' => 'active']);
-
-        // Fund all 3 players' wallets with 500,000 VND
-        $walletService = app(WalletPaymentService::class);
-        $w1 = $walletService->getOrCreateWallet($player1->id, $org->id);
-        $w2 = $walletService->getOrCreateWallet($player2->id, $org->id);
-        $w3 = $walletService->getOrCreateWallet($player3->id, $org->id);
-        $walletService->credit($w1, 500000, 'test_fund', 1, 'Fund');
-        $walletService->credit($w2, 500000, 'test_fund', 2, 'Fund');
-        $walletService->credit($w3, 500000, 'test_fund', 3, 'Fund');
-        config([
-            'features.pilot_organizations' => [(string) $org->id],
-            'features.flags.social_matchmaking_tournaments' => true,
-            'features.flags.tenant_pos_and_wallet' => true,
-        ]);
-
-        // Tournament with max_participants = 2, entry_fee = 100,000 VND
+        // Tournament with max_participants = 2, entry_fee = 100,000 VND paid to the venue owner.
         $tournament = Tournament::create([
             'organization_id' => $org->id,
-            'created_by' => $owner->id,
-            'name' => 'Championship Final Slot Cup',
+            'venue_id' => $fixture['venue']->id,
+            'created_by' => $fixture['owner']->id,
+            'name' => 'Championship Final Place Cup',
             'format' => 'single_elimination',
             'status' => 'open',
-            'settings' => [
-                'entry_fee' => '100000',
-                'max_participants' => 2,
-            ],
+            'settings' => ['entry_fee' => '100000', 'max_participants' => 2],
         ]);
-
-        // Player 1 registers (takes slot 1 of 2)
-        $res1 = $this->actingAs($player1)
-            ->withHeaders([
-                'X-Organization-Id' => (string) $org->id,
-                'Idempotency-Key' => 'tourn-reg-player-1',
-            ])
-            ->postJson("/api/tournaments/{$tournament->id}/register");
-        $res1->assertCreated();
-
-        // Player 2 registers for the last place (slot 2 of 2) -> SUCCEEDS
-        $res2 = $this->actingAs($player2)
-            ->withHeaders([
-                'X-Organization-Id' => (string) $org->id,
-                'Idempotency-Key' => 'tourn-reg-player-2',
-            ])
-            ->postJson("/api/tournaments/{$tournament->id}/register");
-        $res2->assertCreated();
-
-        // Player 3 concurrently attempts to register when capacity is reached -> REJECTED
-        $res3 = $this->actingAs($player3)
-            ->withHeaders([
-                'X-Organization-Id' => (string) $org->id,
-                'Idempotency-Key' => 'tourn-reg-player-3',
-            ])
+        $register = fn (User $player) => $this->actingAs($player)
+            ->withHeaders(['X-Organization-Id' => (string) $org->id, 'Idempotency-Key' => 'tourn-reg-'.$player->id])
             ->postJson("/api/tournaments/{$tournament->id}/register");
 
-        // Fails with 409 / 422 tournament full error
+        // Players 1 and 2 hold both places while they pay.
+        $register($players[0])->assertAccepted();
+        $register($players[1])->assertAccepted();
+
+        // Player 3 is refused: pending payments count against capacity.
+        $res3 = $register($players[2]);
         $this->assertTrue(in_array($res3->status(), [409, 422], true), "Expected 409 or 422, got {$res3->status()}");
         $this->assertStringContainsString('maximum participant capacity', (string) $res3->getContent());
 
-        // Invariants:
-        // - Exactly 1 winner of the final slot (Player 2)
-        $this->assertSame(2, $tournament->participants()->count(), 'Tournament must have exactly 2 participants.');
-
-        // - Player 3 wallet was NOT debited
-        $this->assertSame(500000, (int) $w3->fresh()->balance, 'Player 3 wallet must remain untouched.');
-
-        // - Player 1 and Player 2 wallets were debited exactly 100,000 VND
-        $this->assertSame(400000, (int) $w1->fresh()->balance);
-        $this->assertSame(400000, (int) $w2->fresh()->balance);
+        $this->assertSame(2, OwnerPaymentAttempt::where('purpose', 'tournament_registration')->where('purpose_id', $tournament->uuid)->count());
+        $this->assertFalse(OwnerPaymentAttempt::where('user_id', $players[2]->id)->exists());
+        $this->assertSame(0, $tournament->participants()->count());
     }
 
     // =========================================================================
@@ -1101,11 +927,9 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
             'referenceCode' => 'BANK-'.$eventId,
         ];
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-        $timestamp = (string) now()->timestamp;
         $this->call('POST', '/api/v1/webhooks/sepay/connections/'.$connection->routing_id, [], [], [], [
             'CONTENT_TYPE' => 'application/json',
-            'HTTP_X_SEPAY_TIMESTAMP' => $timestamp,
-            'HTTP_X_SEPAY_SIGNATURE' => 'sha256='.hash_hmac('sha256', $timestamp.'.'.$raw, $fixture['secret']),
+            'HTTP_AUTHORIZATION' => 'Apikey '.$fixture['secret'],
         ], $raw)->assertOk();
 
         $receipt = OwnerPaymentReceipt::where('provider_event_id', $eventId)->firstOrFail();

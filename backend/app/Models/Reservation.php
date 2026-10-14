@@ -120,6 +120,7 @@ class Reservation extends Model
         return $this->hasMany(ReservationSlot::class);
     }
 
+    /** @return HasMany<ReservationEntitlement, $this> */
     public function entitlements(): HasMany
     {
         return $this->hasMany(ReservationEntitlement::class);

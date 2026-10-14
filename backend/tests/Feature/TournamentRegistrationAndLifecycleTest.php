@@ -2,21 +2,27 @@
 
 namespace Tests\Feature;
 
+use App\Models\FinanceException;
 use App\Models\Journal;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
+use App\Models\OwnerPaymentAttempt;
+use App\Models\OwnerPaymentReceipt;
+use App\Models\ReceivingConnection;
 use App\Models\Tournament;
 use App\Models\TournamentParticipant;
 use App\Models\TournamentStanding;
 use App\Models\User;
-use App\Models\WalletAccount;
+use App\Models\Venue;
 use App\Models\WalletTransaction;
 use App\Services\Tournament\TournamentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PaysOwnerByQr;
 use Tests\TestCase;
 
 class TournamentRegistrationAndLifecycleTest extends TestCase
 {
+    use PaysOwnerByQr;
     use RefreshDatabase;
 
     private Organization $organization;
@@ -29,11 +35,11 @@ class TournamentRegistrationAndLifecycleTest extends TestCase
 
     private User $player3;
 
-    private WalletAccount $wallet1;
+    private Venue $venue;
 
-    private WalletAccount $wallet2;
+    private ReceivingConnection $connection;
 
-    private WalletAccount $wallet3;
+    private string $secret;
 
     protected function setUp(): void
     {
@@ -47,8 +53,15 @@ class TournamentRegistrationAndLifecycleTest extends TestCase
         config([
             'features.pilot_organizations' => [(string) $this->organization->id],
             'features.flags.social_matchmaking_tournaments' => true,
-            'features.flags.tenant_pos_and_wallet' => true,
         ]);
+        $this->venue = Venue::create([
+            'organization_id' => $this->organization->id,
+            'name' => 'Sân Cầu Giấy',
+            'slug' => 'cau-giay-'.uniqid(),
+            'status' => 'published',
+            'is_active' => true,
+        ]);
+        [$this->connection, $this->secret] = $this->connectOwnerReceiver($this->venue);
 
         $this->owner = User::factory()->create(['name' => 'Org Owner']);
         OrganizationMember::create([
@@ -65,13 +78,6 @@ class TournamentRegistrationAndLifecycleTest extends TestCase
             'role' => 'customer',
             'status' => 'active',
         ]);
-        $this->wallet1 = WalletAccount::create([
-            'organization_id' => $this->organization->id,
-            'user_id' => $this->player1->id,
-            'currency' => 'VND',
-            'balance' => 500000,
-            'status' => 'active',
-        ]);
 
         $this->player2 = User::factory()->create(['name' => 'Player Bob']);
         OrganizationMember::create([
@@ -80,26 +86,12 @@ class TournamentRegistrationAndLifecycleTest extends TestCase
             'role' => 'customer',
             'status' => 'active',
         ]);
-        $this->wallet2 = WalletAccount::create([
-            'organization_id' => $this->organization->id,
-            'user_id' => $this->player2->id,
-            'currency' => 'VND',
-            'balance' => 300000,
-            'status' => 'active',
-        ]);
 
         $this->player3 = User::factory()->create(['name' => 'Player Charlie']);
         OrganizationMember::create([
             'organization_id' => $this->organization->id,
             'user_id' => $this->player3->id,
             'role' => 'customer',
-            'status' => 'active',
-        ]);
-        $this->wallet3 = WalletAccount::create([
-            'organization_id' => $this->organization->id,
-            'user_id' => $this->player3->id,
-            'currency' => 'VND',
-            'balance' => 50000, // Insufficient for 300k fee
             'status' => 'active',
         ]);
     }
@@ -140,66 +132,74 @@ class TournamentRegistrationAndLifecycleTest extends TestCase
         $res->assertJsonPath('tournament.max_participants', 8);
     }
 
-    public function test_paid_tournament_registration_debits_wallet_creates_participant_and_balanced_ledger(): void
+    private function paidTournament(int $maxParticipants = 16, array $settings = []): Tournament
     {
-        $tournament = Tournament::create([
+        return Tournament::create([
             'organization_id' => $this->organization->id,
+            'venue_id' => $this->venue->id,
             'created_by' => $this->owner->id,
             'name' => 'Aura Open 2026',
             'format' => 'single_elimination',
             'status' => 'open',
-            'settings' => [
-                'entry_fee' => '300.000 ₫ / VĐV',
-                'max_participants' => 16,
-            ],
+            'settings' => ['entry_fee' => '300.000 ₫ / VĐV', 'max_participants' => $maxParticipants] + $settings,
         ]);
-
-        $res = $this->actingAs($this->player1)
-            ->withHeaders($this->headers('reg-1-'))
-            ->postJson("/api/tournaments/{$tournament->id}/register", [
-                'name' => 'Alice Athlete',
-                'phone' => '0901112233',
-            ]);
-
-        $res->assertCreated();
-        $res->assertJsonPath('already_registered', false);
-        $res->assertJsonPath('receipt.entry_fee', 300000);
-        $res->assertJsonPath('receipt.currency', 'VND');
-        $res->assertJsonPath('receipt.status', 'confirmed');
-        $res->assertJsonStructure(['participant' => ['id', 'user_id', 'seed', 'status'], 'receipt' => ['receipt_code', 'tournament_id', 'entry_fee']]);
-
-        // Participant persisted
-        $this->assertDatabaseHas('tournament_participants', [
-            'tournament_id' => $tournament->id,
-            'user_id' => $this->player1->id,
-            'status' => 'registered',
-        ]);
-
-        // Standing created
-        $this->assertDatabaseHas('tournament_standings', [
-            'tournament_id' => $tournament->id,
-            'participant_id' => $res->json('participant.id'),
-        ]);
-
-        // Wallet debited exactly 300,000 VND
-        $this->assertSame(200000, $this->wallet1->fresh()->balance);
-        $this->assertDatabaseHas('wallet_transactions', [
-            'wallet_account_id' => $this->wallet1->id,
-            'type' => 'debit',
-            'amount' => 300000,
-            'source_type' => 'tournament_registration',
-            'source_id' => $tournament->id,
-        ]);
-
-        // Balanced financial posting
-        $journal = Journal::where('event_type', 'tournament.registration')
-            ->where('event_id', "tournament:{$tournament->id}:participant:{$res->json('participant.id')}")
-            ->firstOrFail();
-        $this->assertSame(300000, $journal->total_debit);
-        $this->assertSame(300000, $journal->total_credit);
     }
 
-    public function test_free_tournament_registration_persists_participant_without_wallet_debit(): void
+    private function register(User $player, Tournament $tournament)
+    {
+        return $this->actingAs($player)
+            ->withHeaders($this->headers('reg-'))
+            ->postJson("/api/tournaments/{$tournament->id}/register", ['name' => $player->name, 'phone' => '0901112233']);
+    }
+
+    public function test_paid_registration_opens_the_owner_qr_and_the_receipt_registers_the_player(): void
+    {
+        $tournament = $this->paidTournament();
+
+        $res = $this->register($this->player1, $tournament)
+            ->assertAccepted()
+            ->assertJsonPath('registered', false)
+            ->assertJsonPath('participant', null)
+            ->assertJsonPath('payment.amount', 300000)
+            ->assertJsonPath('payment.status', 'pending')
+            ->assertJsonPath('payment.receiver.account_number', '0987654321');
+        $this->assertNotEmpty($res->json('payment.qr_url'));
+        $reference = $res->json('payment.reference');
+        $this->assertStringStartsWith('AC', $reference);
+        $this->assertDatabaseMissing('tournament_participants', ['tournament_id' => $tournament->id]);
+        $attempt = OwnerPaymentAttempt::where('reference', $reference)->firstOrFail();
+        $this->assertSame(['tournament_registration', $tournament->uuid, $this->player1->id], [$attempt->purpose, $attempt->purpose_id, (int) $attempt->user_id]);
+        $this->assertTrue($attempt->expires_at->lte(now()->addMinutes(15)));
+
+        // The payment page polls the registration until the owner receipt lands.
+        $this->actingAs($this->player1)->withHeaders($this->headers())
+            ->getJson("/api/tournaments/{$tournament->id}/registration")
+            ->assertOk()
+            ->assertJsonPath('registered', false)
+            ->assertJsonPath('payment.reference', $reference);
+
+        $receipt = $this->payOwner($this->connection, $this->secret, $reference, 300000, 'SEPAY-TRN-1');
+        $this->assertSame(OwnerPaymentReceipt::STATUS_ALLOCATED, $receipt->status);
+
+        $after = $this->actingAs($this->player1)->withHeaders($this->headers())
+            ->getJson("/api/tournaments/{$tournament->id}/registration")
+            ->assertOk()
+            ->assertJsonPath('registered', true)
+            ->assertJsonPath('payment', null)
+            ->assertJsonPath('receipt.entry_fee', 300000)
+            ->assertJsonPath('receipt.payment_reference', $reference)
+            ->assertJsonPath('receipt.status', 'confirmed');
+        $this->assertDatabaseHas('tournament_participants', ['tournament_id' => $tournament->id, 'user_id' => $this->player1->id, 'status' => 'registered']);
+        $this->assertDatabaseHas('tournament_standings', ['tournament_id' => $tournament->id, 'participant_id' => $after->json('participant.id')]);
+        $this->assertTrue(Journal::where('event_type', 'owner.direct_receipt')->exists());
+        $this->assertFalse(Journal::where('event_type', 'tournament.registration')->exists());
+        $this->assertSame(0, WalletTransaction::count());
+
+        // Registering again after payment is a no-op.
+        $this->register($this->player1, $tournament)->assertOk()->assertJsonPath('already_registered', true);
+    }
+
+    public function test_free_tournament_registration_persists_participant_without_payment(): void
     {
         $tournament = Tournament::create([
             'organization_id' => $this->organization->id,
@@ -213,21 +213,19 @@ class TournamentRegistrationAndLifecycleTest extends TestCase
             ],
         ]);
 
-        $res = $this->actingAs($this->player1)
-            ->withHeaders($this->headers('reg-free-'))
-            ->postJson("/api/tournaments/{$tournament->id}/register", [
-                'name' => 'Alice Free',
-            ]);
+        $res = $this->register($this->player1, $tournament)
+            ->assertCreated()
+            ->assertJsonPath('registered', true)
+            ->assertJsonPath('payment', null)
+            ->assertJsonPath('receipt.entry_fee', 0);
 
-        $res->assertCreated();
-        $res->assertJsonPath('receipt.entry_fee', 0);
-
-        // Wallet balance untouched
-        $this->assertSame(500000, $this->wallet1->fresh()->balance);
-        $this->assertDatabaseMissing('wallet_transactions', [
-            'wallet_account_id' => $this->wallet1->id,
-            'source_id' => $tournament->id,
-        ]);
+        $this->actingAs($this->player1)->withHeaders($this->headers())
+            ->getJson("/api/tournaments/{$tournament->id}/registration")
+            ->assertOk()
+            ->assertJsonPath('registered', true)
+            ->assertJsonPath('receipt.receipt_code', $res->json('receipt.receipt_code'));
+        $this->assertSame(0, OwnerPaymentAttempt::count());
+        $this->assertSame(0, WalletTransaction::count());
     }
 
     public function test_creating_a_tournament_stores_only_the_settings_given(): void
@@ -249,156 +247,70 @@ class TournamentRegistrationAndLifecycleTest extends TestCase
         // No demo city, prize, fee, dates or category is filled in.
         $tournament = Tournament::findOrFail($res->json('tournament.id'));
         $this->assertEquals(['sport' => 'tennis', 'venue' => 'Sân Phú Nhuận', 'max_participants' => 16], $tournament->settings);
+        $this->assertNull($tournament->venue_id);
 
         // With no published fee, entry is free.
-        $this->actingAs($this->player1)
-            ->withHeaders($this->headers('reg-unpriced-'))
-            ->postJson("/api/tournaments/{$tournament->id}/register", ['name' => 'Alice'])
+        $this->register($this->player1, $tournament)
             ->assertCreated()
             ->assertJsonPath('receipt.entry_fee', 0);
-        $this->assertSame(500000, $this->wallet1->fresh()->balance);
     }
 
-    public function test_tournament_registration_is_idempotent_and_safe_on_retry(): void
+    public function test_a_paid_tournament_needs_an_own_venue_with_a_verified_connection(): void
     {
-        $tournament = Tournament::create([
-            'organization_id' => $this->organization->id,
-            'created_by' => $this->owner->id,
-            'name' => 'Idempotent Tourney',
-            'format' => 'single_elimination',
-            'status' => 'open',
-            'settings' => [
-                'entry_fee' => '300000',
-                'max_participants' => 16,
-            ],
-        ]);
+        $create = fn (array $extra) => $this->actingAs($this->owner)
+            ->withHeaders($this->headers('create-paid-'))
+            ->postJson('/api/tournaments', ['name' => 'Giải Có Phí', 'format' => 'single_elimination', 'entry_fee' => '50000'] + $extra);
 
-        // First attempt
-        $res1 = $this->actingAs($this->player2)
-            ->withHeaders($this->headers('reg-retry-1-'))
-            ->postJson("/api/tournaments/{$tournament->id}/register");
-        $res1->assertCreated();
-        $this->assertSame(0, $this->wallet2->fresh()->balance);
+        $create([])->assertStatus(422);
+        $otherOrganization = Organization::create(['name' => 'Other', 'slug' => 'other-'.uniqid()]);
+        $foreignVenue = Venue::create(['organization_id' => $otherOrganization->id, 'name' => 'Foreign', 'slug' => 'foreign-'.uniqid(), 'status' => 'published', 'is_active' => true]);
+        $create(['venue_id' => $foreignVenue->id])->assertStatus(422);
+        $unconnected = Venue::create(['organization_id' => $this->organization->id, 'name' => 'No Account', 'slug' => 'no-account-'.uniqid(), 'status' => 'published', 'is_active' => true]);
+        $create(['venue_id' => $unconnected->id])->assertStatus(422);
+        $this->assertSame(0, Tournament::count());
 
-        // Second attempt: stable retry returns 200 with same receipt without second debit
-        $res2 = $this->actingAs($this->player2)
-            ->withHeaders($this->headers('reg-retry-2-'))
-            ->postJson("/api/tournaments/{$tournament->id}/register");
-        $res2->assertOk();
-        $res2->assertJsonPath('already_registered', true);
-        $res2->assertJsonPath('participant.id', $res1->json('participant.id'));
-        $res2->assertJsonPath('receipt.receipt_code', $res1->json('receipt.receipt_code'));
-
-        // Balance is STILL 0 (never negative or debited twice)
-        $this->assertSame(0, $this->wallet2->fresh()->balance);
-        $this->assertSame(1, WalletTransaction::where('wallet_account_id', $this->wallet2->id)->count());
+        $res = $create(['venue_id' => $this->venue->id, 'venue' => 'free text'])->assertCreated();
+        $tournament = Tournament::findOrFail($res->json('tournament.id'));
+        $this->assertSame($this->venue->id, (int) $tournament->venue_id);
+        $this->assertSame('Sân Cầu Giấy', $tournament->settings['venue']);
     }
 
-    public function test_tournament_registration_fails_on_insufficient_wallet_balance(): void
+    public function test_paid_registration_is_idempotent_per_player(): void
     {
-        $tournament = Tournament::create([
-            'organization_id' => $this->organization->id,
-            'created_by' => $this->owner->id,
-            'name' => 'Expensive Tourney',
-            'format' => 'single_elimination',
-            'status' => 'open',
-            'settings' => [
-                'entry_fee' => '300000',
-                'max_participants' => 16,
-            ],
-        ]);
+        $tournament = $this->paidTournament();
 
-        // Player 3 has only 50,000 VND
-        $res = $this->actingAs($this->player3)
-            ->withHeaders($this->headers('insuf-'))
-            ->postJson("/api/tournaments/{$tournament->id}/register");
+        $first = $this->register($this->player2, $tournament)->assertAccepted();
+        $second = $this->register($this->player2, $tournament)->assertAccepted();
 
-        $res->assertStatus(422);
-
-        // No participant or debit created
-        $this->assertSame(50000, $this->wallet3->fresh()->balance);
-        $this->assertDatabaseMissing('tournament_participants', [
-            'tournament_id' => $tournament->id,
-            'user_id' => $this->player3->id,
-        ]);
+        $this->assertSame($first->json('payment.reference'), $second->json('payment.reference'));
+        $this->assertSame(1, OwnerPaymentAttempt::where('purpose_id', $tournament->uuid)->count());
     }
 
-    public function test_last_place_race_rejects_with_conflict_when_capacity_reached(): void
+    public function test_paid_registration_is_refused_when_the_venue_cannot_collect(): void
     {
-        $tournament = Tournament::create([
-            'organization_id' => $this->organization->id,
-            'created_by' => $this->owner->id,
-            'name' => 'Limited 2-Player Tourney',
-            'format' => 'single_elimination',
-            'status' => 'open',
-            'settings' => [
-                'entry_fee' => '100000',
-                'max_participants' => 2,
-            ],
-        ]);
+        $tournament = $this->paidTournament();
+        $tournament->forceFill(['venue_id' => null])->save();
 
-        // Player 1 takes slot 1
-        $this->actingAs($this->player1)
-            ->withHeaders($this->headers('cap-1-'))
-            ->postJson("/api/tournaments/{$tournament->id}/register")
-            ->assertCreated();
+        $this->register($this->player3, $tournament)->assertConflict();
 
-        // Player 2 takes final slot 2
-        $this->actingAs($this->player2)
-            ->withHeaders($this->headers('cap-2-'))
-            ->postJson("/api/tournaments/{$tournament->id}/register")
-            ->assertCreated();
+        $this->assertSame(0, OwnerPaymentAttempt::count());
+        $this->assertDatabaseMissing('tournament_participants', ['tournament_id' => $tournament->id]);
+    }
 
-        // Player 3 attempts to register when capacity is full
-        $res = $this->actingAs($this->player3)
-            ->withHeaders($this->headers('cap-3-'))
-            ->postJson("/api/tournaments/{$tournament->id}/register");
+    public function test_capacity_counts_live_pending_payments(): void
+    {
+        $tournament = $this->paidTournament(2);
 
-        $res->assertStatus(409);
+        $this->register($this->player1, $tournament)->assertAccepted();
+        $this->register($this->player2, $tournament)->assertAccepted();
+
+        $res = $this->register($this->player3, $tournament)->assertConflict();
         $this->assertStringContainsString('maximum participant capacity', $res->json('message'));
 
-        // Player 3 wallet was NOT debited
-        $this->assertSame(50000, $this->wallet3->fresh()->balance);
-        $this->assertSame(2, $tournament->participants()->count());
-    }
-
-    public function test_tournament_registration_endpoint_returns_persisted_participant_and_receipt(): void
-    {
-        $tournament = Tournament::create([
-            'organization_id' => $this->organization->id,
-            'created_by' => $this->owner->id,
-            'name' => 'Registration Check Tourney',
-            'format' => 'single_elimination',
-            'status' => 'open',
-            'settings' => [
-                'entry_fee' => '250000',
-                'max_participants' => 8,
-            ],
-        ]);
-
-        // Before registration
-        $before = $this->actingAs($this->player1)
-            ->withHeaders($this->headers())
-            ->getJson("/api/tournaments/{$tournament->id}/registration");
-        $before->assertOk();
-        $before->assertJsonPath('registered', false);
-        $before->assertJsonPath('participant', null);
-
-        // Register
-        $reg = $this->actingAs($this->player1)
-            ->withHeaders($this->headers('reg-chk-'))
-            ->postJson("/api/tournaments/{$tournament->id}/register");
-        $reg->assertCreated();
-
-        // After registration reload
-        $after = $this->actingAs($this->player1)
-            ->withHeaders($this->headers())
-            ->getJson("/api/tournaments/{$tournament->id}/registration");
-        $after->assertOk();
-        $after->assertJsonPath('registered', true);
-        $after->assertJsonPath('participant.id', $reg->json('participant.id'));
-        $after->assertJsonPath('receipt.receipt_code', $reg->json('receipt.receipt_code'));
-        $after->assertJsonPath('receipt.entry_fee', 250000);
+        // A hold that lapses frees its place.
+        $this->travel(16)->minutes();
+        $this->register($this->player3, $tournament)->assertAccepted();
+        $this->assertSame(0, $tournament->participants()->count());
     }
 
     public function test_participant_check_in_and_uncheck_in_with_proper_authorization(): void
@@ -613,5 +525,61 @@ class TournamentRegistrationAndLifecycleTest extends TestCase
         $pollRes->assertOk();
         $this->assertSame($tournament->fresh()->version, $pollRes->json('current_version'));
         $this->assertNotNull($pollRes->json('tournament.fixtures'));
+    }
+
+    public function test_a_repeated_receipt_registers_the_player_once(): void
+    {
+        $tournament = $this->paidTournament();
+        $reference = $this->register($this->player1, $tournament)->json('payment.reference');
+
+        $at = now()->addSeconds(2)->toIso8601String();
+        $this->payOwner($this->connection, $this->secret, $reference, 300000, 'SEPAY-TRN-DUP', $at);
+        $this->payOwner($this->connection, $this->secret, $reference, 300000, 'SEPAY-TRN-DUP', $at);
+        $second = $this->payOwner($this->connection, $this->secret, $reference, 300000, 'SEPAY-TRN-DUP-2', $at);
+
+        $this->assertSame(1, TournamentParticipant::where('tournament_id', $tournament->id)->count());
+        $this->assertSame([OwnerPaymentReceipt::STATUS_EXCEPTION, 'attempt_not_pending'], [$second->status, $second->exception_code]);
+    }
+
+    public function test_late_or_unplaceable_receipts_become_exceptions_without_a_participant(): void
+    {
+        $tournament = $this->paidTournament();
+        $late = $this->register($this->player1, $tournament)->json('payment.reference');
+        $closed = $this->register($this->player2, $tournament)->json('payment.reference');
+
+        // Transfer after the hold expired.
+        $receipt = $this->payOwner($this->connection, $this->secret, $late, 300000, 'SEPAY-TRN-LATE', now()->addMinutes(20)->toIso8601String());
+        $this->assertSame([OwnerPaymentReceipt::STATUS_LATE, 'transfer_after_expiry'], [$receipt->status, $receipt->exception_code]);
+
+        // Transfer in time, but the tournament closed registration meanwhile.
+        $tournament->forceFill(['status' => 'in_progress'])->save();
+        $receipt = $this->payOwner($this->connection, $this->secret, $closed, 300000, 'SEPAY-TRN-CLOSED');
+        $this->assertSame([OwnerPaymentReceipt::STATUS_EXCEPTION, 'tournament_registration_unavailable'], [$receipt->status, $receipt->exception_code]);
+        $this->assertTrue(FinanceException::where('type', 'owner_payment_tournament_registration_unavailable')->exists());
+
+        $this->assertSame(0, TournamentParticipant::where('tournament_id', $tournament->id)->count());
+    }
+
+    public function test_organizer_adds_to_a_paid_tournament_need_a_recorded_waiver_reason(): void
+    {
+        $tournament = $this->paidTournament();
+        $add = fn (array $body) => $this->actingAs($this->owner)
+            ->withHeaders($this->headers('add-'))
+            ->postJson("/api/tournaments/{$tournament->id}/participants", ['user_id' => $this->player2->id] + $body);
+
+        $add([])->assertStatus(422);
+        $add(['waiver_reason' => '   '])->assertStatus(422);
+        $this->assertSame(0, TournamentParticipant::where('tournament_id', $tournament->id)->count());
+
+        $participantId = $add(['waiver_reason' => 'Khách mời của ban tổ chức'])->assertCreated()->json('participant.id');
+        $this->assertDatabaseHas('tournament_participants', ['id' => $participantId, 'waiver_reason' => 'Khách mời của ban tổ chức']);
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $this->owner->id,
+            'action' => 'tournament.entry_fee_waived',
+            'auditable_type' => TournamentParticipant::class,
+            'auditable_id' => $participantId,
+        ]);
+        $this->assertSame(0, WalletTransaction::count());
+        $this->assertSame(0, OwnerPaymentAttempt::count());
     }
 }

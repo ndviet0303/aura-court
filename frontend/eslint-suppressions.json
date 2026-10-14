@@ -4,14 +4,9 @@
       "count": 1
     }
   },
-  "e2e/p0-cancellation-refund-reschedule.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
   "e2e/p0-pos-shift-service.spec.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 7
+      "count": 6
     }
   },
   "e2e/p1-community-feed-moderation.spec.ts": {
@@ -319,16 +314,6 @@
       "count": 2
     }
   },
-  "src/features/marketplace/api/marketplaceApi.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "src/features/marketplace/composables/useResaleMarketplace.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 7
-    }
-  },
   "src/features/partner-registration/__tests__/PartnerApplicationStatusView.spec.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 14
@@ -356,15 +341,10 @@
   },
   "src/features/pos/api/posApi.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 31
+      "count": 29
     }
   },
   "src/features/pos/components/PosCartPanel.vue": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/features/pos/components/PosQrModal.vue": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
     }
@@ -426,7 +406,7 @@
   },
   "src/features/tournament/api/tournamentApi.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 18
+      "count": 13
     }
   },
   "src/features/tournament/composables/useLiveScore.ts": {

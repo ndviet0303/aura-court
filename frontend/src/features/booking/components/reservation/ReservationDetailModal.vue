@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { Reservation } from '../../types/reservation'
 import { displayCode, displayStatus, quoteDiscounts } from '../../utils/reservation'
@@ -14,8 +15,6 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'cancel', reservation: Reservation): void
-  (e: 'reschedule', reservation: Reservation): void
 }>()
 </script>
 
@@ -137,24 +136,14 @@ const emit = defineEmits<{
       </div>
 
       <div class="modal-footer">
-        <button
+        <RouterLink
           v-if="reservation && reservation.status === 'confirmed'"
+          :to="{ name: 'resale-marketplace' }"
           class="btn btn-ghost"
-          type="button"
-          data-testid="reservation-detail-reschedule"
-          @click="emit('reschedule', reservation)"
+          data-testid="reservation-detail-resale"
         >
-          {{ t('booking.rescheduleBtn') }}
-        </button>
-        <button
-          v-if="reservation && reservation.status === 'confirmed'"
-          class="btn btn-ghost"
-          type="button"
-          data-testid="reservation-detail-cancel"
-          @click="emit('cancel', reservation)"
-        >
-          {{ t('booking.cancelBtn') }}
-        </button>
+          {{ t('booking.resaleBtn') }}
+        </RouterLink>
         <button class="btn btn-primary" type="button" @click="emit('close')">
           {{ t('reservations.modal.close') }}
         </button>

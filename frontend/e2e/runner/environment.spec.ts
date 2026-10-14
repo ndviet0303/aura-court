@@ -1194,14 +1194,10 @@ test('Task 2.6: Invalid webhook signature is rejected with HTTP 401 without muta
       accountNumber: '0987654321',
       amount: 100000,
       code: 'BK-INVALID-SIG',
-      tamperSignature: true, // Corrupts signature to sha256=000...
+      tamperSignature: true, // Sends a wrong Api_Key
     })
 
-    assert.equal(
-      webhookRes.statusCode,
-      401,
-      'Endpoint must reject tampered signature with HTTP 401',
-    )
+    assert.equal(webhookRes.statusCode, 401, 'Endpoint must reject a wrong Api_Key with HTTP 401')
   } finally {
     if (env.manifest) {
       await env.stop()
