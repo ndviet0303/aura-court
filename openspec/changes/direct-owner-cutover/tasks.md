@@ -454,8 +454,10 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
 - [x] 15.1 Seed `booking_demo_btprod` bằng `.env.btprod` với code của nhánh, rồi chạy lại các kiểm tra ở 10.9 trên DB đó.
   - 2026-10-14 (HEAD bcf29bca): `migrate:fresh --seed` exit 0. Kiểm tra bằng SQL: 0 ví có số dư, 0 payout, 0 bút toán refund/settlement/payout, 0 attempt `booking_change`, mọi attempt `paid`, 0 khiếu nại `resolve_and_refund`, mọi khu sân `slot_duration` 60, mọi slot và entitlement đúng giờ chẵn và dài 60 phút. Cả 6 kết nối `verified`, cùng ngân hàng và số tài khoản đã cấu hình. Không dòng dữ liệu nào chứa URL localhost.
   - `routing_id` là UUID v5 nên cố định giữa các lần seed. Webhook của Cầu Giấy trên prod: `https://court-api.ziet.dev/api/v1/webhooks/sepay/connections/f670509d-95d2-5ea1-98a5-ffd928baddc2`.
-- [ ] 15.2 Backup prod bằng `pg_dump` vào `backend/storage/app/backups/`.
-- [ ] 15.3 Sau khi người dùng chốt giờ, reseed prod bằng dump/restore. Bước này phải xong trước khi deploy.
+- [x] 15.2 Backup prod bằng `pg_dump` vào `backend/storage/app/backups/`.
+  - `booking-bt-server-20261014-1025-before-direct-owner-reseed.dump` (121 bảng; 86 migration, 44 user trước khi reseed).
+- [x] 15.3 Sau khi người dùng chốt giờ, reseed prod bằng dump/restore. Bước này phải xong trước khi deploy.
+  - 2026-10-14 10:30, người dùng bảo "merge vô nhánh chính rồi deploy đi". Dump `booking_demo_btprod` (bỏ schema `public`, extension `btree_gist` và comment của nó khỏi TOC), `lock_timeout` 30s, một transaction, khoảng 2 phút. Sau đó prod có 88 migration, cột mới có mặt, 0 ví có số dư, 6 kết nối `verified`.
 - [ ] 15.4 Merge `--no-ff` vào `main`, xóa nhánh và push `origin`.
   - Chạy pipeline trên `main` (`glab ci run -b main`) và chờ nó chạy xong.
   - Kiểm tra revision trong `build-info.json`.
