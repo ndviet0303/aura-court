@@ -3,9 +3,10 @@
 - [x] 0.1 Tạo nhánh `feat/direct-owner-cutover` từ `main` (tạo từ `688e440f` ngày 2026-10-13).
   - Mọi lệnh artisan và test chỉ chạy trên DB `*_test` hoặc `booking_demo_btprod`.
   - Không dùng `backend/.env` vì file này trỏ vào prod.
-- [ ] 0.2 Người dùng tự điền bốn biến vào `backend/.env.btprod` (file này gitignored): `SEED_DEMO_RECEIVER_BANK`, `SEED_DEMO_RECEIVER_ACCOUNT`, `SEED_DEMO_RECEIVER_NAME`, `SEED_DEMO_RECEIVER_WEBHOOK_KEY`.
+- [x] 0.2 Người dùng tự điền bốn biến vào `backend/.env.btprod` (file này gitignored): `SEED_DEMO_RECEIVER_BANK`, `SEED_DEMO_RECEIVER_ACCOUNT`, `SEED_DEMO_RECEIVER_NAME`, `SEED_DEMO_RECEIVER_WEBHOOK_KEY`.
   - Giá trị không được xuất hiện trong chat, commit hay log.
   - Chỉ việc seed (mục 10, 15) cần các biến này. Code và test không phụ thuộc chúng.
+  - 2026-10-14, theo yêu cầu người dùng: agent tạo file mới (worktree cũ chứa file đã bị xóa). Ngân hàng, số tài khoản và tên chủ tài khoản lấy từ `SEPAY_*` trong `backend/.env`. Webhook key và ba mật khẩu seed sinh ngẫu nhiên. `APP_KEY` giữ giống prod. DB trỏ tới `booking_demo_btprod` local. Không in giá trị nào.
 
 ## 1. Cờ tính năng và stack (design 1)
 
@@ -450,7 +451,9 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
 
 ## 15. Triển khai (design 13)
 
-- [ ] 15.1 Seed `booking_demo_btprod` bằng `.env.btprod` với code của nhánh, rồi chạy lại các kiểm tra ở 10.9 trên DB đó.
+- [x] 15.1 Seed `booking_demo_btprod` bằng `.env.btprod` với code của nhánh, rồi chạy lại các kiểm tra ở 10.9 trên DB đó.
+  - 2026-10-14 (HEAD bcf29bca): `migrate:fresh --seed` exit 0. Kiểm tra bằng SQL: 0 ví có số dư, 0 payout, 0 bút toán refund/settlement/payout, 0 attempt `booking_change`, mọi attempt `paid`, 0 khiếu nại `resolve_and_refund`, mọi khu sân `slot_duration` 60, mọi slot và entitlement đúng giờ chẵn và dài 60 phút. Cả 6 kết nối `verified`, cùng ngân hàng và số tài khoản đã cấu hình. Không dòng dữ liệu nào chứa URL localhost.
+  - `routing_id` là UUID v5 nên cố định giữa các lần seed. Webhook của Cầu Giấy trên prod: `https://court-api.ziet.dev/api/v1/webhooks/sepay/connections/f670509d-95d2-5ea1-98a5-ffd928baddc2`.
 - [ ] 15.2 Backup prod bằng `pg_dump` vào `backend/storage/app/backups/`.
 - [ ] 15.3 Sau khi người dùng chốt giờ, reseed prod bằng dump/restore. Bước này phải xong trước khi deploy.
 - [ ] 15.4 Merge `--no-ff` vào `main`, xóa nhánh và push `origin`.
