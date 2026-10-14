@@ -10,6 +10,9 @@ import { formatCurrency } from '@/i18n'
 import { DatePicker, SelectDropdown, SkeletonLoader } from '@/shared/components'
 import { resolveCourtImage } from '@/lib/courtImage'
 import { getVenueLocalDate, formatSlotRange } from '../utils/homeAvailability'
+import { describeCourtPlace } from '../utils/courtArea'
+import { useCourtAreaFilter } from '../composables/useCourtAreaFilter'
+import CourtAreaTabs from '../components/CourtAreaTabs.vue'
 import LoyaltyPointSelector from '@/features/booking/components/LoyaltyPointSelector.vue'
 import CouponCodeField from '@/features/booking/components/CouponCodeField.vue'
 import { useCheckoutCoupon } from '@/features/booking/composables/useCheckoutCoupon'
@@ -69,44 +72,23 @@ function getCourtIcon(court: Court): string {
 const courtsChipsScrollRef = ref<HTMLElement | null>(null)
 const canScrollLeft = ref(false)
 const canScrollRight = ref(false)
-const selectedVenueId = ref<number | null>(null)
-const courtSearchQuery = ref('')
+const {
+  selectedArea,
+  query: courtSearchQuery,
+  origin,
+  locating,
+  locateError,
+  areas,
+  filteredCourts,
+  locate,
+  reset,
+} = useCourtAreaFilter(
+  computed(() => store.courts),
+  computed(() => t('home.search.otherArea')),
+)
 
-const venues = computed(() => {
-  const map = new Map<number, { id: number; name: string; count: number }>()
-  for (const c of store.courts) {
-    const vId = c.venue?.id ?? c.venue_id ?? 0
-    const vName = c.venue?.name || 'Aura Court'
-    if (!map.has(vId)) {
-      map.set(vId, { id: vId, name: vName, count: 0 })
-    }
-    map.get(vId)!.count++
-  }
-  return Array.from(map.values())
-})
-
-const filteredCourts = computed(() => {
-  return store.courts.filter((c: Court) => {
-    if (selectedVenueId.value !== null) {
-      const vId = c.venue?.id ?? c.venue_id ?? 0
-      if (vId !== selectedVenueId.value) return false
-    }
-    if (courtSearchQuery.value.trim()) {
-      const q = courtSearchQuery.value.trim().toLowerCase()
-      const matchName = (c.name || '').toLowerCase().includes(q)
-      const matchVenue = (c.venue?.name || '').toLowerCase().includes(q)
-      const matchZone = (c.sport_zone?.name || '').toLowerCase().includes(q)
-      if (!matchName && !matchVenue && !matchZone) return false
-    }
-    return true
-  })
-})
-
-function selectVenue(venueId: number | null | string) {
-  selectedVenueId.value =
-    venueId !== null && venueId !== '' && venueId !== 'all' && venueId !== undefined
-      ? Number(venueId)
-      : null
+function selectArea(key: string | number | null) {
+  selectedArea.value = key === null || key === '' || key === 'all' ? null : String(key)
   const targetCourts = filteredCourts.value
   const first = targetCourts[0]
   if (first && !targetCourts.some((c: Court) => c.id === selected.value)) {
@@ -115,17 +97,13 @@ function selectVenue(venueId: number | null | string) {
   scrollToSelectedChip()
 }
 function resetFilters() {
-  selectedVenueId.value = null
-  courtSearchQuery.value = ''
+  reset()
   scrollToSelectedChip()
 }
-
-function formatVenueTabName(name: string): string {
-  return (
-    name
-      .replace(/^Aura\s+(Court|Arena|Sports\s+Complex|Multi-Sport|Sports\s+Center)\s+/i, '')
-      .trim() || name
-  )
+async function locateNearest() {
+  const nearest = (await locate()) ? filteredCourts.value[0] : undefined
+  if (nearest) await chooseCourt(nearest.id)
+  else scrollToSelectedChip()
 }
 
 function formatCourtChipName(name: string): string {
@@ -215,23 +193,14 @@ async function selectSportCategory(sportId: string) {
     /* store handles error */
   }
 }
-const venueOptions = computed(() => {
-  const allLabel = `${t('home.search.allVenues') || 'Tất cả cơ sở'} (${store.courts.length} sân)`
-  const opts: { value: string | number; label: string }[] = [{ value: 'all', label: allLabel }]
-  for (const v of venues.value) {
-    opts.push({
-      value: v.id,
-      label: `${v.name} (${v.count} sân)`,
-    })
-  }
-  return opts
-})
+const areaOptions = computed(() => [
+  { value: 'all', label: `${t('home.search.allAreas')} (${store.courts.length} sân)` },
+  ...areas.value.map((a) => ({ value: a.key, label: `${a.label} (${a.count} sân)` })),
+])
 
-const selectedVenueValue = computed<string | number>({
-  get: () => (selectedVenueId.value === null ? 'all' : selectedVenueId.value),
-  set: (val) => {
-    selectVenue(val)
-  },
+const selectedAreaValue = computed<string | number>({
+  get: () => selectedArea.value ?? 'all',
+  set: selectArea,
 })
 
 const timeOptions = computed(() => [
@@ -390,11 +359,11 @@ onMounted(async () => {
         <div class="search-field">
           <label>{{ t('home.search.court') }}</label>
           <SelectDropdown
-            v-model="selectedVenueValue"
-            :options="venueOptions"
+            v-model="selectedAreaValue"
+            :options="areaOptions"
             :placeholder="t('home.search.court')"
             :aria-label="t('home.search.court')"
-            @change="selectVenue"
+            @change="selectArea"
           />
         </div>
         <div class="search-field">
@@ -434,35 +403,20 @@ onMounted(async () => {
       </RouterLink>
     </div>
     <p v-if="store.error" class="error">{{ store.error }}</p>
-    <!-- Clean Beside-the-slots controls: venue tabs, quick search, date & court selector -->
+    <!-- Clean Beside-the-slots controls: area tabs, quick search, date & court selector -->
     <div class="availability-beside-bar">
-      <!-- Clean Control Header: Venue tabs on left, Date & Quick search on right -->
+      <!-- Clean Control Header: Area tabs on left, Date & Quick search on right -->
       <div class="availability-bar-header">
-        <!-- Venue tabs (Clean pills) -->
-        <div v-if="venues.length > 1" class="venue-tabs-scroll" role="tablist" aria-label="Cơ sở">
-          <button
-            type="button"
-            role="tab"
-            class="venue-tab-pill"
-            :class="{ active: selectedVenueId === null }"
-            @click="selectVenue(null)"
-          >
-            Tất cả
-            <span class="tab-badge">{{ store.courts.length }}</span>
-          </button>
-          <button
-            v-for="v in venues"
-            :key="v.id"
-            type="button"
-            role="tab"
-            class="venue-tab-pill"
-            :class="{ active: selectedVenueId === v.id }"
-            @click="selectVenue(v.id)"
-          >
-            {{ formatVenueTabName(v.name) }}
-            <span class="tab-badge">{{ v.count }}</span>
-          </button>
-        </div>
+        <CourtAreaTabs
+          :areas="areas"
+          :total="store.courts.length"
+          :selected="selectedArea"
+          :locating="locating"
+          :located="origin !== null"
+          :locate-error="locateError"
+          @select="selectArea"
+          @locate="locateNearest"
+        />
 
         <!-- Quick actions: Search + DatePicker -->
         <div class="availability-quick-actions">
@@ -472,8 +426,8 @@ onMounted(async () => {
               v-model="courtSearchQuery"
               type="text"
               class="court-search-input"
-              placeholder="Tìm tên sân..."
-              aria-label="Tìm tên sân"
+              placeholder="Tìm sân, khu vực..."
+              aria-label="Tìm sân hoặc khu vực"
             />
             <button
               v-if="courtSearchQuery"
@@ -528,7 +482,10 @@ onMounted(async () => {
             @click="chooseCourt(c.id)"
           >
             <span class="material-symbols-outlined icon-16 court-icon">{{ getCourtIcon(c) }}</span>
-            <span class="court-chip-name">{{ formatCourtChipName(c.name) }}</span>
+            <span class="court-chip-text">
+              <span class="court-chip-name">{{ formatCourtChipName(c.name) }}</span>
+              <span class="court-chip-place">{{ describeCourtPlace(c, origin) }}</span>
+            </span>
           </button>
         </div>
 
@@ -749,66 +706,6 @@ onMounted(async () => {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-}
-
-.venue-tabs-scroll {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  flex: 1;
-  min-width: 0;
-}
-
-.venue-tabs-scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.venue-tab-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--outline);
-  background: var(--surface-subtle);
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-}
-
-.venue-tab-pill:hover:not(.active) {
-  border-color: var(--accent);
-  color: var(--ink);
-}
-
-.venue-tab-pill.active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--on-primary);
-}
-
-:global(html.dark) .venue-tab-pill {
-  background: #231c20;
-  border-color: #382d33;
-  color: var(--muted);
-}
-
-:global(html.dark) .venue-tab-pill.active {
-  background: #e58e9f;
-  border-color: #e58e9f;
-  color: #1c0a10;
-}
-
-.tab-badge {
-  font-size: 10.5px;
-  font-weight: 700;
-  opacity: 0.75;
 }
 
 .availability-quick-actions {
@@ -1048,8 +945,21 @@ onMounted(async () => {
   color: #faf7f3;
 }
 
+.court-chip-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+
 .court-chip-name {
   white-space: nowrap;
+}
+
+.court-chip-place {
+  font-size: 10.5px;
+  font-weight: 500;
+  opacity: 0.75;
 }
 
 @media (max-width: 640px) {

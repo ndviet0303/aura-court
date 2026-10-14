@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Spatie\Translatable\HasTranslations;
 
-#[Fillable(['organization_id', 'name', 'slug', 'address', 'city', 'district', 'ward', 'phone', 'email', 'description', 'images', 'google_maps_url', 'amenities', 'is_active', 'status', 'status_reason', 'published_at', 'approved_public_snapshot', 'current_publication_revision_id', 'current_receiving_connection_id'])]
+#[Fillable(['organization_id', 'name', 'slug', 'address', 'city', 'district', 'ward', 'phone', 'email', 'description', 'images', 'google_maps_url', 'latitude', 'longitude', 'amenities', 'is_active', 'status', 'status_reason', 'published_at', 'approved_public_snapshot', 'current_publication_revision_id', 'current_receiving_connection_id'])]
 class Venue extends Model
 {
     use HasTranslations;
@@ -23,6 +23,8 @@ class Venue extends Model
         return [
             'is_active' => 'boolean',
             'amenities' => 'array',
+            'latitude' => 'float',
+            'longitude' => 'float',
             'published_at' => 'datetime',
             'approved_public_snapshot' => 'array',
             'images' => 'array',

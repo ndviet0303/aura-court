@@ -58,6 +58,8 @@ class CreateDraftVenue
                 'description' => $data->description,
                 'images' => $data->images,
                 'google_maps_url' => $data->googleMapsUrl,
+                'latitude' => $data->latitude,
+                'longitude' => $data->longitude,
                 'amenities' => $data->amenities,
                 'status' => 'draft',
                 'is_active' => false, // MUST start as non-public draft!

@@ -18,6 +18,8 @@ readonly class CreateDraftVenueData
         public ?string $email = null,
         public ?string $description = null,
         public ?string $googleMapsUrl = null,
+        public ?float $latitude = null,
+        public ?float $longitude = null,
         public array $amenities = [],
         public array $images = [],
     ) {}
@@ -36,6 +38,8 @@ readonly class CreateDraftVenueData
             email: $request->validated('email'),
             description: $request->validated('description'),
             googleMapsUrl: $request->validated('google_maps_url'),
+            latitude: $request->filled('latitude') ? (float) $request->validated('latitude') : null,
+            longitude: $request->filled('longitude') ? (float) $request->validated('longitude') : null,
             amenities: $request->validated('amenities') ?? [],
             images: $request->validated('images') ?? [],
         );

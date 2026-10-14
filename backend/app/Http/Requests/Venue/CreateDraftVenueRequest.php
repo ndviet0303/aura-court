@@ -23,6 +23,8 @@ class CreateDraftVenueRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
             'google_maps_url' => ['nullable', 'url', 'max:2048'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90', 'required_with:longitude'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180', 'required_with:latitude'],
             'amenities' => ['nullable', 'array'],
             'amenities.*' => ['string', 'max:50'],
             'images' => ['nullable', 'array'],

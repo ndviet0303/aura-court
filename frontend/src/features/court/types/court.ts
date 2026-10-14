@@ -37,6 +37,8 @@ export type Venue = {
   description?: string | null
   images?: string[]
   google_maps_url: string | null
+  latitude?: number | null
+  longitude?: number | null
   is_active: boolean
   share_url?: string
   courts_count?: number

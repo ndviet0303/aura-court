@@ -96,3 +96,18 @@ The platform SHALL distinguish draft, pending publication, revision required, pu
 #### Scenario: Restore suspended venue
 - **WHEN** an ordinary owner requests restoration of a platform-suspended venue
 - **THEN** the request SHALL be denied until a platform review and fresh eligibility checks succeed
+
+### Requirement: Area and nearby court discovery
+Customer court discovery SHALL group and filter public courts by the venue's area (district, falling back to city) rather than by venue identity, and SHALL show each court's area so same-named courts at different venues stay distinguishable. Venues MAY store a validated latitude/longitude pair, which SHALL be part of the publication review snapshot. On explicit request, the client MAY use the device's position to sort areas and courts nearest first; that position MUST stay on the device, MUST NOT be sent to the server or stored, and venues without coordinates SHALL sort last. Denied or unavailable location SHALL leave discovery usable and explain how to recover.
+
+#### Scenario: Filter by area
+- **WHEN** a customer selects an area such as Cầu Giấy
+- **THEN** only courts whose venue lies in that area SHALL be offered, each labelled with its area
+
+#### Scenario: Nearest first
+- **WHEN** a customer grants location access from the "near me" control
+- **THEN** areas and courts SHALL be ordered by distance, the nearest court SHALL be selected and its distance shown, without any request carrying the customer's coordinates
+
+#### Scenario: Location denied
+- **WHEN** the browser denies or cannot provide a position
+- **THEN** the original ordering SHALL remain and an explanation SHALL be shown

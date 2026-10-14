@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
 import type { AdminVenueItem } from '../../composables/useAdminVenues'
 import VenueBookingPolicyForm from './VenueBookingPolicyForm.vue'
+import VenueStatusToggle from './VenueStatusToggle.vue'
+import { formatVenueCoordinates, parseVenueCoordinates } from '../../utils/venueCoordinates'
 import type { VenueBookingPolicySettings, VenueBookingPolicyVersion } from '../../types/admin'
 
 const props = defineProps<{
@@ -33,6 +35,7 @@ const email = ref('')
 const description = ref('')
 const imagesText = ref('')
 const googleMapsUrl = ref('')
+const coordinates = ref('')
 const isActive = ref(true)
 const validationError = ref('')
 
@@ -40,35 +43,22 @@ watch(
   () => props.venue,
   (v) => {
     validationError.value = ''
-    if (v) {
-      name.value =
-        typeof v.name === 'string' ? v.name : (v.name as any)?.vi || (v.name as any)?.en || ''
-      address.value =
-        typeof v.address === 'string'
-          ? v.address
-          : (v.address as any)?.vi || (v.address as any)?.en || ''
-      city.value = v.city || ''
-      district.value = v.district || ''
-      ward.value = v.ward || ''
-      phone.value = v.phone || ''
-      email.value = v.email || ''
-      description.value = v.description || ''
-      imagesText.value = (v.images || []).join('\n')
-      googleMapsUrl.value = v.google_maps_url || ''
-      isActive.value = v.is_active
-    } else {
-      name.value = ''
-      address.value = ''
-      city.value = ''
-      district.value = ''
-      ward.value = ''
-      phone.value = ''
-      email.value = ''
-      description.value = ''
-      imagesText.value = ''
-      googleMapsUrl.value = ''
-      isActive.value = true
-    }
+    name.value =
+      typeof v?.name === 'string' ? v.name : (v?.name as any)?.vi || (v?.name as any)?.en || ''
+    address.value =
+      typeof v?.address === 'string'
+        ? v.address
+        : (v?.address as any)?.vi || (v?.address as any)?.en || ''
+    city.value = v?.city || ''
+    district.value = v?.district || ''
+    ward.value = v?.ward || ''
+    phone.value = v?.phone || ''
+    email.value = v?.email || ''
+    description.value = v?.description || ''
+    imagesText.value = (v?.images || []).join('\n')
+    googleMapsUrl.value = v?.google_maps_url || ''
+    coordinates.value = formatVenueCoordinates(v)
+    isActive.value = v?.is_active ?? true
   },
   { immediate: true },
 )
@@ -98,6 +88,12 @@ function handleSave() {
     return
   }
 
+  const coords = parseVenueCoordinates(coordinates.value)
+  if (!coords) {
+    validationError.value = t('admin.venues.coordinatesInvalid')
+    return
+  }
+
   emit('save', {
     name: trimmedName,
     address: trimmedAddress || undefined,
@@ -112,6 +108,7 @@ function handleSave() {
       .map((image) => image.trim())
       .filter(Boolean),
     google_maps_url: trimmedMaps || undefined,
+    ...coords,
     is_active: isActive.value,
   })
 }
@@ -218,35 +215,22 @@ function handleSave() {
           <span class="field-hint">{{ t('admin.venues.googleMapsHint') }}</span>
         </div>
 
+        <div class="form-group">
+          <label class="form-label">{{ t('admin.venues.coordinatesLabel') }}</label>
+          <input
+            v-model="coordinates"
+            type="text"
+            inputmode="decimal"
+            class="form-input font-mono"
+            placeholder="21.0306, 105.7830"
+          />
+          <span class="field-hint">{{ t('admin.venues.coordinatesHint') }}</span>
+        </div>
+
         <!-- Custom Status Toggle Card -->
         <div v-if="venue?.status === 'published' || venue?.status === 'active'" class="form-group">
           <label class="form-label">{{ t('admin.venues.operationalStatusLabel') }}</label>
-          <div
-            class="status-toggle-card"
-            :class="{ 'is-active': isActive }"
-            @click="isActive = !isActive"
-          >
-            <div class="toggle-card-left">
-              <span
-                class="material-symbols-outlined status-card-icon"
-                :class="isActive ? 'text-green' : 'text-muted'"
-              >
-                {{ isActive ? 'check_circle' : 'pause_circle' }}
-              </span>
-              <div class="toggle-card-info">
-                <strong class="toggle-card-title">{{
-                  t('admin.venues.operatingOpenCheckbox')
-                }}</strong>
-                <span class="toggle-card-desc">
-                  {{ isActive ? t('admin.venues.statusActive') : t('admin.venues.statusInactive') }}
-                </span>
-              </div>
-            </div>
-            <div class="switch-control-wrap" @click.stop>
-              <input v-model="isActive" type="checkbox" />
-              <span class="slider"></span>
-            </div>
-          </div>
+          <VenueStatusToggle v-model="isActive" />
         </div>
 
         <VenueBookingPolicyForm
@@ -430,103 +414,6 @@ function handleSave() {
   line-height: 1.4;
 }
 
-/* Status toggle card */
-.status-toggle-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--outline);
-  background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.status-toggle-card:hover {
-  border-color: rgba(219, 39, 119, 0.3);
-}
-
-.status-toggle-card.is-active {
-  border-color: rgba(16, 185, 129, 0.3);
-  background: rgba(16, 185, 129, 0.03);
-}
-
-.toggle-card-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.status-card-icon {
-  font-size: 22px;
-}
-
-.toggle-card-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.toggle-card-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.toggle-card-desc {
-  font-size: 11px;
-  color: var(--muted);
-}
-
-/* Switch control */
-.switch-control-wrap {
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 24px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.switch-control-wrap input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #cbd5e1;
-  transition: 0.2s;
-  border-radius: 24px;
-}
-
-.slider:before {
-  position: absolute;
-  content: '';
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.2s;
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-}
-
-input:checked + .slider {
-  background-color: #10b981;
-}
-
-input:checked + .slider:before {
-  transform: translateX(20px);
-}
-
 .modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -537,12 +424,6 @@ input:checked + .slider:before {
   background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
 }
 
-.text-green {
-  color: #10b981;
-}
-.text-muted {
-  color: var(--muted);
-}
 .icon-16 {
   font-size: 16px;
 }

@@ -36,6 +36,8 @@ export type VenueForm = {
   description?: string
   images?: string[]
   google_maps_url?: string
+  latitude?: number | null
+  longitude?: number | null
   is_active?: boolean
 }
 

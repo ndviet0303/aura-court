@@ -27,6 +27,8 @@ class UpdateDraftVenueRequest extends FormRequest
             'images' => 'sometimes|nullable|array',
             'images.*' => 'url|max:2048',
             'google_maps_url' => 'nullable|url|max:2048',
+            'latitude' => 'nullable|numeric|between:-90,90|required_with:longitude',
+            'longitude' => 'nullable|numeric|between:-180,180|required_with:latitude',
             'amenities' => 'nullable|array',
             'amenities.*' => 'string|max:50',
         ];

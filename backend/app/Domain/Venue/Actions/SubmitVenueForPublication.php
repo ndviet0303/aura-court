@@ -77,6 +77,8 @@ class SubmitVenueForPublication
                     'images' => $venue->images ?? [],
                     'amenities' => $venue->amenities,
                     'google_maps_url' => $venue->google_maps_url,
+                    'latitude' => $venue->latitude,
+                    'longitude' => $venue->longitude,
                 ],
                 'courts' => $venue->courts->where('is_active', true)->map(fn ($court) => [
                     'id' => $court->id,

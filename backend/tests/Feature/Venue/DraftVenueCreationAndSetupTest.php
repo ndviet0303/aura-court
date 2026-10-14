@@ -61,10 +61,13 @@ class DraftVenueCreationAndSetupTest extends TestCase
             'name' => 'Sân Cầu Lông Ba Đình',
             'address' => '10 Chu Van An, Ba Dinh, Ha Noi',
             'city' => 'Hà Nội',
+            'latitude' => 21.0333,
+            'longitude' => 105.84,
             'amenities' => ['wifi', 'parking', 'shower'],
         ]);
 
         $res->assertStatus(201)
+            ->assertJsonPath('data.latitude', 21.0333)
             ->assertJsonPath('data.status', 'draft')
             ->assertJsonPath('data.is_active', false); // MUST be non-public draft!
 
@@ -79,10 +82,13 @@ class DraftVenueCreationAndSetupTest extends TestCase
         // Update draft venue
         $updateRes = $this->putJson("/api/partner/organizations/{$org->id}/venues/{$venueId}", [
             'address' => '12 Chu Van An, Ba Dinh, Ha Noi',
+            'latitude' => 21.034,
+            'longitude' => 105.841,
         ]);
 
         $updateRes->assertStatus(200)
             ->assertJsonPath('data.address', '12 Chu Van An, Ba Dinh, Ha Noi')
+            ->assertJsonPath('data.longitude', 105.841)
             ->assertJsonPath('data.status', 'draft')
             ->assertJsonPath('data.is_active', false); // Still non-public!
     }
