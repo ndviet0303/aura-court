@@ -129,4 +129,87 @@ describe('HomeView i18n & rendering', () => {
     expect(checkout).toHaveBeenCalledWith({ court_id: 7, slots: [slot.startsAt] }, undefined)
     expect(mockPush).toHaveBeenCalledWith({ name: 'reservations', params: { code: 'RSV-HOME-1' } })
   })
+
+  describe('area filter and near me', () => {
+    const courts = [
+      {
+        id: 1,
+        name: 'Sân 1 - Thảm BWF',
+        slug: 'san-1',
+        venue: { district: 'Cầu Giấy', city: 'Hà Nội', latitude: 21.0306, longitude: 105.783 },
+      },
+      {
+        id: 2,
+        name: 'Sân 2 - Pickleball',
+        slug: 'san-2',
+        venue: { district: 'Tây Hồ', city: 'Hà Nội', latitude: 21.0655, longitude: 105.827 },
+      },
+    ] as Court[]
+
+    function stubGeolocation(
+      getCurrentPosition: (ok: PositionCallback, fail: PositionErrorCallback) => void,
+    ) {
+      Object.defineProperty(navigator, 'geolocation', {
+        value: { getCurrentPosition },
+        configurable: true,
+      })
+    }
+
+    async function mountHome() {
+      vi.spyOn(bookingApi, 'getCourts').mockResolvedValue(courts)
+      vi.spyOn(bookingApi, 'getAvailability').mockResolvedValue([])
+      const wrapper = mount(HomeView, {
+        global: { plugins: [i18n], stubs: { LoyaltyPointSelector: true } },
+      })
+      await flushPromises()
+      return wrapper
+    }
+
+    const chipTexts = (wrapper: Awaited<ReturnType<typeof mountHome>>) =>
+      wrapper.findAll('.court-chip').map((chip) => chip.text())
+
+    it('filters court chips by district and shows where each court is', async () => {
+      const wrapper = await mountHome()
+      expect(chipTexts(wrapper)).toEqual([
+        'sports_tennisSân 1 - Thảm BWFCầu Giấy',
+        'sports_tennisSân 2 - PickleballTây Hồ',
+      ])
+
+      const tayHo = wrapper.findAll('.area-pill').find((pill) => pill.text().startsWith('Tây Hồ'))
+      await tayHo!.trigger('click')
+      await flushPromises()
+
+      expect(chipTexts(wrapper)).toEqual(['sports_tennisSân 2 - PickleballTây Hồ'])
+      expect(wrapper.find('.court-chip.active').text()).toContain('Sân 2')
+    })
+
+    it('sorts courts nearest first and picks the nearest one when location is granted', async () => {
+      stubGeolocation((ok) =>
+        ok({ coords: { latitude: 21.06, longitude: 105.82 } } as GeolocationPosition),
+      )
+      const wrapper = await mountHome()
+
+      await wrapper.find('.near-me').trigger('click')
+      await flushPromises()
+
+      const chips = chipTexts(wrapper)
+      expect(chips[0]).toMatch(/Sân 2 - PickleballTây Hồ · \d+\.\d km/)
+      expect(chips[1]).toMatch(/Sân 1 - Thảm BWFCầu Giấy · \d+\.\d km/)
+      expect(wrapper.find('.court-chip.active').text()).toContain('Sân 2')
+      expect(wrapper.find('.near-me').attributes('aria-pressed')).toBe('true')
+    })
+
+    it('explains how to re-enable location when permission is denied', async () => {
+      stubGeolocation((_ok, fail) =>
+        fail({ code: 1, PERMISSION_DENIED: 1 } as GeolocationPositionError),
+      )
+      const wrapper = await mountHome()
+
+      await wrapper.find('.near-me').trigger('click')
+      await flushPromises()
+
+      expect(wrapper.find('.locate-error').text()).toContain('Bạn đã chặn quyền vị trí')
+      expect(wrapper.find('.court-chip.active').text()).toContain('Sân 1')
+    })
+  })
 })

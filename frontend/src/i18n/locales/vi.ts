@@ -164,8 +164,9 @@ export default {
     openBadge: 'Mở cửa',
     hoursOpen: 'Mở cửa',
     search: {
-      court: 'Cơ sở & Sân thi đấu',
-      allVenues: 'Tất cả cơ sở',
+      court: 'Khu vực & Sân thi đấu',
+      allAreas: 'Tất cả khu vực',
+      otherArea: 'Khu vực khác',
       date: 'Ngày chơi',
       timeSlot: 'Khung giờ',
       allSlots: 'Tất cả khung giờ',
@@ -191,6 +192,13 @@ export default {
       dynamicTitle: 'Lịch trống — {court} — {date}',
       fallbackTitle: 'Lịch sân trống trực quan',
       nearbyCourts: 'Chọn sân',
+      areaTabs: 'Khu vực',
+      allAreas: 'Tất cả',
+      nearMe: 'Gần tôi',
+      locating: 'Đang định vị…',
+      locateDenied:
+        'Bạn đã chặn quyền vị trí. Bật lại trong cài đặt trình duyệt để tìm sân gần nhất.',
+      locateUnavailable: 'Không lấy được vị trí của bạn. Vui lòng thử lại.',
       playDateLabel: 'Ngày chơi',
       viewAllCourts: 'Xem tất cả sân',
       noSlots: 'Không còn khung giờ trống cho ngày này',
@@ -1753,6 +1761,11 @@ export default {
       googleMapsPlaceholder: 'https://maps.app.goo.gl/... hoặc https://google.com/maps/...',
       googleMapsHint: 'Nhập link Google Maps hợp lệ để khách hàng dễ dàng tìm đường và xem bản đồ.',
       googleMapsInvalid: 'Liên kết Google Maps không hợp lệ (phải bắt đầu bằng https://...)',
+      coordinatesLabel: 'Toạ độ (vĩ độ, kinh độ)',
+      coordinatesHint:
+        'Trên Google Maps, nhấn chuột phải vào vị trí sân rồi bấm vào dòng số đầu tiên để chép. Dùng cho nút "Gần tôi" ở trang chủ.',
+      coordinatesInvalid:
+        'Toạ độ phải có dạng "21.0306, 105.7830" (vĩ độ -90…90, kinh độ -180…180), hoặc để trống.',
       operationalStatusLabel: 'Trạng thái hoạt động',
       operatingOpenCheckbox: 'Đang mở cửa vận hành (Active)',
       saveVenueBtn: 'Lưu Cơ Sở',

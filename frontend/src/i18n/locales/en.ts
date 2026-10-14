@@ -164,8 +164,9 @@ export default {
     openBadge: 'Open Daily',
     hoursOpen: 'Open Daily',
     search: {
-      court: 'Facility / Sports Court',
-      allVenues: 'All Facilities',
+      court: 'Area / Sports Court',
+      allAreas: 'All Areas',
+      otherArea: 'Other areas',
       date: 'Play Date',
       timeSlot: 'Time Slot',
       allSlots: 'All Time Slots',
@@ -191,6 +192,13 @@ export default {
       dynamicTitle: 'Availability — {court} — {date}',
       fallbackTitle: 'Live Availability',
       nearbyCourts: 'Select Court',
+      areaTabs: 'Areas',
+      allAreas: 'All',
+      nearMe: 'Near me',
+      locating: 'Locating…',
+      locateDenied:
+        'Location access is blocked. Allow it in your browser settings to find the nearest courts.',
+      locateUnavailable: 'Could not get your location. Please try again.',
       playDateLabel: 'Play Date',
       viewAllCourts: 'View All Courts',
       noSlots: 'No available slots for this date',
@@ -1756,6 +1764,11 @@ export default {
       googleMapsHint:
         'Enter a valid Google Maps URL so customers can easily navigate and find directions.',
       googleMapsInvalid: 'Invalid Google Maps URL (must start with https://...)',
+      coordinatesLabel: 'Coordinates (latitude, longitude)',
+      coordinatesHint:
+        'In Google Maps, right-click the venue and click the numbers at the top to copy them. Powers the "Near me" button on the home page.',
+      coordinatesInvalid:
+        'Coordinates must look like "21.0306, 105.7830" (latitude -90…90, longitude -180…180), or be left empty.',
       operationalStatusLabel: 'Operational Status',
       operatingOpenCheckbox: 'Open for operations (Active)',
       saveVenueBtn: 'Save Facility',

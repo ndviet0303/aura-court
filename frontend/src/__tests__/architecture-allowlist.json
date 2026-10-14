@@ -42,7 +42,7 @@
   ["component-lines", "features/admin/components/tournament/RefereeConsolePanel.vue", 498],
   ["component-lines", "features/admin/components/tournament/TournamentBracketTree.vue", 509],
   ["component-lines", "features/admin/components/venues/OwnerReceivingConnectionPanel.vue", 501],
-  ["component-lines", "features/admin/components/venues/VenueFormModal.vue", 552],
+  ["component-lines", "features/admin/components/venues/VenueFormModal.vue", 433],
   ["component-lines", "features/admin/components/venues/VenueReadinessModal.vue", 425],
   ["component-lines", "features/auth/components/AuthBrandPanel.vue", 408],
   ["component-lines", "features/auth/components/RegisterForm.vue", 517],
@@ -157,7 +157,7 @@
   ["view-lines", "features/finance/views/AdminPayoutsView.vue", 391],
   ["view-lines", "features/finance/views/PaymentCycleDetailView.vue", 332],
   ["view-lines", "features/home/views/AboutView.vue", 965],
-  ["view-lines", "features/home/views/HomeView.vue", 1084],
+  ["view-lines", "features/home/views/HomeView.vue", 994],
   ["view-lines", "features/legal/views/PrivacyView.vue", 1159],
   ["view-lines", "features/legal/views/TermsView.vue", 1252],
   ["view-lines", "features/marketplace/views/ResaleMarketplaceView.vue", 526],
@@ -170,6 +170,6 @@
   ["view-lines", "features/tournament/views/SocialTournamentView.vue", 274],
   ["view-lines", "features/tournament/views/TournamentsView.vue", 405],
   ["view-lines", "features/wallet/views/WalletView.vue", 406],
-  ["view-script-lines", "features/home/views/HomeView.vue", 332],
+  ["view-script-lines", "features/home/views/HomeView.vue", 301],
   ["view-script-lines", "features/pos/views/PosView.vue", 550]
 ]
