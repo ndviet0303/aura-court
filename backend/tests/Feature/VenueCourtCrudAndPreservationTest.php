@@ -58,15 +58,23 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         $updateRes = $this->actingAs($admin)->patchJson("/api/admin/venues/{$venueId}", [
             'address' => '88 Cau Giay, Updated, Hanoi',
             'amenities' => ['wifi', 'parking', 'shower', 'cafe', 'lounge'],
+            'latitude' => 21.0306,
+            'longitude' => 105.783,
         ]);
 
         $updateRes->assertOk();
+        $this->actingAs($admin)->patchJson("/api/admin/venues/{$venueId}", ['latitude' => 21.03])
+            ->assertUnprocessable()->assertJsonValidationErrors('longitude');
+        $this->actingAs($admin)->patchJson("/api/admin/venues/{$venueId}", ['latitude' => 91, 'longitude' => 105.78])
+            ->assertUnprocessable()->assertJsonValidationErrors('latitude');
 
         // 3. Public view reflects the saved amenities and details
         $publicRes = $this->getJson("/api/venues/{$slug}");
         $publicRes->assertOk()
             ->assertJsonPath('address', '88 Cau Giay, Updated, Hanoi')
-            ->assertJsonPath('amenities', ['wifi', 'parking', 'shower', 'cafe', 'lounge']);
+            ->assertJsonPath('amenities', ['wifi', 'parking', 'shower', 'cafe', 'lounge'])
+            ->assertJsonPath('latitude', 21.0306)
+            ->assertJsonPath('longitude', 105.783);
     }
 
     public function test_sport_zone_crud_and_slot_duration_association(): void
@@ -123,6 +131,9 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             'slug' => 'aura-danang-'.uniqid(),
             'address' => 'Vo Nguyen Giap, Da Nang',
             'google_maps_url' => 'https://maps.google.com/?q=danang',
+            'district' => 'Hải Châu',
+            'latitude' => 16.0544,
+            'longitude' => 108.2022,
             'is_active' => true,
         ]);
         // Only priced courts are public; an organization-wide rule prices every court.
@@ -165,6 +176,8 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         $courtInList = collect($listRes->json())->firstWhere('id', $courtId);
         $this->assertNotNull($courtInList);
         $this->assertSame(['wifi', 'pro_shop', 'air_conditioning'], $courtInList['amenities']);
+        // The home page groups courts by district and sorts them by distance from these coordinates.
+        $this->assertSame(['Hải Châu', 16.0544, 108.2022], [$courtInList['venue']['district'], $courtInList['venue']['latitude'], $courtInList['venue']['longitude']]);
 
         // 4. Update court permitted details
         $updateRes = $this->actingAs($admin)->patchJson("/api/admin/courts/{$courtId}", [

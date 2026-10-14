@@ -119,7 +119,7 @@ class AdminController extends Controller
             abort(409, 'Cơ sở phải hoàn tất điều kiện và quy trình duyệt trước khi mở công khai.');
         }
 
-        if ($request->hasAny(['name', 'address', 'city', 'district', 'ward', 'phone', 'email', 'description', 'images', 'google_maps_url', 'amenities'])) {
+        if ($request->hasAny(['name', 'address', 'city', 'district', 'ward', 'phone', 'email', 'description', 'images', 'google_maps_url', 'latitude', 'longitude', 'amenities'])) {
             $data = $this->validatedVenue($request);
             $this->updateVenueAction->execute($venue, $data);
         }
@@ -176,15 +176,15 @@ class AdminController extends Controller
             'images' => 'sometimes|nullable|array',
             'images.*' => 'url|max:2048',
             'google_maps_url' => ($isPatch ? 'sometimes|' : '').'nullable|url|max:2048',
+            'latitude' => 'nullable|numeric|between:-90,90|required_with:longitude',
+            'longitude' => 'nullable|numeric|between:-180,180|required_with:latitude',
             'amenities' => 'nullable|array',
             'amenities.*' => 'string',
             'is_active' => 'boolean',
         ]);
 
         if (isset($data['google_maps_url']) && ! $this->isGoogleMapsUrl($data['google_maps_url'])) {
-            throw ValidationException::withMessages([
-                'google_maps_url' => 'Chỉ chấp nhận liên kết Google Maps HTTPS hợp lệ.',
-            ]);
+            throw ValidationException::withMessages(['google_maps_url' => 'Chỉ chấp nhận liên kết Google Maps HTTPS hợp lệ.']);
         }
 
         return $data;
