@@ -188,8 +188,7 @@ export default {
     filterSearchBtn: 'Tìm sân trống',
     availability: {
       eyebrow: 'Lịch sân trống trực quan',
-      title: 'Lịch trống — {court} — {date}',
-      dynamicTitle: 'Lịch trống — {court} — {date}',
+      summary: '{date} · còn {count} khung trống',
       fallbackTitle: 'Lịch sân trống trực quan',
       nearbyCourts: 'Chọn sân',
       areaTabs: 'Khu vực',

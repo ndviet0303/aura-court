@@ -90,6 +90,9 @@ const { t } = useI18n()
   -webkit-overflow-scrolling: touch;
   flex: 1;
   min-width: 0;
+  /* Soft edge so an overflowing pill reads as "scroll for more", not as clipped. */
+  padding-right: 24px;
+  mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
 }
 
 .area-tabs-scroll::-webkit-scrollbar {

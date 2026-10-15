@@ -53,7 +53,7 @@ describe('HomeView i18n & rendering', () => {
     expect(text).not.toContain('home.search.court')
     expect(text).not.toContain('home.search.date')
     expect(text).not.toContain('home.search.timeSlot')
-    expect(text).not.toContain('home.availability.title')
+    expect(text).not.toContain('home.availability.summary')
     expect(text).not.toContain('home.availability.eyebrow')
     expect(text).not.toContain('home.features.title')
 
