@@ -13,6 +13,7 @@ vi.mock('../api/profileApi', () => ({
     getMembership: vi.fn().mockResolvedValue({ membership: null }),
     updateProfile: vi.fn(),
     changePassword: vi.fn(),
+    sendPasswordSetupLink: vi.fn(),
     resendVerification: vi.fn(),
   },
 }))
@@ -107,7 +108,7 @@ describe('ProfileView', () => {
     expect(wrapper.find('.shortcuts-grid').exists()).toBe(true)
   })
 
-  it('renders set password mode without current password for social users', async () => {
+  it('sends a set-password link instead of taking a password from social users', async () => {
     const auth = useAuthStore()
     auth.user = {
       id: 2,
@@ -133,13 +134,17 @@ describe('ProfileView', () => {
     const tabs = wrapper.findAll('.tab-item-btn')
     await tabs[1]!.trigger('click')
 
-    // Current password input should NOT exist for unset password
+    // No password fields: the password is set through a link sent to the verified email (BR-08)
     expect(wrapper.find('#sec-curr-pwd').exists()).toBe(false)
-    // New password and confirm password inputs DO exist
-    expect(wrapper.find('#sec-new-pwd').exists()).toBe(true)
-    expect(wrapper.find('#sec-conf-pwd').exists()).toBe(true)
+    expect(wrapper.find('#sec-new-pwd').exists()).toBe(false)
     expect(wrapper.find('.social-notice-card').exists()).toBe(true)
-    expect(wrapper.find('.social-notice-card').exists()).toBe(true)
+
+    vi.mocked(profileApi.sendPasswordSetupLink).mockResolvedValue({ message: 'Đã gửi liên kết.' })
+    await wrapper.find('.security-edit-form').trigger('submit')
+    await flushPromises()
+
+    expect(profileApi.sendPasswordSetupLink).toHaveBeenCalledTimes(1)
+    expect(profileApi.changePassword).not.toHaveBeenCalled()
   })
 
   it('saves profile and displays success notice', async () => {

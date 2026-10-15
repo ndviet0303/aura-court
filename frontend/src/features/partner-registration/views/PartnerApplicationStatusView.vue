@@ -15,6 +15,7 @@ const {
   error,
   fetchCurrent,
   fetchHistory,
+  start,
   isPendingReview,
   isSupplementationRequested,
   isApproved,
@@ -31,6 +32,16 @@ async function loadData() {
 }
 
 onMounted(loadData)
+
+// BR-14: the rejected application stays on record; a new draft starts from here.
+async function handleStartNew() {
+  try {
+    await start()
+    router.push('/partner-registration')
+  } catch {
+    // start() already surfaces the error banner
+  }
+}
 async function handleGoToDashboard() {
   try {
     await auth.load(true)
@@ -179,8 +190,9 @@ async function handleGoToDashboard() {
             <div class="action-row">
               <button
                 type="button"
+                :disabled="submitting"
                 class="btn-action-secondary"
-                @click="router.push('/partner-registration')"
+                @click="handleStartNew"
               >
                 <span class="material-symbols-outlined icon-16">add</span>
                 <span>Bắt đầu hồ sơ mới</span>

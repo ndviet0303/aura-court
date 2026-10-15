@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureAccountNotRestricted
@@ -14,6 +15,15 @@ class EnsureAccountNotRestricted
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
+
+        // BR-23: a session signed in before the account was locked never comes back, even after an unlock.
+        if ($user?->sessions_revoked_at && $request->hasSession()
+            && (int) $request->session()->get('auth_at', 0) < $user->sessions_revoked_at->getTimestamp()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+
+            return response()->json(['message' => 'Phiên đăng nhập đã hết hiệu lực. Vui lòng đăng nhập lại.'], 401);
+        }
 
         if ($user && $user->isRestricted()) {
             // Allow checking own profile status and logging out

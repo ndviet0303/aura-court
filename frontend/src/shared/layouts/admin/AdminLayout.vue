@@ -191,6 +191,7 @@ const navGroups: NavGroup[] = [
         labelKey: 'admin.nav.kycVerification',
         icon: 'verified_user',
       },
+      { id: 'org-users', path: '/admin/users', labelKey: 'admin.nav.users', icon: 'group' },
       {
         id: 'org-disputes',
         path: '/admin/disputes',
@@ -228,10 +229,7 @@ function isItemPermitted(item: NavItem): boolean {
     return !!(isOwner || isCashier)
   }
   // POS group: retail, shifts, inventory, membership
-  if (item.path === '/admin/pos' || item.path === '/pos') {
-    return !!(isOwner || isCashier)
-  }
-  if (item.path === '/admin/shifts' || item.path === '/admin/inventory') {
+  if (['/admin/pos', '/pos', '/admin/shifts', '/admin/inventory'].includes(item.path)) {
     return !!(isOwner || isCashier)
   }
   if (item.path === '/admin/membership') {

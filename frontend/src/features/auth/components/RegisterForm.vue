@@ -124,7 +124,7 @@ const passwordsMatch = computed(() => {
           class="custom-input with-toggle"
           :placeholder="t('auth.passwordPlaceholder')"
           autocomplete="new-password"
-          minlength="8"
+          maxlength="64"
           required
           @input="emit('update:password', ($event.target as HTMLInputElement).value)"
         />
@@ -173,7 +173,7 @@ const passwordsMatch = computed(() => {
           class="custom-input with-toggle"
           :placeholder="t('auth.passwordConfirmPlaceholder')"
           autocomplete="new-password"
-          minlength="8"
+          maxlength="64"
           required
           @input="emit('update:passwordConfirmation', ($event.target as HTMLInputElement).value)"
         />

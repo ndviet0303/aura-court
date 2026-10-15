@@ -99,6 +99,9 @@ class DurableNotificationService implements DurableNotificationServiceInterface
             eventType: "partner.application.{$decision}",
             payload: [
                 'title' => $title,
+                // BR-15: the applicant reads the decision and its reason in the notification itself.
+                'body' => $reason ? "Hồ sơ {$kyc->kyc_code}: {$reason}" : "Hồ sơ {$kyc->kyc_code} đã có kết quả xét duyệt.",
+                'action_url' => '/partner/application-status',
                 'decision' => $decision,
                 'reason' => $reason,
                 'kyc_code' => $kyc->kyc_code,

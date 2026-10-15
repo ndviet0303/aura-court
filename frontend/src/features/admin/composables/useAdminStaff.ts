@@ -31,6 +31,14 @@ export interface AuditLogItem {
   status: 'success' | 'warning' | 'danger'
 }
 
+export interface StaffInvitation {
+  id: number
+  email: string
+  role: string
+  status: 'pending' | 'accepted' | 'declined' | 'revoked' | 'expired' | string
+  expiresAt: string | null
+}
+
 export interface VenueOption {
   id: number
   name: string
@@ -67,6 +75,7 @@ export function useAdminStaff() {
   const staffList = ref<StaffMember[]>([])
   const auditLogs = ref<AuditLogItem[]>([])
   const venuesList = ref<VenueOption[]>([])
+  const invitations = ref<StaffInvitation[]>([])
   const auth = useAuthStore()
   function resolveInitialOrgId(): number {
     const user = auth.user
@@ -167,11 +176,23 @@ export function useAdminStaff() {
     loading.value = true
     error.value = ''
     try {
-      const [membersRes, logsRes, venuesRes] = await Promise.allSettled([
+      const [membersRes, logsRes, venuesRes, invitationsRes] = await Promise.allSettled([
         adminApi.getOrgMembers<{ members: any[] }>(currentOrgId.value),
         adminApi.getAuditLogs<any>(),
         adminApi.getVenues(),
+        adminApi.getOrgInvitations<{ invitations?: Record<string, unknown>[] }>(currentOrgId.value),
       ])
+
+      invitations.value =
+        invitationsRes.status === 'fulfilled'
+          ? (invitationsRes.value?.invitations || []).map((inv) => ({
+              id: Number(inv.id),
+              email: String(inv.email || ''),
+              role: String(inv.role || 'staff'),
+              status: String(inv.status || 'pending'),
+              expiresAt: inv.expires_at ? String(inv.expires_at) : null,
+            }))
+          : []
 
       // Venues
       if (venuesRes.status === 'rejected') {
@@ -396,11 +417,7 @@ export function useAdminStaff() {
         venue_ids: member.venueIds || (member.venueId ? [member.venueId] : undefined),
         permissions: member.permissions,
       }
-      if (typeof adminApi.createOrgInvitation === 'function') {
-        await adminApi.createOrgInvitation(currentOrgId.value, payload)
-      } else {
-        await adminApi.addOrgMember(currentOrgId.value, payload)
-      }
+      await adminApi.createOrgInvitation(currentOrgId.value, payload)
       await loadStaffData()
       showInviteModal.value = false
       showNotice(`Đã gửi thư mời gia nhập tới ${member.email}!`)
@@ -520,6 +537,7 @@ export function useAdminStaff() {
     staffList,
     auditLogs,
     venuesList,
+    invitations,
     currentOrgId,
     switchOrganization,
     stats,

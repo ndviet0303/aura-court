@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { api, errorMessage } from '@/lib/api'
 import { resolveAuthDestination } from '../utils/authDestination'
+import { newPasswordError } from '@/core/utils/accountPassword'
 
 import AuthBrandPanel from '../components/AuthBrandPanel.vue'
 import AuthTabs from '../components/AuthTabs.vue'
@@ -105,9 +106,7 @@ function setMode(newMode: 'login' | 'register') {
 function handlePostAuthRedirect(user: { onboarded?: boolean; role?: string } | null) {
   const redirectParam = typeof route.query.redirect === 'string' ? route.query.redirect : null
   const dest = resolveAuthDestination(user, redirectParam)
-  if (dest) {
-    router.push(dest)
-  }
+  if (dest) router.push(dest)
 }
 
 async function handleLogin() {
@@ -124,8 +123,9 @@ async function handleLogin() {
 }
 
 async function handleRegister() {
-  if (regPassword.value !== regPasswordConfirmation.value) {
-    error.value = t('auth.passwordsDoNotMatch')
+  const invalid = newPasswordError(regPassword.value, regPasswordConfirmation.value)
+  if (invalid) {
+    error.value = t(invalid)
     return
   }
 

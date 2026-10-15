@@ -11,6 +11,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Models\User;
+use App\Rules\AccountPassword;
 use App\Services\Auth\SocialAccountResolver;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
@@ -42,12 +43,8 @@ class AuthController extends Controller
         event(new Registered($user));
 
         Auth::login($user);
-        try {
-            if ($request->hasSession()) {
-                $request->session()->regenerate();
-            }
-        } catch (\Throwable) {
-            // Stateless request
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
         }
 
         return response()->json(['user' => $user], 201);
@@ -72,12 +69,8 @@ class AuthController extends Controller
                 'error' => 'account_restricted',
             ], 403);
         }
-        try {
-            if ($request->hasSession()) {
-                $request->session()->regenerate();
-            }
-        } catch (\Throwable) {
-            // Stateless request
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
         }
 
         return ['user' => $request->user()];
@@ -89,7 +82,8 @@ class AuthController extends Controller
         if ($token instanceof PersonalAccessToken) {
             $token->delete();
         }
-        Auth::guard('web')->logout();
+        // BR-24: only this device signs out; remember-me cookies elsewhere stay valid.
+        Auth::guard('web')->logoutCurrentDevice();
         try {
             if ($request->hasSession()) {
                 $request->session()->invalidate();
@@ -105,10 +99,11 @@ class AuthController extends Controller
     public function forgotPassword(ForgotPasswordRequest $request)
     {
         $data = $request->validated();
-        if (User::where('email', $data['email'])->first()?->isDemo()) {
-            return ['message' => __('auth.password_reset_sent')];
+        $user = User::where('email', $data['email'])->first();
+        // BR-10: only accounts with a password and a verified email; the reply never reveals which.
+        if ($user && $user->password_set && $user->hasVerifiedEmail() && ! $user->isDemo()) {
+            Password::sendResetLink(['email' => $data['email']]);
         }
-        Password::sendResetLink(['email' => $data['email']]);
 
         return ['message' => __('auth.password_reset_sent')];
     }
@@ -137,23 +132,30 @@ class AuthController extends Controller
     {
         $user = $request->user();
         if (! $user->password_set) {
-            $data = $request->validate(['password' => ['required', 'string', 'min:8', 'confirmed']]);
-            $user->update(['password' => $data['password'], 'password_set' => true]);
-
-            return ['message' => 'Mật khẩu đăng nhập đã được thiết lập thành công.', 'user' => $user->fresh()];
+            return response()->json(['message' => 'Tài khoản chưa có mật khẩu. Vui lòng thiết lập mật khẩu qua liên kết gửi đến email.'], 422);
         }
         $data = $request->validate([
             'current_password' => ['required', 'current_password:web'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
+            'password' => ['required', 'string', new AccountPassword, 'different:current_password', 'confirmed'],
+        ], ['password.different' => 'Mật khẩu mới phải khác mật khẩu hiện tại.']);
         $user->update(['password' => $data['password']]);
 
         return ['message' => 'Mật khẩu đã được cập nhật.', 'user' => $user->fresh()];
     }
 
+    /** BR-09: an OAuth-only account proves it owns its verified email before setting a password. */
     public function setPassword(Request $request)
     {
-        return $this->changePassword($request);
+        $user = $request->user();
+        if ($user->password_set) {
+            return response()->json(['message' => 'Tài khoản đã có mật khẩu. Hãy dùng chức năng đổi mật khẩu.'], 422);
+        }
+        if (! $user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Vui lòng xác thực email trước khi thiết lập mật khẩu.'], 422);
+        }
+        Password::sendResetLink(['email' => $user->email]);
+
+        return ['message' => 'Đã gửi liên kết thiết lập mật khẩu đến email của bạn. Liên kết có hiệu lực 15 phút.'];
     }
 
     protected function resolveOAuthRedirectUri(Request $request, string $provider): string

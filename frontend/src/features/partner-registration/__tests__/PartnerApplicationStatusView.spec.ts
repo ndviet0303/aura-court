@@ -82,6 +82,7 @@ describe('PartnerApplicationStatusView', () => {
       historyRef.value = mockApp.review_histories
       return mockApp.review_histories
     })
+    const start = vi.fn().mockResolvedValue({ ...mockApp, id: 56, status: 'draft' })
     vi.mocked(usePartnerRegistration).mockReturnValue({
       application: appRef as any,
       history: historyRef as any,
@@ -100,14 +101,14 @@ describe('PartnerApplicationStatusView', () => {
       isRejected: computed(() => status === 'rejected') as any,
       clearErrors: vi.fn(),
       fetchCurrent,
-      start: vi.fn(),
+      start,
       saveDraft: vi.fn(),
       uploadDocument: vi.fn(),
       submit: vi.fn(),
       fetchHistory,
     })
 
-    return { fetchCurrent, fetchHistory }
+    return { fetchCurrent, fetchHistory, start }
   }
 
   it('renders the pending review notice for the backend status', async () => {
@@ -140,5 +141,17 @@ describe('PartnerApplicationStatusView', () => {
     await wrapper.find('button.bg-emerald-600').trigger('click')
     expect(loadSpy).toHaveBeenCalledWith(true)
     expect(mockPush).toHaveBeenCalledWith('/admin/organization')
+  })
+
+  it('shows the rejection reason and starts a new application from it', async () => {
+    const { start } = createMockComposable('rejected')
+    const wrapper = mount(PartnerApplicationStatusView)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.text()).toContain('Thông báo từ chuyên viên thẩm định.')
+    await wrapper.find('button.btn-action-secondary').trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(start).toHaveBeenCalledTimes(1)
+    expect(mockPush).toHaveBeenCalledWith('/partner-registration')
   })
 })

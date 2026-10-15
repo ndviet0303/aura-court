@@ -20,5 +20,7 @@ interface OrganizationLockRepositoryInterface
 
     public function findBySourceKycId(int $sourceKycId): ?Organization;
 
+    public function findByTaxCode(string $taxCode): ?Organization;
+
     public function updatePartnerStatus(Organization $org, string $status, ?string $reason = null): Organization;
 }

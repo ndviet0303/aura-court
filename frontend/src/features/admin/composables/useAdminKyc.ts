@@ -260,12 +260,20 @@ export function useAdminKyc() {
     }
   }
 
+  // BR-15: revision and rejection carry the reviewer's own reason of 10–1000 characters.
+  function reviewReason(): string | null {
+    const reason = customRejectReason.value.trim()
+    if (reason.length < 10 || reason.length > 1000) {
+      showNotice('Vui lòng nhập lý do dài 10–1.000 ký tự trước khi từ chối hoặc yêu cầu bổ sung.')
+      return null
+    }
+    return reason
+  }
+
   async function handleReject() {
     if (!selectedKyc.value) return
-    const reason =
-      selectedRejectReason.value ||
-      customRejectReason.value ||
-      'Hồ sơ không đáp ứng tiêu chuẩn thẩm định.'
+    const reason = reviewReason()
+    if (!reason) return
     isSubmitting.value = true
     try {
       const res = await adminKycApi.reviewKyc(selectedKyc.value.id, {
@@ -293,10 +301,8 @@ export function useAdminKyc() {
 
   async function handleRequestSupplement() {
     if (!selectedKyc.value) return
-    const reason =
-      selectedRejectReason.value ||
-      customRejectReason.value ||
-      'Vui lòng bổ sung giấy tờ xác thực rõ nét hơn.'
+    const reason = reviewReason()
+    if (!reason) return
     isSubmitting.value = true
     try {
       const res = await adminKycApi.reviewKyc(selectedKyc.value.id, {

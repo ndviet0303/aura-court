@@ -36,10 +36,19 @@ class SubmitPartnerApplication
                 abort(403, 'Bạn không có quyền gửi duyệt hồ sơ này.');
             }
 
+            // BR-11: an active account with a verified email and a complete personal profile.
             $user = $this->users->findById($data->userId);
-            if (! $user || (! $user->hasVerifiedEmail() && ! $user->hasVerifiedPhone())) {
+            if (! $user || ! $user->hasVerifiedEmail()) {
                 throw ValidationException::withMessages([
-                    'user' => 'Vui lòng xác thực email hoặc cung cấp bằng chứng xác thực số điện thoại trước khi nộp hồ sơ đối tác.',
+                    'user' => 'Vui lòng xác thực email trước khi nộp hồ sơ đối tác.',
+                ]);
+            }
+            if ($user->isRestricted()) {
+                abort(403, 'Tài khoản của bạn đang bị tạm khóa hoặc giới hạn. Vui lòng liên hệ bộ phận hỗ trợ.');
+            }
+            if (! $user->hasCompleteProfile()) {
+                throw ValidationException::withMessages([
+                    'profile' => 'Vui lòng hoàn thiện hồ sơ cá nhân (họ tên 2–100 ký tự và số điện thoại hợp lệ) trước khi nộp hồ sơ đối tác.',
                 ]);
             }
 

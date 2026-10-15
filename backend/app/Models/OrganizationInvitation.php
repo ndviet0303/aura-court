@@ -18,6 +18,8 @@ class OrganizationInvitation extends Model
 
     public const STATUS_EXPIRED = 'expired';
 
+    public const STATUS_DECLINED = 'declined';
+
     protected $fillable = [
         'organization_id',
         'invited_by',
@@ -31,7 +33,10 @@ class OrganizationInvitation extends Model
         'expires_at',
         'accepted_at',
         'revoked_at',
+        'declined_at',
     ];
+
+    protected $hidden = ['token'];
 
     protected $casts = [
         'venue_ids' => 'array',
@@ -39,18 +44,22 @@ class OrganizationInvitation extends Model
         'expires_at' => 'datetime',
         'accepted_at' => 'datetime',
         'revoked_at' => 'datetime',
+        'declined_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Organization, $this> */
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function inviter(): BelongsTo
     {
         return $this->belongsTo(User::class, 'invited_by');
     }
 
+    /** @return BelongsTo<Venue, $this> */
     public function venue(): BelongsTo
     {
         return $this->belongsTo(Venue::class);

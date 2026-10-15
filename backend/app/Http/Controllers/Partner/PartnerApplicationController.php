@@ -27,7 +27,8 @@ class PartnerApplicationController extends Controller
     public function current(Request $request): JsonResponse
     {
         $user = $request->user();
-        $application = $this->kycRepo->findCurrentByUserId($user->id);
+        // BR-14: after a decision the applicant still sees their latest application and its result.
+        $application = $this->kycRepo->findCurrentByUserId($user->id) ?? $this->kycRepo->findLatestByUserId($user->id);
 
         if (! $application) {
             return response()->json(['data' => null]);

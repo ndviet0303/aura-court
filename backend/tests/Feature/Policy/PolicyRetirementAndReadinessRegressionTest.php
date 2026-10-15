@@ -203,7 +203,7 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
         $staff = User::factory()->create(['role' => 'customer']);
         $customer = User::factory()->create(['role' => 'customer']);
 
-        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $staff->id, 'role' => 'staff', 'status' => 'active']);
+        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $staff->id, 'role' => 'staff', 'status' => 'active', 'permissions' => ['venue_ids' => [$venue->id]]]);
         OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $customer->id, 'role' => 'customer', 'status' => 'active']);
 
         // Fund customer wallet

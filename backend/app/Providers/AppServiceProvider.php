@@ -9,6 +9,7 @@ use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Infrastructure\TenantContext;
 use App\Services\Payment\PaymentProviderManager;
 use App\Services\Payment\PayOsPaymentProvider;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -46,6 +48,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureAuthRateLimits();
+        // BR-23: remember when each session signed in, so a later account lock can end it.
+        Event::listen(Login::class, function (): void {
+            if (app()->bound('session.store') && request()->hasSession()) {
+                request()->session()->put('auth_at', now()->getTimestamp());
+            }
+        });
         Queue::before(function (JobProcessing $event): void {
             app(ObservabilityService::class)->record('queue.job_started', ['job' => $event->job->resolveName()]);
         });

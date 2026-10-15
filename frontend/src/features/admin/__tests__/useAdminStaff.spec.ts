@@ -10,7 +10,7 @@ vi.mock('../api/adminApi', () => ({
     getOrgMembers: vi.fn(),
     getAuditLogs: vi.fn(),
     getVenues: vi.fn(),
-    addOrgMember: vi.fn(),
+    getOrgInvitations: vi.fn(),
     updateOrgMember: vi.fn(),
     removeOrgMember: vi.fn(),
     createOrgInvitation: vi.fn(),
@@ -45,6 +45,20 @@ describe('useAdminStaff (D08)', () => {
       { id: 43, name: { vi: 'Sân Cầu Lông Beta', en: 'Beta Court' } } as unknown as Venue,
     ])
     vi.mocked(adminApi.getAuditLogs).mockResolvedValue({ data: [] })
+    vi.mocked(adminApi.getOrgInvitations).mockResolvedValue({
+      invitations: [
+        { id: 7, email: 'pending@aura.test', role: 'staff', status: 'pending', expires_at: null },
+      ],
+    })
+  })
+
+  it('loads the organization invitations next to its members', async () => {
+    const { loadStaffData, invitations } = useAdminStaff()
+    await loadStaffData()
+
+    expect(invitations.value).toEqual([
+      { id: 7, email: 'pending@aura.test', role: 'staff', status: 'pending', expiresAt: null },
+    ])
   })
 
   it('uses active organization from auth capabilities instead of hardcoded 1', async () => {
@@ -96,8 +110,6 @@ describe('useAdminStaff (D08)', () => {
         active_organization_id: 88,
       },
     }
-
-    vi.mocked(adminApi.addOrgMember).mockResolvedValue({ member: { id: 2 } })
 
     const { inviteStaff } = useAdminStaff()
     await inviteStaff({

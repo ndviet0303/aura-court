@@ -228,9 +228,7 @@ async function handleNext() {
           </p>
         </div>
         <div class="form-field-item form-grid-full">
-          <label for="sports" class="field-label"
-            >Môn thể thao hoạt động <span class="req-star">*</span></label
-          >
+          <label for="sports" class="field-label">Môn thể thao hoạt động</label>
           <div class="sports-chips-row">
             <span
               v-for="s in POPULAR_SPORTS"
@@ -327,9 +325,7 @@ async function handleNext() {
           </p>
         </div>
         <div class="form-field-item">
-          <label for="id_card_number" class="field-label"
-            >Số CCCD / giấy tờ định danh <span class="req-star">*</span></label
-          >
+          <label for="id_card_number" class="field-label">Số CCCD / giấy tờ định danh</label>
           <input
             id="id_card_number"
             v-model="values.id_card_number"
@@ -342,9 +338,7 @@ async function handleNext() {
           </p>
         </div>
         <div class="form-field-item">
-          <label for="legal_name" class="field-label"
-            >Tên pháp lý đăng ký kinh doanh <span class="req-star">*</span></label
-          >
+          <label for="legal_name" class="field-label">Tên pháp lý đăng ký kinh doanh</label>
           <input
             id="legal_name"
             v-model="values.legal_name"
@@ -396,9 +390,7 @@ async function handleNext() {
       </div>
       <div class="form-grid">
         <div class="form-field-item form-grid-full">
-          <label for="contact_name" class="field-label"
-            >Tên người liên hệ <span class="req-star">*</span></label
-          >
+          <label for="contact_name" class="field-label">Tên người liên hệ</label>
           <input
             id="contact_name"
             v-model="values.contact_name"

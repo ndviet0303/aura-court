@@ -46,6 +46,11 @@ class EloquentOrganizationLockRepository implements OrganizationLockRepositoryIn
         return Organization::query()->where('source_kyc_id', $sourceKycId)->first();
     }
 
+    public function findByTaxCode(string $taxCode): ?Organization
+    {
+        return Organization::query()->where('tax_code', trim($taxCode))->first();
+    }
+
     public function updatePartnerStatus(Organization $org, string $status, ?string $reason = null): Organization
     {
         $org->update([

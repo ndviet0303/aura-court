@@ -31,11 +31,9 @@ class ReviewHostKyc
                 reviewerId: $data->reviewerId,
                 kycId: $data->kycId,
                 decision: 'approve',
-                reason: $data->reviewerNotes ?? 'Phê duyệt hồ sơ đối tác',
+                reason: $data->reviewerNotes,
                 reviewerNotes: $data->reviewerNotes,
                 feedbackFields: null,
-                reapplicationAllowed: false,
-                reapplicationCooloffDays: 0,
                 expectedVersion: $kyc->version
             );
 
@@ -47,11 +45,9 @@ class ReviewHostKyc
             reviewerId: $data->reviewerId,
             kycId: $data->kycId,
             decision: $mappedDecision,
-            reason: $data->rejectionReason ?: ($data->reviewerNotes ?: 'Thẩm định hồ sơ đối tác'),
+            reason: $data->rejectionReason,
             reviewerNotes: $data->reviewerNotes,
             feedbackFields: null,
-            reapplicationAllowed: true,
-            reapplicationCooloffDays: 0,
             expectedVersion: $kyc->version
         );
 

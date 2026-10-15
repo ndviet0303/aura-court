@@ -728,18 +728,10 @@ class PromotionController extends Controller
     private function authorizePromotionManager(Request $request, Organization $organization, bool $requireEntitlement = false): void
     {
         $user = $request->user();
-        $member = $user?->organizationMembers()
-            ->where('organization_id', $organization->id)
-            ->where('status', 'active')
-            ->first();
-        $permissions = (array) ($member?->permissions ?? []);
-        $hasPricingGrant = (bool) ($permissions['pricing'] ?? $permissions['promotions'] ?? false);
-        $role = $member?->role;
-
+        // BR-21: staff hold a fixed permission set without pricing, so promotions stay with owners and managers.
         abort_unless($user && (
             $user->isPlatformAdmin()
-            || in_array($role, [OrganizationMember::ROLE_ORGANIZATION_OWNER, OrganizationMember::ROLE_VENUE_MANAGER], true)
-            || (in_array($role, [OrganizationMember::ROLE_STAFF, OrganizationMember::ROLE_CASHIER], true) && $hasPricingGrant)
+            || $user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_ORGANIZATION_OWNER, OrganizationMember::ROLE_VENUE_MANAGER])
         ), 403, 'Pricing permission is required to manage promotions.');
 
         if ($requireEntitlement && ! $user->isPlatformAdmin()) {

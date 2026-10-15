@@ -72,7 +72,7 @@ class PartnerEvidenceAttachmentAndCompletenessTest extends TestCase
         ]);
     }
 
-    public function test_completeness_policy_evaluates_business_types_and_authorization(): void
+    public function test_completeness_policy_requires_the_published_fields_and_documents_of_the_business_type(): void
     {
         $user = User::factory()->create([
             'name' => 'Nguyen Van Contact',
@@ -112,9 +112,9 @@ class PartnerEvidenceAttachmentAndCompletenessTest extends TestCase
         $kyc = HostKyc::find($appId);
         $eval = PartnerCompletenessPolicy::evaluate($kyc);
 
-        // For company with different representative, power_of_attorney and business_license are required
-        $this->assertContains('power_of_attorney', $eval['required_documents']);
-        $this->assertContains('business_license', $eval['required_documents']);
+        // BR-12: a company needs its business licence and the representative's ID; nothing beyond the published list
+        $this->assertSame(['representative_id_front', 'representative_id_back', 'business_license'], $eval['required_documents']);
+        $this->assertSame([], $eval['missing_fields']);
         $this->assertFalse($eval['is_complete']);
     }
 

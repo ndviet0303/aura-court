@@ -4,6 +4,7 @@ namespace App\Infrastructure\Repositories\Eloquent;
 
 use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class EloquentUserRepository implements UserRepositoryInterface
 {
@@ -22,5 +23,19 @@ class EloquentUserRepository implements UserRepositoryInterface
         $user->forceFill($attributes)->save();
 
         return $user->fresh();
+    }
+
+    /** @return LengthAwarePaginator<int, User> */
+    public function paginateForAdmin(?string $search, ?string $status, int $perPage): LengthAwarePaginator
+    {
+        return User::query()
+            ->select(['id', 'name', 'email', 'role', 'status', 'created_at'])
+            ->when($search, function ($query, string $search) {
+                $term = '%'.addcslashes(mb_strtolower(trim($search)), '%_\\').'%';
+                $query->where(fn ($q) => $q->whereRaw('lower(email) like ?', [$term])->orWhereRaw('lower(name) like ?', [$term]));
+            })
+            ->when($status, fn ($query, string $status) => $query->where('status', $status))
+            ->orderByDesc('id')
+            ->paginate($perPage);
     }
 }

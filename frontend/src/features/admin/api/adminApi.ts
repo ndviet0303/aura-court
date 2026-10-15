@@ -138,8 +138,6 @@ export const adminApi = {
   // Organization Members
   getOrgMembers: <T = any[]>(orgId: number | string = 1) =>
     api.get<T>(`/organizations/${orgId}/members`),
-  addOrgMember: <T = any>(orgId: number | string = 1, payload: any) =>
-    api.post<T>(`/organizations/${orgId}/members`, payload),
   updateOrgMember: <T = any>(orgId: number | string = 1, memberId: number | string, payload: any) =>
     api.patch<T>(`/organizations/${orgId}/members/${memberId}`, payload),
   removeOrgMember: (orgId: number | string = 1, memberId: number | string) =>
@@ -150,11 +148,8 @@ export const adminApi = {
     api.get<T>(`/organizations/${orgId}/invitations`, { params: status ? { status } : undefined }),
   createOrgInvitation: <T = any>(orgId: number | string = 1, payload: any) =>
     api.post<T>(`/organizations/${orgId}/invitations`, payload),
-  acceptOrgInvitation: <T = any>(orgId: number | string, invitationId: number | string) =>
-    api.post<T>(`/organizations/${orgId}/invitations/${invitationId}/accept`),
   revokeOrgInvitation: <T = any>(orgId: number | string, invitationId: number | string) =>
     api.post<T>(`/organizations/${orgId}/invitations/${invitationId}/revoke`),
-  acceptInvitationByToken: <T = any>(token: string) => api.post<T>(`/invitations/${token}/accept`),
 
   // Pricing Rules Calendar
   getPriceRules: <T = { rules: any[] }>(params?: Record<string, any>) =>
