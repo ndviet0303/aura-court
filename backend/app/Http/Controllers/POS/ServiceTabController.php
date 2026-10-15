@@ -21,7 +21,7 @@ class ServiceTabController extends Controller
     public function index(Request $request): JsonResponse
     {
         $organization = $this->organization($request);
-        $tabs = $this->tabs->listTabs($organization->id, $request->all());
+        $tabs = $this->tabs->listTabs($request->user(), $organization->id, $request->all());
 
         return response()->json($tabs);
     }
@@ -29,7 +29,7 @@ class ServiceTabController extends Controller
     public function show(Request $request, int|string $reservation): JsonResponse
     {
         $organization = $this->organization($request);
-        $tab = $this->tabs->getTab($organization->id, $reservation);
+        $tab = $this->tabs->getTab($request->user(), $organization->id, $reservation);
 
         return response()->json(['tab' => $tab]);
     }

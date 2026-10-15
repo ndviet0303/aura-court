@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\User;
+use App\Models\Venue;
 use App\Services\Infrastructure\ElevatedAccessService;
 use App\Services\Infrastructure\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -61,8 +62,8 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
         $customer = User::factory()->create();
 
         OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $owner->id, 'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER]);
-        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $manager->id, 'role' => OrganizationMember::ROLE_VENUE_MANAGER]);
-        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $cashier->id, 'role' => OrganizationMember::ROLE_CASHIER]);
+        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $manager->id, 'role' => OrganizationMember::ROLE_STAFF]);
+        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $cashier->id, 'role' => OrganizationMember::ROLE_STAFF]);
         OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $customer->id, 'role' => OrganizationMember::ROLE_CUSTOMER]);
 
         $newUser = User::factory()->create(['email' => 'newstaff@aura.test']);
@@ -83,16 +84,17 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
             ])
             ->assertStatus(403);
 
-        // 3. Manager can view members
+        // 3. BR-21: staff do not administer the member list
         $this->actingAs($manager)
             ->getJson("/api/organizations/{$org->id}/members")
-            ->assertOk();
+            ->assertForbidden();
 
-        // 4. Owner can invite a member
+        // 4. Owner can invite a staff member for one of the organization's venues
+        $venue = Venue::create(['organization_id' => $org->id, 'name' => 'Aura Central 1', 'slug' => 'aura-central-1', 'is_active' => true]);
         $this->actingAs($owner)
             ->postJson("/api/organizations/{$org->id}/invitations", [
                 'email' => $newUser->email,
-                'role' => OrganizationMember::ROLE_STAFF,
+                'venue_ids' => [$venue->id],
             ])
             ->assertCreated()
             ->assertJsonPath('invitation.role', 'staff');
@@ -165,7 +167,7 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
 
         // User is cashier in Org A, but customer in Org B
         $user = User::factory()->create();
-        OrganizationMember::create(['organization_id' => $orgA->id, 'user_id' => $user->id, 'role' => OrganizationMember::ROLE_CASHIER, 'status' => 'active']);
+        OrganizationMember::create(['organization_id' => $orgA->id, 'user_id' => $user->id, 'role' => OrganizationMember::ROLE_STAFF, 'status' => 'active']);
         OrganizationMember::create(['organization_id' => $orgB->id, 'user_id' => $user->id, 'role' => OrganizationMember::ROLE_CUSTOMER, 'status' => 'active']);
 
         // 1. In Org A: user has cashier access
@@ -187,7 +189,7 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
             ->postJson('/api/pos/shifts', ['opening_cash' => 100000])
             ->assertStatus(403);
 
-        // 3. Staff role tests: staff can view active shift, but cannot open shift or review reconciliation
+        // 3. BR-20: staff without an assigned venue can view the active shift but cannot open one
         $staffUser = User::factory()->create();
         OrganizationMember::create(['organization_id' => $orgA->id, 'user_id' => $staffUser->id, 'role' => OrganizationMember::ROLE_STAFF, 'status' => 'active']);
 
@@ -198,10 +200,12 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
 
         $this->actingAs($staffUser)
             ->withHeader('X-Organization-ID', (string) $orgA->id)
+            ->withHeader('Idempotency-Key', 'open-shift-unassigned')
             ->postJson('/api/pos/shifts', ['opening_cash' => 100000])
-            ->assertStatus(403);
+            ->assertStatus(422)->assertJsonPath('message', 'Vui lòng chọn cơ sở bạn được giao.');
 
-        // 4. Cashier role tests: cashier can open shift, but cannot review reconciliation
+        // 4. BR-21: staff assigned to a venue open a shift there, but reviewing reconciliation is the owner's
+        $this->assignStaffVenues($orgA);
         $openShiftRes = $this->actingAs($user)
             ->withHeader('X-Organization-ID', (string) $orgA->id)
             ->withHeader('Idempotency-Key', 'open-shift-cashier')
@@ -209,23 +213,20 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
             ->assertCreated();
         $createdShiftId = $openShiftRes->json('shift.id');
 
-        // Attempting to review shift as cashier -> 403 Forbidden
         $this->actingAs($user)
             ->withHeader('X-Organization-ID', (string) $orgA->id)
             ->postJson("/api/pos/shifts/{$createdShiftId}/review", ['status' => 'approved'])
             ->assertStatus(403);
-        // 5. Manager role tests: manager can review shift reconciliation (fails with 404 shift not found, not 403 forbidden)
-        $managerUser = User::factory()->create();
-        OrganizationMember::create(['organization_id' => $orgA->id, 'user_id' => $managerUser->id, 'role' => OrganizationMember::ROLE_VENUE_MANAGER, 'status' => 'active']);
+        $managerUser = $staffUser;
 
-        $this->actingAs($managerUser)
+        // 5. Owner role tests: owner reviews shift reconciliation (404 for a missing shift, not 403) and updates organization settings
+        $ownerUser = User::factory()->create();
+        OrganizationMember::create(['organization_id' => $orgA->id, 'user_id' => $ownerUser->id, 'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER, 'status' => 'active']);
+
+        $this->actingAs($ownerUser)
             ->withHeader('X-Organization-ID', (string) $orgA->id)
             ->postJson('/api/pos/shifts/999999/review', ['status' => 'approved'])
             ->assertNotFound();
-
-        // 6. Owner role tests: owner can update organization settings
-        $ownerUser = User::factory()->create();
-        OrganizationMember::create(['organization_id' => $orgA->id, 'user_id' => $ownerUser->id, 'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER, 'status' => 'active']);
 
         $this->actingAs($ownerUser)
             ->withHeader('X-Organization-ID', (string) $orgA->id)
@@ -239,13 +240,13 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
             ->patchJson("/api/organizations/{$orgA->id}", ['name' => 'Org A Hacked'])
             ->assertStatus(403);
 
-        // 7. Elevated platform admin tests: can access without being an organization member
+        // 6. BR-23: platform admin rights do not reach organization operations
         $platformAdmin = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($platformAdmin)
             ->withHeader('X-Organization-ID', (string) $orgA->id)
             ->getJson('/api/pos/shifts/active')
-            ->assertOk();
+            ->assertForbidden();
     }
 
     public function test_effective_tenant_capabilities_endpoint_exposes_pilot_and_default_flags(): void
@@ -260,8 +261,8 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
         ]);
 
         $user = User::factory()->create();
-        OrganizationMember::create(['organization_id' => $pilotOrg->id, 'user_id' => $user->id, 'role' => 'cashier', 'status' => 'active']);
-        OrganizationMember::create(['organization_id' => $standardOrg->id, 'user_id' => $user->id, 'role' => 'cashier', 'status' => 'active']);
+        OrganizationMember::create(['organization_id' => $pilotOrg->id, 'user_id' => $user->id, 'role' => 'staff', 'status' => 'active']);
+        OrganizationMember::create(['organization_id' => $standardOrg->id, 'user_id' => $user->id, 'role' => 'staff', 'status' => 'active']);
 
         // 1. Pilot organization has POS enabled
         $pilotRes = $this->actingAs($user)
@@ -270,7 +271,7 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
 
         $pilotRes->assertOk()
             ->assertJsonPath('organization_id', $pilotOrg->id)
-            ->assertJsonPath('role', 'cashier')
+            ->assertJsonPath('role', 'staff')
             ->assertJsonPath('capabilities.tenant_pos_and_wallet', true)
             ->assertJsonPath('capabilities.marketplace_payouts', true);
 
@@ -281,7 +282,7 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
 
         $standardRes->assertOk()
             ->assertJsonPath('organization_id', $standardOrg->id)
-            ->assertJsonPath('role', 'cashier')
+            ->assertJsonPath('role', 'staff')
             ->assertJsonPath('capabilities.tenant_pos_and_wallet', false)
             ->assertJsonPath('capabilities.marketplace_payouts', false);
 

@@ -9,10 +9,11 @@ export interface StaffMember {
   name: string
   email: string
   phone: string
-  role: 'Owner' | 'Manager' | 'Receptionist' | 'Technician' | 'Referee' | 'Staff' | string
+  role: 'Owner' | 'Staff' | 'Customer' | string
   rawRole: string
   venueName: string
   venueId: number
+  venueIds: number[]
   status: 'active' | 'suspended' | 'invited' | string
   avatar?: string
   lastActive: string
@@ -102,67 +103,20 @@ export function useAdminStaff() {
     currentOrgId.value = orgId
     await loadStaffData()
   }
+  // Organization roles are organization_owner, staff and customer; staff share one fixed permission set.
   function mapRoleLabel(role: string): StaffMember['role'] {
     switch (role) {
       case 'organization_owner':
-      case 'Owner':
         return 'Owner'
-      case 'venue_manager':
-      case 'Manager':
-        return 'Manager'
-      case 'cashier':
-      case 'Receptionist':
-        return 'Receptionist'
-      case 'staff':
-      case 'Staff':
+      case 'customer':
+        return 'Customer'
+      default:
         return 'Staff'
-      case 'technician':
-      case 'Technician':
-        return 'Technician'
-      case 'referee':
-      case 'Referee':
-        return 'Referee'
-      default:
-        return role || 'Staff'
-    }
-  }
-
-  function mapRoleToBackend(role: string): string {
-    switch (role) {
-      case 'Owner':
-      case 'organization_owner':
-        return 'organization_owner'
-      case 'Manager':
-      case 'venue_manager':
-        return 'venue_manager'
-      case 'Receptionist':
-      case 'cashier':
-        return 'cashier'
-      default:
-        return 'staff'
     }
   }
 
   function calculatePermCount(role: string): number {
-    switch (role) {
-      case 'organization_owner':
-      case 'Owner':
-        return 28
-      case 'venue_manager':
-      case 'Manager':
-        return 22
-      case 'cashier':
-      case 'Receptionist':
-        return 14
-      case 'technician':
-      case 'Technician':
-        return 8
-      case 'referee':
-      case 'Referee':
-        return 6
-      default:
-        return 10
-    }
+    return role === 'organization_owner' ? 28 : role === 'staff' ? 14 : 0
   }
 
   function showNotice(msg: string) {
@@ -222,12 +176,8 @@ export function useAdminStaff() {
         staffList.value = raw.map((item: unknown) => {
           const m = item as Record<string, unknown>
           const perms = (m.permissions as Record<string, unknown> | null) || {}
-          const vId = Number(
-            m.venue_id ||
-              perms.venue_id ||
-              (Array.isArray(perms.venue_ids) ? perms.venue_ids[0] : 0) ||
-              0,
-          )
+          const venueIds = Array.isArray(perms.venue_ids) ? perms.venue_ids.map(Number) : []
+          const vId = Number(m.venue_id || perms.venue_id || venueIds[0] || 0)
           const venueFound = venuesList.value.find((v) => v.id === vId)
           const userObj = m.user as Record<string, unknown> | null
           const roleStr = String(m.role || 'staff')
@@ -244,6 +194,7 @@ export function useAdminStaff() {
               venueObj?.name || venueFound?.name || (vId ? `Cơ sở #${vId}` : 'Tất cả cơ sở'),
             ),
             venueId: vId,
+            venueIds,
             status: String(m.status || 'active'),
             avatar: userObj?.avatar
               ? String(userObj.avatar)
@@ -293,20 +244,17 @@ export function useAdminStaff() {
     const list = staffList.value
     return {
       totalStaff: list.length,
-      activeManagers: list.filter((s) => s.role === 'Manager' || s.role === 'Owner').length,
-      receptionists: list.filter((s) => s.role === 'Receptionist' || s.role === 'Staff').length,
-      systemRoles: 5,
+      owners: list.filter((s) => s.rawRole === 'organization_owner').length,
+      staff: list.filter((s) => s.rawRole === 'staff').length,
+      systemRoles: 2,
     }
   })
 
   const filteredStaff = computed(() => {
     return staffList.value.filter((staff) => {
       // Role Filter
-      if (selectedRoleFilter.value !== 'all') {
-        const mappedFilter = mapRoleLabel(selectedRoleFilter.value)
-        if (staff.role !== mappedFilter && staff.rawRole !== selectedRoleFilter.value) {
-          return false
-        }
+      if (selectedRoleFilter.value !== 'all' && staff.rawRole !== selectedRoleFilter.value) {
+        return false
       }
 
       // Status Filter
@@ -397,27 +345,15 @@ export function useAdminStaff() {
     })
   })
 
-  async function inviteStaff(member: {
-    name: string
-    email: string
-    phone?: string
-    role: StaffMember['role']
-    venueId?: number
-    venueIds?: number[]
-    permissions?: Record<string, unknown> | string[]
-  }) {
+  // Invitations only grant the staff role, scoped to at least one venue.
+  async function inviteStaff(member: { email: string; venueIds: number[] }) {
     saving.value = true
     error.value = ''
     try {
-      const backendRole = mapRoleToBackend(member.role)
-      const payload = {
+      await adminApi.createOrgInvitation(currentOrgId.value, {
         email: member.email,
-        role: backendRole,
-        venue_id: member.venueId,
-        venue_ids: member.venueIds || (member.venueId ? [member.venueId] : undefined),
-        permissions: member.permissions,
-      }
-      await adminApi.createOrgInvitation(currentOrgId.value, payload)
+        venue_ids: member.venueIds,
+      })
       await loadStaffData()
       showInviteModal.value = false
       showNotice(`Đã gửi thư mời gia nhập tới ${member.email}!`)
@@ -434,31 +370,19 @@ export function useAdminStaff() {
     showEditModal.value = true
   }
 
-  async function updateMemberRole(
-    memberId: number,
-    payload: {
-      role: string
-      status?: string
-      venueId?: number
-      venueIds?: number[]
-      permissions?: Record<string, unknown>
-    },
-  ) {
+  // Only staff rows are editable: status and venue access (an empty list removes all venues).
+  async function updateMember(memberId: number, payload: { status?: string; venueIds?: number[] }) {
     saving.value = true
     error.value = ''
     try {
-      const backendRole = mapRoleToBackend(payload.role)
       await adminApi.updateOrgMember(currentOrgId.value, memberId, {
-        role: backendRole,
         status: payload.status,
-        venue_id: payload.venueId,
-        venue_ids: payload.venueIds || (payload.venueId ? [payload.venueId] : undefined),
-        permissions: payload.permissions,
+        venue_ids: payload.venueIds,
       })
       await loadStaffData()
       showEditModal.value = false
       selectedMemberForEdit.value = null
-      showNotice('Đã cập nhật vai trò và trạng thái thành công!')
+      showNotice('Đã cập nhật cơ sở và trạng thái thành công!')
     } catch (e: unknown) {
       error.value = errorMessage(e, 'Không thể cập nhật nhân sự.')
       throw e
@@ -472,17 +396,18 @@ export function useAdminStaff() {
     showRemoveModal.value = true
   }
 
+  // Ends staff status; the row stays as a customer membership.
   async function removeMember(memberId: number) {
     saving.value = true
     error.value = ''
     try {
-      await adminApi.removeOrgMember(currentOrgId.value, memberId)
+      const res = await adminApi.removeOrgMember(currentOrgId.value, memberId)
       await loadStaffData()
       showRemoveModal.value = false
       selectedMemberForRemove.value = null
-      showNotice('Đã xoá nhân sự khỏi hệ thống thành công!')
+      showNotice(res?.message || 'Đã chấm dứt tư cách nhân viên.')
     } catch (e: unknown) {
-      error.value = errorMessage(e, 'Không thể xoá nhân sự.')
+      error.value = errorMessage(e, 'Không thể chấm dứt tư cách nhân viên.')
       throw e
     } finally {
       saving.value = false
@@ -490,11 +415,7 @@ export function useAdminStaff() {
   }
 
   async function toggleMemberStatus(member: StaffMember) {
-    const newStatus = member.status === 'active' ? 'suspended' : 'active'
-    await updateMemberRole(member.id, {
-      role: member.rawRole,
-      status: newStatus,
-    })
+    await updateMember(member.id, { status: member.status === 'active' ? 'suspended' : 'active' })
   }
 
   async function revokeInvitation(invitationId: number) {
@@ -547,7 +468,7 @@ export function useAdminStaff() {
     loadStaffData,
     inviteStaff,
     openEditModal,
-    updateMemberRole,
+    updateMember,
     openRemoveModal,
     removeMember,
     revokeInvitation,

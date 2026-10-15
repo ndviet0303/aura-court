@@ -53,14 +53,13 @@ class AdminController extends Controller
         $version = Cache::get('venues_version', 1);
         $user = $request->user();
         $isAdminRoute = $request->is('api/admin/venues');
-        if ($isAdminRoute && $user && ! $user->isPlatformAdmin()) {
+        if ($isAdminRoute && $user) {
             abort_unless($user->organizationMembers()->where('status', 'active')->whereIn('role', [
                 OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                OrganizationMember::ROLE_VENUE_MANAGER,
                 OrganizationMember::ROLE_STAFF,
             ])->exists(), 403, 'Unauthorized venue management.');
 
-            $authorizedVenueIds = $user->getAuthorizedVenueIds() ?? [];
+            $authorizedVenueIds = $user->getAuthorizedVenueIds();
             $venues = Venue::query()
                 ->whereIn('id', $authorizedVenueIds)
                 ->withCount(['courts' => fn ($query) => $query->where('is_active', true)])
@@ -90,10 +89,10 @@ class AdminController extends Controller
     {
         $data = $this->validatedVenue($request);
         $user = $request->user();
-        if ($user && ! $user->isPlatformAdmin()) {
+        if ($user) {
             $orgId = $request->input('organization_id')
                 ?? $user->organizations()->where('organizations.status', 'active')->first()?->id;
-            abort_unless($orgId && $user->hasRoleInOrganization($orgId, [OrganizationMember::ROLE_ORGANIZATION_OWNER, OrganizationMember::ROLE_VENUE_MANAGER]), 403, 'Unauthorized organization.');
+            abort_unless($orgId && $user->hasRoleInOrganization($orgId, [OrganizationMember::ROLE_ORGANIZATION_OWNER]), 403, 'Unauthorized organization.');
             $organization = Organization::find($orgId);
             abort_unless($organization?->isApprovedPartner(), 403, 'Câu lạc bộ cần được phê duyệt đối tác trước khi tạo cơ sở.');
             $data['organization_id'] = $orgId;
@@ -111,9 +110,7 @@ class AdminController extends Controller
     public function updateVenue(Request $request, Venue $venue)
     {
         $user = $request->user();
-        if ($user && ! $user->isPlatformAdmin()) {
-            abort_unless($user->canManageVenue($venue), 403, 'Unauthorized venue.');
-        }
+        abort_unless($user->canManageVenue($venue), 403, 'Unauthorized venue.');
 
         if ($request->boolean('is_active') && ! $venue->is_active && ! in_array($venue->status, ['published', 'active'], true)) {
             abort(409, 'Cơ sở phải hoàn tất điều kiện và quy trình duyệt trước khi mở công khai.');
@@ -135,9 +132,7 @@ class AdminController extends Controller
     public function destroyVenue(Venue $venue)
     {
         $user = request()->user();
-        if ($user && ! $user->isPlatformAdmin()) {
-            abort_unless($user->canManageVenue($venue), 403, 'Unauthorized venue.');
-        }
+        abort_unless($user->canManageVenue($venue), 403, 'Unauthorized venue.');
 
         $this->updateVenueAction->execute($venue, ['is_active' => false]);
         Cache::increment('venues_version');
@@ -212,9 +207,7 @@ class AdminController extends Controller
     public function pricesIndex(Request $request, Court $court)
     {
         $user = $request->user();
-        if ($user && ! $user->isPlatformAdmin()) {
-            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
-        }
+        abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
 
         return response()->json($court->priceSlots()->orderBy('weekday')->orderBy('starts_at')->get());
     }
@@ -222,9 +215,7 @@ class AdminController extends Controller
     public function prices(Request $request, Court $court)
     {
         $user = $request->user();
-        if ($user && ! $user->isPlatformAdmin()) {
-            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
-        }
+        abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
 
         $data = $request->validate([
             'weekday' => 'required|integer|min:1|max:7',
@@ -243,9 +234,7 @@ class AdminController extends Controller
     public function bulkPrices(Request $request, Court $court)
     {
         $user = $request->user();
-        if ($user && ! $user->isPlatformAdmin()) {
-            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
-        }
+        abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
 
         $data = $request->validate([
             'weekdays' => 'required|array|min:1',
@@ -274,9 +263,7 @@ class AdminController extends Controller
     public function blocks(Request $request, Court $court)
     {
         $user = $request->user();
-        if ($user && ! $user->isPlatformAdmin()) {
-            abort_unless($user->canOperateVenue($court->venue_id), 403, 'Unauthorized court venue.');
-        }
+        abort_unless($user->canOperateVenue($court->venue_id), 403, 'Unauthorized court venue.');
 
         $data = $request->validate([
             'starts_at' => 'required|date',
@@ -293,9 +280,7 @@ class AdminController extends Controller
     public function updatePrice(Request $request, Court $court, CourtPriceSlot $price)
     {
         $user = $request->user();
-        if ($user && ! $user->isPlatformAdmin()) {
-            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
-        }
+        abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
 
         $data = $request->validate([
             'weekday' => 'sometimes|integer|min:1|max:7',
@@ -314,9 +299,7 @@ class AdminController extends Controller
     public function destroyPrice(Court $court, CourtPriceSlot $price)
     {
         $user = request()->user();
-        if ($user && ! $user->isPlatformAdmin()) {
-            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
-        }
+        abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
 
         $this->manageCourtPricesAction->deletePrice($court, $price);
         $this->audits->record(request(), 'price.deleted', $price, ['court_id' => $court->id]);
@@ -327,9 +310,7 @@ class AdminController extends Controller
     public function blocksIndex(Court $court)
     {
         $user = request()->user();
-        if ($user && ! $user->isPlatformAdmin()) {
-            abort_unless($user->canOperateVenue($court->venue_id), 403, 'Unauthorized court venue.');
-        }
+        abort_unless($user->canOperateVenue($court->venue_id), 403, 'Unauthorized court venue.');
 
         return $this->courtBlocks->paginateForCourt($court, 50);
     }
@@ -337,9 +318,7 @@ class AdminController extends Controller
     public function destroyBlock(Court $court, CourtBlock $block)
     {
         $user = request()->user();
-        if ($user && ! $user->isPlatformAdmin()) {
-            abort_unless($user->canOperateVenue($court->venue_id), 403, 'Unauthorized court venue.');
-        }
+        abort_unless($user->canOperateVenue($court->venue_id), 403, 'Unauthorized court venue.');
 
         $this->manageCourtBlocksAction->deleteBlock($court, $block);
         $this->audits->record(request(), 'court_block.deleted', $block, ['court_id' => $court->id]);
@@ -587,7 +566,9 @@ class AdminController extends Controller
         $user = $request->user();
         $scopedVenueIds = null;
         if ($user && ! $user->isPlatformAdmin()) {
-            $authorizedVenueIds = $user->getAuthorizedVenueIds() ?? [];
+            abort_unless($user->organizationMembers()->where('status', 'active')
+                ->whereIn('role', [OrganizationMember::ROLE_ORGANIZATION_OWNER, OrganizationMember::ROLE_STAFF])->exists(), 403, 'Organization admin or staff access required.');
+            $authorizedVenueIds = $user->getAuthorizedVenueIds();
             if ($request->filled('venue_id')) {
                 $requestedVenueId = (int) $request->input('venue_id');
                 abort_unless(in_array($requestedVenueId, $authorizedVenueIds, true), 403, 'Unauthorized venue report.');

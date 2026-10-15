@@ -24,6 +24,7 @@ vi.mock('../api/posApi', () => ({
     getShifts: vi.fn(),
     getActiveShift: vi.fn(),
     openShift: vi.fn(),
+    getVenues: vi.fn().mockResolvedValue([]),
     closeShift: vi.fn(),
     reviewShift: vi.fn(),
     getActiveReservations: vi.fn(),
@@ -86,7 +87,7 @@ describe('Task 1.2 Regression: POS false success, receipt mismatch, and wrong re
     vi.mocked(api.get).mockResolvedValue({
       organization_id: 1,
       capabilities: { tenant_pos_and_wallet: true },
-      role: 'cashier',
+      role: 'staff',
       is_platform_admin: false,
     })
     vi.mocked(posApi.searchCustomers).mockResolvedValue([])
@@ -234,7 +235,7 @@ describe('Task 1.2 Regression: POS false success, receipt mismatch, and wrong re
       return {
         organization_id: 1,
         capabilities: { tenant_pos_and_wallet: true },
-        role: 'cashier',
+        role: 'staff',
         is_platform_admin: false,
       }
     })

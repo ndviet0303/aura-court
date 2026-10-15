@@ -40,16 +40,12 @@ const {
   loadStaffData,
   inviteStaff,
   openEditModal,
-  updateMemberRole,
+  updateMember,
   openRemoveModal,
   removeMember,
   toggleMemberStatus,
   revokeInvitation,
 } = useAdminStaff()
-
-async function handleConfirmRemove(memberId: number) {
-  await removeMember(memberId)
-}
 </script>
 
 <template>
@@ -87,8 +83,8 @@ async function handleConfirmRemove(memberId: number) {
     <!-- 4 KPI Stat Cards with Skeletons -->
     <StaffKpiBar
       :total-staff="stats.totalStaff"
-      :active-managers="stats.activeManagers"
-      :receptionists="stats.receptionists"
+      :owners="stats.owners"
+      :staff="stats.staff"
       :system-roles="stats.systemRoles"
       :loading="loading"
     />
@@ -182,8 +178,9 @@ async function handleConfirmRemove(memberId: number) {
       :show="showEditModal"
       :member="selectedMemberForEdit"
       :saving="saving"
+      :venues="venuesList"
       @close="showEditModal = false"
-      @save="updateMemberRole"
+      @save="updateMember"
     />
 
     <!-- Remove Member Modal -->
@@ -192,7 +189,7 @@ async function handleConfirmRemove(memberId: number) {
       :member="selectedMemberForRemove"
       :saving="saving"
       @close="showRemoveModal = false"
-      @confirm="handleConfirmRemove"
+      @confirm="removeMember"
     />
   </div>
 </template>

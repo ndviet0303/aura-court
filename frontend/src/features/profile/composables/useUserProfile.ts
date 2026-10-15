@@ -1,4 +1,5 @@
 import { ref, computed, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { profileApi } from '../api/profileApi'
 import { errorMessage } from '@/core/utils/errorMessage'
@@ -9,6 +10,7 @@ import type { Membership } from '@/core/types/common'
 
 export function useUserProfile() {
   const auth = useAuthStore()
+  const router = useRouter()
   const activeTab = ref<ProfileTabType>('general')
   const notice = ref('')
   const error = ref('')
@@ -16,6 +18,7 @@ export function useUserProfile() {
   const savingProfile = ref(false)
   const savingPassword = ref(false)
   const resendingVerification = ref(false)
+  const submittingEmail = ref(false)
   const membership = ref<Membership | null>(null)
 
   // Profile Form States
@@ -56,6 +59,10 @@ export function useUserProfile() {
   const isEmailVerified = computed(() => !!auth.user?.email_verified_at)
   const isSocialUser = computed(() => !!auth.user?.social_provider)
   const hasPasswordSet = computed(() => auth.user?.password_set !== false)
+  const needsEmail = computed(() => {
+    const caps = auth.user?.capabilities
+    return !Array.isArray(caps) && caps?.needs_email === true
+  })
 
   function showNotice(msg: string) {
     notice.value = msg
@@ -148,14 +155,15 @@ export function useUserProfile() {
         password_confirmation: confirmPassword.value,
       })
 
-      if (auth.user && res.user) {
-        Object.assign(auth.user, res.user)
-      }
-
       currentPassword.value = ''
       newPassword.value = ''
       confirmPassword.value = ''
-      showNotice(res.message || 'Cập nhật mật khẩu bảo mật thành công.')
+      // BR-10: the server already ended the session; drop local auth state without another API call.
+      auth.user = null
+      await router.replace({
+        name: 'login',
+        state: { notice: res.message || 'Đã đổi mật khẩu. Vui lòng đăng nhập lại.' },
+      })
     } catch (e: unknown) {
       showError(errorMessage(e, 'Không thể cập nhật mật khẩu. Vui lòng kiểm tra lại.'))
     } finally {
@@ -190,6 +198,20 @@ export function useUserProfile() {
     }
   }
 
+  async function submitEmail(email: string) {
+    submittingEmail.value = true
+    error.value = ''
+    try {
+      const res = await profileApi.addEmail(email)
+      await auth.load(true)
+      showNotice(res.message || 'Đã gửi liên kết xác thực đến email của bạn.')
+    } catch (e: unknown) {
+      showError(errorMessage(e, 'Không thể cập nhật email. Vui lòng thử lại.'))
+    } finally {
+      submittingEmail.value = false
+    }
+  }
+
   onMounted(async () => {
     await Promise.allSettled([auth.load(true), loadMembership()])
   })
@@ -203,6 +225,7 @@ export function useUserProfile() {
     savingProfile,
     savingPassword,
     resendingVerification,
+    submittingEmail,
     membership,
     name,
     phone,
@@ -217,11 +240,13 @@ export function useUserProfile() {
     isEmailVerified,
     isSocialUser,
     hasPasswordSet,
+    needsEmail,
     showNotice,
     showError,
     saveProfile,
     updatePassword,
     resendVerification,
+    submitEmail,
     loadMembership,
   }
 }

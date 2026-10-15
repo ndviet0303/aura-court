@@ -69,7 +69,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenantA->id,
             'user_id' => $this->cashierA->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 
@@ -88,7 +88,7 @@ class BookingAttendanceAndCheckInTest extends TestCase
             'is_active' => true,
         ]);
         // BR-20: staff reach only the venues assigned to them.
-        OrganizationMember::where('organization_id', $this->tenantA->id)->whereIn('role', ['staff', 'cashier'])
+        OrganizationMember::where('organization_id', $this->tenantA->id)->where('role', 'staff')
             ->get()->each(fn (OrganizationMember $m) => $m->update(['permissions' => ['venue_ids' => [$this->venueA->id]]]));
 
         $this->courtA = Court::create([

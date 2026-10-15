@@ -2,6 +2,7 @@
 import { useUserProfile } from '../composables/useUserProfile'
 
 import ProfileAthleteHeader from '../components/ProfileAthleteHeader.vue'
+import ProfileAddEmailForm from '../components/ProfileAddEmailForm.vue'
 import ProfileGeneralTab from '../components/ProfileGeneralTab.vue'
 import ProfileSecurityTab from '../components/ProfileSecurityTab.vue'
 import ProfileMembershipTab from '../components/ProfileMembershipTab.vue'
@@ -15,6 +16,7 @@ const {
   savingProfile,
   savingPassword,
   resendingVerification,
+  submittingEmail,
   membership,
   name,
   phone,
@@ -28,9 +30,11 @@ const {
   displayAvatar,
   isEmailVerified,
   hasPasswordSet,
+  needsEmail,
   saveProfile,
   updatePassword,
   resendVerification,
+  submitEmail,
 } = useUserProfile()
 </script>
 
@@ -58,10 +62,12 @@ const {
       :avatar-url="displayAvatar"
       :active-tab="activeTab"
       :is-email-verified="isEmailVerified"
+      :needs-email="needsEmail"
       :resending-verification="resendingVerification"
       @update:active-tab="activeTab = $event"
       @resend-verification="resendVerification"
     />
+    <ProfileAddEmailForm v-if="needsEmail" :saving="submittingEmail" @submit="submitEmail" />
 
     <!-- Main Content Tab Panels -->
     <main class="profile-main-content">

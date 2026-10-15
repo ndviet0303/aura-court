@@ -253,6 +253,7 @@ class EmailVerificationBookingEnforcementTest extends TestCase
             'role' => 'staff',
             'status' => 'active',
         ]);
+        $this->assignStaffVenues($org, $fixture['org1']['venue1']);
 
         $walkinCustomer = User::factory()->unverified()->create([
             'role' => 'customer',

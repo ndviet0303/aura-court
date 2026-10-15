@@ -149,13 +149,12 @@ export function useMatchmaking() {
   const matches = ref<SocialMatch[]>([])
   const partners = ref<PartnerPlayer[]>([])
 
-  // Mirrors the feed report routes: platform admins plus active organization owners and venue managers.
+  // Mirrors the feed report routes: platform admins plus active organization owners.
   const canModerate = computed(
     () =>
       auth.user?.role === 'admin' ||
       (auth.user?.organizations ?? []).some(
-        (o) =>
-          o.status === 'active' && (o.role === 'organization_owner' || o.role === 'venue_manager'),
+        (o) => o.status === 'active' && o.role === 'organization_owner',
       ),
   )
 

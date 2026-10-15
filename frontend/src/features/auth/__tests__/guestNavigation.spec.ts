@@ -39,9 +39,9 @@ describe('Guest Navigation and Auth Destination Rules', () => {
 
       // Scoped tenant roles cannot access platform admin paths like /admin/venues
       expect(isSafeInternalRedirect('/admin/venues', 'organization_owner')).toBe(false)
-      expect(isSafeInternalRedirect('/admin/venues', 'cashier')).toBe(false)
       expect(isSafeInternalRedirect('/admin/venues', 'staff')).toBe(false)
-      expect(isSafeInternalRedirect('/admin/organization', 'cashier')).toBe(false)
+      expect(isSafeInternalRedirect('/admin/venues', 'staff')).toBe(false)
+      expect(isSafeInternalRedirect('/admin/organization', 'staff')).toBe(false)
       expect(isSafeInternalRedirect('/admin/organization', 'staff')).toBe(false)
     })
 
@@ -49,8 +49,9 @@ describe('Guest Navigation and Auth Destination Rules', () => {
       expect(isSafeInternalRedirect('/admin', 'admin')).toBe(true)
       expect(isSafeInternalRedirect('/admin/manage', 'admin')).toBe(true)
       expect(isSafeInternalRedirect('/admin/venues?filter=open', 'admin')).toBe(true)
-      expect(isSafeInternalRedirect('/admin/organization', 'admin')).toBe(true)
-      expect(isSafeInternalRedirect('/admin/pos', 'admin')).toBe(true)
+      // Organization operations need an owner or staff membership; platform admin rights do not stand in.
+      expect(isSafeInternalRedirect('/admin/organization', 'admin')).toBe(false)
+      expect(isSafeInternalRedirect('/admin/pos', 'admin')).toBe(false)
     })
 
     it('allows safe internal application paths', () => {
@@ -63,8 +64,8 @@ describe('Guest Navigation and Auth Destination Rules', () => {
       // Scoped tenant roles admit /pos and /admin/organization
       expect(isSafeInternalRedirect('/pos', 'organization_owner')).toBe(true)
       expect(isSafeInternalRedirect('/admin/organization', 'organization_owner')).toBe(true)
-      expect(isSafeInternalRedirect('/pos', 'cashier')).toBe(true)
-      expect(isSafeInternalRedirect('/admin/pos', 'cashier')).toBe(true)
+      expect(isSafeInternalRedirect('/pos', 'staff')).toBe(true)
+      expect(isSafeInternalRedirect('/admin/pos', 'staff')).toBe(true)
       expect(isSafeInternalRedirect('/pos', 'staff')).toBe(true)
       expect(isSafeInternalRedirect('/admin/pos', 'staff')).toBe(true)
     })
@@ -90,11 +91,11 @@ describe('Guest Navigation and Auth Destination Rules', () => {
       const customer = { role: 'customer', onboarded: true }
       const admin = { role: 'admin', onboarded: true }
       const owner = { role: 'organization_owner', onboarded: true }
-      const cashier = { role: 'cashier', onboarded: true }
+      const cashier = { role: 'staff', onboarded: true }
       const staff = { role: 'staff', onboarded: true }
 
       expect(resolveAuthDestination(customer)).toBe('/')
-      expect(resolveAuthDestination(admin)).toBe('/admin/organization')
+      expect(resolveAuthDestination(admin)).toBe('/admin')
       expect(resolveAuthDestination(owner)).toBe('/admin/organization')
       expect(resolveAuthDestination(cashier)).toBe('/pos')
       expect(resolveAuthDestination(staff)).toBe('/pos')
@@ -104,11 +105,11 @@ describe('Guest Navigation and Auth Destination Rules', () => {
       const customer = { role: 'customer', onboarded: true }
       const admin = { role: 'admin', onboarded: true }
       const owner = { role: 'organization_owner', onboarded: true }
-      const cashier = { role: 'cashier', onboarded: true }
+      const cashier = { role: 'staff', onboarded: true }
       const staff = { role: 'staff', onboarded: true }
 
       expect(resolveAuthDestination(customer, '/')).toBe('/')
-      expect(resolveAuthDestination(admin, '/')).toBe('/admin/organization')
+      expect(resolveAuthDestination(admin, '/')).toBe('/admin')
       expect(resolveAuthDestination(owner, '/')).toBe('/admin/organization')
       expect(resolveAuthDestination(cashier, '/')).toBe('/pos')
       expect(resolveAuthDestination(staff, '/')).toBe('/pos')
@@ -120,8 +121,8 @@ describe('Guest Navigation and Auth Destination Rules', () => {
 
       expect(resolveAuthDestination(customer, 'https://evil.com')).toBe('/')
       expect(resolveAuthDestination(customer, '//evil.com')).toBe('/')
-      expect(resolveAuthDestination(admin, 'https://evil.com')).toBe('/admin/organization')
-      expect(resolveAuthDestination(admin, '//evil.com/fake')).toBe('/admin/organization')
+      expect(resolveAuthDestination(admin, 'https://evil.com')).toBe('/admin')
+      expect(resolveAuthDestination(admin, '//evil.com/fake')).toBe('/admin')
     })
 
     it('ignores circular guest-only authentication redirect and returns authorized default', () => {
@@ -130,13 +131,13 @@ describe('Guest Navigation and Auth Destination Rules', () => {
 
       expect(resolveAuthDestination(customer, '/login')).toBe('/')
       expect(resolveAuthDestination(customer, '/register')).toBe('/')
-      expect(resolveAuthDestination(admin, '/login?redirect=/admin')).toBe('/admin/organization')
+      expect(resolveAuthDestination(admin, '/login?redirect=/admin')).toBe('/admin')
     })
 
     it('rejects unauthorized admin redirect for customer and falls back to default', () => {
       const customer = { role: 'customer', onboarded: true }
       const owner = { role: 'organization_owner', onboarded: true }
-      const cashier = { role: 'cashier', onboarded: true }
+      const cashier = { role: 'staff', onboarded: true }
       const staff = { role: 'staff', onboarded: true }
 
       expect(resolveAuthDestination(customer, '/admin/manage')).toBe('/')
@@ -155,7 +156,7 @@ describe('Guest Navigation and Auth Destination Rules', () => {
     it('allows authorized internal redirect for customer', () => {
       const customer = { role: 'customer', onboarded: true }
       const owner = { role: 'organization_owner', onboarded: true }
-      const cashier = { role: 'cashier', onboarded: true }
+      const cashier = { role: 'staff', onboarded: true }
       const staff = { role: 'staff', onboarded: true }
 
       expect(resolveAuthDestination(customer, '/courts/1/schedule')).toBe('/courts/1/schedule')
@@ -179,7 +180,7 @@ describe('Guest Navigation and Auth Destination Rules', () => {
       const customer = { role: 'customer', onboarded: true }
       const admin = { role: 'admin', onboarded: true }
       expect(resolveAuthDestination(customer, '/onboarding')).toBe('/')
-      expect(resolveAuthDestination(admin, '/onboarding')).toBe('/admin/organization')
+      expect(resolveAuthDestination(admin, '/onboarding')).toBe('/admin')
     })
 
     it('routes users with partner application or partner intent to partner setup', () => {
@@ -252,7 +253,7 @@ describe('Guest Navigation and Auth Destination Rules', () => {
       expect(router.currentRoute.value.path).toBe(expectedPath)
     })
 
-    it('redirects authenticated onboarded admin away from /login to /admin/organization by default', async () => {
+    it('redirects authenticated onboarded admin away from /login to /admin by default', async () => {
       const auth = useAuthStore()
       auth.user = {
         id: 2,
@@ -266,7 +267,7 @@ describe('Guest Navigation and Auth Destination Rules', () => {
       await router.push('/courts')
       await router.push('/login')
 
-      expect(router.currentRoute.value.path).toBe('/admin/organization')
+      expect(router.currentRoute.value.path).toBe('/admin')
     })
 
     it('redirects authenticated user with incomplete onboarding to /onboarding', async () => {
@@ -430,7 +431,7 @@ describe('Guest Navigation and Auth Destination Rules', () => {
       expect(router.currentRoute.value.path).toBe('/')
     })
 
-    it('restores valid admin session on direct URL entry or reload to /login and redirects to /admin/organization', async () => {
+    it('restores valid admin session on direct URL entry or reload to /login and redirects to /admin', async () => {
       const auth = useAuthStore()
       auth.user = null
       auth.loaded = false
@@ -448,10 +449,10 @@ describe('Guest Navigation and Auth Destination Rules', () => {
 
       expect(meSpy).toHaveBeenCalled()
       expect((auth.user as any)?.id).toBe(2)
-      expect(router.currentRoute.value.path).toBe('/admin/organization')
+      expect(router.currentRoute.value.path).toBe('/admin')
     })
 
-    it('restores valid admin session on direct URL entry or reload to /register and redirects to /admin/organization', async () => {
+    it('restores valid admin session on direct URL entry or reload to /register and redirects to /admin', async () => {
       const auth = useAuthStore()
       auth.user = null
       auth.loaded = false
@@ -469,7 +470,7 @@ describe('Guest Navigation and Auth Destination Rules', () => {
 
       expect(meSpy).toHaveBeenCalled()
       expect((auth.user as any)?.id).toBe(2)
-      expect(router.currentRoute.value.path).toBe('/admin/organization')
+      expect(router.currentRoute.value.path).toBe('/admin')
     })
 
     it('restores session on direct entry to /login with incomplete onboarding and redirects to /onboarding', async () => {

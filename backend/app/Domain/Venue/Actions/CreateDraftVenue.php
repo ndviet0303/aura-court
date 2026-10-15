@@ -28,10 +28,10 @@ class CreateDraftVenue
                 abort(404, 'Câu lạc bộ / tổ chức không tồn tại.');
             }
 
-            // Verify permissions: owner or venue_manager
+            // Only the owner creates venues (BR-21).
             $hasPermission = $org->members()
                 ->where('user_id', $data->actorId)
-                ->whereIn('role', ['organization_owner', 'venue_manager'])
+                ->whereIn('role', ['organization_owner'])
                 ->where('status', 'active')
                 ->exists();
 

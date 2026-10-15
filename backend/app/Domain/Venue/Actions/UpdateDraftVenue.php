@@ -31,7 +31,7 @@ class UpdateDraftVenue
 
             $hasPermission = $org->members()
                 ->where('user_id', $actorId)
-                ->whereIn('role', ['organization_owner', 'venue_manager'])
+                ->whereIn('role', ['organization_owner'])
                 ->where('status', 'active')
                 ->exists();
 

@@ -17,35 +17,27 @@ use Illuminate\Validation\ValidationException;
 /** Staff invitations of module 1: BR-17 (who may be invited), BR-18 (notice, 7-day validity, revoke), BR-19 (invitee answers). */
 class OrganizationInvitationService
 {
-    private const STAFF_ROLES = [OrganizationMember::ROLE_VENUE_MANAGER, OrganizationMember::ROLE_STAFF, OrganizationMember::ROLE_CASHIER];
-
-    private const ROLE_LABELS = [
-        OrganizationMember::ROLE_ORGANIZATION_OWNER => 'Chủ cơ sở',
-        OrganizationMember::ROLE_VENUE_MANAGER => 'Quản lý cơ sở',
-        OrganizationMember::ROLE_STAFF => 'Nhân viên',
-        OrganizationMember::ROLE_CASHIER => 'Thu ngân',
-        OrganizationMember::ROLE_CUSTOMER => 'Khách hàng',
-    ];
-
+    /** @param  array{email: string, venue_id?: ?int, venue_ids?: list<int>}  $data */
     public function invite(Organization $organization, User $inviter, array $data, ?string $ip): OrganizationInvitation
     {
         $email = Str::lower(trim($data['email']));
         $invitee = User::whereRaw('lower(email) = ?', [$email])->first();
         $this->assertInvitable($organization, $inviter, $invitee);
 
-        if (in_array($data['role'], self::STAFF_ROLES, true) && $organization->hasActiveSubscription()) {
+        if ($organization->hasActiveSubscription()) {
             app(EnforcePlanQuota::class)->execute($organization->id, 'staff', 1);
         }
 
-        $permissions = self::permissionsFrom($data);
+        // BR-17/23: an invitation only ever grants staff; ownership comes from partner approval.
+        $permissions = StaffMembershipService::venuePermissions($data['venue_ids'] ?? [(int) $data['venue_id']]);
         $invitation = OrganizationInvitation::create([
             'organization_id' => $organization->id,
             'invited_by' => $inviter->id,
             'email' => $invitee->email,
-            'role' => $data['role'],
-            'venue_id' => $permissions['venue_id'] ?? null,
-            'venue_ids' => $permissions['venue_ids'] ?? null,
-            'permissions' => $permissions ?: null,
+            'role' => OrganizationMember::ROLE_STAFF,
+            'venue_id' => $permissions['venue_id'],
+            'venue_ids' => $permissions['venue_ids'],
+            'permissions' => $permissions,
             'token' => Str::random(64),
             'status' => OrganizationInvitation::STATUS_PENDING,
             'expires_at' => now()->addDays(7),
@@ -54,16 +46,15 @@ class OrganizationInvitationService
         $invitee->notify(new AuraBookingNotification(
             'staff_invitation',
             'Lời mời tham gia quản trị',
-            "{$inviter->name} mời bạn tham gia tổ chức {$organization->name} với vai trò ".self::roleLabel($data['role'])
-                .'. Lời mời có hiệu lực đến '.$invitation->expires_at->timezone('Asia/Ho_Chi_Minh')->format('H:i d/m/Y').'.',
+            "{$inviter->name} mời bạn tham gia tổ chức {$organization->name} với vai trò Nhân viên. Lời mời có hiệu lực đến ".$invitation->expires_at->timezone('Asia/Ho_Chi_Minh')->format('H:i d/m/Y').'.',
             '/invitations'
         ));
 
-        $this->audit($inviter, $organization->id, 'STAFF_INVITATION_CREATED', "Mời {$invitee->email} tham gia tổ chức với vai trò {$data['role']}", $ip, [
+        $this->audit($inviter, $organization->id, 'STAFF_INVITATION_CREATED', "Mời {$invitee->email} tham gia tổ chức với vai trò nhân viên", $ip, [
             'invitation_id' => $invitation->id,
             'email' => $invitee->email,
-            'role' => $data['role'],
-            'venue_ids' => $permissions['venue_ids'] ?? null,
+            'role' => OrganizationMember::ROLE_STAFF,
+            'venue_ids' => $permissions['venue_ids'],
         ]);
 
         return $invitation;
@@ -98,15 +89,16 @@ class OrganizationInvitationService
                 return ['invitation' => $invitation, 'member' => $member, 'already' => true];
             }
             $this->assertAnswerable($invitation);
+            abort_if($this->holdsOperatorRole($invitation->organization_id, $user->id), 422, 'Bạn đã là chủ hoặc nhân viên của tổ chức này.');
 
-            if (in_array($invitation->role, self::STAFF_ROLES, true) && $invitation->organization->hasActiveSubscription()) {
+            if ($invitation->organization->hasActiveSubscription()) {
                 app(EnforcePlanQuota::class)->execute($invitation->organization_id, 'staff', 1);
             }
 
             $invitation->update(['status' => OrganizationInvitation::STATUS_ACCEPTED, 'accepted_at' => now()]);
             $member = OrganizationMember::updateOrCreate(
                 ['organization_id' => $invitation->organization_id, 'user_id' => $user->id],
-                ['role' => $invitation->role, 'status' => 'active', 'permissions' => $invitation->permissions]
+                ['role' => OrganizationMember::ROLE_STAFF, 'status' => 'active', 'permissions' => $invitation->permissions]
             );
 
             $this->audit($user, $invitation->organization_id, 'STAFF_INVITATION_ACCEPTED', "Chấp nhận lời mời tham gia với vai trò {$invitation->role}", $ip, [
@@ -173,29 +165,6 @@ class OrganizationInvitationService
         });
     }
 
-    /** venue_ids / venue_id / permissions of a member or invitation request, in the stored shape. */
-    public static function permissionsFrom(array $data, array $current = []): array
-    {
-        $permissions = $data['permissions'] ?? $current;
-        if (! empty($data['venue_ids'])) {
-            $permissions['venue_ids'] = array_values(array_map('intval', (array) $data['venue_ids']));
-            $permissions['venue_id'] = $permissions['venue_ids'][0] ?? null;
-        } elseif (! empty($data['venue_id'])) {
-            $permissions['venue_ids'] = [(int) $data['venue_id']];
-            $permissions['venue_id'] = (int) $data['venue_id'];
-        }
-        if (empty($permissions) && ($data['role'] ?? null) === OrganizationMember::ROLE_ORGANIZATION_OWNER) {
-            $permissions = ['*'];
-        }
-
-        return $permissions;
-    }
-
-    private static function roleLabel(string $role): string
-    {
-        return self::ROLE_LABELS[$role] ?? $role;
-    }
-
     /** @phpstan-assert User $invitee */
     private function assertInvitable(Organization $organization, User $inviter, ?User $invitee): void
     {
@@ -204,7 +173,8 @@ class OrganizationInvitationService
             $invitee->id === $inviter->id => 'Bạn không thể tự mời chính mình.',
             $invitee->isRestricted() => 'Tài khoản được mời đang bị khóa hoặc hạn chế.',
             ! $invitee->hasVerifiedEmail() => 'Tài khoản được mời chưa xác thực email.',
-            $organization->members()->where('user_id', $invitee->id)->where('status', 'active')->exists() => 'Người dùng đã là thành viên chính thức của tổ chức.',
+            // A customer membership does not block an invitation (BR-17); acceptance turns it into staff.
+            $this->holdsOperatorRole($organization->id, $invitee->id) => 'Người dùng đã là chủ hoặc nhân viên của tổ chức.',
             $organization->invitations()->whereRaw('lower(email) = ?', [Str::lower($invitee->email)])
                 ->where('status', OrganizationInvitation::STATUS_PENDING)->where('expires_at', '>', now())->exists() => 'Người dùng đang có một lời mời chưa phản hồi từ tổ chức này.',
             default => null,
@@ -212,6 +182,15 @@ class OrganizationInvitationService
         if ($reason !== null) {
             throw ValidationException::withMessages(['email' => $reason]);
         }
+    }
+
+    /** An owner row in any status, or an active staff row; a suspended staff member may be invited back. */
+    private function holdsOperatorRole(int $organizationId, int $userId): bool
+    {
+        return OrganizationMember::where('organization_id', $organizationId)->where('user_id', $userId)
+            ->where(fn ($q) => $q->where('role', OrganizationMember::ROLE_ORGANIZATION_OWNER)
+                ->orWhere(fn ($staff) => $staff->where('role', OrganizationMember::ROLE_STAFF)->where('status', 'active')))
+            ->exists();
     }
 
     private function assertRecipient(User $user, OrganizationInvitation $invitation): void

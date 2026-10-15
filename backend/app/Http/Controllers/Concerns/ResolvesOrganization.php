@@ -29,6 +29,14 @@ trait ResolvesOrganization
         if ($courtId !== false) {
             $court = Court::with('venue.organization')->find($courtId);
             if ($court?->venue?->organization && $court->venue->organization->status === 'active') {
+                // A role middleware already authorised this request for one organization; a court elsewhere must not move it.
+                $verifiedId = $request->attributes->get('verified_organization_id');
+                if ($verifiedId !== null && $verifiedId !== $court->venue->organization->id) {
+                    abort(response()->json([
+                        'message' => 'Sân không thuộc tổ chức đang thao tác.',
+                        'code' => 'ORGANIZATION_MISMATCH',
+                    ], 403));
+                }
                 $organization = $court->venue->organization;
                 $context->setOrganization($organization);
 
@@ -81,7 +89,7 @@ trait ResolvesOrganization
             }
 
             if ($organization) {
-                if (! $user->isPlatformAdmin() && ! $organization->hasMember($user->id)) {
+                if (! $organization->hasMember($user->id)) {
                     OrganizationMember::firstOrCreate([
                         'organization_id' => $organization->id,
                         'user_id' => $user->id,
@@ -100,7 +108,7 @@ trait ResolvesOrganization
                 'code' => 'ORGANIZATION_MISMATCH',
             ], 400));
         }
-        if (! ($user->isPlatformAdmin() || $organization->hasMember($user->id))) {
+        if (! $organization->hasMember($user->id)) {
             abort(response()->json([
                 'message' => 'Unauthorized organization access.',
                 'code' => 'ORGANIZATION_ACCESS_DENIED',
@@ -112,7 +120,6 @@ trait ResolvesOrganization
 
     protected function isOrganizationOperator(Request $request, Organization $organization): bool
     {
-        return $request->user()->isPlatformAdmin()
-            || $request->user()->hasRoleInOrganization($organization->id, ['organization_owner', 'venue_manager']);
+        return $request->user()->hasRoleInOrganization($organization->id, ['organization_owner']);
     }
 }

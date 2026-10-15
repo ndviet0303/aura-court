@@ -48,7 +48,7 @@ class AttendanceOperationsAndReadinessTest extends TestCase
 
         OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $owner->id, 'role' => 'organization_owner', 'status' => 'active']);
         OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $staff->id, 'role' => 'staff', 'status' => 'active']);
-        OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $manager->id, 'role' => 'venue_manager', 'status' => 'active']);
+        OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $manager->id, 'role' => 'staff', 'status' => 'active']);
         OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $customer->id, 'role' => 'customer', 'status' => 'active']);
         OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $secondary->id, 'role' => 'customer', 'status' => 'active']);
         OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $outsider->id, 'role' => 'customer', 'status' => 'active']);
@@ -61,7 +61,7 @@ class AttendanceOperationsAndReadinessTest extends TestCase
             'is_active' => true,
         ]);
         // BR-20: staff reach only the venues assigned to them.
-        OrganizationMember::where('organization_id', $organization->id)->whereIn('role', ['staff', 'cashier'])
+        OrganizationMember::where('organization_id', $organization->id)->where('role', 'staff')
             ->get()->each(fn (OrganizationMember $m) => $m->update(['permissions' => ['venue_ids' => [$venue->id]]]));
 
         $court1 = $venue->courts()->create(['name' => 'Court 1', 'is_active' => true]);

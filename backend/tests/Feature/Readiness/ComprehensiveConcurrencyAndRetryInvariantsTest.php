@@ -312,8 +312,9 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
 
         $cashier1 = User::factory()->create(['role' => 'customer']);
         $cashier2 = User::factory()->create(['role' => 'customer']);
-        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $cashier1->id, 'role' => 'cashier', 'status' => 'active']);
-        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $cashier2->id, 'role' => 'cashier', 'status' => 'active']);
+        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $cashier1->id, 'role' => 'staff', 'status' => 'active']);
+        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $cashier2->id, 'role' => 'staff', 'status' => 'active']);
+        $this->assignStaffVenues($org, $venue);
 
         // Open shift for cashier 1
         app(PosService::class)->openShift($cashier1, $org->id, 500000, $venue->id, 'REG-01');

@@ -15,12 +15,9 @@ class ListAdminReservations
 
     public function execute(AdminReservationFilterData $filter, User $user): LengthAwarePaginator
     {
-        // null = platform admin (every venue); otherwise only the venues this user may operate, possibly none.
+        // Only the venues this user may operate, possibly none.
         $venueIds = $user->getAuthorizedVenueIds();
-        if ($venueIds !== null) {
-            $venueIds = array_map('intval', $venueIds);
-            abort_if($filter->venueId !== null && ! in_array($filter->venueId, $venueIds, true), 403, 'Unauthorized venue.');
-        }
+        abort_if($filter->venueId !== null && ! in_array($filter->venueId, $venueIds, true), 403, 'Unauthorized venue.');
 
         return $this->reservations->paginateAdminReservations([
             'status' => $filter->status,

@@ -276,12 +276,13 @@ class LegacyBookingAuditAndBackfillTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $org->id,
             'user_id' => $cashier->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 
         $venue = Venue::create(['organization_id' => $org->id, 'name' => 'Delta Arena', 'slug' => 'delta-'.uniqid()]);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Delta Court']);
+        $this->assignStaffVenues($org, $venue);
         $user = User::factory()->create();
 
         config([

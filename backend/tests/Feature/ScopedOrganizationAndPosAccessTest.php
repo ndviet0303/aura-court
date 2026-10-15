@@ -70,7 +70,7 @@ class ScopedOrganizationAndPosAccessTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $org->id,
             'user_id' => $cashier->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
             'permissions' => ['pos.sell', 'pos.shift'],
         ]);
@@ -108,7 +108,7 @@ class ScopedOrganizationAndPosAccessTest extends TestCase
             ->assertStatus(403);
         // 4. Cashier cannot access platform-only routes
         $this->actingAs($cashier)
-            ->getJson('/api/admin/venues')
+            ->getJson('/api/admin/users')
             ->assertStatus(403);
     }
 
@@ -276,13 +276,13 @@ class ScopedOrganizationAndPosAccessTest extends TestCase
         Config::set('features.flags.tenant_pos_and_wallet', true);
         Config::set('features.pilot_organizations', []);
 
-        $this->artisan("org:provision-pos --target-env=staging --email={$user->email} --org={$org->id} --role=cashier")
+        $this->artisan("org:provision-pos --target-env=staging --email={$user->email} --org={$org->id} --role=staff")
             ->assertExitCode(0)
             ->expectsOutputToContain("NOTICE: POS capability ('tenant_pos_and_wallet') is DISABLED for Organization #{$org->id}")
             ->expectsOutputToContain('Verification will report capability-disabled separately from role assignment');
 
         $member = OrganizationMember::where('organization_id', $org->id)->where('user_id', $user->id)->first();
         $this->assertNotNull($member);
-        $this->assertEquals(OrganizationMember::ROLE_CASHIER, $member->role);
+        $this->assertEquals(OrganizationMember::ROLE_STAFF, $member->role);
     }
 }

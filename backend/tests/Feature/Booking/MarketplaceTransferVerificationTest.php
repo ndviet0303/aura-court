@@ -401,7 +401,7 @@ class MarketplaceTransferVerificationTest extends TestCase
             'is_active' => true,
         ]);
         // BR-20: staff reach only the venues assigned to them.
-        OrganizationMember::where('organization_id', $organization->id)->whereIn('role', ['staff', 'cashier'])
+        OrganizationMember::where('organization_id', $organization->id)->where('role', 'staff')
             ->get()->each(fn (OrganizationMember $m) => $m->update(['permissions' => ['venue_ids' => [$venue->id]]]));
         $court = $venue->courts()->create(['name' => 'Court M1', 'is_active' => true]);
         PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 200000]);

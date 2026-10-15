@@ -166,6 +166,40 @@ describe('AdminLayout', () => {
     expect(wrapper.find('a[href="/admin/disputes"]').exists()).toBe(false)
   })
 
+  it('shows a platform admin without a membership only platform-admin items (BR-23)', async () => {
+    const auth = useAuthStore()
+    auth.user = {
+      id: 1,
+      name: 'Admin Aura',
+      email: 'admin@aura.test',
+      role: 'admin',
+      email_verified_at: '2026-01-01',
+    }
+    const wrapper = await createLoadedWrapper()
+
+    expect(wrapper.find('a[href="/admin/payouts"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/admin/venues"]').exists()).toBe(false)
+    expect(wrapper.find('a[href="/admin/pos"]').exists()).toBe(false)
+    expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(false)
+  })
+
+  it('hides owner-only items from staff', () => {
+    const auth = useAuthStore()
+    auth.user = {
+      id: 6,
+      name: 'Club Staff',
+      email: 'staff@club.test',
+      role: 'customer',
+      email_verified_at: '2026-01-01',
+      organizations: [{ organization_id: 1, role: 'staff', status: 'active' }],
+    } as unknown as User
+    const wrapper = createWrapper()
+
+    expect(wrapper.find('a[href="/admin/pos"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/admin/venues"]').exists()).toBe(false)
+    expect(wrapper.find('a[href="/admin/staff"]').exists()).toBe(false)
+  })
+
   it('hides the finance group when marketplace_payouts is off', async () => {
     payoutsEnabled = false
     const wrapper = await createLoadedWrapper()

@@ -13,7 +13,7 @@ export interface OrgVenue {
 export interface OrgMember {
   id: number
   user_id: number
-  role: 'organization_owner' | 'venue_manager' | 'cashier' | 'staff' | 'customer'
+  role: 'organization_owner' | 'staff' | 'customer'
   status: 'active' | 'suspended' | string
   user?: {
     id: number
@@ -103,13 +103,8 @@ export function useOrganizationOwner() {
   const ownersCount = computed(
     () => currentOrg.value.members?.filter((m) => m.role === 'organization_owner').length || 0,
   )
-  const managersCount = computed(
-    () => currentOrg.value.members?.filter((m) => m.role === 'venue_manager').length || 0,
-  )
   const staffCount = computed(
-    () =>
-      currentOrg.value.members?.filter((m) => m.role === 'staff' || m.role === 'cashier').length ||
-      0,
+    () => currentOrg.value.members?.filter((m) => m.role === 'staff').length || 0,
   )
 
   function showNotice(msg: string) {
@@ -237,59 +232,6 @@ export function useOrganizationOwner() {
     }
   }
 
-  async function inviteMember(email: string, role: any) {
-    saving.value = true
-    try {
-      // BR-17: an invitation, never a direct add; venues are assigned once the invitee accepts.
-      await adminApi.createOrgInvitation(currentOrg.value.id, { email, role })
-      showNotice(`Đã gửi lời mời tới ${email}. Thành viên sẽ xuất hiện sau khi chấp nhận.`)
-    } catch (e: unknown) {
-      error.value = errorMessage(e, 'Không thể gửi lời mời.')
-      throw e
-    } finally {
-      saving.value = false
-    }
-  }
-
-  async function updateMemberRole(memberId: number, payload: { role: string; status?: string }) {
-    saving.value = true
-    try {
-      const res = await adminApi.updateOrgMember<{ member: OrgMember }>(
-        currentOrg.value.id,
-        memberId,
-        payload,
-      )
-      if (res?.member && currentOrg.value.members) {
-        const idx = currentOrg.value.members.findIndex((m) => m.id === memberId)
-        if (idx >= 0) {
-          currentOrg.value.members[idx] = res.member
-        }
-      }
-      showNotice('Đã cập nhật vai trò thành viên thành công!')
-    } catch (e: unknown) {
-      error.value = errorMessage(e, 'Không thể cập nhật vai trò thành viên.')
-      throw e
-    } finally {
-      saving.value = false
-    }
-  }
-
-  async function removeMember(memberId: number) {
-    saving.value = true
-    try {
-      await adminApi.removeOrgMember(currentOrg.value.id, memberId)
-      if (currentOrg.value.members) {
-        currentOrg.value.members = currentOrg.value.members.filter((m) => m.id !== memberId)
-      }
-      showNotice('Đã xóa thành viên khỏi tổ chức thành công!')
-    } catch (e: unknown) {
-      error.value = errorMessage(e, 'Không thể xóa thành viên.')
-      throw e
-    } finally {
-      saving.value = false
-    }
-  }
-
   onMounted(() => {
     loadOrgData()
   })
@@ -312,15 +254,11 @@ export function useOrganizationOwner() {
     totalCourtsCount,
     totalMembersCount,
     ownersCount,
-    managersCount,
     staffCount,
     showNotice,
     loadOrgData,
     switchOrganization,
     saveProfile,
     savePolicies,
-    inviteMember,
-    updateMemberRole,
-    removeMember,
   }
 }

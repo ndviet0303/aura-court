@@ -24,12 +24,13 @@ export function usePosShift() {
     }
   }
 
-  async function openShift(openingCash: number) {
+  async function openShift(openingCash: number, venueId?: number) {
     loading.value = true
     error.value = ''
     try {
       const newShift = await posApi.openShift({
         opening_cash: openingCash,
+        venue_id: venueId,
       })
       // The active-shift read carries qr_available, which the open response does not.
       activeShift.value = (await posApi.getActiveShift()) ?? newShift

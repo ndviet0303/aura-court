@@ -147,7 +147,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         $this->memberManagerAlpha = OrganizationMember::create([
             'organization_id' => $this->orgAlpha->id,
             'user_id' => $this->managerAlpha->id,
-            'role' => OrganizationMember::ROLE_VENUE_MANAGER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'permissions' => [
                 'venue_ids' => [$this->venueAlpha->id],
                 'venue_id' => $this->venueAlpha->id,
@@ -467,29 +467,21 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
     {
         $this->actingAs($this->managerAlpha);
 
-        // 1. Can update assigned Venue Alpha
-        $patchRes = $this->patchJson("/api/admin/venues/{$this->venueAlpha->id}", [
+        // 1. BR-21: venue details and pricing stay with the owner, even on the assigned venue
+        $this->patchJson("/api/admin/venues/{$this->venueAlpha->id}", [
             'address' => 'Updated Alpha Address 888',
-        ]);
-        $patchRes->assertOk();
-        $this->assertDatabaseHas('venues', [
-            'id' => $this->venueAlpha->id,
-            'address' => 'Updated Alpha Address 888',
-        ]);
-
-        // 2. Can set price on Court Alpha
-        $priceRes = $this->postJson("/api/admin/courts/{$this->courtAlpha->id}/prices", [
+        ])->assertForbidden();
+        $this->postJson("/api/admin/courts/{$this->courtAlpha->id}/prices", [
             'weekday' => 1,
             'starts_at' => '10:00',
             'ends_at' => '11:00',
             'price' => 120000,
             'is_active' => true,
-        ]);
-        $priceRes->assertCreated();
+        ])->assertForbidden();
 
-        // 3. Can query reports for Venue Alpha
-        $reportRes = $this->getJson("/api/admin/reports?venue_id={$this->venueAlpha->id}");
-        $reportRes->assertOk();
+        // 2. Staff view reports and bookings for the assigned venue
+        $this->getJson("/api/admin/reports?venue_id={$this->venueAlpha->id}")->assertOk();
+        $this->getJson("/api/admin/reservations?venue_id={$this->venueAlpha->id}")->assertOk();
     }
 
     /**
@@ -535,60 +527,26 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
      */
     public function test_matrix_3_revoked_grant_or_removed_membership_immediately_blocks_manager(): void
     {
-        // Verify manager can initially set price on Court Alpha
-        $this->actingAs($this->managerAlpha)
-            ->postJson("/api/admin/courts/{$this->courtAlpha->id}/prices", [
-                'weekday' => 2,
-                'starts_at' => '07:00',
-                'ends_at' => '08:00',
-                'price' => 90000,
-                'is_active' => true,
-            ])->assertCreated();
+        $reports = fn (Venue $venue) => $this->actingAs($this->managerAlpha->fresh())->getJson("/api/admin/reports?venue_id={$venue->id}");
+        $reports($this->venueAlpha)->assertOk();
 
-        // 1. Shift grant: Owner Alpha shifts manager to Venue Alpha 2, revoking Venue Alpha
-        $updateGrantRes = $this->actingAs($this->ownerAlpha)
+        // 1. Shift grant: Owner Alpha shifts the staff member to Venue Alpha 2, revoking Venue Alpha
+        $this->actingAs($this->ownerAlpha)
             ->patchJson("/api/organizations/{$this->orgAlpha->id}/members/{$this->memberManagerAlpha->id}", [
-                'role' => OrganizationMember::ROLE_VENUE_MANAGER,
-                'venue_id' => $this->venueAlpha2->id,
                 'venue_ids' => [$this->venueAlpha2->id],
-            ]);
-        $updateGrantRes->assertOk();
+            ])->assertOk();
 
-        // Immediate effect: subsequent request to Venue Alpha returns 403
-        $this->actingAs($this->managerAlpha->fresh())
-            ->postJson("/api/admin/courts/{$this->courtAlpha->id}/prices", [
-                'weekday' => 3,
-                'starts_at' => '07:00',
-                'ends_at' => '08:00',
-                'price' => 95000,
-                'is_active' => true,
-            ])->assertStatus(403);
+        // Immediate effect: Venue Alpha is denied, Venue Alpha 2 is reachable
+        $reports($this->venueAlpha)->assertStatus(403);
+        $reports($this->venueAlpha2)->assertOk();
 
-        // But manager can now manage Court Alpha 2
-        $this->actingAs($this->managerAlpha->fresh())
-            ->postJson("/api/admin/courts/{$this->courtAlpha2->id}/prices", [
-                'weekday' => 3,
-                'starts_at' => '07:00',
-                'ends_at' => '08:00',
-                'price' => 110000,
-                'is_active' => true,
-            ])->assertCreated();
+        // 2. Removal: Owner Alpha ends the staff membership
+        $this->actingAs($this->ownerAlpha)
+            ->deleteJson("/api/organizations/{$this->orgAlpha->id}/members/{$this->memberManagerAlpha->id}")
+            ->assertOk();
 
-        // 2. Removal: Owner Alpha deletes manager membership
-        $deleteMemberRes = $this->actingAs($this->ownerAlpha)
-            ->deleteJson("/api/organizations/{$this->orgAlpha->id}/members/{$this->memberManagerAlpha->id}");
-        $deleteMemberRes->assertOk();
-
-        // Immediate effect: manager is completely denied across all venues in the org
-        $this->actingAs($this->managerAlpha->fresh())
-            ->postJson("/api/admin/courts/{$this->courtAlpha2->id}/prices", [
-                'weekday' => 4,
-                'starts_at' => '07:00',
-                'ends_at' => '08:00',
-                'price' => 115000,
-                'is_active' => true,
-            ])->assertStatus(403);
-
+        // Immediate effect: the former staff member is denied across all venues in the org
+        $reports($this->venueAlpha2)->assertStatus(403);
         $this->actingAs($this->managerAlpha->fresh())
             ->getJson('/api/admin/venues')
             ->assertStatus(403);
@@ -799,9 +757,9 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
     }
 
     /**
-     * Venue staff / admin can hide with reason; reasoned record is logged.
+     * BR-21: moderation is the owner's; staff are refused, the owner hides with a reason and the record is logged.
      */
-    public function test_matrix_5_venue_staff_can_hide_with_reason_and_audit_record_is_logged(): void
+    public function test_matrix_5_owner_hides_with_reason_and_audit_record_is_logged(): void
     {
         $post = FeedPost::create([
             'organization_id' => $this->orgAlpha->id,
@@ -812,8 +770,13 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
             'is_hidden' => false,
         ]);
 
-        // Venue Manager Alpha hides the post with audited reason
-        $hideRes = $this->actingAs($this->managerAlpha)
+        $this->actingAs($this->managerAlpha)
+            ->withHeaders(['X-Organization-Id' => (string) $this->orgAlpha->id])
+            ->postJson("/api/social/feed/{$post->id}/hide", ['reason' => 'Nhân viên không được kiểm duyệt.'])
+            ->assertForbidden();
+
+        // Owner Alpha hides the post with audited reason
+        $hideRes = $this->actingAs($this->ownerAlpha)
             ->withHeaders(['X-Organization-Id' => (string) $this->orgAlpha->id])
             ->postJson("/api/social/feed/{$post->id}/hide", [
                 'reason' => 'Nội dung vi phạm tiêu chuẩn cộng đồng sân bãi.',
@@ -824,13 +787,13 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         $freshPost = $post->fresh();
         $this->assertTrue($freshPost->is_hidden);
         $this->assertSame('Nội dung vi phạm tiêu chuẩn cộng đồng sân bãi.', $freshPost->hidden_reason);
-        $this->assertSame($this->managerAlpha->id, $freshPost->hidden_by);
+        $this->assertSame($this->ownerAlpha->id, $freshPost->hidden_by);
         $this->assertNotNull($freshPost->hidden_at);
 
         // Verify ModerationRecord is created
         $this->assertDatabaseHas('moderation_records', [
             'organization_id' => $this->orgAlpha->id,
-            'actor_id' => $this->managerAlpha->id,
+            'actor_id' => $this->ownerAlpha->id,
             'target_type' => FeedPost::class,
             'target_id' => $post->id,
             'action' => 'content_hidden',

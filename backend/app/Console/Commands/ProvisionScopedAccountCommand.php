@@ -62,8 +62,6 @@ class ProvisionScopedAccountCommand extends Command
         // Validate role
         $validRoles = [
             OrganizationMember::ROLE_ORGANIZATION_OWNER,
-            OrganizationMember::ROLE_VENUE_MANAGER,
-            OrganizationMember::ROLE_CASHIER,
             OrganizationMember::ROLE_STAFF,
         ];
         if (! in_array($role, $validRoles, true)) {

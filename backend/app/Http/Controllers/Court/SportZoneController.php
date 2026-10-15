@@ -16,8 +16,8 @@ class SportZoneController extends Controller
         $user = $request->user();
         $scopedVenueIds = null;
         $isAdminRoute = $request->is('api/admin/sport-zones');
-        if ($isAdminRoute && $user && ! $user->isPlatformAdmin()) {
-            $authorizedVenueIds = $user->getAuthorizedVenueIds() ?? [];
+        if ($isAdminRoute && $user) {
+            $authorizedVenueIds = $user->getAuthorizedVenueIds();
             if ($request->filled('venue_id')) {
                 $requestedVenueId = (int) $request->query('venue_id');
                 abort_unless(in_array($requestedVenueId, $authorizedVenueIds, true), 403, 'Unauthorized venue.');
@@ -67,7 +67,7 @@ class SportZoneController extends Controller
             'is_active' => 'boolean',
         ]);
         $user = $request->user();
-        if ($user && ! $user->isPlatformAdmin()) {
+        if ($user) {
             abort_unless($user->canManageVenue((int) $data['venue_id']), 403, 'Unauthorized venue.');
         }
 
@@ -90,7 +90,7 @@ class SportZoneController extends Controller
     public function update(Request $request, SportZone $sportZone)
     {
         $user = $request->user();
-        if ($user && ! $user->isPlatformAdmin()) {
+        if ($user) {
             abort_unless($user->canManageVenue($sportZone->venue_id), 403, 'Unauthorized venue.');
         }
 
@@ -113,7 +113,7 @@ class SportZoneController extends Controller
     public function destroy(SportZone $sportZone)
     {
         $user = request()->user();
-        if ($user && ! $user->isPlatformAdmin()) {
+        if ($user) {
             abort_unless($user->canManageVenue($sportZone->venue_id), 403, 'Unauthorized venue.');
         }
 

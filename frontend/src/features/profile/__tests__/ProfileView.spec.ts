@@ -15,6 +15,7 @@ vi.mock('../api/profileApi', () => ({
     changePassword: vi.fn(),
     sendPasswordSetupLink: vi.fn(),
     resendVerification: vi.fn(),
+    addEmail: vi.fn(),
   },
 }))
 
@@ -242,5 +243,64 @@ describe('ProfileView', () => {
 
     expect(authApi.me).toHaveBeenCalled()
     expect(auth.user?.name).toBe('Fresh Reloaded Name')
+  })
+
+  it('ends the local session and returns to login after a password change (BR-10)', async () => {
+    const auth = useAuthStore()
+    auth.user = {
+      id: 1,
+      name: 'Nguyen Van A',
+      email: 'nva@example.com',
+      role: 'customer',
+      onboarded: true,
+      password_set: true,
+    }
+    auth.loaded = true
+    vi.mocked(profileApi.changePassword).mockResolvedValue({
+      message: 'Đã đổi mật khẩu.',
+      logged_out: true,
+    })
+
+    const wrapper = mount(ProfileView, { global: { plugins: [i18n] } })
+    await flushPromises()
+    await wrapper.findAll('.tab-item-btn')[1]!.trigger('click')
+    await wrapper.find('#sec-curr-pwd').setValue('OldPass123')
+    await wrapper.find('#sec-new-pwd').setValue('NewPass456')
+    await wrapper.find('#sec-conf-pwd').setValue('NewPass456')
+    await wrapper.find('.security-edit-form').trigger('submit')
+    await flushPromises()
+
+    expect(profileApi.changePassword).toHaveBeenCalledTimes(1)
+    expect(auth.user).toBeNull()
+    expect(mockReplace).toHaveBeenCalledWith({
+      name: 'login',
+      state: { notice: 'Đã đổi mật khẩu.' },
+    })
+  })
+
+  it('asks an account without an email to add one instead of resending (BR-06)', async () => {
+    const auth = useAuthStore()
+    auth.user = {
+      id: 3,
+      name: 'Facebook User',
+      email: '',
+      role: 'customer',
+      onboarded: true,
+      capabilities: { needs_email: true },
+    }
+    auth.loaded = true
+    vi.mocked(profileApi.addEmail).mockResolvedValue({ message: 'Đã gửi liên kết xác thực.' })
+
+    const wrapper = mount(ProfileView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    expect(wrapper.find('.resend-btn').exists()).toBe(false)
+    await wrapper.find('[data-testid="add-email-form"] input').setValue('fb@example.com')
+    await wrapper.find('[data-testid="add-email-form"]').trigger('submit')
+    await flushPromises()
+
+    expect(profileApi.addEmail).toHaveBeenCalledWith('fb@example.com')
+    expect(authApi.me).toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Đã gửi liên kết xác thực.')
   })
 })

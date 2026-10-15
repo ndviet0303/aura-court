@@ -70,7 +70,7 @@ class ServiceTabAndStockReservationTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenant->id,
             'user_id' => $this->cashier->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 
@@ -100,6 +100,7 @@ class ServiceTabAndStockReservationTest extends TestCase
             'name' => 'Court Alpha',
             'is_active' => true,
         ]);
+        $this->assignStaffVenues($this->tenant, $this->venue);
 
         $this->waterProduct = PosProduct::create([
             'organization_id' => $this->tenant->id,

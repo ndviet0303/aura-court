@@ -67,7 +67,6 @@ class ReputationService
                 $organizationId,
                 [
                     OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                    OrganizationMember::ROLE_VENUE_MANAGER,
                     OrganizationMember::ROLE_STAFF,
                 ]
             );

@@ -374,9 +374,8 @@ class TournamentService
         return DB::transaction(function () use ($tournament, $actor, $reason): Tournament {
             $tournament = Tournament::query()->whereKey($tournament->id)->lockForUpdate()->firstOrFail();
 
-            $canReopen = $actor->isPlatformAdmin()
-                || $actor->hasRoleInOrganization($tournament->organization_id, 'organization_owner');
-            abort_unless($canReopen, 403, 'Only organization owner or platform admin can reopen.');
+            $canReopen = $actor->hasRoleInOrganization($tournament->organization_id, 'organization_owner');
+            abort_unless($canReopen, 403, 'Only the organization owner can reopen.');
 
             abort_if(mb_strlen(trim($reason)) < 5, 422, 'Reopen reason must be at least 5 characters.');
 

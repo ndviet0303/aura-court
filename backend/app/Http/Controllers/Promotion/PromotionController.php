@@ -36,7 +36,7 @@ class PromotionController extends Controller
             'court_id' => 'nullable|integer',
         ]);
         $organization = $this->selectedOrganization($request);
-        abort_unless($request->user()->isPlatformAdmin() || $organization->hasMember($request->user()->id), 403);
+        abort_unless($organization->hasMember($request->user()->id), 403);
         $this->assertLocationScope($organization, $data['venue_id'] ?? null, $data['court_id'] ?? null);
 
         return $discounts->preview(
@@ -77,7 +77,7 @@ class PromotionController extends Controller
             ->where('organization_id', $organization->id)
             ->where('user_id', $user->id)
             ->exists();
-        if (! $organization || (! $user->isPlatformAdmin() && ! $organization->hasMember($user->id) && ! $hasTenantMembership)) {
+        if (! $organization || (! $organization->hasMember($user->id) && ! $hasTenantMembership)) {
             return ['membership' => null];
         }
 
@@ -728,13 +728,10 @@ class PromotionController extends Controller
     private function authorizePromotionManager(Request $request, Organization $organization, bool $requireEntitlement = false): void
     {
         $user = $request->user();
-        // BR-21: staff hold a fixed permission set without pricing, so promotions stay with owners and managers.
-        abort_unless($user && (
-            $user->isPlatformAdmin()
-            || $user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_ORGANIZATION_OWNER, OrganizationMember::ROLE_VENUE_MANAGER])
-        ), 403, 'Pricing permission is required to manage promotions.');
+        // BR-21: staff hold a fixed permission set without pricing, so promotions stay with the owner.
+        abort_unless($user && $user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_ORGANIZATION_OWNER]), 403, 'Pricing permission is required to manage promotions.');
 
-        if ($requireEntitlement && ! $user->isPlatformAdmin()) {
+        if ($requireEntitlement) {
             $entitlement = app(EvaluatePlatformEntitlement::class)->execute((int) $organization->id);
             abort_unless($entitlement['is_valid'] && $entitlement['can_take_bookings'], 403, 'An active platform subscription is required to manage promotions.');
         }

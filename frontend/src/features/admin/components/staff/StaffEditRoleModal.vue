@@ -3,37 +3,31 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
 import SelectDropdown, { type DropdownOption } from '@/shared/components/forms/SelectDropdown.vue'
-import type { StaffMember } from '../../composables/useAdminStaff'
+import type { StaffMember, VenueOption } from '../../composables/useAdminStaff'
 
 const props = withDefaults(
   defineProps<{
     show: boolean
     member: StaffMember | null
     saving?: boolean
+    venues?: VenueOption[]
   }>(),
   {
     saving: false,
+    venues: () => [],
   },
 )
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'save', memberId: number, payload: { role: string; status: string }): void
+  (e: 'save', memberId: number, payload: { status: string; venueIds: number[] }): void
 }>()
 
 const { t } = useI18n()
 
-const selectedRole = ref<string>('Receptionist')
 const selectedStatus = ref<string>('active')
-
-const roleOptions = computed<DropdownOption[]>(() => [
-  { value: 'Owner', label: t('admin.staff.roleOwner'), icon: 'shield_person' },
-  { value: 'Manager', label: t('admin.staff.roleManager'), icon: 'manage_accounts' },
-  { value: 'Receptionist', label: t('admin.staff.roleReceptionist'), icon: 'point_of_sale' },
-  { value: 'Technician', label: t('admin.staff.roleTechnician'), icon: 'build' },
-  { value: 'Referee', label: t('admin.staff.roleReferee'), icon: 'sports' },
-  { value: 'Staff', label: t('admin.staff.roleStaff'), icon: 'badge' },
-])
+// Unchecking every venue removes all venue access.
+const selectedVenueIds = ref<number[]>([])
 
 const statusOptions = computed<DropdownOption[]>(() => [
   { value: 'active', label: t('admin.staff.statusActive'), icon: 'check_circle' },
@@ -44,8 +38,8 @@ watch(
   () => props.member,
   (val) => {
     if (val) {
-      selectedRole.value = val.role || 'Receptionist'
       selectedStatus.value = val.status || 'active'
+      selectedVenueIds.value = [...val.venueIds]
     }
   },
   { immediate: true },
@@ -54,8 +48,8 @@ watch(
 function handleSave() {
   if (!props.member) return
   emit('save', props.member.id, {
-    role: selectedRole.value,
     status: selectedStatus.value,
+    venueIds: selectedVenueIds.value,
   })
 }
 </script>
@@ -80,15 +74,13 @@ function handleSave() {
           <span class="target-email font-mono">{{ member.email }}</span>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">{{ t('admin.staff.assignedRoleLabel') }}</label>
-          <SelectDropdown
-            v-model="selectedRole"
-            :options="roleOptions"
-            variant="bordered"
-            data-testid="edit-role-select"
-          />
-        </div>
+        <fieldset class="form-group venue-fieldset" data-testid="edit-venue-checkboxes">
+          <legend class="form-label">{{ t('admin.staff.assignedVenueLabel') }}</legend>
+          <label v-for="v in venues" :key="v.id" class="venue-check">
+            <input v-model="selectedVenueIds" type="checkbox" :value="v.id" />
+            <span>{{ v.name }}</span>
+          </label>
+        </fieldset>
 
         <div class="form-group">
           <label class="form-label">{{ t('admin.staff.hdrStatus') }}</label>
@@ -221,6 +213,20 @@ function handleSave() {
 .form-label {
   font-size: 12.5px;
   font-weight: 700;
+  color: var(--ink);
+}
+
+.venue-fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.venue-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
   color: var(--ink);
 }
 

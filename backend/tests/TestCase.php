@@ -34,6 +34,24 @@ abstract class TestCase extends BaseTestCase
         }
     }
 
+    /** A new active owner of the organization, for actions BR-21 keeps from staff and BR-23 from platform admins. */
+    protected function ownerOf(Organization $organization): User
+    {
+        $owner = User::factory()->create();
+        OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $owner->id, 'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER, 'status' => 'active']);
+
+        return $owner;
+    }
+
+    /** BR-20: staff operate only assigned venues; assigns every staff row of the organization to these venues (a new one when none is given). */
+    protected function assignStaffVenues(Organization $organization, Venue ...$venues): void
+    {
+        $venues = $venues ?: [Venue::create(['organization_id' => $organization->id, 'name' => 'Staff venue', 'slug' => 'staff-venue-'.uniqid(), 'is_active' => true])];
+        $ids = array_map(fn (Venue $venue) => $venue->id, $venues);
+        OrganizationMember::where('organization_id', $organization->id)->where('role', OrganizationMember::ROLE_STAFF)
+            ->get()->each->update(['permissions' => ['venue_id' => $ids[0], 'venue_ids' => $ids]]);
+    }
+
     /**
      * Helper to create an isolated multi-org fixture with sibling venues and courts.
      * Useful for cross-tenant and sibling-venue authorization testing.

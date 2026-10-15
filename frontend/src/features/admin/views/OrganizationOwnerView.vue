@@ -29,15 +29,11 @@ const {
   totalCourtsCount,
   totalMembersCount,
   ownersCount,
-  managersCount,
   staffCount,
   loadOrgData,
   switchOrganization,
   saveProfile,
   savePolicies,
-  inviteMember,
-  updateMemberRole,
-  removeMember,
 } = useOrganizationOwner()
 </script>
 
@@ -100,7 +96,6 @@ const {
         :total-courts="totalCourtsCount"
         :total-members="totalMembersCount"
         :owners-count="ownersCount"
-        :managers-count="managersCount"
         :staff-count="staffCount"
         :auto-approve="currentOrg.auto_approve_booking ?? true"
         :resale-fee="currentOrg.resale_fee_percent ?? 5"
@@ -132,10 +127,6 @@ const {
           v-else-if="activeTab === 'members'"
           :members="currentOrg.members || []"
           :loading="orgSwitchLoading"
-          :saving="saving"
-          @invite="inviteMember"
-          @update-role="updateMemberRole"
-          @remove="removeMember"
         />
 
         <!-- Policies Tab -->

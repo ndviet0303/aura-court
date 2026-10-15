@@ -65,12 +65,10 @@ const isOwner = computed(() => {
   if (!userAny) return false
   return (
     userAny.role === 'organization_owner' ||
-    userAny.role === 'venue_manager' ||
     userAny.capabilities?.can_manage_venues === true ||
     (Array.isArray(userAny.organizations) &&
       userAny.organizations.some(
-        (o: any) =>
-          o.status === 'active' && (o.role === 'organization_owner' || o.role === 'venue_manager'),
+        (o: any) => o.status === 'active' && o.role === 'organization_owner',
       ))
   )
 })

@@ -21,6 +21,8 @@ use Laravel\Sanctum\HasApiTokens;
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
+    public const SOCIAL_PLACEHOLDER_EMAIL_DOMAIN = '@facebook.auracourt.vn';
+
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -93,9 +95,17 @@ class User extends Authenticatable implements MustVerifyEmail
         $this->notify(new ResetPasswordNotification($token));
     }
 
+    /** BR-06: a Facebook sign-up without an email holds an unreachable address until the user adds a real one. */
+    public function needsEmail(): bool
+    {
+        return str_ends_with(strtolower($this->email), self::SOCIAL_PLACEHOLDER_EMAIL_DOMAIN);
+    }
+
     public function sendEmailVerificationNotification(): void
     {
-        $this->notify(new VerifyEmailNotification);
+        if (! $this->needsEmail()) {
+            $this->notify(new VerifyEmailNotification);
+        }
     }
 
     /** @return HasMany<OrganizationMember, $this> */
@@ -141,60 +151,13 @@ class User extends Authenticatable implements MustVerifyEmail
         return $query->exists();
     }
 
-    public function isVenueManager(?int $organizationId = null): bool
+    /** @return list<int> venues the user may operate */
+    public function getAuthorizedVenueIds(?int $organizationId = null): array
     {
-        $query = $this->organizationMembers()
-            ->where('role', OrganizationMember::ROLE_VENUE_MANAGER)
-            ->where('status', 'active');
-        if ($organizationId) {
-            $query->where('organization_id', $organizationId);
-        }
-
-        return $query->exists();
-    }
-
-    public function isStaffOrCashier(?int $organizationId = null): bool
-    {
-        $query = $this->organizationMembers()
-            ->whereIn('role', [OrganizationMember::ROLE_STAFF, OrganizationMember::ROLE_CASHIER])
-            ->where('status', 'active');
-        if ($organizationId) {
-            $query->where('organization_id', $organizationId);
-        }
-
-        return $query->exists();
-    }
-
-    public function getAuthorizedOrganizationIds(): array
-    {
-        if ($this->isPlatformAdmin()) {
-            return Organization::pluck('id')->toArray();
-        }
-
-        return $this->organizationMembers()
-            ->where('status', 'active')
-            ->whereIn('role', [
-                OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                OrganizationMember::ROLE_VENUE_MANAGER,
-                OrganizationMember::ROLE_STAFF,
-                OrganizationMember::ROLE_CASHIER,
-            ])
-            ->pluck('organization_id')
-            ->unique()
-            ->toArray();
-    }
-
-    public function getAuthorizedVenueIds(?int $organizationId = null): ?array
-    {
-        if ($this->isPlatformAdmin()) {
-            return null;
-        }
-
         $query = $this->organizationMembers()
             ->where('status', 'active')
             ->whereIn('role', [
                 OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                OrganizationMember::ROLE_VENUE_MANAGER,
                 OrganizationMember::ROLE_STAFF,
             ]);
         if ($organizationId) {
@@ -230,25 +193,25 @@ class User extends Authenticatable implements MustVerifyEmail
         return array_values(array_unique($venueIds));
     }
 
-    /** Venue management (settings, courts, prices, contracts): platform admin, owner, or an assigned venue manager. */
+    /** Venue management (settings, courts, prices, contracts) belongs to the organization owner. */
     public function canManageVenue(int|Venue $venue): bool
     {
-        return $this->venueAccess($venue, [OrganizationMember::ROLE_VENUE_MANAGER]);
+        return $this->venueAccess($venue, []);
     }
 
-    /** BR-21: daily operations (check-in/out, court status) also open to staff assigned to the venue. */
+    /** BR-21: daily operations (schedule, bookings, check-in/out, payments, court status) also open to staff assigned to the venue. */
     public function canOperateVenue(int|Venue $venue): bool
     {
-        return $this->venueAccess($venue, [OrganizationMember::ROLE_VENUE_MANAGER, OrganizationMember::ROLE_STAFF, OrganizationMember::ROLE_CASHIER]);
+        return $this->venueAccess($venue, [OrganizationMember::ROLE_STAFF]);
     }
 
-    /** @param  list<string>  $scopedRoles  roles that reach only the venues assigned to them */
+    /**
+     * BR-23: platform admin rights do not reach organization operations.
+     *
+     * @param  list<string>  $scopedRoles  roles that reach only the venues assigned to them
+     */
     private function venueAccess(int|Venue $venue, array $scopedRoles): bool
     {
-        if ($this->isPlatformAdmin()) {
-            return true;
-        }
-
         $venueModel = is_int($venue) ? Venue::find($venue) : $venue;
         if (! $venueModel) {
             return false;

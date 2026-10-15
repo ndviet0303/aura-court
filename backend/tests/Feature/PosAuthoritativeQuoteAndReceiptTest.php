@@ -50,7 +50,7 @@ class PosAuthoritativeQuoteAndReceiptTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->organization->id,
             'user_id' => $this->cashier->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
         ]);
 
         $this->customer = User::factory()->create(['name' => 'Nguyen Van Khach']);
@@ -94,6 +94,7 @@ class PosAuthoritativeQuoteAndReceiptTest extends TestCase
             'opened_at' => now(),
             'status' => 'open',
         ]);
+        $this->assignStaffVenues($this->organization);
     }
 
     public function test_server_quote_calculates_rental_duration_configured_vat_and_discounts(): void

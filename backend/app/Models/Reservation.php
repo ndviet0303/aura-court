@@ -100,6 +100,7 @@ class Reservation extends Model
         return $this->slots->sortByDesc('ends_at')->first()?->ends_at;
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

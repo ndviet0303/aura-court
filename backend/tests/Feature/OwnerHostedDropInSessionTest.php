@@ -87,7 +87,7 @@ class OwnerHostedDropInSessionTest extends TestCase
         $this->stranger = User::factory()->create(['name' => 'Người Lạ', 'email' => 'stranger@test.vn']);
 
         OrganizationMember::create(['organization_id' => $this->orgA->id, 'user_id' => $this->ownerA->id, 'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER, 'status' => 'active']);
-        OrganizationMember::create(['organization_id' => $this->orgA->id, 'user_id' => $this->managerA->id, 'role' => OrganizationMember::ROLE_VENUE_MANAGER, 'status' => 'active']);
+        OrganizationMember::create(['organization_id' => $this->orgA->id, 'user_id' => $this->managerA->id, 'role' => OrganizationMember::ROLE_STAFF, 'status' => 'active']);
         OrganizationMember::create(['organization_id' => $this->orgA->id, 'user_id' => $this->staffA->id, 'role' => OrganizationMember::ROLE_STAFF, 'status' => 'active']);
         OrganizationMember::create(['organization_id' => $this->orgB->id, 'user_id' => $this->ownerB->id, 'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER, 'status' => 'active']);
 

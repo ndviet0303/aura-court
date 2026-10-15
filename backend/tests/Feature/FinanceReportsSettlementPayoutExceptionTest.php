@@ -61,14 +61,14 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->organization->id,
             'user_id' => $this->manager->id,
-            'role' => OrganizationMember::ROLE_VENUE_MANAGER,
+            'role' => OrganizationMember::ROLE_STAFF,
         ]);
 
         $this->cashier = User::factory()->create();
         OrganizationMember::create([
             'organization_id' => $this->organization->id,
             'user_id' => $this->cashier->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
         ]);
 
         $this->staff = User::factory()->create();
@@ -81,7 +81,7 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
         $this->customer = User::factory()->create();
     }
 
-    public function test_role_matrix_permits_owner_and_manager_but_blocks_cashier_staff_customer(): void
+    public function test_role_matrix_permits_owner_but_blocks_staff_and_customer(): void
     {
         $headers = ['X-Organization-Id' => $this->organization->id];
 
@@ -90,10 +90,10 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
             ->getJson('/api/finance/settlements', $headers)
             ->assertOk();
 
-        // Venue manager can access
+        // BR-21: payouts stay with the owner; former venue managers are staff
         $this->actingAs($this->manager)
             ->getJson('/api/finance/settlements', $headers)
-            ->assertOk();
+            ->assertStatus(403);
 
         // Cashier is forbidden
         $this->actingAs($this->cashier)

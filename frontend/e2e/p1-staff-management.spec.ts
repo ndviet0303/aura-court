@@ -248,7 +248,7 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       LARAVEL_STORAGE_PATH: manifest.storagePath,
     }
 
-    // 1. Arrange a pending invitation for a specific user with role cashier and venue1 grant
+    // 1. Arrange a pending invitation for a specific user with the staff role and venue1 grant
     const inviteeEmail = `invitee.accept.${Date.now()}@staff-${manifest.runId.replaceAll('_', '-')}.auracourt.test`
     const defaultPassword = `Password123!@#${manifest.runId}`
     const arrangeScript = `
@@ -282,7 +282,7 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
         'organization_id' => ${orgId},
         'invited_by' => $ownerUser->id,
         'email' => '${inviteeEmail}',
-        'role' => 'venue_manager',
+        'role' => 'staff',
         'venue_id' => ${venue1Id},
         'venue_ids' => [${venue1Id}],
         'permissions' => ['venue_id' => ${venue1Id}, 'venue_ids' => [${venue1Id}]],
@@ -294,7 +294,7 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       OrganizationMember::create([
         'organization_id' => ${orgId},
         'user_id' => $user->id,
-        'role' => 'venue_manager',
+        'role' => 'staff',
         'status' => 'invited',
         'permissions' => ['venue_id' => ${venue1Id}, 'venue_ids' => [${venue1Id}]],
       ]);
@@ -332,7 +332,7 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
 
     expect(acceptRes.invitation?.status).toBe('accepted')
     expect(acceptRes.member?.status).toBe('active')
-    expect(acceptRes.member?.role).toBe('venue_manager')
+    expect(acceptRes.member?.role).toBe('staff')
 
     // 4. Verify Idempotency: calling accept again returns 200 without error
     const reAcceptRes = (await withE2EApi(
@@ -389,7 +389,7 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     }
 
     expect(memberCheck.status).toBe('active')
-    expect(memberCheck.role).toBe('venue_manager')
+    expect(memberCheck.role).toBe('staff')
     expect(memberCheck.can_manage_venue1).toBe(true)
     // Sibling venue access must be denied without explicit grant
     expect(memberCheck.can_manage_venue2).toBe(false)
@@ -555,16 +555,11 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
 
     const editModal = page.locator('.modal-backdrop')
     await expect(editModal).toBeVisible()
-    await expect(page.locator('.modal-title')).toContainText('Cập nhật Quyền hạn & Trạng thái')
+    await expect(page.locator('.modal-title')).toContainText('Cập nhật Cơ sở & Trạng thái')
 
-    // 4. Change role to Manager and save
-    const roleDropdown = editModal
-      .locator(
-        '.custom-dropdown-trigger, [data-testid="edit-role-select"], button[aria-label="Dropdown"]',
-      )
-      .first()
-    await roleDropdown.click()
-    await page.locator('.dropdown-item', { hasText: 'Quản lý cơ sở' }).first().click()
+    // 4. Roles are fixed (owner/staff/customer): the modal edits only venue access and status
+    await expect(editModal.locator('[data-testid="edit-venue-checkboxes"]')).toBeVisible()
+    await expect(editModal.locator('[data-testid="edit-role-select"]')).toHaveCount(0)
 
     await editModal
       .locator('button:has-text("Lưu Thay Đổi"), [data-testid="confirm-edit-role-btn"]')
@@ -573,8 +568,8 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     // Notice appears
     const notice = page.locator('[data-testid="staff-notice"], .alert-success, .alert-pill').first()
     await notice.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
-    // 5. Verify role badge in table is now Manager
-    await expect(staffRow.locator('.role-badge')).toContainText('Quản lý cơ sở')
+    // 5. The row stays a staff row
+    await expect(staffRow.locator('.role-badge')).toContainText('Nhân viên sân (Staff)')
 
     // 6. Toggle lock / suspend status
     const toggleBtn = staffRow
@@ -641,11 +636,11 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
     }
 
     expect(auditCheck.status).toBe('suspended')
-    expect(auditCheck.role).toBe('venue_manager')
+    expect(auditCheck.role).toBe('staff')
     expect(auditCheck.audit_found).toBe(true)
     expect(auditCheck.audit_action).toBe('STAFF_ROLE_UPDATED')
 
-    // Restore cashier to original role/status for other tests
+    // Restore cashier to active staff for other tests
     const resetCashierScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
@@ -654,7 +649,7 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       use App\\Models\\OrganizationMember;
       OrganizationMember::where('organization_id', ${orgId})
         ->whereHas('user', fn($q) => $q->where('email', '${cashier.email}'))
-        ->update(['role' => 'cashier', 'status' => 'active']);
+        ->update(['role' => 'staff', 'status' => 'active']);
     `
     try {
       execFileSync('php', ['-r', resetCashierScript], {
@@ -682,13 +677,11 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
 
     await page.goto('/admin/staff', { waitUntil: 'domcontentloaded' })
 
-    // 2. In UI: verify remove button for owner is disabled
+    // 2. In UI: an owner row offers no edit or remove action (only staff rows are adjustable)
     const ownerRow = page.locator('.table-grid-row', { hasText: owner.email }).first()
     await expect(ownerRow).toBeVisible({ timeout: 10000 })
-    const removeBtn = ownerRow
-      .locator('[data-testid="remove-staff-btn"], button:has(span:text-is("delete"))')
-      .first()
-    await expect(removeBtn).toBeDisabled()
+    await expect(ownerRow.locator('[data-testid="remove-staff-btn"]')).toHaveCount(0)
+    await expect(ownerRow.locator('[data-testid="edit-staff-btn"]')).toHaveCount(0)
     // Arrange a dedicated single-owner test organization to test the last active owner protection invariant
     const backendDir = path.resolve(import.meta.dirname, '../../backend')
     const backendEnv = {
@@ -742,7 +735,7 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       page,
       async ({ api }, { testOrgId, memberId }) => {
         try {
-          await api.patch(`/organizations/${testOrgId}/members/${memberId}`, { role: 'staff' })
+          await api.patch(`/organizations/${testOrgId}/members/${memberId}`, { venue_ids: [] })
           return { success: true }
         } catch (err: any) {
           return {
@@ -757,9 +750,7 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
 
     expect(demoteAttempt.success).toBe(false)
     expect(demoteAttempt.status).toBe(422)
-    expect(demoteAttempt.message).toContain(
-      'Cannot demote or suspend the last active organization owner.',
-    )
+    expect(demoteAttempt.message).toContain('Chỉ điều chỉnh được tư cách nhân viên.')
 
     // 4. Attempt direct API suspension of the only active owner -> MUST fail with 422
     const suspendAttempt = await withE2EApi(
@@ -767,7 +758,6 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
       async ({ api }, { testOrgId, memberId }) => {
         try {
           await api.patch(`/organizations/${testOrgId}/members/${memberId}`, {
-            role: 'organization_owner',
             status: 'suspended',
           })
           return { success: true }
@@ -784,9 +774,7 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
 
     expect(suspendAttempt.success).toBe(false)
     expect(suspendAttempt.status).toBe(422)
-    expect(suspendAttempt.message).toContain(
-      'Cannot demote or suspend the last active organization owner.',
-    )
+    expect(suspendAttempt.message).toContain('Chỉ điều chỉnh được tư cách nhân viên.')
 
     // 5. Attempt direct API deletion of the only active owner -> MUST fail with 422
     const deleteAttempt = await withE2EApi(
@@ -808,7 +796,7 @@ test.describe('P1: Quản lý nhân viên, Vai trò, Thu hồi quyền & Hạn m
 
     expect(deleteAttempt.success).toBe(false)
     expect(deleteAttempt.status).toBe(422)
-    expect(deleteAttempt.message).toContain('Cannot remove the last active organization owner.')
+    expect(deleteAttempt.message).toContain('Chỉ điều chỉnh được tư cách nhân viên.')
   })
 
   test('7.6.6: Thực thi hạn mức số lượng nhân viên theo gói subscription', async ({ page }) => {

@@ -12,18 +12,12 @@ class OrganizationMember extends Model
 
     public const ROLE_ORGANIZATION_OWNER = 'organization_owner';
 
-    public const ROLE_VENUE_MANAGER = 'venue_manager';
-
-    public const ROLE_CASHIER = 'cashier';
-
     public const ROLE_STAFF = 'staff';
 
     public const ROLE_CUSTOMER = 'customer';
 
     public const VALID_ROLES = [
         self::ROLE_ORGANIZATION_OWNER,
-        self::ROLE_VENUE_MANAGER,
-        self::ROLE_CASHIER,
         self::ROLE_STAFF,
         self::ROLE_CUSTOMER,
     ];
@@ -98,6 +92,7 @@ class OrganizationMember extends Model
         return $this->belongsTo(Organization::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -106,15 +101,5 @@ class OrganizationMember extends Model
     public function isOwner(): bool
     {
         return $this->role === self::ROLE_ORGANIZATION_OWNER;
-    }
-
-    public function isManager(): bool
-    {
-        return in_array($this->role, [self::ROLE_ORGANIZATION_OWNER, self::ROLE_VENUE_MANAGER]);
-    }
-
-    public function isStaff(): bool
-    {
-        return in_array($this->role, [self::ROLE_ORGANIZATION_OWNER, self::ROLE_VENUE_MANAGER, self::ROLE_CASHIER, self::ROLE_STAFF]);
     }
 }

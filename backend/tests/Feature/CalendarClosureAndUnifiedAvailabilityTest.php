@@ -22,11 +22,6 @@ class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function admin(): User
-    {
-        return User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
-    }
-
     private function setupCourtEnvironment(): array
     {
         $org = Organization::create([
@@ -82,7 +77,7 @@ class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
     public function test_court_block_creation_rejects_when_conflicting_with_confirmed_legacy_bookings(): void
     {
         $env = $this->setupCourtEnvironment();
-        $admin = $this->admin();
+        $admin = $this->ownerOf($env['org']);
         $user = User::factory()->create(['email_verified_at' => now()]);
 
         $slotStart = $env['tomorrow']->copy()->setTime(18, 0, 0);
@@ -126,7 +121,7 @@ class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
     public function test_court_block_creation_rejects_when_conflicting_with_active_v2_reservations(): void
     {
         $env = $this->setupCourtEnvironment();
-        $admin = $this->admin();
+        $admin = $this->ownerOf($env['org']);
         $user = User::factory()->create(['email_verified_at' => now()]);
 
         $slotStart = $env['tomorrow']->copy()->setTime(14, 0, 0);
@@ -172,7 +167,7 @@ class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
     public function test_unbooked_closure_succeeds_and_slot_becomes_unavailable_in_availability_search(): void
     {
         $env = $this->setupCourtEnvironment();
-        $admin = $this->admin();
+        $admin = $this->ownerOf($env['org']);
 
         $blockStart = $env['tomorrow']->copy()->setTime(9, 0, 0);
         $blockEnd = $env['tomorrow']->copy()->setTime(10, 0, 0);

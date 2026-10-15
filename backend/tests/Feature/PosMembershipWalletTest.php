@@ -337,7 +337,8 @@ class PosMembershipWalletTest extends TestCase
     {
         $organization = Organization::create(['name' => 'POS Tenant', 'slug' => 'pos-'.uniqid()]);
         $cashier = User::factory()->create();
-        OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $cashier->id, 'role' => 'cashier', 'status' => 'active']);
+        OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $cashier->id, 'role' => 'staff', 'status' => 'active']);
+        $this->assignStaffVenues($organization);
         config(['features.pilot_organizations' => [(string) $organization->id], 'features.flags.tenant_pos_and_wallet' => true]);
 
         return [$organization, $cashier];

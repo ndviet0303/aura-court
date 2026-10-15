@@ -20,7 +20,7 @@ class SocialAccountResolver
             return $user;
         }
 
-        $email = $providerEmail ?: ($socialId.'@facebook.auracourt.vn');
+        $email = $providerEmail ?: ($socialId.User::SOCIAL_PLACEHOLDER_EMAIL_DOMAIN);
         $existing = User::whereRaw('lower(email) = ?', [Str::lower($email)])->first();
         if (! $existing) {
             return $this->create($name, $email, $provider, $socialId, $emailVerified, $avatar);

@@ -36,6 +36,7 @@ vi.mock('../api/posApi', () => ({
     getShifts: vi.fn(),
     getActiveShift: vi.fn(),
     openShift: vi.fn(),
+    getVenues: vi.fn().mockResolvedValue([]),
     closeShift: vi.fn(),
     reviewShift: vi.fn(),
     getActiveReservations: vi.fn().mockResolvedValue([]),
@@ -76,7 +77,7 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
         {
           organization_id: 1,
           organization_name: 'Pilot Org',
-          role: 'cashier',
+          role: 'staff',
           status: 'active',
         },
       ],
@@ -100,7 +101,7 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
         return {
           organization_id: 1,
           capabilities: { tenant_pos_and_wallet: true },
-          role: 'cashier',
+          role: 'staff',
           is_platform_admin: false,
         }
       }
@@ -159,7 +160,7 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
         return {
           organization_id: 2,
           capabilities: { tenant_pos_and_wallet: false },
-          role: 'cashier',
+          role: 'staff',
           is_platform_admin: false,
         }
       }
@@ -194,7 +195,7 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
         return {
           organization_id: 1,
           capabilities: { tenant_pos_and_wallet: true },
-          role: 'cashier',
+          role: 'staff',
           is_platform_admin: false,
         }
       }
@@ -203,7 +204,7 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
         return {
           organization_id: 2,
           capabilities: { tenant_pos_and_wallet: false },
-          role: 'cashier',
+          role: 'staff',
           is_platform_admin: false,
         }
       }
@@ -259,7 +260,7 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
         return {
           organization_id: 1,
           capabilities: { tenant_pos_and_wallet: true },
-          role: 'cashier',
+          role: 'staff',
           is_platform_admin: false,
         }
       }
@@ -302,7 +303,7 @@ describe('POS Capabilities & Scoped Access Integration (Tasks 3.2 & 3.3)', () =>
         return {
           organization_id: 2,
           capabilities: { tenant_pos_and_wallet: false },
-          role: 'cashier',
+          role: 'staff',
           is_platform_admin: false,
         }
       }

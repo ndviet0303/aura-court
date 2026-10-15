@@ -223,13 +223,13 @@ export class E2EIsolatedEnvironment {
         email: `manager_${this.runId}@auracourt.test`,
         password: `MgrPass_${runSecret}!`,
         name: `Test Manager ${this.runId}`,
-        role: 'venue_manager',
+        role: 'staff',
       },
       cashier: {
         email: `cashier_${this.runId}@auracourt.test`,
         password: `CashierPass_${runSecret}!`,
         name: `Test Cashier ${this.runId}`,
-        role: 'cashier',
+        role: 'staff',
       },
       staff: {
         email: `staff_${this.runId}@auracourt.test`,

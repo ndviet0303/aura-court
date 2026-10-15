@@ -52,7 +52,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenant->id,
             'user_id' => $this->cashier->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 
@@ -76,6 +76,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
             'is_active' => true,
             'metadata' => ['tax_rate' => 8],
         ]);
+        $this->assignStaffVenues($this->tenant);
     }
 
     public function test_identified_customer_wallet_sale_path_and_total_agreement(): void
@@ -382,7 +383,7 @@ class PosIdentifiedCustomerWalletCashSaleTest extends TestCase
         ], $headers())->assertConflict()->assertJsonPath('code', 'DIRECT_OWNER_PAYMENTS_ENABLED');
         $this->actingAs($this->cashier)->postJson('/api/wallet/spend', ['amount' => 1000, 'reference' => 'direct-spend'], $headers())
             ->assertConflict()->assertJsonPath('code', 'DIRECT_OWNER_PAYMENTS_ENABLED');
-        $this->actingAs($this->cashier)->postJson('/api/wallet/credit', [
+        $this->actingAs($this->ownerOf($this->tenant))->postJson('/api/wallet/credit', [
             'user_id' => $this->customer->id, 'amount' => 1000, 'source_type' => 'manual', 'source_id' => 1, 'reference' => 'direct-credit',
         ], $headers())->assertConflict()->assertJsonPath('code', 'DIRECT_OWNER_PAYMENTS_ENABLED');
 

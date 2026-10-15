@@ -251,12 +251,12 @@ class DisputeFinanceSeeder extends Seeder
         }
     }
 
-    /** The manager scoped to this venue, else one covering every venue of the organization. */
+    /** The staff member scoped to this venue, else one covering every venue of the organization. */
     private function venueOperator(int $organizationId, int $venueId): ?User
     {
         return OrganizationMember::with('user')
             ->where('organization_id', $organizationId)
-            ->where('role', OrganizationMember::ROLE_VENUE_MANAGER)
+            ->where('role', OrganizationMember::ROLE_STAFF)
             ->where('status', 'active')
             ->orderBy('id')
             ->get()

@@ -100,8 +100,8 @@ class CourtController extends Controller
     {
         $user = $request->user();
         $scopedVenueIds = null;
-        if ($user && ! $user->isPlatformAdmin()) {
-            $authorizedVenueIds = $user->getAuthorizedVenueIds() ?? [];
+        if ($user) {
+            $authorizedVenueIds = $user->getAuthorizedVenueIds();
             if ($request->filled('venue_id')) {
                 $requestedVenueId = (int) $request->query('venue_id');
                 abort_unless(in_array($requestedVenueId, $authorizedVenueIds, true), 403, 'Unauthorized venue.');
@@ -155,7 +155,7 @@ class CourtController extends Controller
             'is_active' => 'boolean',
         ]);
         $user = $request->user();
-        if ($user && ! $user->isPlatformAdmin()) {
+        if ($user) {
             abort_unless($user->canManageVenue((int) $data['venue_id']), 403, 'Unauthorized venue.');
         }
 
@@ -180,7 +180,7 @@ class CourtController extends Controller
     public function update(Request $request, Court $court)
     {
         $user = $request->user();
-        if ($user && ! $user->isPlatformAdmin()) {
+        if ($user) {
             abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
         }
 
@@ -206,7 +206,7 @@ class CourtController extends Controller
             'is_active' => 'boolean',
         ]);
 
-        if (isset($data['venue_id']) && $user && ! $user->isPlatformAdmin()) {
+        if (isset($data['venue_id']) && $user) {
             abort_unless($user->canManageVenue((int) $data['venue_id']), 403, 'Unauthorized venue.');
         }
 
@@ -232,7 +232,7 @@ class CourtController extends Controller
     public function destroy(Court $court)
     {
         $user = request()->user();
-        if ($user && ! $user->isPlatformAdmin()) {
+        if ($user) {
             abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
         }
 

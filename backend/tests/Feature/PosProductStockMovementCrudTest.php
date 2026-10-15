@@ -49,7 +49,7 @@ class PosProductStockMovementCrudTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenantA->id,
             'user_id' => $this->managerA->id,
-            'role' => OrganizationMember::ROLE_VENUE_MANAGER,
+            'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER,
             'status' => 'active',
         ]);
 
@@ -57,7 +57,7 @@ class PosProductStockMovementCrudTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenantA->id,
             'user_id' => $this->cashierA->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
     }
@@ -172,7 +172,7 @@ class PosProductStockMovementCrudTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenantB->id,
             'user_id' => $managerB->id,
-            'role' => OrganizationMember::ROLE_VENUE_MANAGER,
+            'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER,
             'status' => 'active',
         ]);
 

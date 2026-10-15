@@ -20,10 +20,6 @@ class EnsureTournamentRole
             abort(401, 'Unauthenticated.');
         }
 
-        if ($user->isPlatformAdmin()) {
-            return $next($request);
-        }
-
         $tournament = $request->route('tournament');
         $participant = $request->route('participant');
 

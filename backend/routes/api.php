@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\PartnerReviewController;
 use App\Http\Controllers\Attendance\AttendanceController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\SocialEmailController;
 use App\Http\Controllers\Booking\AdvancedBookingController;
 use App\Http\Controllers\Booking\AvailabilityController;
 use App\Http\Controllers\Booking\ResaleListingController;
@@ -127,7 +128,7 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             ->with('organization')
             ->get();
 
-        $ownerMemberships = $memberships->filter(fn ($m) => in_array($m->role, ['organization_owner', 'venue_manager']));
+        $ownerMemberships = $memberships->filter(fn ($m) => $m->role === 'organization_owner');
         $primaryOrg = $ownerMemberships->first()?->organization;
         $latestKyc = HostKyc::where('user_id', $user->id)->latest()->first();
 
@@ -142,6 +143,7 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             ])->values(),
             'capabilities' => [
                 'is_platform_admin' => $user->isPlatformAdmin(),
+                'needs_email' => $user->needsEmail(),
                 'can_manage_venues' => $ownerMemberships->isNotEmpty(),
                 'active_organization_id' => $primaryOrg?->id,
                 'partner_status' => $primaryOrg?->partner_status ?? $latestKyc?->status,
@@ -157,10 +159,13 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
         if ($request->user()->hasVerifiedEmail()) {
             return response()->json(['message' => 'Email đã được xác thực trước đó.']);
         }
+        abort_if($request->user()->needsEmail(), 422, 'Vui lòng bổ sung email trước khi xác thực.');
         $request->user()->sendEmailVerificationNotification();
 
         return response()->json(['message' => 'Liên kết xác thực email đã được gửi.']);
     })->middleware('throttle:auth-email-link');
+    // A typo must not lock the form for a minute; the email-link throttle is charged once the mail goes out.
+    Route::post('auth/email', SocialEmailController::class)->middleware('throttle:6,1');
     // Partner registration routes
     Route::prefix('partner')->group(function () {
         Route::get('application/current', [PartnerApplicationController::class, 'current']);
@@ -264,17 +269,17 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
         ]);
     });
     Route::get('wallet/deposits', [WalletDepositController::class, 'index']);
-    Route::post('wallet/deposits', [WalletDepositController::class, 'store']);
+    Route::post('wallet/deposits', [WalletDepositController::class, 'store'])->middleware('verified');
     Route::get('wallet/deposits/{reference}', [WalletDepositController::class, 'show']);
     Route::get('notifications', [NotificationController::class, 'index']);
     Route::post('notifications/read-all', [NotificationController::class, 'readAll']);
     Route::post('notifications/{notification}/read', [NotificationController::class, 'read']);
     Route::get('waitlist', [WaitlistController::class, 'index']);
-    Route::post('waitlist', [WaitlistController::class, 'store']);
+    Route::post('waitlist', [WaitlistController::class, 'store'])->middleware('verified');
     Route::delete('waitlist/{waitlist}', [WaitlistController::class, 'destroy']);
     Route::post('coupons/preview', [PromotionController::class, 'preview']);
     Route::get('membership', [PromotionController::class, 'membership']);
-    Route::post('reviews', [ReviewController::class, 'store']);
+    Route::post('reviews', [ReviewController::class, 'store'])->middleware('verified');
 
     // Organizations endpoints
     Route::get('organizations', [OrganizationController::class, 'index']);
@@ -291,11 +296,11 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
     Route::post('invitations/{invitation}/accept', [InvitationResponseController::class, 'accept']);
     Route::post('invitations/{invitation}/decline', [InvitationResponseController::class, 'decline']);
     Route::get('disputes', [AdminDisputeController::class, 'index']);
-    Route::post('disputes', [AdminDisputeController::class, 'store']);
+    Route::post('disputes', [AdminDisputeController::class, 'store'])->middleware('verified');
     Route::get('disputes/stats', [AdminDisputeController::class, 'stats']);
     Route::get('disputes/{id}', [AdminDisputeController::class, 'show']);
     Route::post('disputes/{id}/arbitrate', [AdminDisputeController::class, 'arbitrate']);
-    Route::post('disputes/{id}/evidence', [AdminDisputeController::class, 'submitEvidence']);
+    Route::post('disputes/{id}/evidence', [AdminDisputeController::class, 'submitEvidence'])->middleware('verified');
     Route::post('disputes/{id}/reassign', [AdminDisputeController::class, 'reassign']);
     Route::post('disputes/{id}/close', [AdminDisputeController::class, 'close']);
     Route::post('disputes/{id}/reopen', [AdminDisputeController::class, 'reopen']);
@@ -332,7 +337,12 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             });
         });
 
-        // Operational Venue & Organization Admin routes (Platform admin OR authorized organization owner / manager / staff)
+        // Reports: platform-wide for a platform admin, otherwise scoped to the caller's venues.
+        Route::get('reports', [AdminController::class, 'report']);
+        Route::get('reports.csv', [AdminController::class, 'reportCsv']);
+        Route::get('reports/csv', [AdminController::class, 'reportCsv']);
+
+        // BR-23: organization operations need an owner or staff membership; platform admin rights do not stand in.
         Route::middleware(['venue_admin'])->group(function () {
             Route::get('venues', [AdminController::class, 'venues']);
             Route::post('venues', [AdminController::class, 'storeVenue']);
@@ -349,9 +359,6 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             Route::post('courts/{court}/blocks', [AdminController::class, 'blocks']);
             Route::get('courts/{court}/blocks', [AdminController::class, 'blocksIndex']);
             Route::delete('courts/{court}/blocks/{block}', [AdminController::class, 'destroyBlock']);
-            Route::get('reports', [AdminController::class, 'report']);
-            Route::get('reports.csv', [AdminController::class, 'reportCsv']);
-            Route::get('reports/csv', [AdminController::class, 'reportCsv']);
             Route::get('coupons', [PromotionController::class, 'coupons']);
             Route::post('coupons', [PromotionController::class, 'storeCoupon']);
             Route::patch('coupons/{coupon}', [PromotionController::class, 'updateCoupon']);
@@ -378,7 +385,7 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
     Route::post('webhooks/{provider}', ProviderWebhookController::class)->withoutMiddleware('throttle:api');
     Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
         Route::get('capabilities', [OrganizationController::class, 'capabilities']);
-        Route::middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff,cashier')->group(function () {
+        Route::middleware(RequireOrganizationRole::class.':organization_owner,staff')->group(function () {
             Route::get('customers', [CustomerController::class, 'index']);
             Route::post('customers', [CustomerController::class, 'store']);
             Route::get('customers/{customer}', [CustomerController::class, 'show']);
@@ -402,9 +409,9 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
         Route::post('reservations/{reservation}/payment', [ReservationController::class, 'createPayment'])->middleware('verified');
         Route::post('reservations/{reservation}/confirm', [ReservationController::class, 'confirm'])->middleware('verified');
         Route::post('loyalty/preview', [LoyaltyController::class, 'preview']);
-        Route::post('loyalty/redeem', [LoyaltyController::class, 'redeem']);
+        Route::post('loyalty/redeem', [LoyaltyController::class, 'redeem'])->middleware('verified');
 
-        Route::middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff,cashier')->group(function () {
+        Route::middleware(RequireOrganizationRole::class.':organization_owner,staff')->group(function () {
             Route::post('attendance/check-in', [AttendanceController::class, 'checkIn']);
             Route::post('attendance/check-out', [AttendanceController::class, 'checkOut']);
             Route::post('attendance/courts/{court}/confirm-ready', [AttendanceController::class, 'confirmReady']);
@@ -455,9 +462,9 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             // Community Feed, Comments, Reactions & Moderation
             Route::get('social/feed', [CommunityFeedController::class, 'index']);
             Route::post('social/feed', [CommunityFeedController::class, 'store']);
-            Route::get('social/feed/reports', [CommunityFeedController::class, 'reports'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
-            Route::get('social/feed/reports/{report}', [CommunityFeedController::class, 'showReport'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
-            Route::post('social/feed/reports/{report}/dismiss', [CommunityFeedController::class, 'dismissReport'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
+            Route::get('social/feed/reports', [CommunityFeedController::class, 'reports'])->middleware(RequireOrganizationRole::class.':organization_owner');
+            Route::get('social/feed/reports/{report}', [CommunityFeedController::class, 'showReport'])->middleware(RequireOrganizationRole::class.':organization_owner');
+            Route::post('social/feed/reports/{report}/dismiss', [CommunityFeedController::class, 'dismissReport'])->middleware(RequireOrganizationRole::class.':organization_owner');
             Route::get('social/feed/{post}', [CommunityFeedController::class, 'show']);
             Route::put('social/feed/{post}', [CommunityFeedController::class, 'update']);
             Route::delete('social/feed/{post}', [CommunityFeedController::class, 'destroy']);
@@ -468,10 +475,10 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::post('social/feed/comments/{comment}/react', [CommunityFeedController::class, 'reactComment']);
             Route::post('social/feed/{post}/report', [CommunityFeedController::class, 'reportPost']);
             Route::post('social/feed/comments/{comment}/report', [CommunityFeedController::class, 'reportComment']);
-            Route::post('social/feed/{post}/hide', [CommunityFeedController::class, 'hidePost'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
-            Route::post('social/feed/{post}/restore', [CommunityFeedController::class, 'restorePost'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
-            Route::post('social/feed/comments/{comment}/hide', [CommunityFeedController::class, 'hideComment'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
-            Route::post('social/feed/comments/{comment}/restore', [CommunityFeedController::class, 'restoreComment'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
+            Route::post('social/feed/{post}/hide', [CommunityFeedController::class, 'hidePost'])->middleware(RequireOrganizationRole::class.':organization_owner');
+            Route::post('social/feed/{post}/restore', [CommunityFeedController::class, 'restorePost'])->middleware(RequireOrganizationRole::class.':organization_owner');
+            Route::post('social/feed/comments/{comment}/hide', [CommunityFeedController::class, 'hideComment'])->middleware(RequireOrganizationRole::class.':organization_owner');
+            Route::post('social/feed/comments/{comment}/restore', [CommunityFeedController::class, 'restoreComment'])->middleware(RequireOrganizationRole::class.':organization_owner');
 
             Route::post('social/matches', [SocialController::class, 'create']);
             Route::put('social/matches/{post}', [SocialController::class, 'update']);
@@ -492,10 +499,10 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::post('matches/{match}/record-attendance', [SocialController::class, 'recordAttendance']);
             Route::post('matches/{post}/join', [SocialController::class, 'join']);
             Route::post('social/invitations/{invitation}/respond', [SocialController::class, 'respond']);
-            Route::post('social/reputation/activity', [SocialController::class, 'recordActivity'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff');
+            Route::post('social/reputation/activity', [SocialController::class, 'recordActivity'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
             Route::post('social/reputation/activities/{activity}/dispute', [SocialController::class, 'fileDispute']);
-            Route::post('social/reputation/disputes/{dispute}/resolve', [SocialController::class, 'resolveDispute'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
-            Route::post('tournaments', [TournamentController::class, 'create'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,staff');
+            Route::post('social/reputation/disputes/{dispute}/resolve', [SocialController::class, 'resolveDispute'])->middleware(RequireOrganizationRole::class.':organization_owner');
+            Route::post('tournaments', [TournamentController::class, 'create'])->middleware(RequireOrganizationRole::class.':organization_owner');
             Route::post('tournaments/{tournament}/regenerate', [TournamentController::class, 'regenerateBracket'])->middleware('tournament_role:organizer');
             Route::post('tournaments/{tournament}/participants', [TournamentController::class, 'addParticipant'])->middleware('tournament_role:organizer');
             Route::post('tournament-participants/{participant}/check-in', [TournamentController::class, 'checkIn'])->middleware('tournament_role:official');
@@ -512,35 +519,35 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
         Route::middleware('feature:tenant_pos_and_wallet')->group(function () {
             Route::get('pos/products', [PosController::class, 'products']);
             Route::get('pos/products/{product}', [PosController::class, 'showProduct']);
-            Route::post('pos/products', [PosController::class, 'storeProduct'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
-            Route::put('pos/products/{product}', [PosController::class, 'updateProduct'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
-            Route::delete('pos/products/{product}', [PosController::class, 'destroyProduct'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
-            Route::post('pos/products/{product}/stock', [PosController::class, 'adjustStock'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
-            Route::get('pos/inventory/movements', [PosController::class, 'movements'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
-            Route::get('pos/inventory/kpis', [PosController::class, 'inventoryKpis'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
-            Route::post('pos/quote', [PosController::class, 'quote'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
-            Route::post('pos/orders', [PosController::class, 'completeOrder'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
-            Route::get('pos/orders/{order}', [PosController::class, 'showOrder'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
-            Route::post('pos/orders/{order}/cancel-qr', [PosController::class, 'cancelQrPayment'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
-            Route::post('pos/orders/{order}/receipt/print', [PosController::class, 'printReceipt'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
-            Route::post('pos/orders/{order}/receipt/send', [PosController::class, 'sendReceipt'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
-            Route::post('pos/orders/{order}/refund', [PosController::class, 'refundOrder'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
-            Route::get('pos/shifts', [PosController::class, 'shifts'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
-            Route::get('pos/shifts/active', [PosController::class, 'activeShift'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
-            Route::post('pos/shifts', [PosController::class, 'openShift'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier');
-            Route::post('pos/shifts/{shift}/close', [PosController::class, 'closeShift'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier');
-            Route::post('pos/shifts/{shift}/cash-movement', [PosController::class, 'recordCashMovement'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier,staff');
-            Route::post('pos/shifts/{shift}/review', [PosController::class, 'reviewReconciliation'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
+            Route::post('pos/products', [PosController::class, 'storeProduct'])->middleware(RequireOrganizationRole::class.':organization_owner');
+            Route::put('pos/products/{product}', [PosController::class, 'updateProduct'])->middleware(RequireOrganizationRole::class.':organization_owner');
+            Route::delete('pos/products/{product}', [PosController::class, 'destroyProduct'])->middleware(RequireOrganizationRole::class.':organization_owner');
+            Route::post('pos/products/{product}/stock', [PosController::class, 'adjustStock'])->middleware(RequireOrganizationRole::class.':organization_owner');
+            Route::get('pos/inventory/movements', [PosController::class, 'movements'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
+            Route::get('pos/inventory/kpis', [PosController::class, 'inventoryKpis'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
+            Route::post('pos/quote', [PosController::class, 'quote'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
+            Route::post('pos/orders', [PosController::class, 'completeOrder'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
+            Route::get('pos/orders/{order}', [PosController::class, 'showOrder'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
+            Route::post('pos/orders/{order}/cancel-qr', [PosController::class, 'cancelQrPayment'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
+            Route::post('pos/orders/{order}/receipt/print', [PosController::class, 'printReceipt'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
+            Route::post('pos/orders/{order}/receipt/send', [PosController::class, 'sendReceipt'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
+            Route::post('pos/orders/{order}/refund', [PosController::class, 'refundOrder'])->middleware(RequireOrganizationRole::class.':organization_owner');
+            Route::get('pos/shifts', [PosController::class, 'shifts'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
+            Route::get('pos/shifts/active', [PosController::class, 'activeShift'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
+            Route::post('pos/shifts', [PosController::class, 'openShift'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
+            Route::post('pos/shifts/{shift}/close', [PosController::class, 'closeShift'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
+            Route::post('pos/shifts/{shift}/cash-movement', [PosController::class, 'recordCashMovement'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
+            Route::post('pos/shifts/{shift}/review', [PosController::class, 'reviewReconciliation'])->middleware(RequireOrganizationRole::class.':organization_owner');
             Route::get('memberships/plans', [PosController::class, 'membershipPlans']);
             Route::get('memberships/benefits', [PosController::class, 'benefits']);
-            Route::post('memberships/plans', [PosController::class, 'publishMembershipPlan'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
-            Route::post('memberships', [PosController::class, 'assignMembership'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier');
-            Route::post('loyalty/rules', [PosController::class, 'publishLoyaltyRule'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager');
-            Route::post('wallet/credit', [PosController::class, 'creditWallet'])->middleware(RequireOrganizationRole::class.':organization_owner,venue_manager,cashier');
+            Route::post('memberships/plans', [PosController::class, 'publishMembershipPlan'])->middleware(RequireOrganizationRole::class.':organization_owner');
+            Route::post('memberships', [PosController::class, 'assignMembership'])->middleware(RequireOrganizationRole::class.':organization_owner');
+            Route::post('loyalty/rules', [PosController::class, 'publishLoyaltyRule'])->middleware(RequireOrganizationRole::class.':organization_owner');
+            Route::post('wallet/credit', [PosController::class, 'creditWallet'])->middleware(RequireOrganizationRole::class.':organization_owner');
             Route::post('wallet/spend', [PosController::class, 'spendWallet']);
         });
 
-        Route::middleware([RequireOrganizationRole::class.':organization_owner,venue_manager', 'feature:marketplace_payouts'])->group(function () {
+        Route::middleware([RequireOrganizationRole::class.':organization_owner', 'feature:marketplace_payouts'])->group(function () {
             Route::get('finance/beneficiaries', [FinanceController::class, 'beneficiaries']);
             Route::post('finance/beneficiaries', [FinanceController::class, 'storeBeneficiary']);
             Route::get('finance/settlements', [FinanceController::class, 'settlements']);
@@ -572,7 +579,8 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::post('admin/kyc/{id}/review', [AdminKycController::class, 'review']);
         });
 
-        Route::middleware([RequireOrganizationRole::class.':organization_owner,venue_manager'])->group(function () {
+        // Dispute arbitration is a platform function the owner shares for their own organization.
+        Route::middleware([RequireOrganizationRole::class.':organization_owner,platform_admin'])->group(function () {
             Route::get('admin/disputes', [AdminDisputeController::class, 'index']);
             Route::get('admin/disputes/stats', [AdminDisputeController::class, 'stats']);
             Route::get('admin/disputes/{id}', [AdminDisputeController::class, 'show']);
@@ -580,6 +588,9 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::post('admin/disputes/{id}/reassign', [AdminDisputeController::class, 'reassign']);
             Route::post('admin/disputes/{id}/close', [AdminDisputeController::class, 'close']);
             Route::post('admin/disputes/{id}/reopen', [AdminDisputeController::class, 'reopen']);
+        });
+
+        Route::middleware([RequireOrganizationRole::class.':organization_owner'])->group(function () {
             Route::get('admin/memberships/plans', [AdminMembershipController::class, 'plans']);
             Route::post('admin/memberships/plans', [AdminMembershipController::class, 'storePlan']);
             Route::patch('admin/memberships/plans/{id}', [AdminMembershipController::class, 'updatePlan']);

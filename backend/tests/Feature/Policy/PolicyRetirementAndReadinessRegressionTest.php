@@ -79,7 +79,7 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
     public function test_obsolete_membership_cancellation_waiver_writes_are_rejected(): void
     {
         [$org, $venue, $court] = $this->setupTenant();
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = $this->ownerOf($org);
         Sanctum::actingAs($admin);
 
         // 1. Membership plan store rejection (camelCase & snake_case)

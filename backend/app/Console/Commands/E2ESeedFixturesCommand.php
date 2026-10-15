@@ -366,16 +366,16 @@ class E2ESeedFixturesCommand extends Command
             $managerMember = OrganizationMember::create([
                 'organization_id' => $org1->id,
                 'user_id' => $manager1->id,
-                'role' => OrganizationMember::ROLE_VENUE_MANAGER,
+                'role' => OrganizationMember::ROLE_STAFF,
                 'status' => 'active',
             ]);
-            OrganizationMember::create([
+            $cashierMember = OrganizationMember::create([
                 'organization_id' => $org1->id,
                 'user_id' => $cashier1->id,
-                'role' => OrganizationMember::ROLE_CASHIER,
+                'role' => OrganizationMember::ROLE_STAFF,
                 'status' => 'active',
             ]);
-            OrganizationMember::create([
+            $staffMember = OrganizationMember::create([
                 'organization_id' => $org1->id,
                 'user_id' => $staff1->id,
                 'role' => OrganizationMember::ROLE_STAFF,
@@ -443,9 +443,8 @@ class E2ESeedFixturesCommand extends Command
                 'is_active' => true,
                 'published_at' => now(),
             ]);
-            $managerMember->update([
-                'permissions' => ['venue_id' => $venue1A->id],
-            ]);
+            // BR-20: staff operate only assigned venues, so every org-1 staff fixture works at venue 1-A.
+            array_map(fn (OrganizationMember $member) => $member->update(['permissions' => ['venue_id' => $venue1A->id, 'venue_ids' => [$venue1A->id]]]), [$managerMember, $cashierMember, $staffMember]);
 
             // Receiving Connection for Venue 1-A
             $rc1 = ReceivingConnection::create([
@@ -834,8 +833,8 @@ class E2ESeedFixturesCommand extends Command
                     'unverifiedCustomer' => ['id' => $unverifiedCustomer->id, 'name' => $unverifiedCustomer->name, 'email' => $unverifiedCustomer->email, 'role' => 'customer', 'password' => $unverifiedPassword],
                     'restrictedCustomer' => ['id' => $restrictedCustomer->id, 'name' => $restrictedCustomer->name, 'email' => $restrictedCustomer->email, 'role' => 'customer', 'password' => $restrictedPassword],
                     'owner' => ['id' => $owner1->id, 'name' => $owner1->name, 'email' => $owner1->email, 'role' => 'organization_owner', 'password' => $ownerPassword],
-                    'manager' => ['id' => $manager1->id, 'name' => $manager1->name, 'email' => $manager1->email, 'role' => 'venue_manager', 'password' => $managerPassword],
-                    'cashier' => ['id' => $cashier1->id, 'name' => $cashier1->name, 'email' => $cashier1->email, 'role' => 'cashier', 'password' => $cashierPassword],
+                    'manager' => ['id' => $manager1->id, 'name' => $manager1->name, 'email' => $manager1->email, 'role' => 'staff', 'password' => $managerPassword],
+                    'cashier' => ['id' => $cashier1->id, 'name' => $cashier1->name, 'email' => $cashier1->email, 'role' => 'staff', 'password' => $cashierPassword],
                     'staff' => ['id' => $staff1->id, 'name' => $staff1->name, 'email' => $staff1->email, 'role' => 'staff', 'password' => $staffPassword],
                     'foreignOwner' => ['id' => $owner2->id, 'name' => $owner2->name, 'email' => $owner2->email, 'role' => 'organization_owner', 'password' => $foreignOwnerPassword],
                 ],

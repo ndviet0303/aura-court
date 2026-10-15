@@ -30,13 +30,14 @@ class AdminReservationListTest extends TestCase
         app(LegacyBookingBackfillService::class)->backfillBooking($booking);
     }
 
-    public function test_platform_admin_sees_every_organization_and_legacy_mirrors_carry_their_code(): void
+    public function test_platform_admin_is_refused_and_legacy_mirrors_carry_their_code(): void
     {
-        $admin = User::factory()->create(['role' => 'platform_admin']);
+        // BR-23: reservations are organization operations; platform admin rights do not stand in.
+        $this->actingAs(User::factory()->create(['role' => 'platform_admin']))->getJson('/api/admin/reservations')->assertForbidden();
 
-        $response = $this->actingAs($admin)->getJson('/api/admin/reservations')
+        $response = $this->actingAs($this->fixture['org1']['owner'])->getJson('/api/admin/reservations')
             ->assertOk()
-            ->assertJsonPath('total', 4)
+            ->assertJsonPath('total', 3)
             ->assertJsonPath('per_page', 30);
 
         $legacy = collect($response->json('data'))->firstWhere('code', 'LEGACY-BK-ADM-LEGACY');
@@ -70,22 +71,26 @@ class AdminReservationListTest extends TestCase
     public function test_member_without_venue_scope_gets_an_empty_page_not_every_reservation(): void
     {
         // A cashier passes venue_admin but has no authorized venues.
-        $cashier = $this->member(OrganizationMember::ROLE_CASHIER);
+        $cashier = $this->member(OrganizationMember::ROLE_STAFF);
 
         $this->actingAs($cashier)->getJson('/api/admin/reservations')->assertOk()->assertJsonPath('total', 0)->assertJsonPath('data', []);
     }
 
     public function test_status_and_date_filters_and_thirty_per_page(): void
     {
-        $admin = User::factory()->create(['role' => 'platform_admin']);
-
-        $this->assertCodes($this->actingAs($admin)->getJson('/api/admin/reservations?status=cancelled'), ['RSV-ADM-V2']);
-        $this->assertCodes($this->actingAs($admin)->getJson('/api/admin/reservations?status=legacy'), ['LEGACY-BK-ADM-LEGACY']);
+        $owner = $this->fixture['org1']['owner'];
+        $this->assertCodes($this->actingAs($owner)->getJson('/api/admin/reservations?status=cancelled'), ['RSV-ADM-V2']);
+        $this->assertCodes($this->actingAs($owner)->getJson('/api/admin/reservations?status=legacy'), ['LEGACY-BK-ADM-LEGACY']);
+        $admin = $this->fixture['org2']['owner'];
         $this->assertCodes($this->actingAs($admin)->getJson('/api/admin/reservations?date='.now()->addDays(3)->toDateString()), ['RSV-ADM-ORG2']);
         $this->actingAs($admin)->getJson('/api/admin/reservations?status=pending_payment')->assertUnprocessable()->assertJsonValidationErrors(['status']);
 
         $customer = User::factory()->create();
         foreach (range(1, 27) as $i) {
+            Reservation::create(['organization_id' => $this->fixture['org2']['org']->id, 'user_id' => $customer->id, 'court_id' => $this->fixture['org2']['court']->id, 'code' => "RSV-ADM-BULK-{$i}", 'status' => 'expired', 'currency' => 'VND', 'total_amount' => 0, 'payment_model' => 'legacy_wallet_v1']);
+        }
+        $this->actingAs($admin)->getJson('/api/admin/reservations')->assertJsonPath('total', 28)->assertJsonCount(28, 'data');
+        foreach (range(28, 30) as $i) {
             Reservation::create(['organization_id' => $this->fixture['org2']['org']->id, 'user_id' => $customer->id, 'court_id' => $this->fixture['org2']['court']->id, 'code' => "RSV-ADM-BULK-{$i}", 'status' => 'expired', 'currency' => 'VND', 'total_amount' => 0, 'payment_model' => 'legacy_wallet_v1']);
         }
         $this->actingAs($admin)->getJson('/api/admin/reservations')->assertJsonPath('total', 31)->assertJsonCount(30, 'data')->assertJsonPath('last_page', 2);

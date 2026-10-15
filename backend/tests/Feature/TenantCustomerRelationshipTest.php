@@ -24,7 +24,7 @@ class TenantCustomerRelationshipTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $org->id,
             'user_id' => $cashier->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 
@@ -90,7 +90,7 @@ class TenantCustomerRelationshipTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $org->id,
             'user_id' => $cashier->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 
@@ -236,7 +236,7 @@ class TenantCustomerRelationshipTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $org->id,
             'user_id' => $manager->id,
-            'role' => OrganizationMember::ROLE_VENUE_MANAGER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 
@@ -343,7 +343,7 @@ class TenantCustomerRelationshipTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $org->id,
             'user_id' => $cashier->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 

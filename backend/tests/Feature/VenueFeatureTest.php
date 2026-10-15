@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Court;
+use App\Models\Organization;
+use App\Models\OrganizationMember;
 use App\Models\User;
 use App\Models\Venue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,9 +14,14 @@ class VenueFeatureTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function admin(): User
+    /** BR-23: venues are created by an approved partner's owner, not the platform admin. */
+    private function admin(?User $owner = null): User
     {
-        return User::factory()->create(['role' => 'admin']);
+        $org = Organization::create(['name' => 'Aura Partner', 'slug' => 'aura-partner-'.uniqid(), 'status' => 'active', 'partner_status' => 'approved']);
+        $owner ??= User::factory()->create();
+        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $owner->id, 'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER, 'status' => 'active']);
+
+        return $owner;
     }
 
     private function venue(array $overrides = []): Venue
@@ -69,7 +76,7 @@ class VenueFeatureTest extends TestCase
     {
         $this->actingAs(User::factory()->create())->getJson('/api/admin/venues')->assertForbidden();
 
-        $demo = User::factory()->create(['role' => 'admin', 'email' => 'venue-demo@demo.auracourt.vn']);
+        $demo = $this->admin(User::factory()->create(['email' => 'venue-demo@demo.auracourt.vn']));
         $this->actingAs($demo)->postJson('/api/admin/venues', [
             'name' => 'Demo venue', 'address' => 'Địa chỉ demo', 'google_maps_url' => 'https://maps.app.goo.gl/demo',
         ])->assertCreated()->assertHeader('X-Demo-Simulated', 'true');

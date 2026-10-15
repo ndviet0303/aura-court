@@ -8,6 +8,7 @@ defineProps<{
   avatarUrl: string
   activeTab: ProfileTabType
   isEmailVerified: boolean
+  needsEmail?: boolean
   resendingVerification: boolean
 }>()
 
@@ -20,13 +21,11 @@ const emit = defineEmits<{
 <template>
   <div class="athlete-hero-card">
     <div class="athlete-top-bar">
-      <!-- Avatar Section -->
       <div class="avatar-wrapper">
         <img :src="avatarUrl" :alt="user?.name || 'Aura Athlete'" class="athlete-avatar-img" />
         <span class="online-indicator" title="Tài khoản đang hoạt động"></span>
       </div>
 
-      <!-- Athlete Info & Meta -->
       <div class="athlete-info-col">
         <div class="name-badge-row">
           <h1 class="athlete-name">{{ user?.name || 'Vận Động Viên Aura' }}</h1>
@@ -62,6 +61,7 @@ const emit = defineEmits<{
             <span class="material-symbols-outlined verify-ico">warning</span>
             <span>{{ $t('profile.emailUnverified') }}</span>
             <button
+              v-if="!needsEmail"
               type="button"
               class="resend-btn"
               :disabled="resendingVerification"

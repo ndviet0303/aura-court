@@ -67,7 +67,7 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenantA->id,
             'user_id' => $this->cashierBob->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 
@@ -99,6 +99,7 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
             'slug' => 'aura-d1-'.uniqid(),
             'is_active' => true,
         ]);
+        $this->assignStaffVenues($this->tenantA, $this->venueA);
 
         $this->courtA = Court::create([
             'venue_id' => $this->venueA->id,

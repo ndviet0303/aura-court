@@ -280,8 +280,8 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
     {
         [$org, $venue, $cashier] = $this->createPosTenantFixture();
 
-        // 1. Negative product price in product management -> 422
-        $badProductRes = $this->actingAs($cashier)->postJson('/api/pos/products', [
+        // 1. Negative product price in product management (owner-only, BR-21) -> 422
+        $badProductRes = $this->actingAs($this->ownerOf($org))->postJson('/api/pos/products', [
             'sku' => 'NEG-PRICE-'.uniqid(),
             'name' => 'Negative Price Drink',
             'price' => -15000,
@@ -967,9 +967,10 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $org->id,
             'user_id' => $cashier->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
+        $this->assignStaffVenues($org, $venue);
 
         VenueBookingPolicy::create([
             'venue_id' => $venue->id,

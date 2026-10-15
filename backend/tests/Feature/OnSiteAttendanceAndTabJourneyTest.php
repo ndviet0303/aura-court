@@ -63,7 +63,7 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenant->id,
             'user_id' => $this->cashier->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 
@@ -79,7 +79,7 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenant->id,
             'user_id' => $this->manager->id,
-            'role' => OrganizationMember::ROLE_VENUE_MANAGER,
+            'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER,
             'status' => 'active',
         ]);
 
@@ -104,8 +104,7 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
             'is_active' => true,
         ]);
         // BR-20: staff reach only the venues assigned to them.
-        OrganizationMember::where('organization_id', $this->tenant->id)->whereIn('role', ['staff', 'cashier'])
-            ->get()->each(fn (OrganizationMember $m) => $m->update(['permissions' => ['venue_ids' => [$this->venue->id]]]));
+        $this->assignStaffVenues($this->tenant, $this->venue);
 
         $this->court = Court::create([
             'venue_id' => $this->venue->id,

@@ -1,5 +1,6 @@
 import { api } from '@/core/api/client'
 import { venueClockRange } from '@/core/utils/venueTime'
+import { resolveLocalizedText } from '@/i18n'
 import type { Product, PosShift, CustomerProfile, CourtReservation } from '../types/pos'
 import type { ReservationPaymentAttempt } from '@/features/booking/api/bookingApi'
 
@@ -101,7 +102,13 @@ export const posApi = {
     return res?.shift ?? null
   },
 
-  openShift: async (payload: { opening_cash: number }): Promise<PosShift> => {
+  // The caller's own venues (owner: all, staff: assigned ones); admin routes return names as { vi, en }.
+  getVenues: async (): Promise<Array<{ id: number; name: string }>> => {
+    const venues = await api.get<Array<{ id: number; name: unknown }>>('/admin/venues')
+    return venues.map((venue) => ({ id: venue.id, name: resolveLocalizedText(venue.name) }))
+  },
+
+  openShift: async (payload: { opening_cash: number; venue_id?: number }): Promise<PosShift> => {
     const res = await api.post<{ shift: PosShift } | PosShift>('/pos/shifts', payload)
     return (res as any)?.shift || res
   },

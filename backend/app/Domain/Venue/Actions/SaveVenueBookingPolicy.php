@@ -5,7 +5,6 @@ namespace App\Domain\Venue\Actions;
 use App\Contracts\Repositories\OrganizationLockRepositoryInterface;
 use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
-use App\Models\OrganizationMember;
 use App\Models\VenueBookingPolicy;
 use Illuminate\Support\Facades\DB;
 
@@ -31,13 +30,7 @@ class SaveVenueBookingPolicy
             }
 
             $actor = $this->users->findById($actorId);
-            $canManage = $actor && (
-                $actor->isPlatformAdmin()
-                || ($actor->canManageVenue($venue) && $actor->hasRoleInOrganization($org->id, [
-                    OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                    OrganizationMember::ROLE_VENUE_MANAGER,
-                ]))
-            );
+            $canManage = $actor && $actor->canManageVenue($venue);
             abort_unless($canManage, 403, 'Bạn không có quyền thay đổi chính sách đặt sân này.');
 
             $version = (int) VenueBookingPolicy::query()
