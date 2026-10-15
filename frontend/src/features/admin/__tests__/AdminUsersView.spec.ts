@@ -2,13 +2,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import AdminUsersView from '../views/AdminUsersView.vue'
 import { i18n } from '@/i18n'
-import { adminUserApi } from '../api/adminUserApi'
+import { adminUserApi, type AdminUser } from '../api/adminUserApi'
 
 vi.mock('../api/adminUserApi', () => ({
   adminUserApi: { list: vi.fn(), lock: vi.fn(), unlock: vi.fn() },
 }))
 
-const page = (users: Record<string, unknown>[]) => ({
+const page = (users: AdminUser[]) => ({
   data: users,
   current_page: 1,
   last_page: 1,
