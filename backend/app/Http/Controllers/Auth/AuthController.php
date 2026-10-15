@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\PersonalAccessToken;
+use Laravel\Socialite\AbstractUser;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\AbstractProvider;
 
@@ -223,7 +224,7 @@ class AuthController extends Controller
             $socialUser = $driver->redirectUrl($redirectUri)->stateless()->user();
 
             // Only Google states that it checked the address; anything else stays unverified (BR-06).
-            $emailVerified = $provider === 'google'
+            $emailVerified = $provider === 'google' && $socialUser instanceof AbstractUser
                 && filter_var($socialUser->getRaw()['email_verified'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $name = Str::limit($socialUser->getName() ?: ($socialUser->getNickname() ?: 'Athlete'), 255, '');
             $avatar = $socialUser->getAvatar();

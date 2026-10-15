@@ -74,6 +74,7 @@ class User extends Authenticatable implements MustVerifyEmail
         $this->notify(new VerifyEmailNotification);
     }
 
+    /** @return HasMany<OrganizationMember, $this> */
     public function organizationMembers(): HasMany
     {
         return $this->hasMany(OrganizationMember::class);

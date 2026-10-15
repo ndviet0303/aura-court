@@ -799,18 +799,6 @@ parameters:
 			path: app/Http/Controllers/Promotion/PromotionController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$permissions\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Promotion/PromotionController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$role\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Promotion/PromotionController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$starts_at\.$#'
 			identifier: property.notFound
 			count: 2
@@ -1639,12 +1627,6 @@ parameters:
 			path: app/Infrastructure/Repositories/Eloquent/EloquentCourtPriceSlotRepository.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$role\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Infrastructure/Repositories/Eloquent/EloquentDisputeRepository.php
-
-		-
 			message: '#^Method App\\Infrastructure\\Repositories\\Eloquent\\EloquentHostKycRepository\:\:attachDocument\(\) should return App\\Models\\PartnerDocument but returns Illuminate\\Database\\Eloquent\\Model\.$#'
 			identifier: return.type
 			count: 1
@@ -1871,18 +1853,6 @@ parameters:
 			identifier: method.notFound
 			count: 1
 			path: app/Models/Tournament.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$organization_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Models/User.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$role\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Models/User.php
 
 		-
 			message: '#^Right side of && is always true\.$#'
@@ -2471,18 +2441,6 @@ parameters:
 			identifier: notIdentical.alwaysTrue
 			count: 3
 			path: app/Services/Loyalty/LoyaltyPolicyService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$permissions\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/POS/PosService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$role\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/POS/PosService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue\.$#'
