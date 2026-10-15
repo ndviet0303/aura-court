@@ -121,7 +121,7 @@ onMounted(() => {
     <!-- Modals -->
     <CourtFormModal
       v-model:name="courtForm.name"
-      v-model:venue-id="courtForm.venue_id"
+      v-model:address="courtForm.address"
       v-model:sport-zone-id="courtForm.sport_zone_id"
       v-model:surface-type="courtForm.surface_type"
       v-model:capacity="courtForm.capacity"
@@ -130,7 +130,7 @@ onMounted(() => {
       v-model:image-url="courtForm.image_url"
       :show="showCourtModal"
       :editing-court-id="editingCourtId"
-      :venues="venues"
+      :venue-id="courtForm.venue_id"
       :sport-zones="sportZones"
       :saving="saving"
       @close="showCourtModal = false"

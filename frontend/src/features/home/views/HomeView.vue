@@ -9,10 +9,16 @@ import type { AvailabilitySlot, Court } from '@/features/court/types/court'
 import { formatCurrency } from '@/i18n'
 import { DatePicker, SelectDropdown, SkeletonLoader } from '@/shared/components'
 import { resolveCourtImage } from '@/lib/courtImage'
-import { getVenueLocalDate, formatSlotRange } from '../utils/homeAvailability'
+import {
+  getVenueLocalDate,
+  formatSlotRange,
+  formatAvailabilityDate,
+  getCourtIcon,
+} from '../utils/homeAvailability'
 import { describeCourtPlace } from '../utils/courtArea'
 import { useCourtAreaFilter } from '../composables/useCourtAreaFilter'
 import CourtAreaTabs from '../components/CourtAreaTabs.vue'
+import CourtSearchBox from '../components/CourtSearchBox.vue'
 import LoyaltyPointSelector from '@/features/booking/components/LoyaltyPointSelector.vue'
 import CouponCodeField from '@/features/booking/components/CouponCodeField.vue'
 import { useCheckoutCoupon } from '@/features/booking/composables/useCheckoutCoupon'
@@ -49,25 +55,6 @@ const sportCategories = [
   { id: 'volleyball', name: 'Bóng chuyền', icon: 'sports_volleyball' },
   { id: 'table_tennis', name: 'Bóng bàn', icon: 'table_restaurant' },
 ]
-
-function getCourtIcon(court: Court): string {
-  const sport = (court.sport_zone?.sport_type || '').toLowerCase()
-  if (sport === 'football_5v5' || sport === 'football_7v7' || sport === 'football')
-    return 'sports_soccer'
-  if (sport === 'basketball') return 'sports_basketball'
-  if (sport === 'volleyball') return 'sports_volleyball'
-  if (sport === 'table_tennis') return 'table_restaurant'
-  if (sport === 'tennis' || sport === 'pickleball' || sport === 'badminton') return 'sports_tennis'
-
-  const name = (court.name || '').toLowerCase()
-  if (name.includes('bóng đá') || name.includes('football')) return 'sports_soccer'
-  if (name.includes('bóng rổ') || name.includes('basketball') || name.includes('nba'))
-    return 'sports_basketball'
-  if (name.includes('bóng chuyền') || name.includes('volleyball')) return 'sports_volleyball'
-  if (name.includes('bóng bàn') || name.includes('table tennis') || name.includes('stiga'))
-    return 'table_restaurant'
-  return 'sports_tennis'
-}
 
 const courtsChipsScrollRef = ref<HTMLElement | null>(null)
 const canScrollLeft = ref(false)
@@ -229,21 +216,14 @@ const visibleSlots = computed(() =>
 const selectedCourtName = computed(
   () => selectedCourtObj.value?.name || (selected.value ? `Sân ${selected.value}` : ''),
 )
-const availabilitySummary = computed(() => {
-  if (!date.value) return ''
-  // date.value is a venue-local YYYY-MM-DD; format it as a UTC midnight so no shift happens.
-  const label = new Intl.DateTimeFormat(locale.value === 'en' ? 'en-US' : 'vi-VN', {
-    weekday: 'long',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(`${date.value}T00:00:00Z`))
-  return t('home.availability.summary', {
-    date: label.charAt(0).toUpperCase() + label.slice(1),
-    count: visibleSlots.value.filter((slot: AvailabilitySlot) => slot.available).length,
-  })
-})
+const availabilitySummary = computed(() =>
+  date.value
+    ? t('home.availability.summary', {
+        date: formatAvailabilityDate(date.value, locale.value),
+        count: visibleSlots.value.filter((slot: AvailabilitySlot) => slot.available).length,
+      })
+    : '',
+)
 
 let localRequestId = 0
 
@@ -431,25 +411,7 @@ onMounted(async () => {
 
         <!-- Quick actions: Search + DatePicker -->
         <div class="availability-quick-actions">
-          <div class="availability-search-box">
-            <span class="material-symbols-outlined icon-16 search-icon">search</span>
-            <input
-              v-model="courtSearchQuery"
-              type="text"
-              class="court-search-input"
-              placeholder="Tìm sân, khu vực..."
-              aria-label="Tìm sân hoặc khu vực"
-            />
-            <button
-              v-if="courtSearchQuery"
-              type="button"
-              class="search-clear-btn"
-              aria-label="Xóa tìm kiếm"
-              @click="courtSearchQuery = ''"
-            >
-              ×
-            </button>
-          </div>
+          <CourtSearchBox v-model="courtSearchQuery" />
 
           <div class="availability-date-wrapper">
             <DatePicker v-model="date" @change="loadAvailability" />
@@ -731,47 +693,6 @@ onMounted(async () => {
   font-size: 14px;
   font-weight: 500;
   color: var(--muted);
-}
-
-.availability-search-box {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 34px;
-  box-sizing: border-box;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: var(--surface-subtle);
-  border: 1px solid var(--outline);
-  transition: border-color 0.2s ease;
-}
-
-.availability-search-box:focus-within {
-  border-color: var(--primary);
-}
-
-.search-icon {
-  font-size: 15px;
-  color: var(--muted);
-}
-
-.court-search-input {
-  border: none;
-  background: transparent;
-  font-size: 12px;
-  color: var(--ink);
-  outline: none;
-  width: 110px;
-}
-
-.search-clear-btn {
-  background: none;
-  border: none;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 15px;
-  line-height: 1;
-  padding: 0;
 }
 
 .availability-date-wrapper {

@@ -1,4 +1,4 @@
-import type { AvailabilitySlot } from '@/features/court/types/court'
+import type { AvailabilitySlot, Court } from '@/features/court/types/court'
 
 /**
  * Gets the current or provided date string (YYYY-MM-DD) in the venue's local timezone (default: Asia/Ho_Chi_Minh).
@@ -88,4 +88,37 @@ export function resolveAvailabilityHeading(
   const effectiveDate = dateStr || getVenueLocalDate(new Date(), timeZone)
   const prefix = locale === 'en' ? 'Availability' : 'Lịch trống'
   return `${prefix} — ${courtName} — ${effectiveDate}`
+}
+
+/** "Thứ Năm, 15/10/2026" for a venue-local YYYY-MM-DD, capitalised for a heading. */
+export function formatAvailabilityDate(date: string, locale: string): string {
+  // Format it as a UTC midnight so the calendar day never shifts with the browser's timezone.
+  const label = new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'vi-VN', {
+    weekday: 'long',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${date}T00:00:00Z`))
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+/** Material icon for a court chip, from its sport zone or, failing that, its name. */
+export function getCourtIcon(court: Court): string {
+  const sport = (court.sport_zone?.sport_type || '').toLowerCase()
+  if (sport === 'football_5v5' || sport === 'football_7v7' || sport === 'football')
+    return 'sports_soccer'
+  if (sport === 'basketball') return 'sports_basketball'
+  if (sport === 'volleyball') return 'sports_volleyball'
+  if (sport === 'table_tennis') return 'table_restaurant'
+  if (sport === 'tennis' || sport === 'pickleball' || sport === 'badminton') return 'sports_tennis'
+
+  const name = (court.name || '').toLowerCase()
+  if (name.includes('bóng đá') || name.includes('football')) return 'sports_soccer'
+  if (name.includes('bóng rổ') || name.includes('basketball') || name.includes('nba'))
+    return 'sports_basketball'
+  if (name.includes('bóng chuyền') || name.includes('volleyball')) return 'sports_volleyball'
+  if (name.includes('bóng bàn') || name.includes('table tennis') || name.includes('stiga'))
+    return 'table_restaurant'
+  return 'sports_tennis'
 }

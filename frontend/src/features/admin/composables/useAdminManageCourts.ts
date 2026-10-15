@@ -11,6 +11,8 @@ export type { Coupon }
 export type CourtForm = {
   name: string
   venue_id: number
+  // Lives on the venue; edited here so admins never have to pick a venue.
+  address: string
   sport_zone_id: number | null
   description: string
   image_url: string
@@ -58,6 +60,7 @@ export function useAdminManageCourts() {
   const courtForm = ref<CourtForm>({
     name: '',
     venue_id: 0,
+    address: '',
     sport_zone_id: null,
     description: '',
     image_url: '',
@@ -167,11 +170,25 @@ export function useAdminManageCourts() {
     }
   }
 
+  // The address the form opened with, so saving only touches the venue when it changed.
+  let openedAddress = ''
+
+  function venueAddress(venueId: number) {
+    return venues.value.find((venue) => venue.id === venueId)?.address || ''
+  }
+
   function openCreateCourtModal() {
     editingCourtId.value = null
+    // New courts go to the venue being filtered on, else the first open one.
+    const venueId =
+      typeof selectedVenueFilter.value === 'number'
+        ? selectedVenueFilter.value
+        : activeVenues.value[0]?.id || (venues.value[0]?.id ?? 0)
+    openedAddress = venueAddress(venueId)
     courtForm.value = {
       name: '',
-      venue_id: activeVenues.value[0]?.id || (venues.value[0]?.id ?? 0),
+      venue_id: venueId,
+      address: openedAddress,
       sport_zone_id: null,
       description: '',
       image_url: '',
@@ -184,9 +201,11 @@ export function useAdminManageCourts() {
 
   function openEditCourtModal(court: Court) {
     editingCourtId.value = court.id
+    openedAddress = court.venue?.address || venueAddress(court.venue?.id ?? 0)
     courtForm.value = {
       name: resolveLocalizedText(court.name),
       venue_id: court.venue?.id || activeVenues.value[0]?.id || 0,
+      address: openedAddress,
       sport_zone_id: court.sport_zone_id || null,
       description: resolveLocalizedText(court.description) || '',
       image_url: court.image_url || '',
@@ -201,8 +220,13 @@ export function useAdminManageCourts() {
     saving.value = true
     clearAlerts()
     try {
+      const { address, ...court } = courtForm.value
+      const nextAddress = address.trim()
+      if (nextAddress && nextAddress !== openedAddress) {
+        await adminApi.updateVenue(court.venue_id, { address: nextAddress })
+      }
       const payload = {
-        ...courtForm.value,
+        ...court,
         sport_zone_id: courtForm.value.sport_zone_id || null,
         image_url: courtForm.value.image_url || null,
         surface_type: courtForm.value.surface_type || null,
