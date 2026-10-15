@@ -73,6 +73,26 @@ class OrganizationMember extends Model
         return [];
     }
 
+    /**
+     * Venues this member was assigned, limited to their own organization.
+     * No assignment means no venue access (BR-20), not every venue.
+     *
+     * @return list<int>
+     */
+    public function assignedVenueIds(): array
+    {
+        $ids = $this->venue_ids;
+        if ($ids === []) {
+            return [];
+        }
+
+        return Venue::where('organization_id', $this->organization_id)
+            ->whereIn('id', $ids)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);

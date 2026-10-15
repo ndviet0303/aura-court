@@ -181,6 +181,8 @@ class PosMembershipWalletTest extends TestCase
             'status' => 'published',
             'is_active' => true,
         ]);
+        OrganizationMember::where('organization_id', $organization->id)->where('user_id', $cashier->id)
+            ->update(['permissions' => json_encode(['venue_ids' => [$venue->id, $otherVenue->id]])]);
         $product = PosProduct::create([
             'organization_id' => $organization->id,
             'sku' => 'VENUE-ITEM',

@@ -187,15 +187,7 @@ class User extends Authenticatable implements MustVerifyEmail
             $allVenueIds = Venue::whereIn('organization_id', $ownedOrgIds)->pluck('id')->toArray();
 
             foreach ($memberships->where('role', '!=', OrganizationMember::ROLE_ORGANIZATION_OWNER) as $m) {
-                $perms = $m->permissions ?? [];
-                if (! empty($perms['venue_ids'])) {
-                    $allVenueIds = array_merge($allVenueIds, (array) $perms['venue_ids']);
-                } elseif (! empty($perms['venue_id'])) {
-                    $allVenueIds[] = (int) $perms['venue_id'];
-                } else {
-                    $orgVenues = Venue::where('organization_id', $m->organization_id)->pluck('id')->toArray();
-                    $allVenueIds = array_merge($allVenueIds, $orgVenues);
-                }
+                $allVenueIds = array_merge($allVenueIds, $m->assignedVenueIds());
             }
 
             return array_values(array_unique($allVenueIds));
@@ -207,15 +199,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
         $venueIds = [];
         foreach ($memberships as $m) {
-            $perms = $m->permissions ?? [];
-            if (! empty($perms['venue_ids'])) {
-                $venueIds = array_merge($venueIds, (array) $perms['venue_ids']);
-            } elseif (! empty($perms['venue_id'])) {
-                $venueIds[] = (int) $perms['venue_id'];
-            } else {
-                $orgVenues = Venue::where('organization_id', $m->organization_id)->pluck('id')->toArray();
-                $venueIds = array_merge($venueIds, $orgVenues);
-            }
+            $venueIds = array_merge($venueIds, $m->assignedVenueIds());
         }
 
         return array_values(array_unique($venueIds));
@@ -246,15 +230,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return false;
         }
 
-        $perms = $member->permissions ?? [];
-        if (! empty($perms['venue_ids'])) {
-            return in_array($venueModel->id, (array) $perms['venue_ids'], true);
-        }
-        if (! empty($perms['venue_id'])) {
-            return (int) $perms['venue_id'] === $venueModel->id;
-        }
-
-        return true;
+        return in_array($venueModel->id, $member->assignedVenueIds(), true);
     }
 
     public function bookings(): HasMany

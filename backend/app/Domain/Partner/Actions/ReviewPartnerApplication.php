@@ -22,6 +22,8 @@ class ReviewPartnerApplication
             if (! $kyc) {
                 abort(404, 'Hồ sơ đối tác không tồn tại.');
             }
+            // BR-15: a reviewer never decides their own application.
+            abort_if((int) $kyc->user_id === (int) $data->reviewerId, 403, 'Không thể tự xét duyệt hồ sơ đối tác của chính mình.');
 
             // Optimistic concurrency check
             if ($kyc->version !== $data->expectedVersion) {

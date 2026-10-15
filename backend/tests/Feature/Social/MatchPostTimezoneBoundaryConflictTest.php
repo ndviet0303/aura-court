@@ -40,6 +40,8 @@ class MatchPostTimezoneBoundaryConflictTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // The fixtures use fixed 2026-10-15 times that must stay in the future.
+        $this->travelTo(Carbon::parse('2026-10-14 00:00:00', 'UTC'));
 
         config([
             'app.timezone' => 'Asia/Ho_Chi_Minh',

@@ -58,14 +58,14 @@ use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::post('auth/register', [AuthController::class, 'register']);
-Route::post('auth/login', [AuthController::class, 'login']);
+Route::post('auth/register', [AuthController::class, 'register'])->middleware('throttle:auth-register');
+Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:auth-login');
 Route::get('platform/plans', [PlatformPlanController::class, 'catalog']);
 Route::middleware('web')->group(function () {
     Route::get('auth/{provider}/redirect', [AuthController::class, 'redirectToProvider']);
 });
-Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword']);
-Route::post('auth/reset-password', [AuthController::class, 'resetPassword']);
+Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:auth-email-link');
+Route::post('auth/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:auth-reset');
 Route::get('partner/documents/download', [PartnerDocumentController::class, 'download'])
     ->middleware('signed')
     ->name('partner.documents.download');
@@ -155,7 +155,7 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
         $request->user()->sendEmailVerificationNotification();
 
         return response()->json(['message' => 'Liên kết xác thực email đã được gửi.']);
-    });
+    })->middleware('throttle:auth-email-link');
     // Partner registration routes
     Route::prefix('partner')->group(function () {
         Route::get('application/current', [PartnerApplicationController::class, 'current']);

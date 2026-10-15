@@ -96,9 +96,15 @@ return [
         'users' => [
             'provider' => 'users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
-            'expire' => 60,
+            // BR-10: reset links last 15 minutes and are at least 60 s apart.
+            'expire' => 15,
             'throttle' => 60,
         ],
+    ],
+
+    // BR-05: email verification links last 15 minutes.
+    'verification' => [
+        'expire' => 15,
     ],
 
     /*

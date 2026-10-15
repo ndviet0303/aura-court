@@ -243,6 +243,8 @@ export function useOrganizationOwner() {
       const res = await adminApi.addOrgMember<{ member: OrgMember }>(currentOrg.value.id, {
         email,
         role,
+        // Members reach only the venues they are given; start them on every venue of the org.
+        venue_ids: (currentOrg.value.venues || []).map((venue) => venue.id),
       })
       if (res?.member) {
         // Check if member already exists in list to update, else append

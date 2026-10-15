@@ -56,7 +56,9 @@ class RestrictedAccountLifecycleTest extends TestCase
             'email' => 'oauth_restricted@example.com',
             'status' => 'locked',
             'email_verified_at' => now(),
+            'social_provider' => 'google',
         ]);
+        $user->forceFill(['social_id' => 'google-restricted-123'])->save();
 
         $provider = \Mockery::mock(AbstractProvider::class);
         $provider->shouldReceive('redirectUrl')
