@@ -105,6 +105,7 @@ class Reservation extends Model
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsTo<Court, $this> */
     public function court(): BelongsTo
     {
         return $this->belongsTo(Court::class);

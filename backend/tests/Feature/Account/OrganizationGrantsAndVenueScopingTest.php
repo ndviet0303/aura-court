@@ -80,15 +80,16 @@ class OrganizationGrantsAndVenueScopingTest extends TestCase
         $venue2 = $this->createVenue($org, 'Venue Two', 'venue-two');
 
         // Invite a manager assigned only to Venue 1
-        $res = $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/members", [
+        $manager = $this->createCustomer('manager_assigned@test.local');
+        $invitationId = $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", [
             'email' => 'manager_assigned@test.local',
             'role' => OrganizationMember::ROLE_VENUE_MANAGER,
             'venue_id' => $venue1->id,
             'venue_ids' => [$venue1->id],
             'permissions' => ['functions' => ['pricing', 'calendar']],
-        ]);
+        ])->assertCreated()->json('invitation.id');
 
-        $res->assertCreated();
+        $res = $this->actingAs($manager)->postJson("/api/invitations/{$invitationId}/accept")->assertOk();
         $this->assertEquals($venue1->id, $res->json('member.venue_id'));
         $this->assertEquals([$venue1->id], $res->json('member.venue_ids'));
         $this->assertEquals(['pricing', 'calendar'], $res->json('member.permissions.functions'));

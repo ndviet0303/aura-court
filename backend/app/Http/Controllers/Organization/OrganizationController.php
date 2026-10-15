@@ -8,14 +8,11 @@ use App\Models\ElevatedAuditLog;
 use App\Models\Organization;
 use App\Models\OrganizationInvitation;
 use App\Models\OrganizationMember;
-use App\Models\User;
-use App\Notifications\AuraBookingNotification;
 use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\TenantContext;
+use App\Services\Organization\OrganizationInvitationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class OrganizationController extends Controller
@@ -162,59 +159,6 @@ class OrganizationController extends Controller
         return response()->json(['members' => $members]);
     }
 
-    public function addMember(Request $request, Organization $organization): JsonResponse
-    {
-        $user = $request->user();
-        abort_unless(
-            $user->isPlatformAdmin() || $user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_ORGANIZATION_OWNER]),
-            403
-        );
-
-        $data = $request->validate([
-            'email' => 'required|email',
-            'role' => 'required|string|in:'.implode(',', OrganizationMember::VALID_ROLES),
-            'venue_id' => 'nullable|integer',
-            'venue_ids' => 'nullable|array',
-            'venue_ids.*' => 'integer',
-            'permissions' => 'nullable|array',
-        ]);
-
-        $targetUser = User::where('email', $data['email'])->first();
-        if (! $targetUser) {
-            $namePart = explode('@', $data['email'])[0];
-            $targetUser = User::create([
-                'name' => ucfirst($namePart),
-                'email' => $data['email'],
-                'password' => bcrypt(Str::random(24)),
-                'role' => 'customer',
-                'password_set' => false,
-            ]);
-        }
-
-        $permissions = $data['permissions'] ?? [];
-        if (! empty($data['venue_ids'])) {
-            $permissions['venue_ids'] = array_values(array_map('intval', (array) $data['venue_ids']));
-            $permissions['venue_id'] = $permissions['venue_ids'][0] ?? null;
-        } elseif (! empty($data['venue_id'])) {
-            $permissions['venue_ids'] = [(int) $data['venue_id']];
-            $permissions['venue_id'] = (int) $data['venue_id'];
-        }
-        if (empty($permissions) && $data['role'] === OrganizationMember::ROLE_ORGANIZATION_OWNER) {
-            $permissions = ['*'];
-        }
-
-        $member = OrganizationMember::updateOrCreate(
-            ['organization_id' => $organization->id, 'user_id' => $targetUser->id],
-            [
-                'role' => $data['role'],
-                'status' => 'active',
-                'permissions' => ! empty($permissions) ? $permissions : null,
-            ]
-        );
-
-        return response()->json(['member' => $member->load('user')], 201);
-    }
-
     public function updateMemberRole(Request $request, Organization $organization, OrganizationMember $member): JsonResponse
     {
         $user = $request->user();
@@ -259,9 +203,7 @@ class OrganizationController extends Controller
             app(EnforcePlanQuota::class)->execute($organization->id, 'staff', 1);
         }
 
-        $updatePayload = [
-            'role' => $data['role'],
-        ];
+        $updatePayload = ['role' => $data['role']];
         if (isset($data['status'])) {
             $updatePayload['status'] = $data['status'];
         }
@@ -277,6 +219,7 @@ class OrganizationController extends Controller
             $updatePayload['permissions'] = $permissions;
         }
 
+        $before = $member->only(['role', 'status', 'permissions']);
         $member->update($updatePayload);
 
         ElevatedAuditLog::create([
@@ -288,8 +231,8 @@ class OrganizationController extends Controller
             'ip_address' => $request->ip(),
             'metadata' => [
                 'member_id' => $member->id,
-                'role' => $data['role'],
-                'status' => $data['status'] ?? $member->status,
+                'before' => $before,
+                'after' => $member->only(['role', 'status', 'permissions']),
             ],
             'created_at' => now(),
         ]);
@@ -358,7 +301,7 @@ class OrganizationController extends Controller
         return response()->json(['invitations' => $invitations]);
     }
 
-    public function invite(Request $request, Organization $organization): JsonResponse
+    public function invite(Request $request, Organization $organization, OrganizationInvitationService $invitations): JsonResponse
     {
         $user = $request->user();
         abort_unless(
@@ -367,7 +310,7 @@ class OrganizationController extends Controller
         );
 
         $data = $request->validate([
-            'email' => 'required|email',
+            'email' => 'required|email|max:254',
             'role' => 'required|string|in:'.implode(',', OrganizationMember::VALID_ROLES),
             'venue_id' => 'nullable|integer',
             'venue_ids' => 'nullable|array',
@@ -375,245 +318,21 @@ class OrganizationController extends Controller
             'permissions' => 'nullable|array',
         ]);
 
-        // Enforce staff quota if organization has an active platform subscription
-        if (in_array($data['role'], [OrganizationMember::ROLE_VENUE_MANAGER, OrganizationMember::ROLE_STAFF, OrganizationMember::ROLE_CASHIER], true) && $organization->hasActiveSubscription()) {
-            app(EnforcePlanQuota::class)->execute($organization->id, 'staff', 1);
-        }
-
-        $targetUser = User::where('email', $data['email'])->first();
-        if (! $targetUser) {
-            $namePart = explode('@', $data['email'])[0];
-            $targetUser = User::create([
-                'name' => ucfirst($namePart),
-                'email' => $data['email'],
-                'password' => bcrypt(Str::random(24)),
-                'role' => 'customer',
-                'password_set' => false,
-            ]);
-        }
-
-        // Check if user is already an active member
-        $existingActive = $organization->members()
-            ->where('user_id', $targetUser->id)
-            ->where('status', 'active')
-            ->first();
-        if ($existingActive) {
-            abort(422, 'Người dùng đã là thành viên chính thức của tổ chức.');
-        }
-
-        $permissions = $data['permissions'] ?? [];
-        if (! empty($data['venue_ids'])) {
-            $permissions['venue_ids'] = array_values(array_map('intval', (array) $data['venue_ids']));
-            $permissions['venue_id'] = $permissions['venue_ids'][0] ?? null;
-        } elseif (! empty($data['venue_id'])) {
-            $permissions['venue_ids'] = [(int) $data['venue_id']];
-            $permissions['venue_id'] = (int) $data['venue_id'];
-        }
-        if (empty($permissions) && $data['role'] === OrganizationMember::ROLE_ORGANIZATION_OWNER) {
-            $permissions = ['*'];
-        }
-
-        // Invalidate older pending invitations for the same email
-        $organization->invitations()
-            ->where('email', $data['email'])
-            ->where('status', OrganizationInvitation::STATUS_PENDING)
-            ->update([
-                'status' => OrganizationInvitation::STATUS_REVOKED,
-                'revoked_at' => now(),
-            ]);
-
-        $token = Str::random(64);
-        $invitation = OrganizationInvitation::create([
-            'organization_id' => $organization->id,
-            'invited_by' => $user->id,
-            'email' => $data['email'],
-            'role' => $data['role'],
-            'venue_id' => $permissions['venue_id'] ?? null,
-            'venue_ids' => $permissions['venue_ids'] ?? null,
-            'permissions' => ! empty($permissions) ? $permissions : null,
-            'token' => $token,
-            'status' => OrganizationInvitation::STATUS_PENDING,
-            'expires_at' => now()->addDays(7),
-        ]);
-
-        // Persist membership with 'invited' status until accepted
-        $member = OrganizationMember::updateOrCreate(
-            ['organization_id' => $organization->id, 'user_id' => $targetUser->id],
-            [
-                'role' => $data['role'],
-                'status' => 'invited',
-                'permissions' => ! empty($permissions) ? $permissions : null,
-            ]
-        );
-
-        // Persisted notification to invitee
-        $targetUser->notify(new AuraBookingNotification(
-            'staff_invitation',
-            'Lời mời tham gia quản trị',
-            "Bạn được mời tham gia tổ chức {$organization->name} với vai trò {$data['role']}.",
-            "/admin/invitations/{$token}"
-        ));
-
-        ElevatedAuditLog::create([
-            'user_id' => $user->id,
-            'organization_id' => $organization->id,
-            'action' => 'STAFF_INVITATION_CREATED',
-            'purpose' => "Mời {$data['email']} tham gia tổ chức với vai trò {$data['role']}",
-            'outcome' => 'success',
-            'ip_address' => $request->ip(),
-            'metadata' => [
-                'email' => $data['email'],
-                'role' => $data['role'],
-                'token' => $token,
-                'venue_id' => $permissions['venue_id'] ?? null,
-            ],
-            'created_at' => now(),
-        ]);
-
-        return response()->json([
-            'invitation' => $invitation,
-            'member' => $member->load('user'),
-        ], 201);
+        return response()->json(['invitation' => $invitations->invite($organization, $user, $data, $request->ip())], 201);
     }
 
-    public function acceptInvitation(Request $request, Organization $organization, OrganizationInvitation $invitation): JsonResponse
-    {
-        abort_if($invitation->organization_id !== $organization->id, 404);
-
-        return $this->processInvitationAccept($request->user(), $invitation);
-    }
-
-    public function acceptByToken(Request $request, string $token): JsonResponse
-    {
-        $invitation = OrganizationInvitation::where('token', $token)->firstOrFail();
-
-        return $this->processInvitationAccept($request->user(), $invitation);
-    }
-
-    private function processInvitationAccept(User $user, OrganizationInvitation $invitation): JsonResponse
-    {
-        abort_unless(
-            strtolower($user->email) === strtolower($invitation->email),
-            403,
-            'Bạn không phải là người nhận của lời mời này.'
-        );
-
-        // Idempotency: duplicate accepts return success without redundant mutation
-        if ($invitation->isAccepted()) {
-            $member = OrganizationMember::where('organization_id', $invitation->organization_id)
-                ->where('user_id', $user->id)
-                ->first();
-
-            return response()->json([
-                'message' => 'Lời mời đã được chấp nhận trước đó.',
-                'invitation' => $invitation,
-                'member' => $member?->load('user'),
-            ], 200);
-        }
-
-        if ($invitation->isRevoked()) {
-            abort(422, 'Lời mời đã bị thu hồi.');
-        }
-
-        if ($invitation->isExpired()) {
-            $invitation->update(['status' => OrganizationInvitation::STATUS_EXPIRED]);
-            abort(422, 'Lời mời đã hết hạn.');
-        }
-
-        // Quota check before activating membership
-        if (in_array($invitation->role, [OrganizationMember::ROLE_VENUE_MANAGER, OrganizationMember::ROLE_STAFF, OrganizationMember::ROLE_CASHIER], true) && $invitation->organization->hasActiveSubscription()) {
-            app(EnforcePlanQuota::class)->execute($invitation->organization_id, 'staff', 1);
-        }
-
-        return DB::transaction(function () use ($user, $invitation) {
-            $invitation->update([
-                'status' => OrganizationInvitation::STATUS_ACCEPTED,
-                'accepted_at' => now(),
-            ]);
-
-            $member = OrganizationMember::updateOrCreate(
-                ['organization_id' => $invitation->organization_id, 'user_id' => $user->id],
-                [
-                    'role' => $invitation->role,
-                    'status' => 'active',
-                    'permissions' => $invitation->permissions,
-                ]
-            );
-
-            ElevatedAuditLog::create([
-                'user_id' => $user->id,
-                'organization_id' => $invitation->organization_id,
-                'action' => 'STAFF_INVITATION_ACCEPTED',
-                'purpose' => "Chấp nhận lời mời tham gia với vai trò {$invitation->role}",
-                'outcome' => 'success',
-                'ip_address' => request()->ip(),
-                'metadata' => [
-                    'invitation_id' => $invitation->id,
-                    'role' => $invitation->role,
-                ],
-                'created_at' => now(),
-            ]);
-
-            // Persisted notification to inviter
-            $invitation->inviter?->notify(new AuraBookingNotification(
-                'staff_invitation_accepted',
-                'Lời mời được chấp nhận',
-                "{$user->name} ({$user->email}) đã chấp nhận lời mời tham gia tổ chức.",
-                '/admin/staff'
-            ));
-
-            return response()->json([
-                'message' => 'Chấp nhận lời mời thành công.',
-                'invitation' => $invitation,
-                'member' => $member->fresh()->load('user'),
-            ], 200);
-        });
-    }
-
-    public function revokeInvitation(Request $request, Organization $organization, OrganizationInvitation $invitation): JsonResponse
+    public function revokeInvitation(Request $request, Organization $organization, OrganizationInvitation $invitation, OrganizationInvitationService $invitations): JsonResponse
     {
         $user = $request->user();
         abort_unless(
             $user->isPlatformAdmin() || $user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_ORGANIZATION_OWNER]),
             403
         );
-
         abort_if($invitation->organization_id !== $organization->id, 404);
 
-        if ($invitation->isAccepted()) {
-            abort(422, 'Không thể thu hồi lời mời đã được chấp nhận.');
-        }
-
-        return DB::transaction(function () use ($user, $organization, $invitation, $request) {
-            $invitation->update([
-                'status' => OrganizationInvitation::STATUS_REVOKED,
-                'revoked_at' => now(),
-            ]);
-
-            // Delete any unaccepted member row
-            OrganizationMember::where('organization_id', $organization->id)
-                ->where('status', 'invited')
-                ->whereHas('user', fn ($q) => $q->where('email', $invitation->email))
-                ->delete();
-
-            ElevatedAuditLog::create([
-                'user_id' => $user->id,
-                'organization_id' => $organization->id,
-                'action' => 'STAFF_INVITATION_REVOKED',
-                'purpose' => "Thu hồi lời mời cho {$invitation->email}",
-                'outcome' => 'success',
-                'ip_address' => $request->ip(),
-                'metadata' => [
-                    'invitation_id' => $invitation->id,
-                    'email' => $invitation->email,
-                ],
-                'created_at' => now(),
-            ]);
-
-            return response()->json([
-                'message' => 'Đã thu hồi lời mời thành công.',
-                'invitation' => $invitation,
-            ], 200);
-        });
+        return response()->json([
+            'message' => 'Đã thu hồi lời mời thành công.',
+            'invitation' => $invitations->revoke($user, $invitation, $request->ip()),
+        ]);
     }
 }

@@ -73,7 +73,7 @@ class PartnerApplicationReviewActionTest extends TestCase
         $saveRes->assertStatus(200);
     }
 
-    public function test_reviewer_rejects_application_and_enforces_reapplication_policy(): void
+    public function test_a_rejected_applicant_can_start_a_new_application_at_once(): void
     {
         $applicant = User::factory()->create(['email_verified_at' => now()]);
         $admin = User::factory()->create(['role' => 'admin']);
@@ -96,14 +96,11 @@ class PartnerApplicationReviewActionTest extends TestCase
             'version' => 2,
         ]);
 
-        // Rejection with cooloff 30 days
         $dto = new ReviewPartnerApplicationData(
             reviewerId: $admin->id,
             kycId: $kyc->id,
             decision: 'reject',
             reason: 'Phát hiện giấy phép kinh doanh giả mạo.',
-            reapplicationAllowed: true,
-            reapplicationCooloffDays: 30,
             expectedVersion: 2
         );
 
@@ -113,32 +110,20 @@ class PartnerApplicationReviewActionTest extends TestCase
         $this->assertNull($result->current_user_id); // Slot released!
         $this->assertFalse($result->isCurrent());
 
-        // Applicant attempts to start new application immediately: must be blocked by cooloff
+        // BR-14: the rejected application is kept, the status page still shows it,
+        // and the applicant may start a new application at once.
         Sanctum::actingAs($applicant);
+        $this->getJson('/api/partner/application/current')
+            ->assertOk()
+            ->assertJsonPath('data.status', 'rejected');
+
         $startRes = $this->postJson('/api/partner/application/start', []);
-        $startRes->assertStatus(422)
-            ->assertJsonValidationErrors(['reapplication']);
-
-        // Now test policy when reapplication is permanently forbidden
-        $kyc->update([
-            'reapplication_policy' => ['allowed' => false, 'cooloff_days' => 0],
-        ]);
-
-        $startRes2 = $this->postJson('/api/partner/application/start', []);
-        $startRes2->assertStatus(422)
-            ->assertJsonValidationErrors(['reapplication']);
-
-        // When cooloff has elapsed and allowed is true:
-        $kyc->update([
-            'reapplication_policy' => ['allowed' => true, 'cooloff_days' => 0, 'eligible_at' => now()->subDay()->toIso8601String()],
-        ]);
-
-        $startRes3 = $this->postJson('/api/partner/application/start', []);
-        $startRes3->assertStatus(201)
+        $startRes->assertStatus(201)
             ->assertJsonPath('data.status', 'draft');
 
-        $newApp = HostKyc::find($startRes3->json('data.id'));
+        $newApp = HostKyc::find($startRes->json('data.id'));
         $this->assertEquals($kyc->id, $newApp->parent_kyc_id);
+        $this->assertSame('rejected', $kyc->fresh()->status);
     }
 
     public function test_stale_expected_version_or_invalid_state_returns_conflict(): void

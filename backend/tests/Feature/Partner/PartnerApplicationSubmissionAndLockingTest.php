@@ -45,7 +45,7 @@ class PartnerApplicationSubmissionAndLockingTest extends TestCase
         ]);
 
         $submitRes->assertStatus(422)
-            ->assertJsonValidationErrors(['business_name', 'id_card_number', 'representative_id_front']);
+            ->assertJsonValidationErrors(['business_name', 'address_line', 'representative_id_front']);
     }
 
     public function test_cannot_submit_without_all_required_consents(): void

@@ -273,13 +273,12 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
             'status' => 'active',
         ]);
 
-        $inviteRes = $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/members", [
+        $newAccount = $this->createCustomerUser('new_owner@test.local');
+        $invitationId = $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", [
             'email' => 'new_owner@test.local',
             'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER,
-        ]);
-        $inviteRes->assertCreated();
-
-        $newAccount = User::where('email', 'new_owner@test.local')->firstOrFail();
+        ])->assertCreated()->json('invitation.id');
+        $this->actingAs($newAccount)->postJson("/api/invitations/{$invitationId}/accept")->assertOk();
         // Personal account role MUST remain customer, NOT admin
         $this->assertEquals('customer', $newAccount->role);
         $this->assertFalse($newAccount->isAdmin());
@@ -343,7 +342,7 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
 
         // 2. Cashier cannot add or manage organization members
         $this->actingAs($cashier)
-            ->postJson("/api/organizations/{$org->id}/members", [
+            ->postJson("/api/organizations/{$org->id}/invitations", [
                 'email' => 'cashier_friend@test.local',
                 'role' => OrganizationMember::ROLE_STAFF,
             ])

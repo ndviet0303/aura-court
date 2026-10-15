@@ -13,8 +13,6 @@ readonly class ReviewPartnerApplicationData
         public ?string $reason = null,
         public ?string $reviewerNotes = null,
         public ?array $feedbackFields = null,
-        public bool $reapplicationAllowed = true,
-        public int $reapplicationCooloffDays = 0,
         public int $expectedVersion = 1,
     ) {}
 
@@ -27,8 +25,6 @@ readonly class ReviewPartnerApplicationData
             reason: $request->input('reason'),
             reviewerNotes: $request->input('reviewer_notes'),
             feedbackFields: $request->input('feedback_fields'),
-            reapplicationAllowed: (bool) $request->boolean('reapplication_allowed', true),
-            reapplicationCooloffDays: (int) $request->integer('reapplication_cooloff_days', 0),
             expectedVersion: (int) $request->integer('expected_version', 1),
         );
     }

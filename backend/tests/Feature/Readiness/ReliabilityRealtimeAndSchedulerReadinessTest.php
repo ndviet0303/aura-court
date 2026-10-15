@@ -120,6 +120,9 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
             'is_active' => true,
             'timezone' => 'Asia/Ho_Chi_Minh',
         ]);
+        // BR-20: staff reach only the venues assigned to them.
+        OrganizationMember::where('organization_id', $org->id)->whereIn('role', ['staff', 'cashier'])
+            ->get()->each(fn (OrganizationMember $m) => $m->update(['permissions' => ['venue_ids' => [$venue->id]]]));
 
         $court = Court::create([
             'venue_id' => $venue->id,

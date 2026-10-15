@@ -66,14 +66,14 @@ const documentRequirements = computed<DocRequirement[]>(() => {
       type: 'bank_account_confirmation',
       title: 'Xác nhận tài khoản ngân hàng',
       description: 'Ảnh chụp thông tin tài khoản trên app ngân hàng hoặc sao kê ngân hàng.',
-      required: true,
+      required: false,
       icon: 'account_balance',
     },
     {
       type: 'venue_operation_rights',
       title: 'Giấy tờ quyền sử dụng mặt bằng sân thể thao',
       description: 'Hợp đồng thuê mặt bằng, quyền sử dụng đất hoặc giấy phép xây dựng sân.',
-      required: true,
+      required: false,
       icon: 'stadium',
     },
   )

@@ -6,7 +6,6 @@ use App\Contracts\Repositories\HostKycRepositoryInterface;
 use App\Contracts\Repositories\OrganizationLockRepositoryInterface;
 use App\Domain\Partner\DTOs\StartPartnerApplicationData;
 use App\Models\HostKyc;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -26,11 +25,10 @@ class StartPartnerApplication
                 throw ValidationException::withMessages(['user' => 'Người dùng không tồn tại.']);
             }
 
-            // Check contact verification (email verified or verified phone evidence)
-            $isVerified = $user->hasVerifiedEmail() || $user->hasVerifiedPhone();
-            if (! $isVerified) {
+            // BR-04: partner registration needs a verified email.
+            if (! $user->hasVerifiedEmail()) {
                 throw ValidationException::withMessages([
-                    'user' => 'Vui lòng xác thực email hoặc cung cấp bằng chứng xác thực số điện thoại trước khi đăng ký đối tác.',
+                    'user' => 'Vui lòng xác thực email trước khi đăng ký đối tác.',
                 ]);
             }
 
@@ -67,20 +65,11 @@ class StartPartnerApplication
                 }
             }
 
+            // BR-14: a rejected application stays on record; a new one only links back to the user's own.
             if ($parentId) {
                 $parentKyc = $this->kycRepo->findById($parentId);
-                if ($parentKyc && $parentKyc->user_id === $user->id && $parentKyc->isRejected()) {
-                    $policy = (array) ($parentKyc->reapplication_policy ?? []);
-                    if (isset($policy['allowed']) && ! $policy['allowed']) {
-                        throw ValidationException::withMessages([
-                            'reapplication' => 'Hồ sơ đối tác trước đó đã bị từ chối và chính sách không cho phép nộp lại.',
-                        ]);
-                    }
-                    if (! empty($policy['eligible_at']) && Carbon::parse($policy['eligible_at'])->isFuture()) {
-                        throw ValidationException::withMessages([
-                            'reapplication' => 'Chưa hết thời gian chờ để nộp lại hồ sơ đối tác theo quy định.',
-                        ]);
-                    }
+                if (! $parentKyc || $parentKyc->user_id !== $user->id || ! $parentKyc->isRejected()) {
+                    $parentId = null;
                 }
             }
 

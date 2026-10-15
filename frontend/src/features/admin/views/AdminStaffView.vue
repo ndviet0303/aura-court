@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
-import { useAdminStaff, type StaffMember } from '../composables/useAdminStaff'
+import { useAdminStaff } from '../composables/useAdminStaff'
 
 import StaffKpiBar from '../components/staff/StaffKpiBar.vue'
 import StaffDirectoryTable from '../components/staff/StaffDirectoryTable.vue'
 import StaffRoleMatrix from '../components/staff/StaffRoleMatrix.vue'
 import StaffAuditLogs from '../components/staff/StaffAuditLogs.vue'
 import StaffInviteModal from '../components/staff/StaffInviteModal.vue'
+import StaffInvitationList from '../components/staff/StaffInvitationList.vue'
 import StaffEditRoleModal from '../components/staff/StaffEditRoleModal.vue'
 import StaffRemoveModal from '../components/staff/StaffRemoveModal.vue'
 
@@ -32,6 +33,7 @@ const {
   notice,
   error,
   venuesList,
+  invitations,
   stats,
   filteredStaff,
   filteredAuditLogs,
@@ -42,21 +44,8 @@ const {
   openRemoveModal,
   removeMember,
   toggleMemberStatus,
+  revokeInvitation,
 } = useAdminStaff()
-
-async function handleInviteMember(member: {
-  name: string
-  email: string
-  phone: string
-  role: StaffMember['role']
-  venueIds: number[]
-}) {
-  await inviteStaff(member)
-}
-
-async function handleSaveEditRole(memberId: number, payload: { role: string; status: string }) {
-  await updateMemberRole(memberId, payload)
-}
 
 async function handleConfirmRemove(memberId: number) {
   await removeMember(memberId)
@@ -156,6 +145,7 @@ async function handleConfirmRemove(memberId: number) {
         @toggle-status="toggleMemberStatus"
         @remove-member="openRemoveModal"
       />
+      <StaffInvitationList :invitations="invitations" :saving="saving" @revoke="revokeInvitation" />
     </section>
 
     <!-- View 2: Role Matrix -->
@@ -184,7 +174,7 @@ async function handleConfirmRemove(memberId: number) {
       :saving="saving"
       :venues="venuesList"
       @close="showInviteModal = false"
-      @invite="handleInviteMember"
+      @invite="inviteStaff"
     />
 
     <!-- Edit Role & Status Modal -->
@@ -193,7 +183,7 @@ async function handleConfirmRemove(memberId: number) {
       :member="selectedMemberForEdit"
       :saving="saving"
       @close="showEditModal = false"
-      @save="handleSaveEditRole"
+      @save="updateMemberRole"
     />
 
     <!-- Remove Member Modal -->

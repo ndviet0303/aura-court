@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { User } from '@/core/types/common'
 import { AuraButton } from '@/shared/components'
+import { isAccountPassword } from '@/core/utils/accountPassword'
 
 defineProps<{
   user: User | null
@@ -45,98 +46,98 @@ const emit = defineEmits<{
     </div>
 
     <form class="security-edit-form" @submit.prevent="emit('save')">
-      <!-- Current Password field (shown if password is set) -->
-      <div v-if="hasPasswordSet" class="form-group">
-        <label class="form-label" for="sec-curr-pwd">
-          {{ $t('profile.currentPassword') }} <span class="required">*</span>
-        </label>
-        <div class="input-with-icon">
-          <span class="material-symbols-outlined input-icon">lock_open</span>
-          <input
-            id="sec-curr-pwd"
-            :value="currentPassword"
-            type="password"
-            class="form-input"
-            placeholder="••••••••"
-            autocomplete="current-password"
-            required
-            @input="emit('update:currentPassword', ($event.target as HTMLInputElement).value)"
-          />
-        </div>
-      </div>
-
-      <div class="form-grid">
+      <template v-if="hasPasswordSet">
         <div class="form-group">
-          <label class="form-label" for="sec-new-pwd">
-            {{ hasPasswordSet ? $t('profile.newPassword') : $t('profile.setPasswordTitle') }}
-            <span class="required">*</span>
+          <label class="form-label" for="sec-curr-pwd">
+            {{ $t('profile.currentPassword') }} <span class="required">*</span>
           </label>
           <div class="input-with-icon">
-            <span class="material-symbols-outlined input-icon">lock</span>
+            <span class="material-symbols-outlined input-icon">lock_open</span>
             <input
-              id="sec-new-pwd"
-              :value="newPassword"
+              id="sec-curr-pwd"
+              :value="currentPassword"
               type="password"
               class="form-input"
-              :placeholder="$t('auth.passwordPlaceholder')"
-              autocomplete="new-password"
+              placeholder="••••••••"
+              autocomplete="current-password"
               required
-              minlength="8"
-              @input="emit('update:newPassword', ($event.target as HTMLInputElement).value)"
+              @input="emit('update:currentPassword', ($event.target as HTMLInputElement).value)"
             />
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="sec-conf-pwd">
-            {{ $t('profile.confirmNewPassword') }} <span class="required">*</span>
-          </label>
-          <div class="input-with-icon">
-            <span class="material-symbols-outlined input-icon">verified_user</span>
-            <input
-              id="sec-conf-pwd"
-              :value="confirmPassword"
-              type="password"
-              class="form-input"
-              :placeholder="$t('profile.confirmNewPassword')"
-              autocomplete="new-password"
-              required
-              minlength="8"
-              @input="emit('update:confirmPassword', ($event.target as HTMLInputElement).value)"
-            />
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="sec-new-pwd">
+              {{ $t('profile.newPassword') }} <span class="required">*</span>
+            </label>
+            <div class="input-with-icon">
+              <span class="material-symbols-outlined input-icon">lock</span>
+              <input
+                id="sec-new-pwd"
+                :value="newPassword"
+                type="password"
+                class="form-input"
+                :placeholder="$t('auth.passwordPlaceholder')"
+                autocomplete="new-password"
+                required
+                maxlength="64"
+                @input="emit('update:newPassword', ($event.target as HTMLInputElement).value)"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="sec-conf-pwd">
+              {{ $t('profile.confirmNewPassword') }} <span class="required">*</span>
+            </label>
+            <div class="input-with-icon">
+              <span class="material-symbols-outlined input-icon">verified_user</span>
+              <input
+                id="sec-conf-pwd"
+                :value="confirmPassword"
+                type="password"
+                class="form-input"
+                :placeholder="$t('profile.confirmNewPassword')"
+                autocomplete="new-password"
+                required
+                maxlength="64"
+                @input="emit('update:confirmPassword', ($event.target as HTMLInputElement).value)"
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Security Checklist Box -->
-      <div class="security-checklist">
-        <span class="checklist-title font-mono">{{ $t('profile.passCriteriaTitle') }}</span>
-        <ul class="checklist-items">
-          <li :class="{ met: newPassword.length >= 8 }">
-            <span class="material-symbols-outlined check-ico">
-              {{ newPassword.length >= 8 ? 'check_circle' : 'radio_button_unchecked' }}
-            </span>
-            {{ $t('profile.passCriteria1') }}
-          </li>
-          <li :class="{ met: newPassword && newPassword === confirmPassword }">
-            <span class="material-symbols-outlined check-ico">
-              {{
-                newPassword && newPassword === confirmPassword
-                  ? 'check_circle'
-                  : 'radio_button_unchecked'
-              }}
-            </span>
-            {{ $t('profile.passCriteria2') }}
-          </li>
-        </ul>
-      </div>
+        <!-- Security Checklist Box -->
+        <div class="security-checklist">
+          <span class="checklist-title font-mono">{{ $t('profile.passCriteriaTitle') }}</span>
+          <ul class="checklist-items">
+            <li :class="{ met: isAccountPassword(newPassword) }">
+              <span class="material-symbols-outlined check-ico">
+                {{ isAccountPassword(newPassword) ? 'check_circle' : 'radio_button_unchecked' }}
+              </span>
+              {{ $t('profile.passCriteria1') }}
+            </li>
+            <li :class="{ met: newPassword && newPassword === confirmPassword }">
+              <span class="material-symbols-outlined check-ico">
+                {{
+                  newPassword && newPassword === confirmPassword
+                    ? 'check_circle'
+                    : 'radio_button_unchecked'
+                }}
+              </span>
+              {{ $t('profile.passCriteria2') }}
+            </li>
+          </ul>
+        </div>
+      </template>
 
       <div class="form-actions-bar">
         <AuraButton
           type="submit"
           variant="primary"
           :loading="saving"
-          :disabled="saving || !newPassword || newPassword.length < 8"
+          :disabled="saving || (hasPasswordSet && !isAccountPassword(newPassword))"
         >
           <template #icon>
             <span class="material-symbols-outlined">lock_reset</span>

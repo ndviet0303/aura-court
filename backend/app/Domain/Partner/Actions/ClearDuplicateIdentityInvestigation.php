@@ -21,6 +21,9 @@ class ClearDuplicateIdentityInvestigation
             if (! $kyc) {
                 abort(404, 'Hồ sơ đối tác không tồn tại.');
             }
+            if ($kyc->investigation_status !== 'flagged_duplicate') {
+                abort(409, 'Hồ sơ không bị gắn cờ nghi vấn trùng lặp định danh.');
+            }
 
             $updated = $this->kycRepo->update($kyc, [
                 'investigation_status' => 'cleared',

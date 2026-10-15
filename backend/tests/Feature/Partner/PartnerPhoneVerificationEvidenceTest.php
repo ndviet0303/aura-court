@@ -32,7 +32,7 @@ class PartnerPhoneVerificationEvidenceTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['user']);
-        $this->assertStringContainsString('bằng chứng xác thực', $response->json('errors.user.0'));
+        $this->assertStringContainsString('xác thực email', $response->json('errors.user.0'));
     }
 
     public function test_direct_action_call_with_unverified_phone_and_email_throws_validation_exception(): void
@@ -50,7 +50,8 @@ class PartnerPhoneVerificationEvidenceTest extends TestCase
         $action->execute(new StartPartnerApplicationData(userId: $applicant->id));
     }
 
-    public function test_applicant_with_phone_verification_evidence_can_start_application(): void
+    /** BR-04: a verified phone does not replace a verified email. */
+    public function test_a_verified_phone_without_a_verified_email_cannot_start_application(): void
     {
         $applicant = User::factory()->create([
             'email_verified_at' => null,
@@ -63,11 +64,9 @@ class PartnerPhoneVerificationEvidenceTest extends TestCase
 
         $response = $this->postJson('/api/partner/application/start', []);
 
-        $response->assertStatus(201)
-            ->assertJsonPath('data.status', 'draft')
-            ->assertJsonPath('data.is_current', true);
+        $response->assertStatus(422)->assertJsonValidationErrors(['user']);
 
-        $this->assertSame(1, HostKyc::query()->where('user_id', $applicant->id)->count());
+        $this->assertSame(0, HostKyc::query()->where('user_id', $applicant->id)->count());
     }
 
     public function test_applicant_with_verified_email_can_start_application(): void

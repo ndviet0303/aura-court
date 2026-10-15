@@ -37,7 +37,8 @@ const name = ref('')
 const email = ref('')
 const phone = ref('')
 const role = ref<StaffMember['role']>('Receptionist')
-const venueId = ref<number | string>('all')
+// The inviter picks the venue scope explicitly; nothing is preselected.
+const venueId = ref<number | string>('')
 
 const roleOptions = computed<DropdownOption[]>(() => [
   { value: 'Manager', label: t('admin.staff.roleManager'), icon: 'manage_accounts' },
@@ -57,15 +58,22 @@ const venueOptions = computed<DropdownOption[]>(() => {
   return list
 })
 
+const venueMissing = computed(() => props.venues.length > 0 && venueId.value === '')
+
 function handleSend() {
-  if (!name.value.trim() || !email.value.trim()) return
+  if (!name.value.trim() || !email.value.trim() || venueMissing.value) return
   emit('invite', {
     name: name.value.trim(),
     email: email.value.trim(),
     phone: phone.value.trim(),
     role: role.value,
     // Staff reach only the venues they are given, so "all" is sent as the explicit list.
-    venueIds: venueId.value === 'all' ? props.venues.map((v) => v.id) : [Number(venueId.value)],
+    venueIds:
+      venueId.value === 'all'
+        ? props.venues.map((v) => v.id)
+        : venueId.value === ''
+          ? []
+          : [Number(venueId.value)],
   })
 }
 
@@ -77,7 +85,7 @@ watch(
       email.value = ''
       phone.value = ''
       role.value = 'Receptionist'
-      venueId.value = 'all'
+      venueId.value = ''
     }
   },
 )
@@ -144,10 +152,13 @@ watch(
         </div>
 
         <div v-if="venues && venues.length > 0" class="form-group">
-          <label class="form-label">{{ t('admin.staff.assignedVenueLabel') }}</label>
+          <label class="form-label"
+            >{{ t('admin.staff.assignedVenueLabel') }} <span class="required">*</span></label
+          >
           <SelectDropdown
             v-model="venueId"
             :options="venueOptions"
+            :placeholder="t('admin.staff.chooseVenuePlaceholder')"
             variant="bordered"
             data-testid="invite-venue-select"
           />
@@ -162,7 +173,7 @@ watch(
           variant="primary"
           class="btn-send-invite"
           data-testid="send-invite-btn"
-          :disabled="!name.trim() || !email.trim() || saving"
+          :disabled="!name.trim() || !email.trim() || venueMissing || saving"
           @click="handleSend"
         >
           <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': saving }">

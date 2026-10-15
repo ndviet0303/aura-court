@@ -67,17 +67,17 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
 
         $newUser = User::factory()->create(['email' => 'newstaff@aura.test']);
 
-        // 1. Customer cannot add member
+        // 1. Customer cannot invite a member
         $this->actingAs($customer)
-            ->postJson("/api/organizations/{$org->id}/members", [
+            ->postJson("/api/organizations/{$org->id}/invitations", [
                 'email' => $newUser->email,
                 'role' => OrganizationMember::ROLE_STAFF,
             ])
             ->assertStatus(403);
 
-        // 2. Cashier cannot add member
+        // 2. Cashier cannot invite a member
         $this->actingAs($cashier)
-            ->postJson("/api/organizations/{$org->id}/members", [
+            ->postJson("/api/organizations/{$org->id}/invitations", [
                 'email' => $newUser->email,
                 'role' => OrganizationMember::ROLE_STAFF,
             ])
@@ -88,14 +88,14 @@ class TenantIsolationAndRoleMatrixTest extends TestCase
             ->getJson("/api/organizations/{$org->id}/members")
             ->assertOk();
 
-        // 4. Owner can add member
+        // 4. Owner can invite a member
         $this->actingAs($owner)
-            ->postJson("/api/organizations/{$org->id}/members", [
+            ->postJson("/api/organizations/{$org->id}/invitations", [
                 'email' => $newUser->email,
                 'role' => OrganizationMember::ROLE_STAFF,
             ])
             ->assertCreated()
-            ->assertJsonPath('member.role', 'staff');
+            ->assertJsonPath('invitation.role', 'staff');
     }
 
     public function test_audited_elevated_access_creates_immutable_log(): void

@@ -25,17 +25,19 @@ class ReviewPartnerApplication
             // BR-15: a reviewer never decides their own application.
             abort_if((int) $kyc->user_id === (int) $data->reviewerId, 403, 'Không thể tự xét duyệt hồ sơ đối tác của chính mình.');
 
+            $decidedStatus = $data->decision === 'reject' ? 'rejected' : $data->decision;
+
             // Optimistic concurrency check
             if ($kyc->version !== $data->expectedVersion) {
                 // Idempotency: If decision was already applied identically, return current record
-                if ($kyc->status === $data->decision && $kyc->rejection_reason === $data->reason) {
+                if ($kyc->status === $decidedStatus && $kyc->rejection_reason === $data->reason) {
                     return $kyc;
                 }
                 abort(409, 'Dữ liệu hồ sơ đã thay đổi từ một phiên làm việc khác. Vui lòng tải lại trang.');
             }
 
             if (! $kyc->isPending()) {
-                if ($kyc->status === $data->decision) {
+                if ($kyc->status === $decidedStatus) {
                     return $kyc;
                 }
                 abort(409, 'Chỉ có thể xét duyệt hồ sơ đang ở trạng thái chờ duyệt (pending).');
@@ -99,15 +101,8 @@ class ReviewPartnerApplication
 
     private function handleReject(HostKyc $kyc, ReviewPartnerApplicationData $data): HostKyc
     {
-        $eligibleAt = $data->reapplicationCooloffDays > 0
-            ? now()->addDays($data->reapplicationCooloffDays)->toIso8601String()
-            : now()->toIso8601String();
-
-        $policy = [
-            'allowed' => $data->reapplicationAllowed,
-            'cooloff_days' => $data->reapplicationCooloffDays,
-            'eligible_at' => $eligibleAt,
-        ];
+        // BR-14: a rejected application is kept and the applicant may start a new one at once.
+        $policy = ['allowed' => true, 'cooloff_days' => 0, 'eligible_at' => now()->toIso8601String()];
 
         $payload = [
             'status' => 'rejected',
@@ -127,8 +122,8 @@ class ReviewPartnerApplication
             'reason' => $data->reason,
             'reviewer_notes' => $data->reviewerNotes,
             'feedback_fields' => $data->feedbackFields,
-            'reapplication_allowed' => $data->reapplicationAllowed,
-            'reapplication_cooloff_days' => $data->reapplicationCooloffDays,
+            'reapplication_allowed' => true,
+            'reapplication_cooloff_days' => 0,
             'application_version' => $kyc->version,
         ]);
 

@@ -275,7 +275,7 @@ class AdminController extends Controller
     {
         $user = $request->user();
         if ($user && ! $user->isPlatformAdmin()) {
-            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
+            abort_unless($user->canOperateVenue($court->venue_id), 403, 'Unauthorized court venue.');
         }
 
         $data = $request->validate([
@@ -328,7 +328,7 @@ class AdminController extends Controller
     {
         $user = request()->user();
         if ($user && ! $user->isPlatformAdmin()) {
-            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
+            abort_unless($user->canOperateVenue($court->venue_id), 403, 'Unauthorized court venue.');
         }
 
         return $this->courtBlocks->paginateForCourt($court, 50);
@@ -338,7 +338,7 @@ class AdminController extends Controller
     {
         $user = request()->user();
         if ($user && ! $user->isPlatformAdmin()) {
-            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
+            abort_unless($user->canOperateVenue($court->venue_id), 403, 'Unauthorized court venue.');
         }
 
         $this->manageCourtBlocksAction->deleteBlock($court, $block);

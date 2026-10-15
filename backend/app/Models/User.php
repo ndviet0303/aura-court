@@ -8,11 +8,13 @@ use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['name', 'email', 'password', 'role', 'status', 'phone', 'phone_verified_at', 'play_level', 'favorite_sports', 'avatar_url', 'onboarded', 'password_set', 'social_provider'])]
@@ -36,7 +38,29 @@ class User extends Authenticatable implements MustVerifyEmail
             'onboarded' => 'boolean',
             'password_set' => 'boolean',
             'favorite_sports' => 'array',
+            'sessions_revoked_at' => 'datetime',
         ];
+    }
+
+    /** BR-08: 10 digits starting with 0, or +84 followed by 9 digits. */
+    public const PHONE_PATTERN = '/^(0\d{9}|\+84\d{9})$/';
+
+    /**
+     * BR-02: one account per email, compared trimmed and lower-cased.
+     *
+     * @return Attribute<string, string|null>
+     */
+    protected function email(): Attribute
+    {
+        return Attribute::make(set: fn (?string $value) => $value === null ? null : Str::lower(trim($value)));
+    }
+
+    /** BR-08: a profile is complete with a 2–100 character name and a valid phone number. */
+    public function hasCompleteProfile(): bool
+    {
+        $name = trim((string) $this->name);
+
+        return mb_strlen($name) >= 2 && mb_strlen($name) <= 100 && preg_match(self::PHONE_PATTERN, (string) $this->phone) === 1;
     }
 
     public function isAdmin(): bool
@@ -206,7 +230,20 @@ class User extends Authenticatable implements MustVerifyEmail
         return array_values(array_unique($venueIds));
     }
 
+    /** Venue management (settings, courts, prices, contracts): platform admin, owner, or an assigned venue manager. */
     public function canManageVenue(int|Venue $venue): bool
+    {
+        return $this->venueAccess($venue, [OrganizationMember::ROLE_VENUE_MANAGER]);
+    }
+
+    /** BR-21: daily operations (check-in/out, court status) also open to staff assigned to the venue. */
+    public function canOperateVenue(int|Venue $venue): bool
+    {
+        return $this->venueAccess($venue, [OrganizationMember::ROLE_VENUE_MANAGER, OrganizationMember::ROLE_STAFF, OrganizationMember::ROLE_CASHIER]);
+    }
+
+    /** @param  list<string>  $scopedRoles  roles that reach only the venues assigned to them */
+    private function venueAccess(int|Venue $venue, array $scopedRoles): bool
     {
         if ($this->isPlatformAdmin()) {
             return true;
@@ -224,7 +261,7 @@ class User extends Authenticatable implements MustVerifyEmail
         $member = $this->organizationMembers()
             ->where('organization_id', $venueModel->organization_id)
             ->where('status', 'active')
-            ->whereIn('role', [OrganizationMember::ROLE_VENUE_MANAGER, OrganizationMember::ROLE_STAFF])
+            ->whereIn('role', $scopedRoles)
             ->first();
 
         if (! $member) {

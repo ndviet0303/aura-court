@@ -87,6 +87,9 @@ class BookingAttendanceAndCheckInTest extends TestCase
             'slug' => 'aura-d1-'.uniqid(),
             'is_active' => true,
         ]);
+        // BR-20: staff reach only the venues assigned to them.
+        OrganizationMember::where('organization_id', $this->tenantA->id)->whereIn('role', ['staff', 'cashier'])
+            ->get()->each(fn (OrganizationMember $m) => $m->update(['permissions' => ['venue_ids' => [$this->venueA->id]]]));
 
         $this->courtA = Court::create([
             'venue_id' => $this->venueA->id,

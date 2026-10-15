@@ -7,7 +7,6 @@ use App\Models\BookingAttendance;
 use App\Models\Court;
 use App\Models\CourtBlock;
 use App\Models\LegacyBookingMapping;
-use App\Models\OrganizationMember;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
@@ -84,6 +83,7 @@ class AttendanceService
         ?int $venueId = null
     ): array {
         $reservation = $this->resolveReservation($codeOrId, $organizationId);
+        $this->assertCanOperate($staff, $reservation, 'Unauthorized to check in at this venue.');
 
         // 1. Correct venue validation (Task 8.2 / D49)
         if ($venueId !== null && (int) $reservation->court?->venue_id !== (int) $venueId) {
@@ -251,6 +251,7 @@ class AttendanceService
     public function checkOut(User $staff, int $organizationId, string|int $codeOrId, ?string $notes = null): array
     {
         $reservation = $this->resolveReservation($codeOrId, $organizationId);
+        $this->assertCanOperate($staff, $reservation, 'Unauthorized to check out at this venue.');
 
         $attendance = BookingAttendance::query()
             ->where('organization_id', $organizationId)
@@ -324,21 +325,9 @@ class AttendanceService
 
     public function confirmCourtReady(User $staff, int $organizationId, int $courtId, ?string $notes = null): array
     {
-        $isStaff = OrganizationMember::query()
-            ->where('organization_id', $organizationId)
-            ->where('user_id', $staff->id)
-            ->whereIn('role', [
-                OrganizationMember::ROLE_STAFF,
-                OrganizationMember::ROLE_VENUE_MANAGER,
-                OrganizationMember::ROLE_ORGANIZATION_OWNER,
-            ])
-            ->where('status', 'active')
-            ->exists();
-
-        abort_unless($isStaff, 403, 'Unauthorized to perform court readiness inspection.');
-
         $court = Court::query()->whereKey($courtId)->firstOrFail();
         abort_unless((int) $court->venue?->organization_id === (int) $organizationId, 404, 'Court not found in organization.');
+        abort_unless($staff->canOperateVenue((int) $court->venue_id), 403, 'Unauthorized to perform court readiness inspection.');
 
         Cache::put("court:{$court->id}:operational_status", 'available', now()->addHours(4));
 
@@ -364,19 +353,8 @@ class AttendanceService
 
     public function markNoShow(User $staff, int $organizationId, string|int $codeOrId, ?string $reason = null): array
     {
-        $isStaff = OrganizationMember::query()
-            ->where('organization_id', $organizationId)
-            ->where('user_id', $staff->id)
-            ->whereIn('role', [
-                OrganizationMember::ROLE_STAFF,
-                OrganizationMember::ROLE_VENUE_MANAGER,
-                OrganizationMember::ROLE_ORGANIZATION_OWNER,
-            ])
-            ->exists();
-
-        abort_unless($isStaff, 403, 'Unauthorized to record no-show.');
-
         $reservation = $this->resolveReservation($codeOrId, $organizationId);
+        $this->assertCanOperate($staff, $reservation, 'Unauthorized to record no-show.');
         abort_unless($reservation->status === 'confirmed', 422, 'Only confirmed bookings can be marked no-show.');
 
         $existing = BookingAttendance::query()
@@ -439,20 +417,10 @@ class AttendanceService
 
     public function reassignCourt(User $staff, int $organizationId, string|int $codeOrId, int $newCourtId, string $reason): array
     {
-        $isStaff = OrganizationMember::query()
-            ->where('organization_id', $organizationId)
-            ->where('user_id', $staff->id)
-            ->whereIn('role', [
-                OrganizationMember::ROLE_STAFF,
-                OrganizationMember::ROLE_VENUE_MANAGER,
-                OrganizationMember::ROLE_ORGANIZATION_OWNER,
-            ])
-            ->exists();
-
-        abort_unless($isStaff, 403, 'Unauthorized to reassign court.');
         abort_if(trim($reason) === '', 422, 'Reason is required for incident reassignment.');
 
         $reservation = $this->resolveReservation($codeOrId, $organizationId);
+        $this->assertCanOperate($staff, $reservation, 'Unauthorized to reassign court.');
         $oldCourtId = $reservation->court_id;
         abort_if($oldCourtId === $newCourtId, 422, 'New court must be different from current court.');
 
@@ -518,6 +486,13 @@ class AttendanceService
                 'to_court_id' => $newCourt->id,
             ];
         });
+    }
+
+    /** BR-21: operations run only at a venue the actor manages or is assigned to. */
+    private function assertCanOperate(User $staff, Reservation $reservation, string $message): void
+    {
+        $venueId = $reservation->court?->venue_id;
+        abort_unless($venueId !== null && $staff->canOperateVenue((int) $venueId), 403, $message);
     }
 
     public function getAttendance(int $organizationId, string|int $codeOrId): array

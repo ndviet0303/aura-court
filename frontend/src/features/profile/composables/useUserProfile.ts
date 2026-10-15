@@ -2,6 +2,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { profileApi } from '../api/profileApi'
 import { errorMessage } from '@/core/utils/errorMessage'
+import { isAccountPassword } from '@/core/utils/accountPassword'
 import { getAvatarUrl, getUserInitials } from '@/lib/avatar'
 import type { ProfileTabType } from '../types/profile'
 import type { Membership } from '@/core/types/common'
@@ -111,19 +112,29 @@ export function useUserProfile() {
   }
 
   async function updatePassword() {
+    if (!hasPasswordSet.value) {
+      await sendPasswordSetupLink()
+      return
+    }
     if (!newPassword.value) {
       showError('Vui lòng nhập mật khẩu mới.')
       return
     }
-    if (newPassword.value.length < 8) {
-      showError('Mật khẩu mới phải có độ dài tối thiểu 8 ký tự.')
+    if (!isAccountPassword(newPassword.value)) {
+      showError(
+        'Mật khẩu mới phải dài 8–64 ký tự, có ít nhất một chữ in hoa, một chữ thường, một chữ số và không chứa khoảng trắng.',
+      )
       return
     }
     if (newPassword.value !== confirmPassword.value) {
       showError('Xác nhận mật khẩu mới không trùng khớp.')
       return
     }
-    if (hasPasswordSet.value && !currentPassword.value) {
+    if (newPassword.value === currentPassword.value) {
+      showError('Mật khẩu mới phải khác mật khẩu hiện tại.')
+      return
+    }
+    if (!currentPassword.value) {
       showError('Vui lòng nhập mật khẩu hiện tại.')
       return
     }
@@ -137,11 +148,8 @@ export function useUserProfile() {
         password_confirmation: confirmPassword.value,
       })
 
-      if (auth.user) {
-        auth.user.password_set = true
-        if (res.user) {
-          Object.assign(auth.user, res.user)
-        }
+      if (auth.user && res.user) {
+        Object.assign(auth.user, res.user)
       }
 
       currentPassword.value = ''
@@ -150,6 +158,20 @@ export function useUserProfile() {
       showNotice(res.message || 'Cập nhật mật khẩu bảo mật thành công.')
     } catch (e: unknown) {
       showError(errorMessage(e, 'Không thể cập nhật mật khẩu. Vui lòng kiểm tra lại.'))
+    } finally {
+      savingPassword.value = false
+    }
+  }
+
+  // BR-08: an account without a password sets one through a link sent to its verified email.
+  async function sendPasswordSetupLink() {
+    savingPassword.value = true
+    error.value = ''
+    try {
+      const res = await profileApi.sendPasswordSetupLink()
+      showNotice(res.message || 'Đã gửi liên kết thiết lập mật khẩu đến email của bạn.')
+    } catch (e: unknown) {
+      showError(errorMessage(e, 'Không thể gửi liên kết thiết lập mật khẩu. Vui lòng thử lại sau.'))
     } finally {
       savingPassword.value = false
     }

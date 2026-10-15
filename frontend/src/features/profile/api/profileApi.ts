@@ -11,5 +11,7 @@ export const profileApi = {
   changePassword: (payload: ChangePasswordPayload) =>
     api.patch<{ message?: string; user?: User }>('/profile/password', payload),
 
+  sendPasswordSetupLink: () => api.post<{ message?: string }>('/profile/password/setup-link'),
+
   resendVerification: () => api.post<{ message?: string }>('/auth/email/verification-notification'),
 }

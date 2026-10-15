@@ -110,8 +110,8 @@ class PartnerReviewController extends Controller
 
         $updated = $action->execute(
             kycId: $id,
-            adminUserId: $request->user()->id,
-            clearanceNotes: $request->input('notes')
+            reviewerId: $request->user()->id,
+            clearanceNote: $request->input('notes')
         );
 
         return response()->json([

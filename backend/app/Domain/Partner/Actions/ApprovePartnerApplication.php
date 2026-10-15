@@ -48,6 +48,11 @@ class ApprovePartnerApplication
                 return $kyc;
             }
 
+            // BR-15: the business identity must not belong to a registered organization.
+            if (trim((string) $kyc->tax_code) !== '' && $this->orgLocks->findByTaxCode((string) $kyc->tax_code)) {
+                abort(422, 'Mã định danh kinh doanh đã thuộc về một tổ chức đã đăng ký. Không thể phê duyệt hồ sơ trùng tổ chức.');
+            }
+
             // Generate organization slug
             $baseName = $kyc->business_name ?: $kyc->legal_name ?: 'club';
             $slugBase = Str::slug($baseName);
@@ -95,7 +100,7 @@ class ApprovePartnerApplication
                 'reason' => $data->reason ?: 'Hồ sơ đạt yêu cầu phê duyệt đối tác.',
                 'reviewer_notes' => $data->reviewerNotes,
                 'feedback_fields' => $data->feedbackFields,
-                'reapplication_allowed' => false,
+                'reapplication_allowed' => true,
                 'reapplication_cooloff_days' => 0,
                 'application_version' => $kyc->version,
             ]);

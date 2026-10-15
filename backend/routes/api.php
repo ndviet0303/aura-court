@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminDisputeController;
 use App\Http\Controllers\Admin\AdminKycController;
 use App\Http\Controllers\Admin\AdminMembershipController;
+use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminVenuePublicationController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\PartnerReviewController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Finance\FinanceExceptionController;
 use App\Http\Controllers\Finance\FinancialReconciliationController;
 use App\Http\Controllers\Loyalty\LoyaltyController;
 use App\Http\Controllers\Notification\NotificationController;
+use App\Http\Controllers\Organization\InvitationResponseController;
 use App\Http\Controllers\Organization\OrganizationController;
 use App\Http\Controllers\Partner\PartnerApplicationController;
 use App\Http\Controllers\Partner\PartnerDocumentController;
@@ -52,6 +54,7 @@ use App\Http\Middleware\ResolveTenantContext;
 use App\Http\Middleware\SimulateDemoMutations;
 use App\Models\HostKyc;
 use App\Models\User;
+use App\Notifications\VerifyEmailNotification;
 use App\Services\Payment\WalletAvailabilityService;
 use App\Services\Payment\WalletPaymentService;
 use Illuminate\Auth\Events\Verified;
@@ -75,7 +78,8 @@ Route::get('auth/verify-email/{id}/{hash}', function (Request $request, string $
         return response()->json(['message' => __('auth.user_not_found')], 404);
     }
 
-    if (! hash_equals(sha1($user->getEmailForVerification()), (string) $hash)) {
+    // BR-05: each link works once, and sending a new link retires the older ones.
+    if (! VerifyEmailNotification::matches($user, $hash)) {
         return response()->json(['message' => __('auth.invalid_verification_link')], 403);
     }
 
@@ -83,6 +87,7 @@ Route::get('auth/verify-email/{id}/{hash}', function (Request $request, string $
         return response()->json(['message' => __('auth.expired_verification_link')], 403);
     }
 
+    VerifyEmailNotification::forget($user);
     if (! $user->hasVerifiedEmail()) {
         $user->markEmailAsVerified();
         event(new Verified($user));
@@ -203,14 +208,18 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
     Route::post('partner/subscription/confirm-payment', [PlatformSubscriptionController::class, 'confirmPayment']);
     Route::patch('profile', function (Request $request) {
         $data = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'phone' => 'nullable|string|max:20',
+            'name' => 'sometimes|string|min:2|max:100',
+            'phone' => ['nullable', 'string', 'regex:'.User::PHONE_PATTERN],
             'avatar_url' => 'nullable|string|max:2048',
             'avatar' => 'nullable|string|max:2048',
             'play_level' => 'nullable|string|in:beginner,intermediate,advanced,pro',
             'skill_level' => 'nullable|string|in:beginner,intermediate,advanced,pro',
             'favorite_sports' => 'nullable|array',
             'favorite_sports.*' => 'string|max:50',
+        ], [
+            'name.min' => 'Họ tên phải dài 2–100 ký tự.',
+            'name.max' => 'Họ tên phải dài 2–100 ký tự.',
+            'phone.regex' => 'Số điện thoại phải gồm 10 chữ số bắt đầu bằng 0 hoặc +84 kèm 9 chữ số.',
         ]);
 
         $user = $request->user();
@@ -242,6 +251,7 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
         return response()->json($user->fresh());
     });
     Route::patch('profile/password', [AuthController::class, 'changePassword']);
+    Route::post('profile/password/setup-link', [AuthController::class, 'setPassword'])->middleware('throttle:auth-email-link');
     Route::get('wallet', [WalletController::class, 'show']);
     Route::get('wallet/balance', function (Request $request, WalletPaymentService $walletService) {
         $orgId = $request->query('organization_id') ? (int) $request->query('organization_id') : null;
@@ -271,15 +281,15 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
     Route::get('organizations/{organization}', [OrganizationController::class, 'show']);
     Route::patch('organizations/{organization}', [OrganizationController::class, 'update']);
     Route::get('organizations/{organization}/members', [OrganizationController::class, 'members']);
-    Route::post('organizations/{organization}/members', [OrganizationController::class, 'addMember']);
     Route::patch('organizations/{organization}/members/{member}', [OrganizationController::class, 'updateMemberRole']);
     Route::delete('organizations/{organization}/members/{member}', [OrganizationController::class, 'removeMember']);
     Route::get('organizations/{organization}/capabilities', [OrganizationController::class, 'capabilities']);
     Route::get('organizations/{organization}/invitations', [OrganizationController::class, 'invitations']);
     Route::post('organizations/{organization}/invitations', [OrganizationController::class, 'invite']);
-    Route::post('organizations/{organization}/invitations/{invitation}/accept', [OrganizationController::class, 'acceptInvitation']);
     Route::post('organizations/{organization}/invitations/{invitation}/revoke', [OrganizationController::class, 'revokeInvitation']);
-    Route::post('invitations/{token}/accept', [OrganizationController::class, 'acceptByToken']);
+    Route::get('invitations', [InvitationResponseController::class, 'index']);
+    Route::post('invitations/{invitation}/accept', [InvitationResponseController::class, 'accept']);
+    Route::post('invitations/{invitation}/decline', [InvitationResponseController::class, 'decline']);
     Route::get('disputes', [AdminDisputeController::class, 'index']);
     Route::post('disputes', [AdminDisputeController::class, 'store']);
     Route::get('disputes/stats', [AdminDisputeController::class, 'stats']);
@@ -307,6 +317,9 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             Route::get('payments', [AdminController::class, 'payments']);
             Route::patch('payments/{payment}', [AdminController::class, 'reviewPayment']);
             Route::get('audit-logs', [AuditLogController::class, 'index']);
+            Route::get('users', [AdminUserController::class, 'index']);
+            Route::post('users/{user}/lock', [AdminUserController::class, 'lock']);
+            Route::post('users/{user}/unlock', [AdminUserController::class, 'unlock']);
             // Admin partner application review and lifecycle management
             Route::prefix('partner')->group(function () {
                 Route::get('applications', [PartnerReviewController::class, 'index']);

@@ -10,7 +10,7 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\User;
 use App\Models\Venue;
-use Illuminate\Auth\Notifications\VerifyEmail;
+use App\Notifications\VerifyEmailNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -102,7 +102,7 @@ class Module1SecurityRulesTest extends TestCase
         $unassigned = User::factory()->create();
         OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $unassigned->id, 'role' => OrganizationMember::ROLE_STAFF, 'status' => 'active']);
 
-        $this->assertFalse($unassigned->canManageVenue($venue));
+        $this->assertFalse($unassigned->canOperateVenue($venue));
         $this->assertSame([], $unassigned->getAuthorizedVenueIds());
 
         // A venue id from another organization never widens a member's scope.
@@ -112,8 +112,8 @@ class Module1SecurityRulesTest extends TestCase
             'permissions' => ['venue_ids' => [$venue->id, $foreignVenue->id]],
         ]);
 
-        $this->assertTrue($assigned->canManageVenue($venue));
-        $this->assertFalse($assigned->canManageVenue($foreignVenue));
+        $this->assertTrue($assigned->canOperateVenue($venue));
+        $this->assertFalse($assigned->canOperateVenue($foreignVenue));
         $this->assertSame([$venue->id], $assigned->getAuthorizedVenueIds());
     }
 
@@ -162,7 +162,7 @@ class Module1SecurityRulesTest extends TestCase
     {
         $this->freezeTime();
         $user = User::factory()->unverified()->create();
-        $notification = new class extends VerifyEmail
+        $notification = new class extends VerifyEmailNotification
         {
             public function url(object $notifiable): string
             {

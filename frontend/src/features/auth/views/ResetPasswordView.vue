@@ -4,6 +4,7 @@ import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/stores/auth'
+import { newPasswordError } from '@/core/utils/accountPassword'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -35,13 +36,9 @@ async function submit() {
     return
   }
 
-  if (password.value.length < 8) {
-    error.value = t('auth.passwordTooShort', 'Mật khẩu phải có ít nhất 8 ký tự.')
-    return
-  }
-
-  if (password.value !== confirmation.value) {
-    error.value = t('auth.passwordsDoNotMatch')
+  const invalid = newPasswordError(password.value, confirmation.value)
+  if (invalid) {
+    error.value = t(invalid)
     return
   }
 
@@ -180,7 +177,7 @@ async function submit() {
                   class="custom-input with-toggle"
                   :placeholder="t('auth.passwordPlaceholder')"
                   autocomplete="new-password"
-                  minlength="8"
+                  maxlength="64"
                   required
                 />
                 <button
@@ -210,7 +207,7 @@ async function submit() {
                   class="custom-input with-toggle"
                   :placeholder="t('auth.passwordConfirmPlaceholder')"
                   autocomplete="new-password"
-                  minlength="8"
+                  maxlength="64"
                   required
                 />
                 <button

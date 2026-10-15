@@ -47,7 +47,7 @@ class LegacyProjectionSyncTest extends TestCase
         $booking = $this->mappedBooking('confirmed', 'confirmed', now()->subDays(2));
         $mirror = $this->mirror($booking);
         $staff = User::factory()->create(['email_verified_at' => now()]);
-        OrganizationMember::create(['organization_id' => $this->org->id, 'user_id' => $staff->id, 'role' => 'staff', 'status' => 'active']);
+        OrganizationMember::create(['organization_id' => $this->org->id, 'user_id' => $staff->id, 'role' => 'staff', 'status' => 'active', 'permissions' => ['venue_ids' => [$this->court->venue_id]]]);
 
         $this->actingAs($staff)
             ->withHeaders(['X-Organization-ID' => (string) $this->org->id])

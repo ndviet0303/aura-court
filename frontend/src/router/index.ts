@@ -494,6 +494,12 @@ const router = createRouter({
           meta: { platformAdmin: true, titleKey: 'seo.adminKycTitle', indexable: false },
         },
         {
+          path: 'users',
+          name: 'admin-users',
+          component: () => import('@/features/admin/views/AdminUsersView.vue'),
+          meta: { platformAdmin: true, titleKey: 'seo.adminUsersTitle', indexable: false },
+        },
+        {
           path: 'disputes',
           name: 'admin-disputes',
           component: () => import('@/features/admin/views/AdminDisputeResolutionView.vue'),
@@ -520,6 +526,17 @@ const router = createRouter({
         auth: true,
         titleKey: 'seo.notificationsTitle',
         descriptionKey: 'seo.notificationsDesc',
+        indexable: false,
+      },
+    },
+    {
+      path: '/invitations',
+      name: 'invitations',
+      component: () => import('@/features/notification/views/InvitationsView.vue'),
+      meta: {
+        auth: true,
+        titleKey: 'seo.invitationsTitle',
+        descriptionKey: 'seo.invitationsDesc',
         indexable: false,
       },
     },

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
+use App\Notifications\VerifyEmailNotification;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -78,14 +79,7 @@ class AuthFlowsTest extends TestCase
         Event::fake([Verified::class]);
         $user = User::factory()->create(['email_verified_at' => null]);
 
-        $signedUrl = URL::temporarySignedRoute(
-            'verification.verify',
-            now()->addHour(),
-            [
-                'id' => $user->id,
-                'hash' => sha1($user->getEmailForVerification()),
-            ]
-        );
+        $signedUrl = $this->verificationLink($user);
 
         $response = $this->getJson($signedUrl);
         $response->assertOk()
@@ -94,9 +88,33 @@ class AuthFlowsTest extends TestCase
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
         Event::assertDispatched(Verified::class);
 
-        // Idempotent: verifying again succeeds without error
-        $response2 = $this->getJson($signedUrl);
-        $response2->assertOk();
+        // BR-05: a link verifies only once.
+        $this->getJson($signedUrl)->assertForbidden();
+    }
+
+    public function test_a_new_verification_link_retires_the_older_one(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => null]);
+        $older = $this->verificationLink($user);
+        $newer = $this->verificationLink($user);
+
+        $this->getJson($older)->assertForbidden();
+        $this->assertFalse($user->fresh()->hasVerifiedEmail());
+        $this->getJson($newer)->assertOk();
+        $this->assertTrue($user->fresh()->hasVerifiedEmail());
+    }
+
+    private function verificationLink(User $user): string
+    {
+        $notification = new class extends VerifyEmailNotification
+        {
+            public function link(object $notifiable): string
+            {
+                return $this->verificationUrl($notifiable);
+            }
+        };
+
+        return $notification->link($user);
     }
 
     public function test_expired_or_invalid_email_verification_url_fails_without_verifying(): void
@@ -104,14 +122,8 @@ class AuthFlowsTest extends TestCase
         $user = User::factory()->create(['email_verified_at' => null]);
 
         // 1. Expired URL
-        $expiredUrl = URL::temporarySignedRoute(
-            'verification.verify',
-            now()->subMinutes(10),
-            [
-                'id' => $user->id,
-                'hash' => sha1($user->getEmailForVerification()),
-            ]
-        );
+        $expiredUrl = $this->verificationLink($user);
+        $this->travel(16)->minutes();
         $this->getJson($expiredUrl)->assertStatus(403);
         $this->assertFalse($user->fresh()->hasVerifiedEmail());
 

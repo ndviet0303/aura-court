@@ -240,24 +240,11 @@ export function useOrganizationOwner() {
   async function inviteMember(email: string, role: any) {
     saving.value = true
     try {
-      const res = await adminApi.addOrgMember<{ member: OrgMember }>(currentOrg.value.id, {
-        email,
-        role,
-        // Members reach only the venues they are given; start them on every venue of the org.
-        venue_ids: (currentOrg.value.venues || []).map((venue) => venue.id),
-      })
-      if (res?.member) {
-        // Check if member already exists in list to update, else append
-        const idx = (currentOrg.value.members || []).findIndex((m) => m.id === res.member.id)
-        if (idx >= 0 && currentOrg.value.members) {
-          currentOrg.value.members[idx] = res.member
-        } else {
-          currentOrg.value.members = [res.member, ...(currentOrg.value.members || [])]
-        }
-      }
-      showNotice(`Đã thêm/gửi lời mời thành viên ${email} thành công!`)
+      // BR-17: an invitation, never a direct add; venues are assigned once the invitee accepts.
+      await adminApi.createOrgInvitation(currentOrg.value.id, { email, role })
+      showNotice(`Đã gửi lời mời tới ${email}. Thành viên sẽ xuất hiện sau khi chấp nhận.`)
     } catch (e: unknown) {
-      error.value = errorMessage(e, 'Không thể thêm thành viên.')
+      error.value = errorMessage(e, 'Không thể gửi lời mời.')
       throw e
     } finally {
       saving.value = false

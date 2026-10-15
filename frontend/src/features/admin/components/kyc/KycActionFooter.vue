@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton, SelectDropdown } from '@/shared/components'
 
-defineProps<{
+const props = defineProps<{
   selectedReason: string
   customReason: string
   isSubmitting: boolean
@@ -19,6 +19,12 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+// A template only pre-fills the reason; the reviewer can edit it before deciding.
+function pickTemplate(value: string) {
+  emit('update:selectedReason', value)
+  if (value) emit('update:customReason', value)
+}
 
 const reasonOptions = computed(() => [
   { value: '', label: t('admin.kyc.reasonSelectPlaceholder') },
@@ -38,8 +44,19 @@ const reasonOptions = computed(() => [
         :options="reasonOptions"
         variant="bordered"
         :placeholder="t('admin.kyc.reasonSelectPlaceholder')"
-        @update:model-value="emit('update:selectedReason', String($event))"
+        @update:model-value="pickTemplate(String($event))"
       />
+      <label class="reason-label" for="kyc-review-reason">{{ t('admin.kyc.reasonLabel') }}</label>
+      <textarea
+        id="kyc-review-reason"
+        class="reason-input"
+        :value="props.customReason"
+        rows="3"
+        maxlength="1000"
+        :placeholder="t('admin.kyc.reasonInputPlaceholder')"
+        @input="emit('update:customReason', ($event.target as HTMLTextAreaElement).value)"
+      />
+      <span class="reason-count">{{ props.customReason.trim().length }}/1000</span>
     </div>
 
     <div class="footer-actions">
@@ -83,6 +100,29 @@ const reasonOptions = computed(() => [
 .footer-left {
   flex: 1;
   min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reason-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.reason-input {
+  width: 100%;
+  border: 1px solid var(--outline, #e1e3e4);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font: inherit;
+  resize: vertical;
+}
+
+.reason-count {
+  align-self: flex-end;
+  font-size: 12px;
+  color: var(--muted, #6e6668);
 }
 
 .footer-actions {

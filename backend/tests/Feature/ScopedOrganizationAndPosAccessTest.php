@@ -85,7 +85,7 @@ class ScopedOrganizationAndPosAccessTest extends TestCase
         $targetUser = User::factory()->create();
         $this->actingAs($cashier)
             ->withHeader('X-Organization-ID', (string) $org->id)
-            ->postJson("/api/organizations/{$org->id}/members", [
+            ->postJson("/api/organizations/{$org->id}/invitations", [
                 'email' => $targetUser->email,
                 'role' => 'staff',
             ])

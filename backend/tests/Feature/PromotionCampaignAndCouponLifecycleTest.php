@@ -144,7 +144,7 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['action' => 'promotion.campaign.retired', 'auditable_id' => $campaignId]);
     }
 
-    public function test_coupon_management_requires_owner_or_a_pricing_grant_in_the_selected_organization(): void
+    public function test_coupon_management_requires_an_owner_or_manager_of_the_selected_organization(): void
     {
         $fixture = $this->tenant();
         $otherOrganization = Organization::create([
@@ -173,12 +173,13 @@ class PromotionCampaignAndCouponLifecycleTest extends TestCase
             'status' => 'active',
             'permissions' => ['pricing' => true],
         ]);
+        // BR-21: staff keep a fixed permission set, so a per-member pricing grant no longer opens promotions.
         Sanctum::actingAs($pricingStaff);
         $this->withHeader('X-Organization-ID', (string) $fixture['organization']->id)->postJson('/api/admin/coupons', [
             'code' => 'STAFF10',
             'discount_type' => 'fixed',
             'discount_value' => 10000,
-        ])->assertCreated();
+        ])->assertForbidden();
 
         $noGrantStaff = User::factory()->create(['email_verified_at' => now()]);
         OrganizationMember::create([

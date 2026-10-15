@@ -56,9 +56,7 @@ const emit = defineEmits<{
     </div>
     <div class="form-grid">
       <div class="form-field-item form-grid-full">
-        <label for="bank_select" class="field-label"
-          >Chọn ngân hàng nhận tiền <span class="req-star">*</span></label
-        >
+        <label for="bank_select" class="field-label">Chọn ngân hàng nhận tiền</label>
         <select
           id="bank_select"
           :value="selectedBankCode"
@@ -71,9 +69,7 @@ const emit = defineEmits<{
         </select>
       </div>
       <div class="form-field-item">
-        <label for="bank_name" class="field-label"
-          >Tên ngân hàng <span class="req-star">*</span></label
-        >
+        <label for="bank_name" class="field-label">Tên ngân hàng</label>
         <input
           id="bank_name"
           v-model="bankName"
@@ -84,9 +80,7 @@ const emit = defineEmits<{
         <p v-if="fieldErrors.bank_name" class="field-error-msg">{{ fieldErrors.bank_name[0] }}</p>
       </div>
       <div class="form-field-item">
-        <label for="bank_code" class="field-label"
-          >Mã ngân hàng (Bank Code) <span class="req-star">*</span></label
-        >
+        <label for="bank_code" class="field-label">Mã ngân hàng (Bank Code)</label>
         <input
           id="bank_code"
           v-model="bankCode"
@@ -97,9 +91,7 @@ const emit = defineEmits<{
         <p v-if="fieldErrors.bank_code" class="field-error-msg">{{ fieldErrors.bank_code[0] }}</p>
       </div>
       <div class="form-field-item">
-        <label for="bank_account_number" class="field-label"
-          >Số tài khoản ngân hàng <span class="req-star">*</span></label
-        >
+        <label for="bank_account_number" class="field-label">Số tài khoản ngân hàng</label>
         <input
           id="bank_account_number"
           v-model="bankAccountNumber"
@@ -113,7 +105,7 @@ const emit = defineEmits<{
       </div>
       <div class="form-field-item">
         <label for="bank_account_holder" class="field-label"
-          >Tên chủ tài khoản (in hoa không dấu) <span class="req-star">*</span></label
+          >Tên chủ tài khoản (in hoa không dấu)</label
         >
         <input
           id="bank_account_holder"

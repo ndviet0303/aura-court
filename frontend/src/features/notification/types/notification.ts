@@ -8,3 +8,12 @@ export interface NotificationMeta {
   category: 'booking' | 'payment' | 'social' | 'system'
   badgeText: string
 }
+
+export interface StaffInvitation {
+  id: number
+  role: string
+  expires_at: string | null
+  organization?: { id: number; name: string } | null
+  inviter?: { id: number; name: string } | null
+  venue?: { id: number; name: string | Record<string, string> } | null
+}

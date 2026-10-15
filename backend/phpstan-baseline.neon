@@ -211,18 +211,6 @@ parameters:
 			path: app/Domain/Partner/Actions/SubmitPartnerApplication.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Partner/Rules/PartnerCompletenessPolicy.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Domain/Partner/Rules/PartnerCompletenessPolicy.php
-
-		-
 			message: '#^Call to an undefined method App\\Services\\Reservation\\ReservationService\:\:create\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -463,24 +451,6 @@ parameters:
 			path: app/Http/Controllers/Admin/PartnerReviewController.php
 
 		-
-			message: '#^Missing parameter \$reviewerId \(int\) in call to method App\\Domain\\Partner\\Actions\\ClearDuplicateIdentityInvestigation\:\:execute\(\)\.$#'
-			identifier: argument.missing
-			count: 1
-			path: app/Http/Controllers/Admin/PartnerReviewController.php
-
-		-
-			message: '#^Unknown parameter \$adminUserId in call to method App\\Domain\\Partner\\Actions\\ClearDuplicateIdentityInvestigation\:\:execute\(\)\.$#'
-			identifier: argument.unknown
-			count: 1
-			path: app/Http/Controllers/Admin/PartnerReviewController.php
-
-		-
-			message: '#^Unknown parameter \$clearanceNotes in call to method App\\Domain\\Partner\\Actions\\ClearDuplicateIdentityInvestigation\:\:execute\(\)\.$#'
-			identifier: argument.unknown
-			count: 1
-			path: app/Http/Controllers/Admin/PartnerReviewController.php
-
-		-
 			message: '#^Method App\\Http\\Controllers\\Attendance\\AttendanceController\:\:checkIn\(\) should return Illuminate\\Http\\JsonResponse but returns Symfony\\Component\\HttpFoundation\\Response\.$#'
 			identifier: return.type
 			count: 1
@@ -574,18 +544,6 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
 			identifier: property.notFound
 			count: 2
-			path: app/Http/Controllers/Organization/OrganizationController.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:hasActiveSubscription\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Controllers/Organization/OrganizationController.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:notify\(\)\.$#'
-			identifier: method.notFound
-			count: 1
 			path: app/Http/Controllers/Organization/OrganizationController.php
 
 		-
@@ -818,12 +776,6 @@ parameters:
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>benefits" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Controllers/Promotion/PromotionController.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>permissions" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Http/Controllers/Promotion/PromotionController.php
@@ -1783,21 +1735,9 @@ parameters:
 			path: app/Models/Reservation.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Models/Reservation.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$starts_at\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Models/Reservation.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue_id\.$#'
-			identifier: property.notFound
-			count: 2
 			path: app/Models/Reservation.php
 
 		-
@@ -1879,33 +1819,9 @@ parameters:
 			path: app/Services/Attendance/AttendanceService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 9
-			path: app/Services/Attendance/AttendanceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_active\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Attendance/AttendanceService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$starts_at\.$#'
 			identifier: property.notFound
 			count: 4
-			path: app/Services/Attendance/AttendanceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Services/Attendance/AttendanceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue_id\.$#'
-			identifier: property.notFound
-			count: 5
 			path: app/Services/Attendance/AttendanceService.php
 
 		-
@@ -2443,15 +2359,9 @@ parameters:
 			path: app/Services/Loyalty/LoyaltyPolicyService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue\.$#'
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$currentBookingPolicy\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Services/POS/PosService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue_id\.$#'
-			identifier: property.notFound
-			count: 2
 			path: app/Services/POS/PosService.php
 
 		-
@@ -2671,12 +2581,6 @@ parameters:
 			path: app/Services/Payment/SplitPaymentService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Payment/SplitPaymentService.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:entitlements\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -2847,17 +2751,11 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
-			count: 2
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
-			identifier: property.notFound
 			count: 1
 			path: app/Services/Social/MatchService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue\.$#'
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Services/Social/MatchService.php
@@ -2887,7 +2785,7 @@ parameters:
 			path: app/Services/Social/MatchService.php
 
 		-
-			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\Court\|null given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Services/Social/MatchService.php
