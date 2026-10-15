@@ -299,6 +299,9 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
       expect(modal.find<HTMLInputElement>('input[type="text"]').element.value).toBe('')
 
       await modal.find('input[type="text"]').setValue('Court 9')
+      const addressInput = modal.find<HTMLInputElement>('#court-address')
+      expect(addressInput.element.value).toBe('142 Wellness Blvd, Downtown')
+      await addressInput.setValue('  9 New Street  ')
       await modal.find('input[type="number"]').setValue('8')
       await modal.find('input[type="checkbox"]').setValue(false)
       const tag = modal.find('.tag-btn')
@@ -308,6 +311,7 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
       await modal.find('.btn-primary').trigger('click')
       await flushPromises()
 
+      expect(api.patch).toHaveBeenCalledWith('/admin/venues/1', { address: '9 New Street' })
       expect(api.post).toHaveBeenCalledWith('/admin/courts', {
         name: 'Court 9',
         venue_id: 1,

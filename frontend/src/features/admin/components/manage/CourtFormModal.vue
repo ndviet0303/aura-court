@@ -3,20 +3,23 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { resolveLocalizedText } from '@/i18n'
 import type { CourtForm } from '../../composables/useAdminManageCourts'
-import type { Venue, SportZone } from '@/features/court/types/court'
+import type { SportZone } from '@/features/court/types/court'
 import { adminApi } from '../../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
+import SelectDropdown from '@/shared/components/forms/SelectDropdown.vue'
+import CourtImagePresets from './CourtImagePresets.vue'
 
 const props = defineProps<{
   show: boolean
   editingCourtId: number | null
-  venues: Venue[]
+  // Picked by the caller; only used to list that venue's sport zones.
+  venueId: number
   sportZones: SportZone[]
   saving?: boolean
 }>()
 
 const name = defineModel<string>('name', { required: true })
-const venueId = defineModel<number>('venueId', { required: true })
+const address = defineModel<string>('address', { required: true })
 const sportZoneId = defineModel<number | null>('sportZoneId', { required: true })
 const surfaceType = defineModel<CourtForm['surface_type']>('surfaceType', { required: true })
 // A cleared number input yields '', which is not a valid capacity.
@@ -39,37 +42,23 @@ const uploadingImage = ref(false)
 const uploadError = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
 
-const courtImagePresets = computed(() => [
-  {
-    name: t('admin.manage.presetFootball'),
-    sub: t('admin.manage.presetFootballSub'),
-    url: '/courts/football-mini-turf.jpg',
-  },
-  {
-    name: t('admin.manage.presetPickleball'),
-    sub: t('admin.manage.presetPickleballSub'),
-    url: '/courts/pickleball-neon.jpg',
-  },
-  {
-    name: t('admin.manage.presetTennis'),
-    sub: t('admin.manage.presetTennisSub'),
-    url: '/courts/tennis-1.jpg',
-  },
-  {
-    name: t('admin.manage.presetBasketball'),
-    sub: t('admin.manage.presetBasketballSub'),
-    url: '/courts/basketball-nba.jpg',
-  },
-  {
-    name: t('admin.manage.presetYonex'),
-    sub: t('admin.manage.presetYonexSub'),
-    url: '/courts/badminton-0.jpg',
-  },
-  {
-    name: t('admin.manage.presetBlue'),
-    sub: t('admin.manage.presetBlueSub'),
-    url: '/courts/badminton-court.jpg',
-  },
+const sportZoneOptions = computed(() => [
+  { value: '', label: t('admin.manage.defaultSportZone') },
+  ...props.sportZones
+    .filter((z) => z.venue_id === props.venueId)
+    .map((z) => ({ value: z.id, label: resolveLocalizedText(z.name) })),
+])
+
+const surfaceOptions = computed(() => [
+  { value: '', label: t('admin.manage.unspecified') },
+  { value: 'wood', label: t('admin.manage.surfaceWood') },
+  { value: 'synthetic', label: t('admin.manage.surfaceSynthetic') },
+  { value: 'acrylic', label: t('admin.manage.surfaceAcrylic') },
+  { value: 'concrete', label: t('admin.manage.surfaceConcrete') },
+  { value: 'grass', label: t('admin.manage.surfaceGrass') },
+  { value: 'clay', label: t('admin.manage.surfaceClay') },
+  { value: 'hard', label: t('admin.manage.surfaceHard') },
+  { value: 'other', label: t('admin.manage.surfaceOther') },
 ])
 
 const courtDescriptionTags = computed(() => [
@@ -174,43 +163,40 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="form-group">
-            <label class="form-label"
-              >{{ t('admin.manage.venueLabel') }} <span class="required">*</span></label
-            >
-            <select v-model="venueId" class="form-input">
-              <option v-for="v in venues" :key="v.id" :value="v.id">
-                {{ resolveLocalizedText(v.name) }}
-              </option>
-            </select>
+            <label class="form-label" for="court-address">{{
+              t('admin.manage.courtAddressLabel')
+            }}</label>
+            <input
+              id="court-address"
+              v-model="address"
+              type="text"
+              class="form-input"
+              autocomplete="street-address"
+              :placeholder="t('admin.manage.courtAddressPlaceholder')"
+            />
           </div>
 
           <div class="form-group">
             <label class="form-label">{{ t('admin.manage.sportZoneLabel') }}</label>
-            <select v-model="sportZoneId" class="form-input">
-              <option :value="null">{{ t('admin.manage.defaultSportZone') }}</option>
-              <option
-                v-for="z in sportZones.filter((sz) => sz.venue_id === venueId)"
-                :key="z.id"
-                :value="z.id"
-              >
-                {{ resolveLocalizedText(z.name) }}
-              </option>
-            </select>
+            <!-- The dropdown only carries strings/numbers, so '' stands for "no zone" (null). -->
+            <SelectDropdown
+              :model-value="sportZoneId ?? ''"
+              :options="sportZoneOptions"
+              variant="bordered"
+              :aria-label="t('admin.manage.sportZoneLabel')"
+              @update:model-value="(value) => (sportZoneId = value === '' ? null : Number(value))"
+            />
           </div>
 
           <div class="form-group">
             <label class="form-label">{{ t('admin.manage.courtSurfaceLabel') }}</label>
-            <select v-model="surfaceType" class="form-input">
-              <option value="">{{ t('admin.manage.unspecified') }}</option>
-              <option value="wood">{{ t('admin.manage.surfaceWood') }}</option>
-              <option value="synthetic">{{ t('admin.manage.surfaceSynthetic') }}</option>
-              <option value="acrylic">{{ t('admin.manage.surfaceAcrylic') }}</option>
-              <option value="concrete">{{ t('admin.manage.surfaceConcrete') }}</option>
-              <option value="grass">{{ t('admin.manage.surfaceGrass') }}</option>
-              <option value="clay">{{ t('admin.manage.surfaceClay') }}</option>
-              <option value="hard">{{ t('admin.manage.surfaceHard') }}</option>
-              <option value="other">{{ t('admin.manage.surfaceOther') }}</option>
-            </select>
+            <SelectDropdown
+              :model-value="surfaceType"
+              :options="surfaceOptions"
+              variant="bordered"
+              :aria-label="t('admin.manage.courtSurfaceLabel')"
+              @update:model-value="(value) => (surfaceType = value as CourtForm['surface_type'])"
+            />
           </div>
 
           <div class="form-group">
@@ -280,22 +266,7 @@ onBeforeUnmount(() => {
               </button>
             </div>
 
-            <span class="tag-prompt presets-label">{{ t('admin.manage.presetImagesLabel') }}</span>
-            <div class="presets-grid">
-              <button
-                v-for="preset in courtImagePresets"
-                :key="preset.name"
-                type="button"
-                class="preset-thumb-btn"
-                :class="{ active: imageUrl === preset.url }"
-                :aria-pressed="imageUrl === preset.url"
-                :title="preset.sub"
-                @click="imageUrl = preset.url"
-              >
-                <img :src="preset.url" alt="" loading="lazy" />
-                <span class="preset-name">{{ preset.name }}</span>
-              </button>
-            </div>
+            <CourtImagePresets v-model="imageUrl" />
           </div>
         </div>
       </div>
@@ -402,63 +373,6 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-}
-
-.presets-label {
-  display: block;
-  margin: 12px 0 6px;
-}
-
-.presets-grid {
-  display: grid;
-  /* Six presets: 3 or 2 columns keep the rows even. */
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-@media (max-width: 560px) {
-  .presets-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-.preset-thumb-btn {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-  padding: 6px;
-  border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 600;
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 0.15s ease;
-}
-
-.preset-thumb-btn:hover {
-  border-color: var(--accent);
-}
-
-.preset-thumb-btn.active {
-  border-color: var(--pink-dark, #db2777);
-  box-shadow: 0 0 0 1px var(--pink-dark, #db2777);
-}
-
-.preset-thumb-btn img {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: 6px;
-  object-fit: cover;
-}
-
-.preset-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .btn-cancel {
