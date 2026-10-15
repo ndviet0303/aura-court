@@ -600,9 +600,35 @@ router.beforeEach(async (to) => {
   }
 })
 
+const STALE_CHUNK_KEY = 'aura_stale_chunk_reload'
+
 router.afterEach((to) => {
   applySeo(to)
   endRouteNav()
+  sessionStorage.removeItem(STALE_CHUNK_KEY)
+})
+
+/**
+ * A deploy replaces the hashed chunks an open tab still references, and the host answers the old
+ * URLs with index.html, so the lazy route import rejects and the navigation silently stops.
+ * Load the target page from the server once instead; the key stops a reload loop on a real break.
+ */
+export function reloadOnStaleChunk(
+  error: unknown,
+  path: string,
+  reload: (path: string) => void = (target) => window.location.assign(target),
+): boolean {
+  const message = error instanceof Error ? error.message : String(error)
+  const stale =
+    /dynamically imported module|Importing a module script failed|not a valid JavaScript MIME type/i
+  if (!stale.test(message) || sessionStorage.getItem(STALE_CHUNK_KEY) === path) return false
+  sessionStorage.setItem(STALE_CHUNK_KEY, path)
+  reload(path)
+  return true
+}
+
+router.onError((error, to) => {
+  reloadOnStaleChunk(error, to.fullPath)
 })
 
 export default router

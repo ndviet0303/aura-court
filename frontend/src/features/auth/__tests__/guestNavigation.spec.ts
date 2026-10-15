@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { isSafeInternalRedirect, resolveAuthDestination } from '../utils/authDestination'
-import router from '@/router'
+import router, { reloadOnStaleChunk } from '@/router'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '../api/authApi'
 
@@ -531,5 +531,28 @@ describe('Guest Navigation and Auth Destination Rules', () => {
       await auth.resendVerification()
       expect(resendSpy).toHaveBeenCalledTimes(1)
     })
+  })
+})
+
+describe('reloadOnStaleChunk', () => {
+  beforeEach(() => sessionStorage.clear())
+
+  it('reloads the target once when a deploy removed the lazy route chunk', () => {
+    const reload = vi.fn()
+    const error = new TypeError(
+      'Failed to fetch dynamically imported module: /assets/AdminLayout-old.js',
+    )
+
+    expect(reloadOnStaleChunk(error, '/admin/organization', reload)).toBe(true)
+    expect(reload).toHaveBeenCalledWith('/admin/organization')
+    // A second failure on the same target means the build itself is broken: no reload loop.
+    expect(reloadOnStaleChunk(error, '/admin/organization', reload)).toBe(false)
+    expect(reload).toHaveBeenCalledTimes(1)
+  })
+
+  it('leaves unrelated navigation errors alone', () => {
+    const reload = vi.fn()
+    expect(reloadOnStaleChunk(new Error('boom'), '/admin', reload)).toBe(false)
+    expect(reload).not.toHaveBeenCalled()
   })
 })
