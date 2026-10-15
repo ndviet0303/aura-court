@@ -55,6 +55,7 @@ class SecurityFixesTest extends TestCase
             'id' => 'provider-user-123',
             'email' => 'verified@example.com',
             'name' => 'Verified User',
+            'email_verified' => true,
         ]));
         Socialite::shouldReceive('driver')->once()->with('google')->andReturn($provider);
 

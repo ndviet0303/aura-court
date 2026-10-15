@@ -800,7 +800,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
         $dispute = $this->createDisputeCase($this->tenantA, $this->venueA, $this->customerAlice, $this->ownerA, 'resolved', 'DSP-DEMOTED-OWNER');
         OrganizationMember::where('organization_id', $this->tenantA->id)
             ->where('user_id', $this->ownerA->id)
-            ->update(['role' => OrganizationMember::ROLE_VENUE_MANAGER]);
+            ->update(['role' => OrganizationMember::ROLE_VENUE_MANAGER, 'permissions' => json_encode(['venue_ids' => [$this->venueA->id]])]);
 
         $this->actingAs($this->ownerA)->getJson("/api/disputes/{$dispute->id}")->assertOk();
         $this->actingAs($this->ownerA)

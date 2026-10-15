@@ -26,7 +26,7 @@ const emit = defineEmits<{
       email: string
       phone: string
       role: StaffMember['role']
-      venueId?: number
+      venueIds: number[]
     },
   ): void
 }>()
@@ -64,7 +64,8 @@ function handleSend() {
     email: email.value.trim(),
     phone: phone.value.trim(),
     role: role.value,
-    venueId: venueId.value === 'all' ? undefined : Number(venueId.value),
+    // Staff reach only the venues they are given, so "all" is sent as the explicit list.
+    venueIds: venueId.value === 'all' ? props.venues.map((v) => v.id) : [Number(venueId.value)],
   })
 }
 

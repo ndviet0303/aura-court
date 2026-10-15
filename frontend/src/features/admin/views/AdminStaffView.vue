@@ -49,7 +49,7 @@ async function handleInviteMember(member: {
   email: string
   phone: string
   role: StaffMember['role']
-  venueId?: number
+  venueIds: number[]
 }) {
   await inviteStaff(member)
 }

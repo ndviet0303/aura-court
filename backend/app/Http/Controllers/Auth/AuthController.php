@@ -11,8 +11,8 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Models\User;
+use App\Services\Auth\SocialAccountResolver;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -207,7 +207,7 @@ class AuthController extends Controller
         return response()->json(['url' => $driver->redirectUrl($redirectUri)->stateless()->redirect()->getTargetUrl()]);
     }
 
-    public function handleProviderCallback(Request $request, string $provider)
+    public function handleProviderCallback(Request $request, string $provider, SocialAccountResolver $accounts)
     {
         $frontendUrl = $this->resolveFrontendUrl($request);
 
@@ -222,28 +222,29 @@ class AuthController extends Controller
             $driver = Socialite::driver($provider);
             $socialUser = $driver->redirectUrl($redirectUri)->stateless()->user();
 
-            $email = $socialUser->getEmail() ?: ($socialUser->getId().'@facebook.auracourt.vn');
+            // Only Google states that it checked the address; anything else stays unverified (BR-06).
+            $emailVerified = $provider === 'google'
+                && filter_var($socialUser->getRaw()['email_verified'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $name = Str::limit($socialUser->getName() ?: ($socialUser->getNickname() ?: 'Athlete'), 255, '');
             $avatar = $socialUser->getAvatar();
             if ($avatar && strlen($avatar) > 2048) {
                 $avatar = Str::limit($avatar, 2048, '');
             }
 
-            $user = User::where('email', $email)->first();
-
+            $user = $accounts->resolve($provider, (string) $socialUser->getId(), $socialUser->getEmail(), $emailVerified, $name, $avatar);
             if (! $user) {
-                $user = $this->createOAuthUser($name, $email, $provider, $avatar);
-            } else {
-                if ($user->isRestricted()) {
-                    return redirect("{$frontendUrl}/login?error=account_restricted&msg=".urlencode('Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.'));
-                }
-                if ($avatar && (empty($user->avatar_url) || str_contains($user->avatar_url, 'athlete-'))) {
-                    try {
-                        $user->avatar_url = $avatar;
-                        $user->save();
-                    } catch (\Throwable) {
-                        // Prevent legacy schema avatar length from breaking login
-                    }
+                return redirect("{$frontendUrl}/login?error=oauth_email_taken&msg=".urlencode('Email này đã có tài khoản Aura Court. Vui lòng đăng nhập bằng email và mật khẩu.'));
+            }
+
+            if ($user->isRestricted()) {
+                return redirect("{$frontendUrl}/login?error=account_restricted&msg=".urlencode('Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.'));
+            }
+            if ($avatar && (empty($user->avatar_url) || str_contains($user->avatar_url, 'athlete-'))) {
+                try {
+                    $user->avatar_url = $avatar;
+                    $user->save();
+                } catch (\Throwable) {
+                    // Prevent legacy schema avatar length from breaking login
                 }
             }
 
@@ -270,29 +271,6 @@ class AuthController extends Controller
 
             return redirect("{$frontendUrl}/login?error=oauth_failed&msg=".urlencode($userMessage));
         }
-    }
-
-    private function createOAuthUser(string $name, string $email, string $provider, ?string $avatar): User
-    {
-        $payload = [
-            'name' => $name, 'email' => $email, 'password' => Hash::make(Str::random(32)),
-            'role' => 'customer', 'avatar_url' => $avatar, 'onboarded' => false,
-            'password_set' => false, 'social_provider' => $provider,
-        ];
-        try {
-            $user = User::create($payload);
-        } catch (QueryException $qe) {
-            if (str_contains($qe->getMessage(), '22001') || str_contains($qe->getMessage(), 'avatar_url')) {
-                $payload['avatar_url'] = null;
-                $user = User::create($payload);
-            } else {
-                throw $qe;
-            }
-        }
-        $user->email_verified_at = now();
-        $user->save();
-
-        return $user;
     }
 
     public function onboarding(

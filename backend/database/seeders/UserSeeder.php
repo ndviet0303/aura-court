@@ -70,7 +70,9 @@ class UserSeeder extends Seeder
         $this->member($org, $owner, OrganizationMember::ROLE_ORGANIZATION_OWNER, ['*']);
 
         $manager = $this->user('manager@demo.auracourt.vn', ['name' => 'Nguyễn Hữu Thắng', 'phone' => '0906111222', 'play_level' => 'advanced'], 52);
-        $this->member($org, $manager, OrganizationMember::ROLE_VENUE_MANAGER);
+        // Staff reach only the venues they are assigned, so "every venue" is spelled out.
+        $orgVenueIds = Venue::where('organization_id', $org->id)->orderBy('id')->pluck('id')->all();
+        $this->member($org, $manager, OrganizationMember::ROLE_VENUE_MANAGER, ['venue_id' => $orgVenueIds[0] ?? null, 'venue_ids' => $orgVenueIds]);
 
         $venueManager = $this->user('manager.caugiay@demo.auracourt.vn', ['name' => 'Đỗ Minh Khoa', 'phone' => '0906333444', 'play_level' => 'intermediate'], 49);
         $this->member($org, $venueManager, OrganizationMember::ROLE_VENUE_MANAGER, $caugiayScope);

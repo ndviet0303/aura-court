@@ -1181,9 +1181,7 @@ class PosService
             ], true), 403);
 
             if ($member->role !== OrganizationMember::ROLE_ORGANIZATION_OWNER) {
-                $permissions = (array) $member->permissions;
-                $assignedVenueIds = $permissions['venue_ids'] ?? (isset($permissions['venue_id']) ? [$permissions['venue_id']] : null);
-                abort_unless($assignedVenueIds === null || in_array((int) $venue->id, array_map('intval', $assignedVenueIds), true), 403);
+                abort_unless(in_array((int) $venue->id, $member->assignedVenueIds(), true), 403);
             }
         }
 
