@@ -272,7 +272,7 @@ class SocialNotificationDeliveryTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenant->id,
             'user_id' => $manager->id,
-            'role' => OrganizationMember::ROLE_VENUE_MANAGER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 

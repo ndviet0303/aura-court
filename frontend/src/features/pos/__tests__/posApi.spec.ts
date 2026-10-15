@@ -27,3 +27,13 @@ describe('posApi.getActiveReservations', () => {
     expect(reservation!.time_slot).toBe('10:00 - 12:00')
   })
 })
+
+describe('posApi.getVenues', () => {
+  it('turns the admin route translatable venue name into display text', async () => {
+    vi.mocked(api.get).mockResolvedValue([
+      { id: 3, name: { vi: 'Cơ sở Quận 1', en: 'District 1' } },
+    ])
+
+    expect(await posApi.getVenues()).toEqual([{ id: 3, name: 'Cơ sở Quận 1' }])
+  })
+})

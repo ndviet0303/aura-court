@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers\Organization;
 
-use App\Domain\Subscription\Actions\EnforcePlanQuota;
 use App\Http\Controllers\Controller;
-use App\Models\ElevatedAuditLog;
+use App\Http\Requests\Organization\InviteStaffRequest;
+use App\Http\Requests\Organization\RemoveStaffMemberRequest;
+use App\Http\Requests\Organization\UpdateStaffMemberRequest;
 use App\Models\Organization;
 use App\Models\OrganizationInvitation;
 use App\Models\OrganizationMember;
 use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\TenantContext;
 use App\Services\Organization\OrganizationInvitationService;
+use App\Services\Organization\StaffMembershipService;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -79,7 +82,7 @@ class OrganizationController extends Controller
     {
         $user = $request->user();
         abort_unless(
-            $user->isPlatformAdmin() || $user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_ORGANIZATION_OWNER]),
+            $user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_ORGANIZATION_OWNER]),
             403
         );
 
@@ -138,7 +141,12 @@ class OrganizationController extends Controller
         }
         $updateData['settings'] = $settings;
 
-        $organization->update($updateData);
+        try {
+            $organization->update($updateData);
+        } catch (UniqueConstraintViolationException) {
+            // BR-15: the unique tax code index is the only guard that holds under concurrent writes.
+            throw ValidationException::withMessages(['tax_code' => 'Mã số thuế đã thuộc về một tổ chức khác.']);
+        }
 
         return response()->json(['organization' => $organization->fresh(['venues.courts', 'members.user'])]);
     }
@@ -147,9 +155,8 @@ class OrganizationController extends Controller
     {
         $user = $request->user();
         abort_unless(
-            $user->isPlatformAdmin() || $user->hasRoleInOrganization($organization->id, [
+            $user->hasRoleInOrganization($organization->id, [
                 OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                OrganizationMember::ROLE_VENUE_MANAGER,
             ]),
             403
         );
@@ -159,138 +166,33 @@ class OrganizationController extends Controller
         return response()->json(['members' => $members]);
     }
 
-    public function updateMemberRole(Request $request, Organization $organization, OrganizationMember $member): JsonResponse
+    public function updateMemberRole(UpdateStaffMemberRequest $request, Organization $organization, OrganizationMember $member, StaffMembershipService $staff): JsonResponse
     {
-        $user = $request->user();
-        abort_unless(
-            $user->isPlatformAdmin() || $user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_ORGANIZATION_OWNER]),
-            403
-        );
+        $member = $staff->update($organization, $request->user(), $member, $request->validated(), $request->ip());
 
-        abort_if($member->organization_id !== $organization->id, 404);
-
-        $data = $request->validate([
-            'role' => 'required|string|in:'.implode(',', OrganizationMember::VALID_ROLES),
-            'status' => 'sometimes|string|in:active,suspended',
-            'venue_id' => 'nullable|integer',
-            'venue_ids' => 'nullable|array',
-            'venue_ids.*' => 'integer',
-            'permissions' => 'nullable|array',
-        ]);
-
-        // Prevent removing or suspending the last active owner
-        if ($member->role === OrganizationMember::ROLE_ORGANIZATION_OWNER) {
-            $isDemoting = $data['role'] !== OrganizationMember::ROLE_ORGANIZATION_OWNER;
-            $isSuspending = ($data['status'] ?? null) === 'suspended';
-            if ($isDemoting || $isSuspending) {
-                $otherActiveOwners = $organization->members()
-                    ->where('role', OrganizationMember::ROLE_ORGANIZATION_OWNER)
-                    ->where('status', 'active')
-                    ->where('id', '!=', $member->id)
-                    ->count();
-                if ($otherActiveOwners < 1) {
-                    abort(422, 'Cannot demote or suspend the last active organization owner.');
-                }
-            }
-        }
-
-        // Enforce staff quota if role or status changes to active staff
-        $isStaffRole = in_array($data['role'], [OrganizationMember::ROLE_VENUE_MANAGER, OrganizationMember::ROLE_STAFF, OrganizationMember::ROLE_CASHIER], true);
-        $wasActiveStaffRole = in_array($member->role, [OrganizationMember::ROLE_VENUE_MANAGER, OrganizationMember::ROLE_STAFF, OrganizationMember::ROLE_CASHIER], true) && $member->status === 'active';
-        $willBeActiveStaff = $isStaffRole && (($data['status'] ?? $member->status) === 'active');
-
-        if ($willBeActiveStaff && ! $wasActiveStaffRole && $organization->hasActiveSubscription()) {
-            app(EnforcePlanQuota::class)->execute($organization->id, 'staff', 1);
-        }
-
-        $updatePayload = ['role' => $data['role']];
-        if (isset($data['status'])) {
-            $updatePayload['status'] = $data['status'];
-        }
-        if (array_key_exists('permissions', $data) || array_key_exists('venue_id', $data) || array_key_exists('venue_ids', $data)) {
-            $permissions = $data['permissions'] ?? ($member->permissions ?? []);
-            if (! empty($data['venue_ids'])) {
-                $permissions['venue_ids'] = array_values(array_map('intval', (array) $data['venue_ids']));
-                $permissions['venue_id'] = $permissions['venue_ids'][0] ?? null;
-            } elseif (! empty($data['venue_id'])) {
-                $permissions['venue_ids'] = [(int) $data['venue_id']];
-                $permissions['venue_id'] = (int) $data['venue_id'];
-            }
-            $updatePayload['permissions'] = $permissions;
-        }
-
-        $before = $member->only(['role', 'status', 'permissions']);
-        $member->update($updatePayload);
-
-        ElevatedAuditLog::create([
-            'user_id' => $user->id,
-            'organization_id' => $organization->id,
-            'action' => 'STAFF_ROLE_UPDATED',
-            'purpose' => "Cập nhật vai trò thành viên {$member->user?->email} thành {$data['role']}",
-            'outcome' => 'success',
-            'ip_address' => $request->ip(),
-            'metadata' => [
-                'member_id' => $member->id,
-                'before' => $before,
-                'after' => $member->only(['role', 'status', 'permissions']),
-            ],
-            'created_at' => now(),
-        ]);
-
-        return response()->json(['member' => $member->fresh()->load('user')]);
+        return response()->json(['member' => $member->fresh()?->load('user')]);
     }
 
-    public function removeMember(Request $request, Organization $organization, OrganizationMember $member): JsonResponse
+    public function removeMember(RemoveStaffMemberRequest $request, Organization $organization, OrganizationMember $member, StaffMembershipService $staff): JsonResponse
     {
-        $user = $request->user();
-        abort_unless(
-            $user->isPlatformAdmin() || $user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_ORGANIZATION_OWNER]),
-            403
-        );
+        $staff->terminate($organization, $request->user(), $member, $request->ip());
 
-        abort_if($member->organization_id !== $organization->id, 404);
-
-        if ($member->role === OrganizationMember::ROLE_ORGANIZATION_OWNER) {
-            $otherActiveOwners = $organization->members()
-                ->where('role', OrganizationMember::ROLE_ORGANIZATION_OWNER)
-                ->where('status', 'active')
-                ->where('id', '!=', $member->id)
-                ->count();
-            if ($otherActiveOwners < 1) {
-                abort(422, 'Cannot remove the last active organization owner.');
-            }
-        }
-
-        $targetEmail = $member->user?->email;
-        $member->delete();
-
-        ElevatedAuditLog::create([
-            'user_id' => $user->id,
-            'organization_id' => $organization->id,
-            'action' => 'STAFF_MEMBER_REMOVED',
-            'purpose' => "Xóa thành viên {$targetEmail}",
-            'outcome' => 'success',
-            'ip_address' => $request->ip(),
-            'metadata' => [
-                'removed_email' => $targetEmail,
-            ],
-            'created_at' => now(),
-        ]);
-
-        return response()->json(['message' => 'Member removed successfully.']);
+        return response()->json(['message' => 'Đã chấm dứt tư cách nhân viên.']);
     }
 
     public function invitations(Request $request, Organization $organization): JsonResponse
     {
         $user = $request->user();
         abort_unless(
-            $user->isPlatformAdmin() || $user->hasRoleInOrganization($organization->id, [
+            $user->hasRoleInOrganization($organization->id, [
                 OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                OrganizationMember::ROLE_VENUE_MANAGER,
             ]),
             403
         );
 
+        // BR-18: an unanswered invitation past its expiry is shown, and filtered, as expired.
+        $organization->invitations()->where('status', OrganizationInvitation::STATUS_PENDING)->where('expires_at', '<=', now())
+            ->update(['status' => OrganizationInvitation::STATUS_EXPIRED]);
         $query = $organization->invitations()->with(['inviter:id,name,email', 'venue:id,name']);
         if ($request->filled('status')) {
             $query->where('status', $request->query('status'));
@@ -301,31 +203,16 @@ class OrganizationController extends Controller
         return response()->json(['invitations' => $invitations]);
     }
 
-    public function invite(Request $request, Organization $organization, OrganizationInvitationService $invitations): JsonResponse
+    public function invite(InviteStaffRequest $request, Organization $organization, OrganizationInvitationService $invitations): JsonResponse
     {
-        $user = $request->user();
-        abort_unless(
-            $user->isPlatformAdmin() || $user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_ORGANIZATION_OWNER]),
-            403
-        );
-
-        $data = $request->validate([
-            'email' => 'required|email|max:254',
-            'role' => 'required|string|in:'.implode(',', OrganizationMember::VALID_ROLES),
-            'venue_id' => 'nullable|integer',
-            'venue_ids' => 'nullable|array',
-            'venue_ids.*' => 'integer',
-            'permissions' => 'nullable|array',
-        ]);
-
-        return response()->json(['invitation' => $invitations->invite($organization, $user, $data, $request->ip())], 201);
+        return response()->json(['invitation' => $invitations->invite($organization, $request->user(), $request->validated(), $request->ip())], 201);
     }
 
     public function revokeInvitation(Request $request, Organization $organization, OrganizationInvitation $invitation, OrganizationInvitationService $invitations): JsonResponse
     {
         $user = $request->user();
         abort_unless(
-            $user->isPlatformAdmin() || $user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_ORGANIZATION_OWNER]),
+            $user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_ORGANIZATION_OWNER]),
             403
         );
         abort_if($invitation->organization_id !== $organization->id, 404);

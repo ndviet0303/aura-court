@@ -111,7 +111,7 @@
   },
   "src/features/admin/api/adminApi.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 28
+      "count": 26
     }
   },
   "src/features/admin/api/contractsApi.ts": {
@@ -216,7 +216,7 @@
   },
   "src/features/admin/composables/useOrganizationOwner.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 4
+      "count": 3
     }
   },
   "src/features/admin/composables/useTournamentBracketAdmin.ts": {
@@ -351,7 +351,7 @@
   },
   "src/features/pos/components/PosShiftModal.vue": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 2
+      "count": 1
     }
   },
   "src/features/pos/composables/usePosProducts.ts": {

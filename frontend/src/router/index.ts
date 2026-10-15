@@ -329,7 +329,7 @@ const router = createRouter({
           name: 'admin-manage',
           component: AdminManageView,
           meta: {
-            orgRoles: ['organization_owner', 'venue_manager'],
+            orgRoles: ['organization_owner'],
             titleKey: 'seo.adminManageTitle',
             indexable: false,
           },
@@ -339,7 +339,7 @@ const router = createRouter({
           name: 'admin-schedule',
           component: () => import('@/features/admin/views/AdminScheduleView.vue'),
           meta: {
-            orgRoles: ['organization_owner', 'venue_manager', 'staff'],
+            orgRoles: ['organization_owner', 'staff'],
             titleKey: 'seo.adminScheduleTitle',
             indexable: false,
           },
@@ -349,7 +349,7 @@ const router = createRouter({
           name: 'admin-venues',
           component: AdminVenuesView,
           meta: {
-            orgRoles: ['organization_owner', 'venue_manager'],
+            orgRoles: ['organization_owner'],
             titleKey: 'seo.adminVenuesTitle',
             indexable: false,
           },
@@ -369,7 +369,7 @@ const router = createRouter({
           name: 'admin-pricing',
           component: () => import('@/features/admin/views/PricingCalendarView.vue'),
           meta: {
-            orgRoles: ['organization_owner', 'venue_manager'],
+            orgRoles: ['organization_owner'],
             titleKey: 'seo.adminPricingTitle',
             indexable: false,
           },
@@ -379,7 +379,7 @@ const router = createRouter({
           name: 'admin-contracts',
           component: () => import('@/features/admin/views/AdminRecurringContractsView.vue'),
           meta: {
-            orgRoles: ['organization_owner', 'venue_manager'],
+            orgRoles: ['organization_owner'],
             titleKey: 'seo.adminContractsTitle',
             indexable: false,
           },
@@ -389,7 +389,7 @@ const router = createRouter({
           name: 'admin-organization',
           component: () => import('@/features/admin/views/OrganizationOwnerView.vue'),
           meta: {
-            orgRoles: ['organization_owner', 'venue_manager'],
+            orgRoles: ['organization_owner'],
             titleKey: 'seo.adminOrgTitle',
             indexable: false,
           },
@@ -420,7 +420,7 @@ const router = createRouter({
           name: 'admin-tournaments',
           component: () => import('@/features/admin/views/AdminTournamentBracketView.vue'),
           meta: {
-            orgRoles: ['organization_owner', 'venue_manager', 'staff'],
+            orgRoles: ['organization_owner', 'staff'],
             titleKey: 'seo.adminTournamentsTitle',
             indexable: false,
           },
@@ -430,7 +430,7 @@ const router = createRouter({
           name: 'admin-pos',
           component: () => import('@/features/pos/views/PosView.vue'),
           meta: {
-            orgRoles: ['organization_owner', 'venue_manager', 'cashier', 'staff'],
+            orgRoles: ['organization_owner', 'staff'],
             titleKey: 'seo.adminPosTitle',
             indexable: false,
           },
@@ -440,7 +440,7 @@ const router = createRouter({
           name: 'admin-shifts',
           component: () => import('@/features/admin/views/AdminShiftReconciliationView.vue'),
           meta: {
-            orgRoles: ['organization_owner', 'venue_manager', 'cashier'],
+            orgRoles: ['organization_owner', 'staff'],
             titleKey: 'seo.adminShiftsTitle',
             indexable: false,
           },
@@ -450,7 +450,7 @@ const router = createRouter({
           name: 'admin-inventory',
           component: () => import('@/features/admin/views/AdminInventoryView.vue'),
           meta: {
-            orgRoles: ['organization_owner', 'venue_manager', 'staff'],
+            orgRoles: ['organization_owner', 'staff'],
             titleKey: 'seo.adminInventoryTitle',
             indexable: false,
           },
@@ -460,7 +460,7 @@ const router = createRouter({
           name: 'admin-membership',
           component: () => import('@/features/admin/views/AdminMembershipView.vue'),
           meta: {
-            orgRoles: ['organization_owner', 'venue_manager'],
+            orgRoles: ['organization_owner'],
             titleKey: 'seo.adminMembershipTitle',
             indexable: false,
           },
@@ -575,16 +575,16 @@ router.beforeEach(async (to) => {
       (userAny.organizations as Array<any> | undefined)?.filter(
         (o: any) => o.status === 'active',
       ) || []
+    // Platform admin does not stand in for an owner or staff membership in organization operations.
     const isOwner =
-      isPlatformAdmin ||
-      activeOrgs.some((o: any) => o.role === 'organization_owner' || o.role === 'venue_manager') ||
+      activeOrgs.some((o: any) => o.role === 'organization_owner') ||
       userAny.capabilities?.can_manage_venues === true
-    const isCashier = activeOrgs.some((o: any) => o.role === 'cashier' || o.role === 'staff')
+    const isStaff = activeOrgs.some((o: any) => o.role === 'staff')
     // Access guard for all /admin routes: pure customers without staff/owner roles are redirected to home
     const isAdminRoute = to.matched.some(
       (record) => record.path === '/admin' || record.path.startsWith('/admin/'),
     )
-    if (isAdminRoute && !isPlatformAdmin && !isOwner && !isCashier) {
+    if (isAdminRoute && !isPlatformAdmin && !isOwner && !isStaff) {
       return { name: 'home' }
     }
 
@@ -592,7 +592,7 @@ router.beforeEach(async (to) => {
     if (to.path === '/admin') {
       if (!isPlatformAdmin) {
         if (isOwner) return { name: 'admin-manage' }
-        if (isCashier) return { name: 'admin-pos' }
+        if (isStaff) return { name: 'admin-pos' }
         return { name: 'home' }
       }
     }
@@ -603,15 +603,12 @@ router.beforeEach(async (to) => {
 
     // Organization/POS scoped routes
     if (to.meta.orgRoles && Array.isArray(to.meta.orgRoles)) {
-      if (!isPlatformAdmin) {
-        const allowedRoles = to.meta.orgRoles as string[]
-        const hasMatchingRole =
-          activeOrgs.some((o: any) => allowedRoles.includes(o.role)) ||
-          (allowedRoles.includes('organization_owner') && isOwner) ||
-          (allowedRoles.includes('cashier') && isCashier)
-        if (!hasMatchingRole) {
-          return { name: 'home' }
-        }
+      const allowedRoles = to.meta.orgRoles as string[]
+      const hasMatchingRole =
+        activeOrgs.some((o: any) => allowedRoles.includes(o.role)) ||
+        (allowedRoles.includes('organization_owner') && isOwner)
+      if (!hasMatchingRole) {
+        return { name: isPlatformAdmin ? 'admin' : 'home' }
       }
     }
   }

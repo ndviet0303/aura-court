@@ -54,14 +54,12 @@ class OrdinaryCheckoutService
                     abort(403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/auth/email/verification-notification.');
                 }
                 $quote = $this->resolveQuote($user->id, $organizationId, $data);
-                if ($quote->status !== 'open') {
-                    abort(409, 'Price quote has already been accepted.');
-                }
-                if ($quote->expires_at?->isPast()) {
-                    abort(409, 'Price quote has expired.');
-                }
+                abort_if($quote->status !== 'open', 409, 'Price quote has already been accepted.');
+                abort_if((bool) $quote->expires_at?->isPast(), 409, 'Price quote has expired.');
                 $court = Court::query()->withoutGlobalScope('tenant_isolation')->whereKey($quote->court_id)->lockForUpdate()->firstOrFail();
                 $lockedVenue = Venue::query()->whereKey($court->venue_id)->lockForUpdate()->firstOrFail();
+                // BR-20/21: staff book for a customer only at a venue assigned to them.
+                abort_if($actor !== null && ! $actor->canOperateVenue($lockedVenue), 403, 'Bạn không được giao cơ sở này.');
                 $couponUsage = $this->quoteCoupons->reserve($quote, $user, $court);
                 $directOwnerPayments = app(FeatureFlagService::class)
                     ->enabled('direct_owner_payments', (int) $lockedVenue->organization_id);

@@ -12,76 +12,28 @@ interface PermissionRow {
   moduleKey: string
   actionKey: string
   owner: boolean
-  manager: boolean
-  receptionist: boolean
-  tech: boolean
   staff: boolean
 }
 
+// Staff share one fixed permission set, limited to their assigned venues.
 const permissionsMatrix: PermissionRow[] = [
-  {
-    moduleKey: 'courtManagement',
-    actionKey: 'courtManagementDesc',
-    owner: true,
-    manager: true,
-    receptionist: false,
-    tech: true,
-    staff: false,
-  },
-  {
-    moduleKey: 'pricingRules',
-    actionKey: 'pricingRulesDesc',
-    owner: true,
-    manager: true,
-    receptionist: false,
-    tech: false,
-    staff: false,
-  },
-  {
-    moduleKey: 'posAndCashier',
-    actionKey: 'posAndCashierDesc',
-    owner: true,
-    manager: true,
-    receptionist: true,
-    tech: false,
-    staff: true,
-  },
+  { moduleKey: 'courtManagement', actionKey: 'courtManagementDesc', owner: true, staff: false },
+  { moduleKey: 'pricingRules', actionKey: 'pricingRulesDesc', owner: true, staff: false },
+  { moduleKey: 'posAndCashier', actionKey: 'posAndCashierDesc', owner: true, staff: true },
   {
     moduleKey: 'maintenanceSchedule',
     actionKey: 'maintenanceScheduleDesc',
     owner: true,
-    manager: true,
-    receptionist: true,
-    tech: true,
-    staff: false,
+    staff: true,
   },
   {
     moduleKey: 'tournamentManagement',
     actionKey: 'tournamentManagementDesc',
     owner: true,
-    manager: true,
-    receptionist: true,
-    tech: false,
     staff: true,
   },
-  {
-    moduleKey: 'financialReports',
-    actionKey: 'financialReportsDesc',
-    owner: true,
-    manager: true,
-    receptionist: false,
-    tech: false,
-    staff: false,
-  },
-  {
-    moduleKey: 'staffAndRoles',
-    actionKey: 'staffAndRolesDesc',
-    owner: true,
-    manager: false,
-    receptionist: false,
-    tech: false,
-    staff: false,
-  },
+  { moduleKey: 'financialReports', actionKey: 'financialReportsDesc', owner: true, staff: false },
+  { moduleKey: 'staffAndRoles', actionKey: 'staffAndRolesDesc', owner: true, staff: false },
 ]
 </script>
 
@@ -110,9 +62,6 @@ const permissionsMatrix: PermissionRow[] = [
       <div class="matrix-header-row">
         <span>{{ t('admin.staff.hdrModuleAndAction') }}</span>
         <span class="role-col-hdr">{{ t('admin.staff.roleOwner') }}</span>
-        <span class="role-col-hdr">{{ t('admin.staff.roleManager') }}</span>
-        <span class="role-col-hdr">{{ t('admin.staff.roleReceptionist') }}</span>
-        <span class="role-col-hdr">{{ t('admin.staff.roleTechnician') }}</span>
         <span class="role-col-hdr">{{ t('admin.staff.roleStaff') }}</span>
       </div>
 
@@ -125,20 +74,6 @@ const permissionsMatrix: PermissionRow[] = [
 
           <div class="check-col">
             <span v-if="row.owner" class="material-symbols-outlined perm-yes">check_circle</span>
-            <span v-else class="perm-no">—</span>
-          </div>
-          <div class="check-col">
-            <span v-if="row.manager" class="material-symbols-outlined perm-yes">check_circle</span>
-            <span v-else class="perm-no">—</span>
-          </div>
-          <div class="check-col">
-            <span v-if="row.receptionist" class="material-symbols-outlined perm-yes"
-              >check_circle</span
-            >
-            <span v-else class="perm-no">—</span>
-          </div>
-          <div class="check-col">
-            <span v-if="row.tech" class="material-symbols-outlined perm-yes">check_circle</span>
             <span v-else class="perm-no">—</span>
           </div>
           <div class="check-col">
@@ -199,7 +134,7 @@ const permissionsMatrix: PermissionRow[] = [
 
 .matrix-header-row {
   display: grid;
-  grid-template-columns: 2.2fr repeat(5, 110px);
+  grid-template-columns: 2.2fr repeat(2, 140px);
   padding: 14px 20px;
   background: var(--surface-secondary, rgba(0, 0, 0, 0.025));
   border-bottom: 1px solid var(--outline);
@@ -221,7 +156,7 @@ const permissionsMatrix: PermissionRow[] = [
 
 .matrix-row {
   display: grid;
-  grid-template-columns: 2.2fr repeat(5, 110px);
+  grid-template-columns: 2.2fr repeat(2, 140px);
   padding: 14px 20px;
   align-items: center;
   border-bottom: 1px solid var(--outline);
@@ -307,7 +242,7 @@ const permissionsMatrix: PermissionRow[] = [
 @media (max-width: 900px) {
   .matrix-header-row,
   .matrix-row {
-    grid-template-columns: 2fr repeat(5, 80px);
+    grid-template-columns: 2fr repeat(2, 100px);
     padding: 10px 12px;
   }
 }

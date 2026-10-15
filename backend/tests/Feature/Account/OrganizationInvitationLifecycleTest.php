@@ -53,9 +53,15 @@ class OrganizationInvitationLifecycleTest extends TestCase
         return [$owner, $org];
     }
 
-    private function invite(User $owner, Organization $org, string $email, string $role = OrganizationMember::ROLE_STAFF, array $extra = []): OrganizationInvitation
+    private function venueOf(Organization $org): Venue
     {
-        $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", ['email' => $email, 'role' => $role] + $extra)
+        return Venue::firstOrCreate(['organization_id' => $org->id, 'slug' => 'venue-'.$org->slug], ['name' => 'Venue '.$org->name, 'is_active' => true]);
+    }
+
+    /** BR-17/BR-21: an invitation is always for staff, for at least one of the organization's venues. */
+    private function invite(User $owner, Organization $org, string $email, array $extra = []): OrganizationInvitation
+    {
+        $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", ['email' => $email] + $extra + ['venue_ids' => [$this->venueOf($org)->id]])
             ->assertStatus(201);
 
         return OrganizationInvitation::where('email', $email)->latest('id')->firstOrFail();
@@ -73,7 +79,7 @@ class OrganizationInvitationLifecycleTest extends TestCase
 
         $res = $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", [
             'email' => 'NewStaff@Alpha.local',
-            'role' => OrganizationMember::ROLE_VENUE_MANAGER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'venue_id' => $venue->id,
         ]);
 
@@ -109,13 +115,26 @@ class OrganizationInvitationLifecycleTest extends TestCase
         $this->invite($owner, $org, $this->createCustomerUser('pending@alpha.local')->email);
 
         foreach (['nobody@alpha.local', 'owner@alpha.local', 'unverified@alpha.local', 'locked@alpha.local', 'member@alpha.local', 'pending@alpha.local'] as $email) {
-            $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", ['email' => $email, 'role' => OrganizationMember::ROLE_STAFF])
+            $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", ['email' => $email, 'venue_ids' => [$this->venueOf($org)->id]])
                 ->assertStatus(422)
                 ->assertJsonValidationErrors(['email']);
         }
 
+        // An invitation needs a venue of this organization.
+        $foreignVenue = Venue::create(['organization_id' => $this->createOrg('Other Club', 'other-club')->id, 'name' => 'Other', 'slug' => 'other-venue', 'is_active' => true]);
+        $this->createCustomerUser('venueless@alpha.local');
+        $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", ['email' => 'venueless@alpha.local'])
+            ->assertStatus(422)->assertJsonValidationErrors(['venue_ids']);
+        $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", ['email' => 'venueless@alpha.local', 'venue_ids' => [$foreignVenue->id]])
+            ->assertStatus(422)->assertJsonValidationErrors(['venue_ids.0']);
+
+        // A customer membership does not block an invitation (BR-17).
+        $customer = $this->createCustomerUser('customer@alpha.local');
+        OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $customer->id, 'role' => OrganizationMember::ROLE_CUSTOMER, 'status' => 'active']);
+        $this->invite($owner, $org, $customer->email);
+
         $this->assertDatabaseMissing('users', ['email' => 'nobody@alpha.local']);
-        $this->assertSame(1, OrganizationInvitation::count());
+        $this->assertSame(2, OrganizationInvitation::count());
     }
 
     /** BR-19: the invitee sees their pending invitations and accepts once; repeats are idempotent. */
@@ -124,14 +143,14 @@ class OrganizationInvitationLifecycleTest extends TestCase
         [$owner, $org] = $this->orgWithOwner();
         $venue = Venue::create(['organization_id' => $org->id, 'name' => 'Venue Alpha 1', 'slug' => 'venue-alpha-1', 'is_active' => true]);
         $invitee = $this->createCustomerUser('manager@alpha.local');
-        $invitation = $this->invite($owner, $org, $invitee->email, OrganizationMember::ROLE_VENUE_MANAGER, ['venue_id' => $venue->id]);
+        $invitation = $this->invite($owner, $org, $invitee->email, ['venue_ids' => [$venue->id]]);
 
         $this->actingAs($invitee)->getJson('/api/invitations')
             ->assertOk()
             ->assertJsonCount(1, 'invitations')
             ->assertJsonPath('invitations.0.organization.name', $org->name)
             ->assertJsonPath('invitations.0.inviter.name', 'Owner Alpha');
-        $this->assertFalse($invitee->hasRoleInOrganization($org->id, OrganizationMember::ROLE_VENUE_MANAGER));
+        $this->assertFalse($invitee->hasRoleInOrganization($org->id, OrganizationMember::ROLE_STAFF));
 
         $this->actingAs($invitee)->postJson("/api/invitations/{$invitation->id}/accept")
             ->assertOk()
@@ -139,7 +158,7 @@ class OrganizationInvitationLifecycleTest extends TestCase
             ->assertJsonPath('member.status', 'active');
 
         $member = OrganizationMember::where('organization_id', $org->id)->where('user_id', $invitee->id)->firstOrFail();
-        $this->assertSame(OrganizationMember::ROLE_VENUE_MANAGER, $member->role);
+        $this->assertSame(OrganizationMember::ROLE_STAFF, $member->role);
         $this->assertSame($venue->id, $member->venue_id);
         $this->assertSame('Lời mời được chấp nhận', $owner->notifications()->firstOrFail()->data['title']);
         $this->assertDatabaseHas('elevated_audit_logs', ['user_id' => $invitee->id, 'action' => 'STAFF_INVITATION_ACCEPTED']);
@@ -212,6 +231,12 @@ class OrganizationInvitationLifecycleTest extends TestCase
             ->assertOk()
             ->assertJsonPath('invitations.0.status', 'pending');
 
+        // BR-18: once its 7 days pass, the list shows the invitation as expired, not pending.
+        $stale = $this->invite($owner, $org, $this->createCustomerUser('stale@alpha.local')->email);
+        $stale->forceFill(['expires_at' => now()->subMinute()])->save();
+        $this->actingAs($owner)->getJson("/api/organizations/{$org->id}/invitations")->assertOk();
+        $this->assertSame('expired', $stale->fresh()->status);
+
         $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations/{$invitation->id}/revoke")->assertOk();
         $this->assertSame('revoked', $invitation->fresh()->status);
 
@@ -220,12 +245,13 @@ class OrganizationInvitationLifecycleTest extends TestCase
         $this->assertDatabaseMissing('organization_members', ['organization_id' => $org->id, 'user_id' => $invitee->id]);
     }
 
-    /** An organization role never grants platform administration. */
+    /** BR-13/BR-17: an invitation never makes an owner, and an organization role never grants platform administration. */
     public function test_inviting_owner_does_not_grant_global_admin(): void
     {
         [$owner, $org] = $this->orgWithOwner();
         $newAccount = $this->createCustomerUser('new_owner_invite@org.local');
-        $invitation = $this->invite($owner, $org, $newAccount->email, OrganizationMember::ROLE_ORGANIZATION_OWNER);
+        $invitation = $this->invite($owner, $org, $newAccount->email, ['role' => OrganizationMember::ROLE_ORGANIZATION_OWNER]);
+        $this->assertSame(OrganizationMember::ROLE_STAFF, $invitation->role);
 
         $this->actingAs($newAccount)->postJson("/api/invitations/{$invitation->id}/accept")->assertOk();
 
@@ -233,7 +259,8 @@ class OrganizationInvitationLifecycleTest extends TestCase
         $this->assertEquals('customer', $newAccount->role);
         $this->assertFalse($newAccount->isAdmin());
         $this->assertFalse($newAccount->isPlatformAdmin());
-        $this->assertTrue($newAccount->hasRoleInOrganization($org->id, OrganizationMember::ROLE_ORGANIZATION_OWNER));
+        $this->assertFalse($newAccount->hasRoleInOrganization($org->id, OrganizationMember::ROLE_ORGANIZATION_OWNER));
+        $this->assertTrue($newAccount->hasRoleInOrganization($org->id, OrganizationMember::ROLE_STAFF));
     }
 
     /**
@@ -253,7 +280,7 @@ class OrganizationInvitationLifecycleTest extends TestCase
 
         // 1. Demoting last owner fails
         $this->actingAs($owner)->patchJson("/api/organizations/{$org->id}/members/{$member->id}", [
-            'role' => OrganizationMember::ROLE_VENUE_MANAGER,
+            'role' => OrganizationMember::ROLE_STAFF,
         ])->assertStatus(422);
 
         // 2. Suspending last owner fails
@@ -315,7 +342,7 @@ class OrganizationInvitationLifecycleTest extends TestCase
         $this->createCustomerUser('staff2@quota.local');
         $res = $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", [
             'email' => 'staff2@quota.local',
-            'role' => OrganizationMember::ROLE_STAFF,
+            'venue_ids' => [$this->venueOf($org)->id],
         ]);
 
         $res->assertStatus(422);

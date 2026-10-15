@@ -60,8 +60,8 @@ class BookingFlowsTest extends TestCase
 
     public function test_admin_can_create_court_price_and_block(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
         $venue = Venue::firstOrFail();
+        $admin = $this->ownerOf($venue->organization);
 
         $court = $this->actingAs($admin)->postJson('/api/admin/courts', ['name' => 'Sân Test', 'venue_id' => $venue->id])->assertCreated()->json();
         $courtId = $court['id'];
@@ -126,8 +126,8 @@ class BookingFlowsTest extends TestCase
 
     public function test_admin_can_list_and_delete_a_block(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
         $venue = Venue::firstOrFail();
+        $admin = $this->ownerOf($venue->organization);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Block CRUD', 'is_active' => true]);
         $block = $court->blocks()->create(['starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHour(), 'reason' => 'Bảo trì']);
 

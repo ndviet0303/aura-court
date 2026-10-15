@@ -42,7 +42,7 @@ class CommunityFeedController extends Controller
         $isModerator = $request->user()->role === 'admin'
             || OrganizationMember::where('organization_id', $organization->id)
                 ->where('user_id', $request->user()->id)
-                ->whereIn('role', [OrganizationMember::ROLE_ORGANIZATION_OWNER, OrganizationMember::ROLE_VENUE_MANAGER])
+                ->whereIn('role', [OrganizationMember::ROLE_ORGANIZATION_OWNER])
                 ->where('status', 'active')
                 ->exists();
         $loaded = $this->feed->getPost($post, $request->user(), $isModerator);

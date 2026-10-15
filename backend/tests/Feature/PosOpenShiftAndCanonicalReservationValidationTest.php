@@ -63,7 +63,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenantA->id,
             'user_id' => $this->cashierA->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 
@@ -103,6 +103,7 @@ class PosOpenShiftAndCanonicalReservationValidationTest extends TestCase
             'is_active' => true,
             'metadata' => ['tax_rate' => 0],
         ]);
+        $this->assignStaffVenues($this->tenantA, $this->venueA);
     }
 
     public function test_sale_completion_requires_an_active_open_shift(): void

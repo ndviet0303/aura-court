@@ -50,7 +50,7 @@ class PlatformSubscriptionController extends Controller
                 'max_venues' => (int) ($plan?->max_venues ?? 0),
                 'courts_count' => $organization->courts()->count(),
                 'max_courts' => (int) ($plan?->max_courts ?? 0),
-                'staff_count' => $organization->members()->whereIn('role', ['venue_manager', 'staff', 'cashier'])->where('status', 'active')->count(),
+                'staff_count' => $organization->members()->whereIn('role', ['staff'])->where('status', 'active')->count(),
                 'max_staff' => (int) ($plan?->max_staff ?? 0),
             ],
         ]);

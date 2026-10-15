@@ -28,7 +28,7 @@ describe('useAdminStaff (D08)', () => {
         {
           id: 1,
           user_id: 10,
-          role: 'venue_manager',
+          role: 'staff',
           status: 'active',
           permissions: {
             venue_id: 42,
@@ -99,7 +99,7 @@ describe('useAdminStaff (D08)', () => {
     expect(adminApi.getOrgMembers).toHaveBeenCalledWith(99)
   })
 
-  it('passes venue_id and venue_ids when inviting staff', async () => {
+  it('invites staff with only an email and venue scope (no role)', async () => {
     const auth = useAuthStore()
     auth.user = {
       id: 1,
@@ -112,27 +112,15 @@ describe('useAdminStaff (D08)', () => {
     }
 
     const { inviteStaff } = useAdminStaff()
-    await inviteStaff({
-      name: 'New Staff',
-      email: 'staff@test.local',
-      role: 'Manager',
-      venueId: 42,
-      permissions: ['pricing', 'schedule'],
-    })
+    await inviteStaff({ email: 'staff@test.local', venueIds: [42, 43] })
 
-    expect(adminApi.createOrgInvitation).toHaveBeenCalledWith(
-      88,
-      expect.objectContaining({
-        email: 'staff@test.local',
-        role: 'venue_manager',
-        venue_id: 42,
-        venue_ids: [42],
-        permissions: ['pricing', 'schedule'],
-      }),
-    )
+    expect(adminApi.createOrgInvitation).toHaveBeenCalledWith(88, {
+      email: 'staff@test.local',
+      venue_ids: [42, 43],
+    })
   })
 
-  it('passes venue_id and venue_ids when updating member role and grants', async () => {
+  it('updates a staff member status and venue access without a role', async () => {
     const auth = useAuthStore()
     auth.user = {
       id: 1,
@@ -146,24 +134,35 @@ describe('useAdminStaff (D08)', () => {
 
     vi.mocked(adminApi.updateOrgMember).mockResolvedValue({ member: { id: 1 } })
 
-    const { updateMemberRole } = useAdminStaff()
-    await updateMemberRole(1, {
-      role: 'venue_manager',
+    const { updateMember } = useAdminStaff()
+    await updateMember(1, { status: 'active', venueIds: [] })
+
+    expect(adminApi.updateOrgMember).toHaveBeenCalledWith(88, 1, {
       status: 'active',
-      venueId: 43,
-      venueIds: [43],
+      venue_ids: [],
+    })
+  })
+
+  it('ends staff status and shows the server message', async () => {
+    const auth = useAuthStore()
+    auth.user = {
+      id: 1,
+      name: 'Owner Alice',
+      email: 'alice@aura.test',
+      role: 'customer',
+      capabilities: {
+        active_organization_id: 88,
+      },
+    }
+    vi.mocked(adminApi.removeOrgMember).mockResolvedValue({
+      message: 'Đã chấm dứt tư cách nhân viên.',
     })
 
-    expect(adminApi.updateOrgMember).toHaveBeenCalledWith(
-      88,
-      1,
-      expect.objectContaining({
-        role: 'venue_manager',
-        status: 'active',
-        venue_id: 43,
-        venue_ids: [43],
-      }),
-    )
+    const { removeMember, notice } = useAdminStaff()
+    await removeMember(1)
+
+    expect(adminApi.removeOrgMember).toHaveBeenCalledWith(88, 1)
+    expect(notice.value).toBe('Đã chấm dứt tư cách nhân viên.')
   })
 
   it('correctly maps venue_id and venueName from permissions', async () => {
@@ -173,43 +172,6 @@ describe('useAdminStaff (D08)', () => {
     expect(staffList.value.length).toBe(1)
     expect(staffList.value[0]?.venueId).toBe(42)
     expect(staffList.value[0]?.venueName).toBe('Sân Cầu Lông Alpha')
-  })
-
-  it('sends pending staff invitation via createOrgInvitation with venue scope', async () => {
-    const auth = useAuthStore()
-    auth.user = {
-      id: 1,
-      name: 'Owner',
-      email: 'owner@org.com',
-      role: 'customer',
-      capabilities: {
-        active_organization_id: 99,
-      },
-    }
-
-    vi.mocked(adminApi.createOrgInvitation).mockResolvedValue({
-      invitation: { id: 101, status: 'pending' },
-    })
-
-    const { inviteStaff } = useAdminStaff()
-    await inviteStaff({
-      name: 'Nguyen Van A',
-      email: 'a@test.com',
-      role: 'Receptionist',
-      venueId: 42,
-      venueIds: [42],
-      permissions: { venue_id: 42 },
-    })
-
-    expect(adminApi.createOrgInvitation).toHaveBeenCalledWith(
-      99,
-      expect.objectContaining({
-        email: 'a@test.com',
-        role: 'cashier',
-        venue_id: 42,
-        venue_ids: [42],
-      }),
-    )
   })
 
   it('revokes staff invitation and reloads staff list', async () => {

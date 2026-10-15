@@ -69,17 +69,13 @@ export function isSafeInternalRedirect(
       : null
   const isPlatformAdmin = roleStr === 'admin' || userCaps?.is_platform_admin === true
   const activeOrgs = userObj?.organizations?.filter((o) => o.status === 'active') || []
+  // A platform admin operates an organization only through an owner or staff membership.
   const isOrgOwner =
-    isPlatformAdmin ||
     roleStr === 'organization_owner' ||
-    roleStr === 'venue_manager' ||
-    activeOrgs.some((o) => o.role === 'organization_owner' || o.role === 'venue_manager') ||
+    activeOrgs.some((o) => o.role === 'organization_owner') ||
     userCaps?.can_manage_venues === true
   const hasPosAccess =
-    isOrgOwner ||
-    roleStr === 'cashier' ||
-    roleStr === 'staff' ||
-    activeOrgs.some((o) => o.role === 'cashier' || o.role === 'staff')
+    isOrgOwner || roleStr === 'staff' || activeOrgs.some((o) => o.role === 'staff')
 
   // POS route access
   if (
@@ -88,14 +84,12 @@ export function isSafeInternalRedirect(
     pathOnly.startsWith('/pos/') ||
     pathOnly.startsWith('/admin/pos/')
   ) {
-    if (isPlatformAdmin || hasPosAccess) return true
-    return false
+    return hasPosAccess
   }
 
   // Organization management route access
   if (pathOnly === '/admin/organization' || pathOnly.startsWith('/admin/organization/')) {
-    if (isPlatformAdmin || isOrgOwner) return true
-    return false
+    return isOrgOwner
   }
   // Reject all other platform admin paths for non-platform-admin users
   if (pathOnly.startsWith('/admin') && !isPlatformAdmin) {
@@ -110,7 +104,7 @@ export function isSafeInternalRedirect(
  * 1. Incomplete onboarding has priority -> '/onboarding'
  * 2. Authorized internal redirect query parameter (if safe, non-circular, and authorized)
  * 3. Role-appropriate default:
- *    - Admin -> '/admin/organization'
+ *    - Platform admin -> '/admin'; organization owner -> '/admin/organization'
  *    - Customer/other -> '/'
  */
 export function resolveAuthDestination(
@@ -151,21 +145,17 @@ function getDefaultDestination(user: MinimalUser): string {
       ? (user.capabilities as Record<string, unknown>)
       : null
   if (user.role === 'admin' || userCaps?.is_platform_admin === true) {
-    return '/admin/organization'
+    return '/admin'
   }
   const activeOrgs = user.organizations?.filter((o) => o.status === 'active') || []
   const isOrgOwner =
     user.role === 'organization_owner' ||
-    user.role === 'venue_manager' ||
-    activeOrgs.some((o) => o.role === 'organization_owner' || o.role === 'venue_manager') ||
+    activeOrgs.some((o) => o.role === 'organization_owner') ||
     userCaps?.can_manage_venues === true
   if (isOrgOwner) {
     return '/admin/organization'
   }
-  const hasPosAccess =
-    user.role === 'cashier' ||
-    user.role === 'staff' ||
-    activeOrgs.some((o) => o.role === 'cashier' || o.role === 'staff')
+  const hasPosAccess = user.role === 'staff' || activeOrgs.some((o) => o.role === 'staff')
   if (hasPosAccess) {
     return '/pos'
   }

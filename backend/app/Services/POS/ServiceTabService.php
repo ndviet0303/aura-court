@@ -48,31 +48,19 @@ class ServiceTabService
         $clean = trim((string) $reservationIdOrCode);
         $clean = preg_replace('/^AURA_(?:V2_RESERVATION|BOOKING)_/i', '', $clean);
 
-        $reservation = Reservation::query()
-            ->where('organization_id', $organizationId)
-            ->where(function ($q) use ($clean) {
-                $q->where('code', $clean);
-                if (is_numeric($clean)) {
-                    $q->orWhere('id', (int) $clean);
-                }
-            })
+        $reservation = Reservation::query()->where('organization_id', $organizationId)
+            ->where(fn ($q) => $q->where('code', $clean)->when(is_numeric($clean), fn ($q) => $q->orWhere('id', (int) $clean)))
             ->first();
 
-        if ($reservation) {
-            return $reservation;
-        }
-
-        $canonicalId = $this->backfill->resolveCanonicalReservationId((int) $clean, $organizationId);
-
-        return Reservation::query()
-            ->where('organization_id', $organizationId)
-            ->whereKey($canonicalId)
+        return $reservation ?? Reservation::query()->where('organization_id', $organizationId)
+            ->whereKey($this->backfill->resolveCanonicalReservationId((int) $clean, $organizationId))
             ->firstOrFail();
     }
 
     public function getOrCreateTab(int $organizationId, int|string $reservationIdOrCode, User $staff): ServiceTab
     {
         $reservation = $this->resolveReservation($reservationIdOrCode, $organizationId);
+        $this->assertOperates($staff, $reservation);
 
         return ServiceTab::firstOrCreate([
             'organization_id' => $organizationId,
@@ -84,9 +72,10 @@ class ServiceTabService
         ]);
     }
 
-    public function getTab(int $organizationId, int|string $reservationIdOrCode): ?ServiceTab
+    public function getTab(User $staff, int $organizationId, int|string $reservationIdOrCode): ?ServiceTab
     {
         $reservation = $this->resolveReservation($reservationIdOrCode, $organizationId);
+        $this->assertOperates($staff, $reservation);
 
         return ServiceTab::query()
             ->where('organization_id', $organizationId)
@@ -96,10 +85,12 @@ class ServiceTabService
             ->first();
     }
 
-    public function listTabs(int $organizationId, array $filters = []): LengthAwarePaginator
+    public function listTabs(User $staff, int $organizationId, array $filters = []): LengthAwarePaginator
     {
+        $venueIds = $staff->getAuthorizedVenueIds($organizationId);
         $query = ServiceTab::query()
             ->where('organization_id', $organizationId)
+            ->whereHas('reservation.court', fn ($court) => $court->whereIn('venue_id', $venueIds))
             ->with(['items.product', 'reservation.user', 'reservation.court.venue', 'openedBy:id,name', 'settledBy:id,name'])
             ->latest();
 
@@ -209,8 +200,8 @@ class ServiceTabService
 
     public function removeItem(User $staff, int $organizationId, int|string $reservationIdOrCode, int $itemId): ServiceTab
     {
-        return DB::transaction(function () use ($organizationId, $reservationIdOrCode, $itemId): ServiceTab {
-            $tab = $this->getTab($organizationId, $reservationIdOrCode);
+        return DB::transaction(function () use ($staff, $organizationId, $reservationIdOrCode, $itemId): ServiceTab {
+            $tab = $this->getTab($staff, $organizationId, $reservationIdOrCode);
             abort_unless($tab !== null, 404, 'Active service tab not found.');
 
             $item = $tab->items()->whereKey($itemId)->firstOrFail();
@@ -225,12 +216,13 @@ class ServiceTabService
 
     public function cancelTab(User $staff, int $organizationId, int $tabId, ?string $reason = null): ServiceTab
     {
-        return DB::transaction(function () use ($organizationId, $tabId, $reason): ServiceTab {
+        return DB::transaction(function () use ($staff, $organizationId, $tabId, $reason): ServiceTab {
             $tab = ServiceTab::query()
                 ->where('organization_id', $organizationId)
                 ->whereKey($tabId)
                 ->lockForUpdate()
                 ->firstOrFail();
+            $this->assertOperates($staff, $tab->reservation);
 
             abort_unless($tab->status === ServiceTab::STATUS_UNPAID, 422, 'Only unpaid tabs can be cancelled.');
 
@@ -265,6 +257,7 @@ class ServiceTabService
                 ->whereKey($tabId)
                 ->lockForUpdate()
                 ->firstOrFail();
+            $this->assertOperates($cashier, $tab->reservation);
 
             // Idempotent retry: if already settled, return existing order and receipt
             if ($tab->status === ServiceTab::STATUS_SETTLED && $tab->pos_order_id) {
@@ -435,5 +428,12 @@ class ServiceTabService
                 'duplicate' => false,
             ];
         });
+    }
+
+    /** BR-20: tabs belong to a booking's venue; staff work only on venues assigned to them. */
+    private function assertOperates(User $staff, ?Reservation $reservation): void
+    {
+        $venue = $reservation?->court?->venue;
+        abort_unless($venue && $staff->canOperateVenue($venue), 403, 'Bạn không được giao cơ sở này.');
     }
 }

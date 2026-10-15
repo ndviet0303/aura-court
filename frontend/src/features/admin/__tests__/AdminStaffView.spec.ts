@@ -41,7 +41,7 @@ describe('AdminStaffView', () => {
     {
       id: 2,
       user_id: 102,
-      role: 'venue_manager',
+      role: 'staff',
       status: 'active',
       user: {
         id: 102,
@@ -168,12 +168,24 @@ describe('AdminStaffView', () => {
     })
     await flushPromises()
 
-    const editBtns = wrapper.findAll('.actions-col button')
-    expect(editBtns.length).toBeGreaterThan(0)
+    // Only the staff row (not the owner row) can be edited.
+    const editBtns = wrapper.findAll('[data-testid="edit-staff-btn"]')
+    expect(editBtns.length).toBe(1)
     await editBtns[0]?.trigger('click')
     await flushPromises()
 
     expect(wrapper.find('.modal-card').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Cập nhật Quyền hạn & Trạng thái')
+    expect(wrapper.text()).toContain('Cập nhật Cơ sở & Trạng thái')
+
+    vi.mocked(api.patch).mockResolvedValue({ member: { id: 2 } })
+    const venueChecks = wrapper.findAll('[data-testid="edit-venue-checkboxes"] input')
+    await venueChecks[1]!.setValue(true)
+    await wrapper.find('[data-testid="confirm-edit-role-btn"]').trigger('click')
+    await flushPromises()
+
+    expect(api.patch).toHaveBeenCalledWith(expect.stringContaining('/members/2'), {
+      status: 'active',
+      venue_ids: [2],
+    })
   })
 })

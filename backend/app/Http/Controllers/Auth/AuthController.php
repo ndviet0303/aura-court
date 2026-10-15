@@ -12,6 +12,7 @@ use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Models\User;
 use App\Rules\AccountPassword;
+use App\Services\Auth\EmailLinkThrottle;
 use App\Services\Auth\SocialAccountResolver;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
@@ -41,6 +42,7 @@ class AuthController extends Controller
             'social_provider' => null,
         ]);
         event(new Registered($user));
+        EmailLinkThrottle::hit($user->email);
 
         Auth::login($user);
         if ($request->hasSession()) {
@@ -140,7 +142,14 @@ class AuthController extends Controller
         ], ['password.different' => 'Mật khẩu mới phải khác mật khẩu hiện tại.']);
         $user->update(['password' => $data['password']]);
 
-        return ['message' => 'Mật khẩu đã được cập nhật.', 'user' => $user->fresh()];
+        // BR-10: a password change ends every session, this one included; the user signs in again.
+        Auth::guard('web')->logout();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
+        return ['message' => 'Mật khẩu đã được cập nhật. Vui lòng đăng nhập lại.', 'logged_out' => true];
     }
 
     /** BR-09: an OAuth-only account proves it owns its verified email before setting a password. */
@@ -229,10 +238,7 @@ class AuthController extends Controller
             $emailVerified = $provider === 'google' && $socialUser instanceof AbstractUser
                 && filter_var($socialUser->getRaw()['email_verified'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $name = Str::limit($socialUser->getName() ?: ($socialUser->getNickname() ?: 'Athlete'), 255, '');
-            $avatar = $socialUser->getAvatar();
-            if ($avatar && strlen($avatar) > 2048) {
-                $avatar = Str::limit($avatar, 2048, '');
-            }
+            $avatar = $socialUser->getAvatar() ? Str::limit($socialUser->getAvatar(), 2048, '') : null;
 
             $user = $accounts->resolve($provider, (string) $socialUser->getId(), $socialUser->getEmail(), $emailVerified, $name, $avatar);
             if (! $user) {
@@ -276,10 +282,8 @@ class AuthController extends Controller
         }
     }
 
-    public function onboarding(
-        CompletePersonalOnboardingRequest $request,
-        CompletePersonalOnboarding $action
-    ) {
+    public function onboarding(CompletePersonalOnboardingRequest $request, CompletePersonalOnboarding $action)
+    {
         $dto = CompletePersonalOnboardingData::fromRequest($request);
         $result = $action->execute($dto);
 

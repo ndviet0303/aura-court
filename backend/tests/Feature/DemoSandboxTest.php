@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\OrganizationMember;
 use App\Models\User;
 use App\Models\Venue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -33,6 +34,7 @@ class DemoSandboxTest extends TestCase
             'role' => 'admin',
             'name' => 'Admin demo',
         ]);
+        OrganizationMember::create(['organization_id' => Venue::firstOrFail()->organization_id, 'user_id' => $admin->id, 'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER, 'status' => 'active']);
 
         $this->actingAs($admin)->patchJson('/api/profile', ['name' => 'Tên mới'])
             ->assertOk();

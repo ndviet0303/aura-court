@@ -8,7 +8,7 @@ use the platform without disclosing or modifying one another's data.
 ## Requirements
 
 ### Requirement: Organization and membership model
-The platform SHALL treat an Organization as the tenant boundary. An organization owner MAY operate multiple venues, and a user MAY hold separate memberships in multiple organizations. Membership roles MUST be `organization_owner`, `venue_manager`, `cashier`, `staff`, or `customer`; `platform_admin` MUST be a platform-scoped role rather than an organization membership.
+The platform SHALL treat an Organization as the tenant boundary. An organization owner MAY operate multiple venues, and a user MAY hold separate memberships in multiple organizations. Membership roles MUST be `organization_owner`, `staff`, or `customer`; staff share one fixed permission set limited to their assigned venues. `platform_admin` MUST be a platform-scoped role rather than an organization membership, and it SHALL NOT stand in for an owner or staff membership in organization operations.
 
 #### Scenario: Owner operates multiple venues
 - **WHEN** an organization owner is assigned to an organization with multiple venues
@@ -30,7 +30,7 @@ Every tenant-owned API response, export, cache entry, asynchronous job, and real
 - **THEN** its resulting data, notification, cache entry, and event SHALL remain scoped to that record's organization
 
 ### Requirement: Role-based owner operations
-Organization owners and authorized employees SHALL access assigned venues and functions including catalog, calendars, pricing, employees, POS, memberships, promotions, reports and owner refund obligations through both UI and API. Permissions SHALL be the intersection of active organization membership, venue assignment, function grant and effective feature entitlement. Cashier is an employee permission profile, not platform administration. Platform roles MUST NOT be granted through employee invitations. Legacy payouts SHALL be available only to separately authorized finance actors for pre-cutover obligations.
+Organization owners and authorized employees SHALL access assigned venues and functions including catalog, calendars, pricing, employees, POS, memberships, promotions, reports and owner refund obligations through both UI and API. Permissions SHALL be the intersection of active organization membership, venue assignment, function grant and effective feature entitlement. Staff is an employee permission profile, not platform administration. Platform roles MUST NOT be granted through employee invitations. Legacy payouts SHALL be available only to separately authorized finance actors for pre-cutover obligations.
 
 #### Scenario: Venue manager changes venue operations
 - **WHEN** a manager operates one assigned venue in a multi-venue organization
@@ -40,8 +40,8 @@ Organization owners and authorized employees SHALL access assigned venues and fu
 - **WHEN** an approved customer-role owner opens their management screens
 - **THEN** authorized organization actions SHALL work without granting platform_admin or legacy admin
 
-#### Scenario: Cashier requests payout administration
-- **WHEN** a cashier attempts legacy payout or organization administration
+#### Scenario: Staff requests payout administration
+- **WHEN** a staff member attempts legacy payout or organization administration
 - **THEN** the action SHALL be denied without mutations
 
 #### Scenario: Organization switch
@@ -81,18 +81,18 @@ Migration of existing owners and venues SHALL preserve identity, memberships, hi
 - **THEN** the organization SHALL be reported for reconciliation, not silently marked verified or placed into the enforced cohort with invalid entitlement
 
 ### Requirement: Real staff invitation and permission lifecycle
-Invitations SHALL identify organization, venue assignments, role and expiry, create a pending invitation, send a persisted notification and activate membership only after the intended recipient accepts. Duplicate accepts SHALL be idempotent; revocation/expiry SHALL prevent activation. Owners SHALL manage grants without creating global admins, exceeding staff quotas or removing the final active owner. API/UI MUST preserve selected venue assignments and audit actor, reason and outcome.
+Invitations SHALL identify organization, venue assignments and expiry, create a pending staff invitation, send a persisted notification and activate membership only after the intended recipient accepts. Invitations SHALL only grant the staff role; ownership comes solely from partner approval. Duplicate accepts SHALL be idempotent; revocation/expiry SHALL prevent activation. Owners SHALL manage staff grants without creating global admins or exceeding staff quotas, and owner memberships SHALL NOT be edited or removed through staff management. API/UI MUST preserve selected venue assignments and audit actor, reason and outcome.
 
 #### Scenario: Invite accepted
 - **WHEN** the addressed user accepts a valid invitation twice
 - **THEN** exactly one scoped membership SHALL become active and notification/UI SHALL reflect actual delivery and acceptance
 
 #### Scenario: Scope escalation
-- **WHEN** an owner invites an unknown email as an organization owner
-- **THEN** the resulting personal account SHALL NOT acquire global admin rights
+- **WHEN** an owner tries to invite someone as an organization owner or to grant owner rights through staff management
+- **THEN** the request SHALL grant at most the staff role at the selected venues, and no account SHALL acquire organization ownership or global admin rights
 
-#### Scenario: Last owner and quota
-- **WHEN** a mutation would exceed staff quota or suspend/remove the final active owner
+#### Scenario: Staff quota and owner rows
+- **WHEN** a mutation would exceed staff quota or targets an owner membership through staff management
 - **THEN** it SHALL fail atomically
 
 ### Requirement: Organization and POS interface access follows scoped roles
@@ -102,8 +102,8 @@ Users with an active authorized organization role SHALL be able to reach the cor
 - **WHEN** an active organization owner opens their organization page or POS and the required capability is enabled
 - **THEN** the interface SHALL allow entry and the authorized operations SHALL succeed within that organization without assigning platform administrator privileges
 
-#### Scenario: Cashier attempts owner administration
-- **WHEN** a cashier with POS access follows a direct link to an owner-only or platform-only page
+#### Scenario: Staff attempts owner administration
+- **WHEN** a staff member with POS access follows a direct link to an owner-only or platform-only page
 - **THEN** both the interface and direct privileged API requests SHALL deny the unauthorized operation
 
 ### Requirement: Explicit organization POS account provisioning

@@ -20,7 +20,6 @@ class StoreVenueBookingPolicyRequest extends FormRequest
             && $user->canManageVenue($venue)
             && $user->hasRoleInOrganization($venue->organization_id, [
                 OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                OrganizationMember::ROLE_VENUE_MANAGER,
             ]);
     }
 

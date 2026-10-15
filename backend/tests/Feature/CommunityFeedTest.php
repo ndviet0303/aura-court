@@ -56,7 +56,7 @@ class CommunityFeedTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenant->id,
             'user_id' => $this->moderator->id,
-            'role' => OrganizationMember::ROLE_VENUE_MANAGER,
+            'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER,
             'status' => 'active',
         ]);
 

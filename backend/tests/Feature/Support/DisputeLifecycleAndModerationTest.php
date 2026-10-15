@@ -800,9 +800,10 @@ class DisputeLifecycleAndModerationTest extends TestCase
         $dispute = $this->createDisputeCase($this->tenantA, $this->venueA, $this->customerAlice, $this->ownerA, 'resolved', 'DSP-DEMOTED-OWNER');
         OrganizationMember::where('organization_id', $this->tenantA->id)
             ->where('user_id', $this->ownerA->id)
-            ->update(['role' => OrganizationMember::ROLE_VENUE_MANAGER, 'permissions' => json_encode(['venue_ids' => [$this->venueA->id]])]);
+            ->update(['role' => OrganizationMember::ROLE_STAFF, 'permissions' => json_encode(['venue_ids' => [$this->venueA->id]])]);
 
-        $this->actingAs($this->ownerA)->getJson("/api/disputes/{$dispute->id}")->assertOk();
+        // BR-21: disputes are not part of the staff set, so the demoted owner no longer sees the case.
+        $this->actingAs($this->ownerA)->getJson("/api/disputes/{$dispute->id}")->assertNotFound();
         $this->actingAs($this->ownerA)
             ->postJson("/api/disputes/{$dispute->id}/evidence", [
                 'evidence' => [['url' => 'https://storage.local/late.jpg', 'type' => 'image']],
@@ -813,7 +814,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
                 'reason' => 'Có chứng cứ mới về tình trạng sân.',
                 'material_evidence' => [['url' => 'https://storage.local/new.jpg', 'type' => 'image']],
             ])
-            ->assertStatus(403);
+            ->assertNotFound();
         $this->assertSame('resolved', $dispute->fresh()->status);
     }
 
@@ -827,7 +828,7 @@ class DisputeLifecycleAndModerationTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $org->id,
             'user_id' => $this->createCustomerUser("manager_{$org->slug}@test.local", "Manager {$org->name}")->id,
-            'role' => OrganizationMember::ROLE_VENUE_MANAGER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
         OrganizationMember::create([

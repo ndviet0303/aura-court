@@ -22,5 +22,7 @@ interface OrganizationLockRepositoryInterface
 
     public function findByTaxCode(string $taxCode): ?Organization;
 
+    public function ownsActiveOrganization(int $userId): bool;
+
     public function updatePartnerStatus(Organization $org, string $status, ?string $reason = null): Organization;
 }

@@ -138,16 +138,21 @@ export const adminApi = {
   // Organization Members
   getOrgMembers: <T = any[]>(orgId: number | string = 1) =>
     api.get<T>(`/organizations/${orgId}/members`),
-  updateOrgMember: <T = any>(orgId: number | string = 1, memberId: number | string, payload: any) =>
-    api.patch<T>(`/organizations/${orgId}/members/${memberId}`, payload),
-  removeOrgMember: (orgId: number | string = 1, memberId: number | string) =>
-    api.delete(`/organizations/${orgId}/members/${memberId}`),
+  updateOrgMember: <T = any>(
+    orgId: number | string,
+    memberId: number | string,
+    payload: { status?: string; venue_ids?: number[] },
+  ) => api.patch<T>(`/organizations/${orgId}/members/${memberId}`, payload),
+  removeOrgMember: (orgId: number | string, memberId: number | string) =>
+    api.delete<{ message?: string }>(`/organizations/${orgId}/members/${memberId}`),
 
   // Organization Invitations
   getOrgInvitations: <T = { invitations: any[] }>(orgId: number | string = 1, status?: string) =>
     api.get<T>(`/organizations/${orgId}/invitations`, { params: status ? { status } : undefined }),
-  createOrgInvitation: <T = any>(orgId: number | string = 1, payload: any) =>
-    api.post<T>(`/organizations/${orgId}/invitations`, payload),
+  createOrgInvitation: <T = any>(
+    orgId: number | string,
+    payload: { email: string; venue_ids: number[] },
+  ) => api.post<T>(`/organizations/${orgId}/invitations`, payload),
   revokeOrgInvitation: <T = any>(orgId: number | string, invitationId: number | string) =>
     api.post<T>(`/organizations/${orgId}/invitations/${invitationId}/revoke`),
 

@@ -238,7 +238,7 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     await custCtx.close()
   })
 
-  test('3.3.2: Phân quyền vận hành cơ sở: Quản lý (Manager) vs Thu ngân (Cashier) vs Nhân viên (Staff)', async ({
+  test('3.3.2: Phân quyền vận hành cơ sở: mọi tài khoản vận hành đều là Nhân viên (Staff)', async ({
     browser,
   }) => {
     const manifest = getTestManifest()
@@ -246,7 +246,7 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     const cashier = getActorCredentials(manifest, 'cashier1')
     const staff = getActorCredentials(manifest, 'staff1')
 
-    // 1. Manager: permitted on manage/pos/venues, denied on staff
+    // 1. Manager fixture (role staff): permitted on pos, denied on owner-only manage
     const mgrCtx = await browser.newContext()
     const mgrPage = await mgrCtx.newPage()
     await mgrPage.addInitScript(() => sessionStorage.setItem('aura_demo_warned', 'true'))
@@ -256,11 +256,12 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     await mgrPage.locator('button[type="submit"].auth-submit-btn').click()
     await expect(mgrPage).not.toHaveURL(/.*login$/, { timeout: 20000 })
 
-    await mgrPage.goto('/admin/manage', { waitUntil: 'domcontentloaded' })
-    await expect(mgrPage).toHaveURL(/.*admin\/manage/, { timeout: 15000 })
-
     await mgrPage.goto('/admin/pos', { waitUntil: 'domcontentloaded' })
     await expect(mgrPage).toHaveURL(/.*admin\/pos/, { timeout: 15000 })
+
+    await mgrPage.goto('/admin/manage', { waitUntil: 'domcontentloaded' })
+    await expect(mgrPage).not.toHaveURL(/.*admin\/manage/, { timeout: 15000 })
+    await expect(mgrPage).toHaveURL(/https?:\/\/[^/]+\/?$/)
 
     // Manager denied on platform-only routes
     await mgrPage.goto('/admin/kyc', { waitUntil: 'domcontentloaded' })
@@ -268,7 +269,7 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
     await expect(mgrPage).toHaveURL(/https?:\/\/[^/]+\/?$/)
     await mgrCtx.close()
 
-    // 2. Cashier: permitted on pos, denied on manage & organization
+    // 2. Cashier fixture (role staff): permitted on pos, denied on manage & organization
     const cshCtx = await browser.newContext()
     const cshPage = await cshCtx.newPage()
     await cshPage.addInitScript(() => sessionStorage.setItem('aura_demo_warned', 'true'))

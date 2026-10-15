@@ -9,45 +9,25 @@ import type { OrgMember } from '../../composables/useOrganizationOwner'
 const props = defineProps<{
   members: OrgMember[]
   loading?: boolean
-  saving?: boolean
-}>()
-
-const emit = defineEmits<{
-  (e: 'invite', email: string, role: string): void
-  (e: 'updateRole', memberId: number, payload: { role: string; status?: string }): void
-  (e: 'remove', memberId: number): void
 }>()
 
 const { t } = useI18n()
 
-const emailInput = ref('')
-const roleInput = ref('staff')
 const searchQuery = ref('')
 const roleFilter = ref('all')
 
-// Member removal modal state
-const memberToRemove = ref<OrgMember | null>(null)
-const showRemoveModal = ref(false)
+const roleLabelKeys: Record<string, string> = {
+  organization_owner: 'admin.org.roleOwner',
+  staff: 'admin.org.roleStaff',
+  customer: 'admin.org.roleCustomer',
+}
 
-// Member edit role modal state
-const memberToEdit = ref<OrgMember | null>(null)
-const editRoleValue = ref('staff')
-const showEditModal = ref(false)
-
-const roleOptions: DropdownOption[] = [
-  { value: 'organization_owner', label: 'Chủ sở hữu (Owner)', icon: 'shield_person' },
-  { value: 'venue_manager', label: 'Quản lý cơ sở (Manager)', icon: 'manage_accounts' },
-  { value: 'cashier', label: 'Thu ngân (Cashier)', icon: 'point_of_sale' },
-  { value: 'staff', label: 'Nhân viên sân (Staff)', icon: 'badge' },
-]
-
-const filterRoleOptions: DropdownOption[] = [
-  { value: 'all', label: 'Tất cả vai trò', icon: 'filter_list' },
-  { value: 'organization_owner', label: 'Chủ sở hữu (Owner)', icon: 'shield_person' },
-  { value: 'venue_manager', label: 'Quản lý cơ sở (Manager)', icon: 'manage_accounts' },
-  { value: 'cashier', label: 'Thu ngân (Cashier)', icon: 'point_of_sale' },
-  { value: 'staff', label: 'Nhân viên sân (Staff)', icon: 'badge' },
-]
+const filterRoleOptions = computed<DropdownOption[]>(() => [
+  { value: 'all', label: t('admin.org.filterAllRoles'), icon: 'filter_list' },
+  { value: 'organization_owner', label: t('admin.org.roleOwner'), icon: 'shield_person' },
+  { value: 'staff', label: t('admin.org.roleStaff'), icon: 'badge' },
+  { value: 'customer', label: t('admin.org.roleCustomer'), icon: 'person' },
+])
 
 const filteredMembers = computed(() => {
   return props.members.filter((m) => {
@@ -69,53 +49,7 @@ const filteredMembers = computed(() => {
   })
 })
 
-function handleInvite() {
-  if (!emailInput.value.trim()) return
-  emit('invite', emailInput.value.trim(), roleInput.value)
-  emailInput.value = ''
-}
-
-function openEditRoleModal(m: OrgMember) {
-  memberToEdit.value = m
-  editRoleValue.value = m.role
-  showEditModal.value = true
-}
-
-function handleConfirmEditRole() {
-  if (!memberToEdit.value) return
-  emit('updateRole', memberToEdit.value.id, { role: editRoleValue.value })
-  showEditModal.value = false
-  memberToEdit.value = null
-}
-
-function promptRemoveMember(m: OrgMember) {
-  memberToRemove.value = m
-  showRemoveModal.value = true
-}
-
-function handleConfirmRemove() {
-  if (!memberToRemove.value) return
-  emit('remove', memberToRemove.value.id)
-  showRemoveModal.value = false
-  memberToRemove.value = null
-}
-
-function getRoleLabel(role: string) {
-  switch (role) {
-    case 'organization_owner':
-      return t('admin.org.roleOwner')
-    case 'venue_manager':
-      return t('admin.org.roleManager')
-    case 'cashier':
-      return t('admin.org.roleCashier')
-    case 'staff':
-      return t('admin.org.roleStaff')
-    case 'customer':
-      return t('admin.org.roleCustomer')
-    default:
-      return role
-  }
-}
+const getRoleLabel = (role: string) => (roleLabelKeys[role] ? t(roleLabelKeys[role]) : role)
 </script>
 
 <template>
@@ -129,33 +63,10 @@ function getRoleLabel(role: string) {
           <p class="tab-sub">{{ t('admin.org.membersSubtitle') }}</p>
         </div>
       </div>
-    </div>
-
-    <!-- Quick Invite Form -->
-    <div class="invite-box">
-      <div class="invite-inputs">
-        <input
-          v-model="emailInput"
-          type="email"
-          :placeholder="t('admin.org.inviteEmailPlaceholder')"
-          class="form-input font-mono email-input"
-          @keydown.enter.prevent="handleInvite"
-        />
-        <div class="role-select-wrap">
-          <SelectDropdown v-model="roleInput" :options="roleOptions" variant="bordered" />
-        </div>
-      </div>
-
-      <AuraButton
-        type="button"
-        variant="primary"
-        :disabled="!emailInput.trim() || saving"
-        @click="handleInvite"
-      >
-        <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': saving }">
-          {{ saving ? 'sync' : 'person_add' }}
-        </span>
-        <span>{{ t('admin.org.sendInviteBtn') }}</span>
+      <!-- Staff invitations, venue access and status are managed on the staff page. -->
+      <AuraButton variant="primary" to="/admin/staff" data-testid="org-manage-staff-link">
+        <span class="material-symbols-outlined icon-18">badge</span>
+        <span>{{ t('admin.org.manageStaffBtn') }}</span>
       </AuraButton>
     </div>
 
@@ -195,7 +106,6 @@ function getRoleLabel(role: string) {
             <th>{{ t('admin.org.hdrEmail') }}</th>
             <th>{{ t('admin.org.hdrRole') }}</th>
             <th>{{ t('admin.org.hdrStatus') }}</th>
-            <th class="text-right">{{ t('admin.org.hdrActions') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -239,30 +149,6 @@ function getRoleLabel(role: string) {
                 ● {{ m.status || 'active' }}
               </span>
             </td>
-
-            <!-- Actions -->
-            <td class="text-right">
-              <div class="actions-cell">
-                <AuraButton
-                  size="sm"
-                  variant="secondary"
-                  :title="t('admin.org.editRoleBtn')"
-                  @click="openEditRoleModal(m)"
-                >
-                  <span class="material-symbols-outlined icon-16">manage_accounts</span>
-                </AuraButton>
-
-                <AuraButton
-                  size="sm"
-                  variant="danger"
-                  :disabled="m.role === 'organization_owner'"
-                  :title="t('admin.org.removeMemberBtn')"
-                  @click="promptRemoveMember(m)"
-                >
-                  <span class="material-symbols-outlined icon-16">delete</span>
-                </AuraButton>
-              </div>
-            </td>
           </tr>
         </tbody>
       </table>
@@ -272,47 +158,6 @@ function getRoleLabel(role: string) {
     <div v-else class="empty-members-state">
       <span class="material-symbols-outlined empty-icon">group_off</span>
       <h4 class="empty-title">{{ t('admin.org.noMembersFound') }}</h4>
-    </div>
-
-    <!-- Edit Role Modal -->
-    <div v-if="showEditModal" class="modal-backdrop" @click.self="showEditModal = false">
-      <div class="modal-content">
-        <h3 class="modal-title">{{ t('admin.org.editRoleBtn') }}</h3>
-        <p class="modal-sub">{{ memberToEdit?.user?.name }} ({{ memberToEdit?.user?.email }})</p>
-
-        <div class="modal-form">
-          <label class="form-label">{{ t('admin.org.hdrRole') }}</label>
-          <SelectDropdown v-model="editRoleValue" :options="roleOptions" variant="bordered" />
-        </div>
-
-        <div class="modal-actions">
-          <AuraButton variant="secondary" @click="showEditModal = false">
-            {{ t('admin.org.cancelBtn') }}
-          </AuraButton>
-          <AuraButton variant="primary" :disabled="saving" @click="handleConfirmEditRole">
-            {{ t('admin.org.confirmBtn') }}
-          </AuraButton>
-        </div>
-      </div>
-    </div>
-
-    <!-- Confirm Remove Modal -->
-    <div v-if="showRemoveModal" class="modal-backdrop" @click.self="showRemoveModal = false">
-      <div class="modal-content">
-        <h3 class="modal-title">{{ t('admin.org.confirmRemoveMemberTitle') }}</h3>
-        <p class="modal-sub">
-          {{ t('admin.org.confirmRemoveMemberMsg', { email: memberToRemove?.user?.email || '' }) }}
-        </p>
-
-        <div class="modal-actions">
-          <AuraButton variant="secondary" @click="showRemoveModal = false">
-            {{ t('admin.org.cancelBtn') }}
-          </AuraButton>
-          <AuraButton variant="danger" :disabled="saving" @click="handleConfirmRemove">
-            {{ t('admin.org.removeMemberBtn') }}
-          </AuraButton>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -357,48 +202,6 @@ function getRoleLabel(role: string) {
   margin: 2px 0 0 0;
   font-size: 12.5px;
   color: var(--muted);
-}
-
-.invite-box {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 16px 20px;
-  border-radius: 14px;
-  background: var(--surface-secondary, rgba(0, 0, 0, 0.02));
-  border: 1px solid var(--outline);
-  flex-wrap: wrap;
-}
-
-.invite-inputs {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-  min-width: 280px;
-  flex-wrap: wrap;
-}
-
-.email-input {
-  flex: 1;
-  min-width: 200px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 13.5px;
-}
-
-.email-input:focus {
-  outline: none;
-  border-color: var(--pink-dark, #db2777);
-  box-shadow: 0 0 0 3px rgba(219, 39, 119, 0.15);
-}
-
-.role-select-wrap {
-  width: 220px;
 }
 
 .members-toolbar {
@@ -567,16 +370,6 @@ function getRoleLabel(role: string) {
   color: #8b3a52;
 }
 
-.role-venue_manager {
-  background: rgba(37, 99, 235, 0.12);
-  color: #2563eb;
-}
-
-.role-cashier {
-  background: rgba(245, 158, 11, 0.12);
-  color: #d97706;
-}
-
 .role-staff {
   background: rgba(16, 185, 129, 0.12);
   color: #059669;
@@ -598,15 +391,6 @@ function getRoleLabel(role: string) {
 
 .status-suspended {
   color: #ef4444;
-}
-
-.text-right {
-  text-align: right;
-}
-
-.actions-cell {
-  display: inline-flex;
-  gap: 8px;
 }
 
 .empty-members-state {
@@ -632,70 +416,11 @@ function getRoleLabel(role: string) {
   color: var(--ink);
 }
 
-/* Modal styles */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.modal-content {
-  background: var(--surface);
-  border: 1px solid var(--outline);
-  border-radius: 20px;
-  padding: 24px;
-  max-width: 440px;
-  width: 100%;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.modal-title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--ink);
-}
-
-.modal-sub {
-  margin: 0;
-  font-size: 13.5px;
-  color: var(--muted);
-  line-height: 1.5;
-}
-
-.modal-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 8px;
-}
-
 :global(html.dark) .org-members-tab-card {
   background: var(--surface, #1e191c);
   border-color: var(--outline, #4d4049);
 }
 
-:global(html.dark) .invite-box {
-  background: var(--surface-subtle, #262024);
-  border-color: var(--outline, #4d4049);
-}
-
-:global(html.dark) .email-input,
 :global(html.dark) .members-search-input {
   background: var(--surface-subtle, #262024);
   color: var(--ink, #faf7f3);
@@ -731,32 +456,9 @@ function getRoleLabel(role: string) {
   color: var(--muted, #a89fa4);
 }
 
-:global(html.dark) .modal-card {
-  background: var(--surface, #1e191c);
-  border-color: var(--outline, #4d4049);
-}
-
-:global(html.dark) .modal-title {
-  color: var(--ink, #faf7f3);
-}
-
-:global(html.dark) .modal-sub {
-  color: var(--muted, #a89fa4);
-}
-
 :global(html.dark) .role-organization_owner {
   background: rgba(229, 142, 159, 0.2);
   color: #f8b4c4;
-}
-
-:global(html.dark) .role-venue_manager {
-  background: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
-}
-
-:global(html.dark) .role-cashier {
-  background: rgba(234, 179, 8, 0.2);
-  color: #fde047;
 }
 
 :global(html.dark) .role-staff {
@@ -769,9 +471,6 @@ function getRoleLabel(role: string) {
   color: #cbd5e1;
 }
 
-.icon-16 {
-  font-size: 16px;
-}
 .icon-18 {
   font-size: 18px;
 }

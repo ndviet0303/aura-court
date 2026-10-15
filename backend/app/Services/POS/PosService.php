@@ -373,16 +373,19 @@ class PosService
 
         $reservationId = empty($data['reservation_id']) ? null : $this->backfill->resolveCanonicalReservationId((int) $data['reservation_id'], $organizationId);
 
+        $saleVenueId = $data['venue_id'] ?? $activeShift?->venue_id ?? ($reservationId ? Reservation::query()->find($reservationId)?->court()->value('venue_id') : null);
+        $saleVenueId = $this->posQr->venueIdFor($cashier, $organizationId, $saleVenueId === null ? null : (int) $saleVenueId);
+        $this->posQr->assertOperableVenue($cashier, $organizationId, $saleVenueId);
+
         // QR pays the venue owner's verified connection; without one the tender is refused before any mutation.
         $isPendingQr = $method === 'qr' || ($method === 'mixed' && in_array('qr', array_column((array) ($data['tenders'] ?? []), 'method'), true));
         $qrConnection = null;
         if ($isPendingQr) {
-            $venueId = $data['venue_id'] ?? $activeShift->venue_id ?? ($reservationId ? Reservation::query()->find($reservationId)?->court()->value('venue_id') : null);
-            $qrConnection = $this->posQr->connectionFor($organizationId, $this->posQr->venueIdFor($cashier, $organizationId, $venueId));
+            $qrConnection = $this->posQr->connectionFor($organizationId, $saleVenueId);
             abort_unless($qrConnection !== null, 422, PosQrPaymentService::UNAVAILABLE);
         }
 
-        return DB::transaction(function () use ($cashier, $organizationId, $data, $method, $reservationId, $activeShift, $isPendingQr, $qrConnection): PosOrder {
+        return DB::transaction(function () use ($cashier, $organizationId, $data, $method, $reservationId, $activeShift, $isPendingQr, $qrConnection, $saleVenueId): PosOrder {
             $quote = $this->calculateQuote($organizationId, $data, $cashier);
 
             $subtotal = $quote['subtotal'];
@@ -512,7 +515,7 @@ class PosService
                 'customer_id' => $data['customer_id'] ?? null,
                 'cashier_id' => $cashier->id,
                 'cash_shift_id' => $activeShift?->id,
-                'venue_id' => $qrConnection->venue_id ?? $data['venue_id'] ?? $activeShift?->venue_id ?? $reservation?->court?->venue_id ?? null,
+                'venue_id' => $qrConnection->venue_id ?? $saleVenueId,
                 'register_id' => $data['register_id'] ?? $activeShift?->register_id ?? null,
                 'reservation_id' => $reservationId,
                 'status' => $orderStatus,
@@ -678,6 +681,8 @@ class PosService
             $query->where('register_id', $registerId);
         }
         abort_if($query->exists(), 409, 'Cashier already has an open shift.');
+        $venueId = $this->posQr->venueIdFor($cashier, $organizationId, $venueId);
+        $this->posQr->assertOperableVenue($cashier, $organizationId, $venueId);
 
         return CashShift::create([
             'organization_id' => $organizationId,
@@ -919,10 +924,11 @@ class PosService
             $meta['refunds'] = $refunds;
 
             if ($refundMethod === 'cash') {
+                // The owner refunds (BR-21); without a shift of their own the cash leaves the order's still-open register.
                 $activeShift = CashShift::where('organization_id', $order->organization_id)
                     ->where('cashier_id', $cashier->id)
                     ->where('status', 'open')
-                    ->first();
+                    ->first() ?? CashShift::where('organization_id', $order->organization_id)->where('status', 'open')->find($order->cash_shift_id);
                 if ($activeShift) {
                     $movements = (array) ($activeShift->cash_movements ?? []);
                     $movements[] = [
@@ -1168,22 +1174,7 @@ class PosService
         }
 
         $venue = Venue::query()->where('organization_id', $organizationId)->whereKey($venueId)->firstOrFail();
-        if (! $cashier?->isPlatformAdmin()) {
-            $member = $cashier?->organizationMembers()
-                ->where('organization_id', $organizationId)
-                ->where('status', 'active')
-                ->first();
-            abort_unless($member && in_array($member->role, [
-                OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                OrganizationMember::ROLE_VENUE_MANAGER,
-                OrganizationMember::ROLE_STAFF,
-                OrganizationMember::ROLE_CASHIER,
-            ], true), 403);
-
-            if ($member->role !== OrganizationMember::ROLE_ORGANIZATION_OWNER) {
-                abort_unless(in_array((int) $venue->id, $member->assignedVenueIds(), true), 403);
-            }
-        }
+        abort_unless($cashier?->canOperateVenue($venue), 403, 'Bạn không được giao cơ sở này.');
 
         return [$venueId, $courtId];
     }

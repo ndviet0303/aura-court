@@ -13,9 +13,6 @@ class StorePriceSlotRequest extends FormRequest
         if (! $user) {
             return false;
         }
-        if ($user->isPlatformAdmin()) {
-            return true;
-        }
 
         $court = $this->route('court');
         if ($court) {
@@ -26,7 +23,6 @@ class StorePriceSlotRequest extends FormRequest
             ->where('status', 'active')
             ->whereIn('role', [
                 OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                OrganizationMember::ROLE_VENUE_MANAGER,
             ])
             ->exists();
     }

@@ -4,8 +4,8 @@ import SkeletonLoader from '@/shared/components/feedback/SkeletonLoader.vue'
 
 defineProps<{
   totalStaff: number
-  activeManagers: number
-  receptionists: number
+  owners: number
+  staff: number
   systemRoles: number
   loading?: boolean
 }>()
@@ -29,17 +29,17 @@ const { t } = useI18n()
       </strong>
     </div>
 
-    <!-- Card 2: Active Managers -->
+    <!-- Card 2: Owners -->
     <div class="stat-card">
       <div class="stat-top-row">
         <span class="material-symbols-outlined stat-icon text-blue">shield_person</span>
-        <span class="stat-label">{{ t('admin.staff.activeManagers') }}</span>
+        <span class="stat-label">{{ t('admin.staff.roleOwner') }}</span>
       </div>
       <div v-if="loading" class="stat-skeleton-wrap">
         <SkeletonLoader type="rect" height="24px" width="110px" />
       </div>
       <strong v-else class="stat-value">
-        {{ t('admin.staff.activeManagersCount', { count: activeManagers }) }}
+        {{ owners }}
       </strong>
       <span class="stat-trend text-blue">
         <span class="material-symbols-outlined icon-14">domain</span>
@@ -47,17 +47,17 @@ const { t } = useI18n()
       </span>
     </div>
 
-    <!-- Card 3: Receptionists & POS -->
+    <!-- Card 3: Staff -->
     <div class="stat-card">
       <div class="stat-top-row">
         <span class="material-symbols-outlined stat-icon text-green">point_of_sale</span>
-        <span class="stat-label">{{ t('admin.staff.receptionistsOnline') }}</span>
+        <span class="stat-label">{{ t('admin.staff.roleStaff') }}</span>
       </div>
       <div v-if="loading" class="stat-skeleton-wrap">
         <SkeletonLoader type="rect" height="24px" width="110px" />
       </div>
       <strong v-else class="stat-value">
-        {{ t('admin.staff.totalStaffCount', { count: receptionists }) }}
+        {{ t('admin.staff.totalStaffCount', { count: staff }) }}
       </strong>
     </div>
 

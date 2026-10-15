@@ -205,46 +205,45 @@ const navGroups: NavGroup[] = [
 function isItemPermitted(item: NavItem): boolean {
   if (!auth.user) return true
   const userAny = auth.user as any
-  if (auth.user.role === 'admin' || userAny.capabilities?.is_platform_admin) {
-    return true
-  }
+  const isPlatformAdmin = auth.user.role === 'admin' || userAny.capabilities?.is_platform_admin
+  // A platform admin sees organization items only through their own active owner/staff membership.
   const activeOrgs =
     (userAny.organizations as Array<any> | undefined)?.filter((o: any) => o.status === 'active') ||
     []
   const isOwner =
-    activeOrgs.some((o: any) => o.role === 'organization_owner' || o.role === 'venue_manager') ||
+    activeOrgs.some((o: any) => o.role === 'organization_owner') ||
     userAny.capabilities?.can_manage_venues === true
-  const isCashier = activeOrgs.some((o: any) => o.role === 'cashier' || o.role === 'staff')
+  const isStaff = activeOrgs.some((o: any) => o.role === 'staff')
 
-  // Courts group: manage, schedule, contracts, venues, pricing
+  // Owner-only: courts, contracts, venues, pricing, membership, organization profile & staff
   if (
-    item.path === '/admin/manage' ||
-    item.path === '/admin/contracts' ||
-    item.path === '/admin/venues' ||
-    item.path === '/admin/pricing'
+    [
+      '/admin/manage',
+      '/admin/contracts',
+      '/admin/venues',
+      '/admin/pricing',
+      '/admin/membership',
+      '/admin/organization',
+      '/admin/staff',
+    ].includes(item.path)
   ) {
-    return !!isOwner
+    return isOwner
   }
-  if (item.path === '/admin/schedule') {
-    return !!(isOwner || isCashier)
+  // Owner or staff: schedule, POS, shifts, inventory, tournaments
+  if (
+    [
+      '/admin/schedule',
+      '/admin/pos',
+      '/pos',
+      '/admin/shifts',
+      '/admin/inventory',
+      '/admin/tournaments',
+    ].includes(item.path)
+  ) {
+    return isOwner || isStaff
   }
-  // POS group: retail, shifts, inventory, membership
-  if (['/admin/pos', '/pos', '/admin/shifts', '/admin/inventory'].includes(item.path)) {
-    return !!(isOwner || isCashier)
-  }
-  if (item.path === '/admin/membership') {
-    return !!isOwner
-  }
-  // Tournaments
-  if (item.path === '/admin/tournaments') {
-    return !!(isOwner || isCashier)
-  }
-  // Organization profile & staff
-  if (item.path === '/admin/organization' || item.path === '/admin/staff') {
-    return !!isOwner
-  }
-  // Finance and KYC/disputes stay platform admin only; finance also needs marketplace_payouts
-  return false
+  // Finance and KYC/users/disputes stay platform admin only; finance also needs marketplace_payouts
+  return !!isPlatformAdmin
 }
 
 const permittedNavGroups = computed(() => {

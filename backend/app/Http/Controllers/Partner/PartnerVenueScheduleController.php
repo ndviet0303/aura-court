@@ -123,11 +123,10 @@ class PartnerVenueScheduleController extends Controller
         $venue = $this->venueRepo->findById($venueId);
         abort_if($venue === null || (int) $venue->organization_id !== $organizationId, 404, 'Cơ sở thể thao không tồn tại.');
         $user = $request->user();
-        abort_unless($user && ($user->isPlatformAdmin() || (
+        abort_unless($user && ((
             $user->canManageVenue($venue)
             && $user->hasRoleInOrganization($organizationId, [
                 OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                OrganizationMember::ROLE_VENUE_MANAGER,
             ])
         )), 403, $message);
 

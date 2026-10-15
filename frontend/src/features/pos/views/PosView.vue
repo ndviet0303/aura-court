@@ -475,9 +475,9 @@ async function handleCancelQr() {
   }
 }
 
-async function handleOpenShift(cash: number) {
+async function handleOpenShift(cash: number, venueId?: number) {
   try {
-    await openShift(cash)
+    await openShift(cash, venueId)
     showShiftModal.value = false
     showNotice(t('admin.pos.openShiftSuccess'))
   } catch {

@@ -45,9 +45,7 @@ function handleConfirm() {
 
         <div class="member-target-card">
           <strong class="target-name">{{ member.name }}</strong>
-          <span class="target-role"
-            >{{ member.role }} • UID: #{{ member.userId || member.id }}</span
-          >
+          <span class="target-role">UID: #{{ member.userId || member.id }}</span>
         </div>
       </div>
 
@@ -62,7 +60,7 @@ function handleConfirm() {
           @click="handleConfirm"
         >
           <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': saving }">
-            {{ saving ? 'sync' : 'delete' }}
+            {{ saving ? 'sync' : 'person_remove' }}
           </span>
           <span>{{ t('admin.staff.removeConfirmBtn') }}</span>
         </AuraButton>

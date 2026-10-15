@@ -29,8 +29,8 @@ class ResolveTenantContext
         }
 
         if ($organization) {
-            // If user is authenticated, ensure they belong to this organization or are platform admin
-            if ($request->user() && ! $request->user()->isPlatformAdmin()) {
+            // BR-23: an authenticated user must belong to the organization; platform admin rights do not stand in.
+            if ($request->user()) {
                 $isMember = $organization->hasMember($request->user()->id);
                 if (! $isMember && ! $request->is('api/loyalty*')) {
                     abort(response()->json([

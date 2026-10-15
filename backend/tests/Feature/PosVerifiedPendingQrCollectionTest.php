@@ -63,7 +63,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenant->id,
             'user_id' => $this->cashier->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
         // Opened from the POS screen, so the shift names no venue; the organization's only venue is used.
@@ -84,6 +84,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
             'is_active' => true,
         ]);
         [$this->connection, $this->secret] = $this->connectOwnerReceiver($this->venue);
+        $this->assignStaffVenues($this->tenant, $this->venue);
     }
 
     public function test_qr_tender_is_refused_with_setup_guidance_without_a_verified_connection(): void

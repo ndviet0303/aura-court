@@ -95,11 +95,7 @@ class Tournament extends Model
 
     public function isAuthorizedOfficial(User $user, ?string $requiredRole = null): bool
     {
-        if ($user->isPlatformAdmin()) {
-            return true;
-        }
-
-        if ($user->hasRoleInOrganization($this->organization_id, ['organization_owner', 'venue_manager', 'staff'])) {
+        if ($user->hasRoleInOrganization($this->organization_id, ['organization_owner', 'staff'])) {
             return true;
         }
 

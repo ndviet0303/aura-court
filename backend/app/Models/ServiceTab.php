@@ -44,6 +44,7 @@ class ServiceTab extends Model
         return $this->belongsTo(Organization::class);
     }
 
+    /** @return BelongsTo<Reservation, $this> */
     public function reservation(): BelongsTo
     {
         return $this->belongsTo(Reservation::class);

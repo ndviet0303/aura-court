@@ -143,8 +143,9 @@ class PlanQuotaEnforcementAndDowngradeTest extends TestCase
         // Court in Org A
         $courtA = Court::create(['name' => ['vi' => 'Sân A1'], 'venue_id' => $venueA->id, 'is_active' => true]);
 
-        // Admin of both or platform admin attempts to move Court A to Venue B
-        $platformAdmin = User::factory()->create(['role' => 'admin']);
+        // An owner of both organizations attempts to move Court A to Venue B
+        $platformAdmin = $ownerA;
+        OrganizationMember::create(['organization_id' => $orgB->id, 'user_id' => $ownerA->id, 'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER, 'status' => 'active']);
 
         $res = $this->actingAs($platformAdmin)->patchJson("/api/admin/courts/{$courtA->id}", [
             'venue_id' => $venueB->id,

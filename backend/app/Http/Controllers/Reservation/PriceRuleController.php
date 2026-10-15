@@ -79,14 +79,10 @@ class PriceRuleController extends Controller
      * D29: activating or updating a pricing policy is "new business" and requires a
      * valid platform subscription entitlement. Having the right role is not enough —
      * an expired or missing plan is denied, and the response names the actual missing
-     * entitlement so the UI can explain it. Platform admins act on the owner's behalf.
+     * entitlement so the UI can explain it.
      */
     private function assertActivePlatformEntitlement(Request $request, Organization $organization): void
     {
-        if ($request->user()->isPlatformAdmin()) {
-            return;
-        }
-
         $entitlement = app(EvaluatePlatformEntitlement::class)->execute((int) $organization->id);
 
         if (! $entitlement['is_valid']) {

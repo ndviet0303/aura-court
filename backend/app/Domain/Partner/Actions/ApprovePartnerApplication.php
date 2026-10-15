@@ -7,11 +7,14 @@ use App\Contracts\Repositories\HostKycRepositoryInterface;
 use App\Contracts\Repositories\OrganizationLockRepositoryInterface;
 use App\Domain\Partner\DTOs\ReviewPartnerApplicationData;
 use App\Models\HostKyc;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ApprovePartnerApplication
 {
+    private const DUPLICATE_TAX_CODE = 'Mã định danh kinh doanh đã thuộc về một tổ chức đã đăng ký. Không thể phê duyệt hồ sơ trùng tổ chức.';
+
     public function __construct(
         private readonly HostKycRepositoryInterface $kycRepo,
         private readonly OrganizationLockRepositoryInterface $orgLocks,
@@ -48,9 +51,13 @@ class ApprovePartnerApplication
                 return $kyc;
             }
 
+            // BR-13: one account owns one organization; the applicant may have become an owner since applying.
+            $this->orgLocks->lockUserForUpdate((int) $kyc->user_id);
+            abort_if($this->orgLocks->ownsActiveOrganization((int) $kyc->user_id), 422, 'Người nộp hồ sơ đã là chủ sở hữu một tổ chức đang hoạt động.');
+
             // BR-15: the business identity must not belong to a registered organization.
             if (trim((string) $kyc->tax_code) !== '' && $this->orgLocks->findByTaxCode((string) $kyc->tax_code)) {
-                abort(422, 'Mã định danh kinh doanh đã thuộc về một tổ chức đã đăng ký. Không thể phê duyệt hồ sơ trùng tổ chức.');
+                abort(422, self::DUPLICATE_TAX_CODE);
             }
 
             // Generate organization slug
@@ -61,23 +68,28 @@ class ApprovePartnerApplication
             }
             $slug = $slugBase.'-'.substr(uniqid(), -5);
 
-            // 1. Atomically provision Organization
-            $org = $this->orgLocks->createOrganization([
-                'name' => $kyc->business_name ?: $kyc->legal_name,
-                'slug' => $slug,
-                'tax_code' => $kyc->tax_code,
-                'status' => 'active',
-                'partner_status' => 'approved',
-                'partner_status_changed_at' => now(),
-                'source_kyc_id' => $kyc->id,
-                'settings' => [
-                    'phone' => $kyc->contact_phone,
-                    'address' => $kyc->address_line.($kyc->city ? ', '.$kyc->city : ''),
-                    'contact_name' => $kyc->contact_name,
-                    'sports' => $kyc->sports,
-                    'court_scale' => $kyc->court_scale,
-                ],
-            ]);
+            // 1. Atomically provision Organization; the unique tax code index settles a concurrent approval.
+            try {
+                $org = $this->orgLocks->createOrganization([
+                    'name' => $kyc->business_name ?: $kyc->legal_name,
+                    'slug' => $slug,
+                    'tax_code' => $kyc->tax_code,
+                    'status' => 'active',
+                    'partner_status' => 'approved',
+                    'partner_status_changed_at' => now(),
+                    'source_kyc_id' => $kyc->id,
+                    'settings' => [
+                        'phone' => $kyc->contact_phone,
+                        'address' => $kyc->address_line.($kyc->city ? ', '.$kyc->city : ''),
+                        'contact_name' => $kyc->contact_name,
+                        'sports' => $kyc->sports,
+                        'court_scale' => $kyc->court_scale,
+                    ],
+                ]);
+            } catch (UniqueConstraintViolationException $e) {
+                abort_unless(str_contains($e->getMessage(), 'organizations_tax_code_unique'), 500, $e->getMessage());
+                abort(422, self::DUPLICATE_TAX_CODE);
+            }
 
             // 2. Provision owner membership (user's personal role remains customer!)
             $this->orgLocks->addMember($org, (int) $kyc->user_id, 'organization_owner', 'active');

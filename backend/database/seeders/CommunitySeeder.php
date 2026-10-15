@@ -606,7 +606,7 @@ class CommunitySeeder extends Seeder
         $staff = OrganizationMember::with('user')
             ->where('organization_id', $this->organization->id)
             ->where('status', 'active')
-            ->whereIn('role', [OrganizationMember::ROLE_VENUE_MANAGER, OrganizationMember::ROLE_STAFF, OrganizationMember::ROLE_CASHIER])
+            ->whereIn('role', [OrganizationMember::ROLE_STAFF])
             ->orderBy('id')
             ->get()
             ->filter(fn (OrganizationMember $member) => $member->user)

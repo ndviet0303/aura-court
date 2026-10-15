@@ -135,7 +135,7 @@ describe('Organization Owner & Scoped Access (Task 3.1 & 3.4)', () => {
           {
             organization_id: 1,
             organization_name: 'Aura Tenant Org',
-            role: 'cashier',
+            role: 'staff',
             status: 'active',
           },
         ],

@@ -231,7 +231,8 @@ class SevenGroupsRegressionTest extends TestCase
     {
         [$organization, $customer, $court] = $this->tenant();
         $cashier = User::factory()->create();
-        OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $cashier->id, 'role' => 'cashier', 'status' => 'active']);
+        OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $cashier->id, 'role' => 'staff', 'status' => 'active']);
+        $this->assignStaffVenues($organization, $court->venue);
         CashShift::create([
             'organization_id' => $organization->id,
             'cashier_id' => $cashier->id,

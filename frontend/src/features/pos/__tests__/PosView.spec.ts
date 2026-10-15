@@ -18,7 +18,7 @@ vi.mock('@/core/api/client', () => ({
     get: vi.fn().mockResolvedValue({
       organization_id: 1,
       capabilities: { tenant_pos_and_wallet: true },
-      role: 'cashier',
+      role: 'staff',
       is_platform_admin: false,
     }),
     post: vi.fn(),
@@ -40,6 +40,7 @@ vi.mock('../api/posApi', () => ({
     getShifts: vi.fn(),
     getActiveShift: vi.fn(),
     openShift: vi.fn(),
+    getVenues: vi.fn().mockResolvedValue([]),
     closeShift: vi.fn(),
     reviewShift: vi.fn(),
     getActiveReservations: vi.fn(),
@@ -163,12 +164,38 @@ describe('PosView (/admin/pos)', () => {
 
     expect(wrapper.text()).toContain('Quản Lý Ca Thu Ngân')
   })
+
+  it('asks a caller with several venues which venue the shift opens at', async () => {
+    vi.mocked(posApi.getActiveShift).mockResolvedValue(null)
+    vi.mocked(posApi.getVenues).mockResolvedValueOnce([
+      { id: 42, name: 'Alpha' },
+      { id: 43, name: 'Beta' },
+    ])
+    vi.mocked(posApi.openShift).mockResolvedValue({
+      id: 102,
+      status: 'open',
+      opened_at: '2026-10-15 08:00:00',
+    })
+
+    const wrapper = mount(PosView, { global: { plugins: [i18n] } })
+    await flushPromises()
+    await wrapper.find('.shift-btn').trigger('click')
+    await flushPromises()
+
+    const openBtn = wrapper.find('.modal-footer .btn-primary')
+    expect(openBtn.attributes('disabled')).toBeDefined()
+    await wrapper.find('.shift-open-form select').setValue(43)
+    await openBtn.trigger('click')
+    await flushPromises()
+
+    expect(posApi.openShift).toHaveBeenCalledWith({ opening_cash: 1000000, venue_id: 43 })
+  })
   it('shows the owner QR without a manual confirm and completes when the receipt lands', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
     vi.mocked(api.get).mockResolvedValueOnce({
       organization_id: 1,
       capabilities: { tenant_pos_and_wallet: true, direct_owner_payments: true },
-      role: 'cashier',
+      role: 'staff',
       is_platform_admin: false,
     })
     vi.mocked(posApi.getActiveShift).mockResolvedValue({

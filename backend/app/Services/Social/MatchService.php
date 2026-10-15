@@ -638,7 +638,6 @@ class MatchService
             $post->organization_id,
             [
                 OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                OrganizationMember::ROLE_VENUE_MANAGER,
             ]
         );
 
@@ -655,7 +654,6 @@ class MatchService
             $post->organization_id,
             [
                 OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                OrganizationMember::ROLE_VENUE_MANAGER,
                 OrganizationMember::ROLE_STAFF,
             ]
         );

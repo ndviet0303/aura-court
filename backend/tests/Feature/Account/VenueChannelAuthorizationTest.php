@@ -46,12 +46,14 @@ class VenueChannelAuthorizationTest extends TestCase
         $this->assertTrue($this->canJoin($owner, $venue2));
         $this->assertFalse($this->canJoin($owner, $fixture['org2']['venue']));
 
-        $scopedManager = $this->member($org->id, OrganizationMember::ROLE_VENUE_MANAGER, ['venue_ids' => [$venue1->id]]);
+        $scopedManager = $this->member($org->id, OrganizationMember::ROLE_STAFF, ['venue_ids' => [$venue1->id]]);
         $this->assertTrue($this->canJoin($scopedManager, $venue1));
         $this->assertFalse($this->canJoin($scopedManager, $venue2));
 
-        $unscopedCashier = $this->member($org->id, OrganizationMember::ROLE_CASHIER, ['pos.sell']);
-        $this->assertTrue($this->canJoin($unscopedCashier, $venue2));
+        // BR-20: staff without an assigned venue reach none, and platform admin rights do not stand in.
+        $unscopedStaff = $this->member($org->id, OrganizationMember::ROLE_STAFF, ['pos.sell']);
+        $this->assertFalse($this->canJoin($unscopedStaff, $venue2));
+        $this->assertFalse($this->canJoin(User::factory()->create(['role' => 'platform_admin']), $venue1));
 
         $customer = $this->member($org->id, OrganizationMember::ROLE_CUSTOMER);
         $this->assertFalse($this->canJoin($customer, $venue1));

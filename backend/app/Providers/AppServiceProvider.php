@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Contracts\Infrastructure\SubscriptionPaymentAdapterInterface;
 use App\Contracts\Payment\PaymentProviderInterface;
 use App\Infrastructure\Payment\ProviderNeutralSubscriptionPaymentAdapter;
+use App\Services\Auth\EmailLinkThrottle;
 use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Infrastructure\TenantContext;
 use App\Services\Payment\PaymentProviderManager;
@@ -89,7 +90,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('auth-reset', fn (Request $request) => Limit::perMinute(5)->by($request->ip())->response($tooMany));
         // BR-05/BR-10: verification and reset emails at least 60 s apart and at most 5 an hour per account.
         RateLimiter::for('auth-email-link', function (Request $request) use ($tooMany) {
-            $account = $request->user()?->getKey() ?? Str::lower(trim((string) $request->input('email')));
+            $account = EmailLinkThrottle::account($request->user()->email ?? (string) $request->input('email'));
 
             return [
                 Limit::perMinute(1)->by('minute:'.$account)->response($tooMany),

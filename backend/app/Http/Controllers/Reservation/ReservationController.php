@@ -17,6 +17,7 @@ use App\Services\Infrastructure\TenantContext;
 use App\Services\Payment\ReservationPaymentService;
 use App\Services\Reservation\PriceQuoteService;
 use App\Services\Reservation\ReservationService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class ReservationController extends Controller
@@ -36,10 +37,8 @@ class ReservationController extends Controller
         $query = Reservation::query()
             ->where('organization_id', $organization->id)
             ->with(['court.venue', 'quote', 'slots', 'entitlements'])
-            ->latest();
-        if (! $this->isOrganizationOperator($request, $organization)) {
-            $query->where('user_id', $request->user()->id);
-        }
+            ->latest()
+            ->where(fn ($q) => $this->scopeVisibleReservations($q, $request, $organization));
 
         return $query->paginate(20);
     }
@@ -132,7 +131,7 @@ class ReservationController extends Controller
             $actor = null;
             if (! empty($data['customer_id'])) {
                 abort_unless(
-                    $user->isPlatformAdmin() || $user->hasRoleInOrganization($organization->id, ['organization_owner', 'venue_manager', 'staff', 'cashier']),
+                    $user->hasRoleInOrganization($organization->id, ['organization_owner', 'staff']),
                     403,
                     'Only staff can perform walk-in bookings for other customers.'
                 );
@@ -185,7 +184,7 @@ class ReservationController extends Controller
             $actor = null;
             if (! empty($data['customer_id'])) {
                 abort_unless(
-                    $user->isPlatformAdmin() || $user->hasRoleInOrganization($organization->id, ['organization_owner', 'venue_manager', 'staff', 'cashier']),
+                    $user->hasRoleInOrganization($organization->id, ['organization_owner', 'staff']),
                     403,
                     'Only staff can perform walk-in bookings for other customers.'
                 );
@@ -233,15 +232,13 @@ class ReservationController extends Controller
     }
 
     /**
-     * The caller's own reservation in any organization, or any reservation of the context
+     * The caller's own reservation in any organization, or one at a venue of the context
      * organization they operate. Binds the tenant context to the record's organization.
      */
     private function findReservation(Request $request, Organization $organization, string $identifier): Reservation
     {
-        $operator = $this->isOrganizationOperator($request, $organization);
         $query = Reservation::query()->withoutGlobalScope('tenant_isolation')
-            ->where(fn ($owned) => $owned->where('user_id', $request->user()->id)
-                ->when($operator, fn ($q) => $q->orWhere('organization_id', $organization->id)));
+            ->where(fn ($q) => $this->scopeVisibleReservations($q, $request, $organization));
         if (ctype_digit($identifier)) {
             $query->whereKey((int) $identifier);
         } else {
@@ -253,5 +250,18 @@ class ReservationController extends Controller
         app(TenantContext::class)->setOrganization($recordOrganization);
 
         return $record;
+    }
+
+    /**
+     * BR-21: the owner manages every booking of the organization, staff only those at their assigned venues.
+     *
+     * @param  Builder<Reservation>  $query
+     */
+    private function scopeVisibleReservations(Builder $query, Request $request, Organization $organization): void
+    {
+        $venueIds = $request->user()->getAuthorizedVenueIds($organization->id);
+        $query->where('user_id', $request->user()->id)
+            ->orWhere(fn ($q) => $q->where('organization_id', $organization->id)
+                ->whereHas('court', fn ($court) => $court->whereIn('venue_id', $venueIds)));
     }
 }

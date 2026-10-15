@@ -4,6 +4,7 @@ namespace Tests\Feature\Partner;
 
 use App\Models\HostKyc;
 use App\Models\Organization;
+use App\Models\OrganizationMember;
 use App\Models\OutboxMessage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -91,6 +92,22 @@ class PartnerReviewRulesTest extends TestCase
 
         $this->assertSame('pending', $kyc->fresh()->status);
         $this->assertSame(1, Organization::where('tax_code', '0312345678')->count());
+    }
+
+    /** BR-13: one account owns at most one active organization, re-checked at approval time. */
+    public function test_approval_refuses_an_applicant_who_already_owns_an_active_organization(): void
+    {
+        $kyc = $this->pendingApplication();
+        $owned = Organization::create(['name' => 'Owned', 'slug' => 'owned', 'status' => 'active', 'partner_status' => 'approved']);
+        OrganizationMember::create(['organization_id' => $owned->id, 'user_id' => $kyc->user_id, 'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER, 'status' => 'active']);
+        Sanctum::actingAs($this->admin);
+        $organizations = Organization::count();
+
+        $this->postJson("/api/admin/partner/applications/{$kyc->id}/review", ['decision' => 'approve', 'expected_version' => 1])
+            ->assertStatus(422)->assertJsonPath('message', 'Người nộp hồ sơ đã là chủ sở hữu một tổ chức đang hoạt động.');
+
+        $this->assertSame('pending', $kyc->fresh()->status);
+        $this->assertSame($organizations, Organization::count());
     }
 
     public function test_an_admin_clears_a_duplicate_flag_only_on_a_flagged_application(): void

@@ -89,7 +89,7 @@ class ActivatePlatformTrial
             }
 
             $currentStaff = $org->members()
-                ->whereIn('role', ['venue_manager', 'staff', 'cashier'])
+                ->whereIn('role', ['staff'])
                 ->whereIn('status', ['active', 'invited'])
                 ->count();
             $maxStaff = (int) ($plan->max_staff ?? 2);

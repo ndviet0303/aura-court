@@ -23,15 +23,16 @@ class VenueCourtCrudAndPreservationTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function admin(): User
+    /** BR-23: venue and court management is the organization owner's job, not the platform admin's. */
+    private function partnerOrg(string $name = 'Aura Partner'): Organization
     {
-        return User::factory()->create(['role' => 'admin']);
+        return Organization::create(['name' => $name, 'slug' => 'org-'.uniqid(), 'status' => 'active', 'partner_status' => 'approved']);
     }
 
     public function test_venue_crud_and_amenities_persistence(): void
     {
-        $admin = $this->admin();
-        $org = Organization::create(['name' => 'Aura Group', 'slug' => 'aura-group-'.uniqid()]);
+        $org = $this->partnerOrg('Aura Group');
+        $admin = $this->ownerOf($org);
 
         // 1. Create venue with amenities
         $createRes = $this->actingAs($admin)->postJson('/api/admin/venues', [
@@ -68,7 +69,8 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         $this->actingAs($admin)->patchJson("/api/admin/venues/{$venueId}", ['latitude' => 91, 'longitude' => 105.78])
             ->assertUnprocessable()->assertJsonValidationErrors('latitude');
 
-        // 3. Public view reflects the saved amenities and details
+        // 3. Once the platform publishes it, the public view reflects the saved amenities and details
+        Venue::whereKey($venueId)->update(['status' => 'published', 'is_active' => true]);
         $publicRes = $this->getJson("/api/venues/{$slug}");
         $publicRes->assertOk()
             ->assertJsonPath('address', '88 Cau Giay, Updated, Hanoi')
@@ -79,8 +81,8 @@ class VenueCourtCrudAndPreservationTest extends TestCase
 
     public function test_sport_zone_crud_and_slot_duration_association(): void
     {
-        $admin = $this->admin();
         $org = Organization::create(['name' => 'Aura District 7 Org', 'slug' => 'aura-d7-org-'.uniqid(), 'status' => 'active', 'partner_status' => 'approved']);
+        $admin = $this->ownerOf($org);
         $venue = Venue::create([
             'organization_id' => $org->id,
             'name' => 'Aura District 7',
@@ -123,8 +125,8 @@ class VenueCourtCrudAndPreservationTest extends TestCase
 
     public function test_court_crud_amenities_and_public_detail_integration(): void
     {
-        $admin = $this->admin();
         $org = Organization::create(['name' => 'Aura Da Nang Org', 'slug' => 'aura-danang-org-'.uniqid(), 'status' => 'active', 'partner_status' => 'approved']);
+        $admin = $this->ownerOf($org);
         $venue = Venue::create([
             'organization_id' => $org->id,
             'name' => 'Aura Da Nang',
@@ -198,13 +200,13 @@ class VenueCourtCrudAndPreservationTest extends TestCase
     {
         config(['cache.default' => 'database', 'cache.prefix' => 'court-catalog-regression-']);
         Cache::forget('courts_version');
-        $admin = $this->admin();
         $org = Organization::create([
             'name' => 'Catalog Org',
             'slug' => 'catalog-org-'.uniqid(),
             'status' => 'active',
             'partner_status' => 'approved',
         ]);
+        $admin = $this->ownerOf($org);
         $venue = Venue::create([
             'organization_id' => $org->id,
             'name' => 'Catalog Venue',
@@ -232,9 +234,9 @@ class VenueCourtCrudAndPreservationTest extends TestCase
 
     public function test_court_surface_and_capacity_round_trip_without_mutating_existing_bookings(): void
     {
-        $admin = $this->admin();
         $owner = User::factory()->create();
         $org = Organization::create(['name' => 'Specification Arena Org', 'slug' => 'spec-arena-org-'.uniqid(), 'status' => 'active', 'partner_status' => 'approved']);
+        $admin = $this->ownerOf($org);
         $venue = Venue::create([
             'organization_id' => $org->id,
             'name' => 'Specification Arena',
@@ -292,8 +294,10 @@ class VenueCourtCrudAndPreservationTest extends TestCase
 
     public function test_court_surface_and_capacity_validation_rejects_unknown_or_impossible_values(): void
     {
-        $admin = $this->admin();
+        $org = $this->partnerOrg();
+        $admin = $this->ownerOf($org);
         $venue = Venue::create([
+            'organization_id' => $org->id,
             'name' => 'Validation Arena',
             'slug' => 'validation-arena-'.uniqid(),
             'address' => '23 Court Street',
@@ -311,8 +315,8 @@ class VenueCourtCrudAndPreservationTest extends TestCase
 
     public function test_court_deactivation_preserves_historical_bookings_and_rejects_new_bookings(): void
     {
-        $admin = $this->admin();
-        $org = Organization::create(['name' => 'Aura Club', 'slug' => 'aura-club-'.uniqid()]);
+        $org = $this->partnerOrg('Aura Club');
+        $admin = $this->ownerOf($org);
         $venue = Venue::create([
             'organization_id' => $org->id,
             'name' => 'Aura Central Arena',
@@ -440,8 +444,10 @@ class VenueCourtCrudAndPreservationTest extends TestCase
 
     public function test_admin_can_fetch_court_prices_and_listing_has_price_slots_count(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $org = $this->partnerOrg();
+        $admin = $this->ownerOf($org);
         $venue = Venue::create([
+            'organization_id' => $org->id,
             'name' => ['vi' => 'Cụm Sân Test Giá', 'en' => 'Test Venue'],
             'slug' => 'test-venue-'.uniqid(),
             'address' => '123 Test St',

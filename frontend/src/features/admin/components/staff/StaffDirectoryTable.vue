@@ -40,12 +40,9 @@ const { t } = useI18n()
 
 const roleFilterOptions = computed<DropdownOption[]>(() => [
   { value: 'all', label: t('admin.staff.allRoles'), icon: 'filter_list' },
-  { value: 'Owner', label: t('admin.staff.roleOwner'), icon: 'shield_person' },
-  { value: 'Manager', label: t('admin.staff.roleManager'), icon: 'manage_accounts' },
-  { value: 'Receptionist', label: t('admin.staff.roleReceptionist'), icon: 'point_of_sale' },
-  { value: 'Technician', label: t('admin.staff.roleTechnician'), icon: 'build' },
-  { value: 'Referee', label: t('admin.staff.roleReferee'), icon: 'sports' },
-  { value: 'Staff', label: t('admin.staff.roleStaff'), icon: 'badge' },
+  { value: 'organization_owner', label: t('admin.staff.roleOwner'), icon: 'shield_person' },
+  { value: 'staff', label: t('admin.staff.roleStaff'), icon: 'badge' },
+  { value: 'customer', label: t('admin.staff.roleCustomer'), icon: 'person' },
 ])
 
 const statusFilterOptions = computed<DropdownOption[]>(() => [
@@ -55,29 +52,10 @@ const statusFilterOptions = computed<DropdownOption[]>(() => [
   { value: 'invited', label: t('admin.staff.statusInvited'), icon: 'mail' },
 ])
 
-function getRoleLabel(role: string): string {
-  switch (role) {
-    case 'Owner':
-    case 'organization_owner':
-      return t('admin.staff.roleOwner')
-    case 'Manager':
-    case 'venue_manager':
-      return t('admin.staff.roleManager')
-    case 'Receptionist':
-    case 'cashier':
-      return t('admin.staff.roleReceptionist')
-    case 'Technician':
-    case 'technician':
-      return t('admin.staff.roleTechnician')
-    case 'Referee':
-    case 'referee':
-      return t('admin.staff.roleReferee')
-    case 'Staff':
-    case 'staff':
-      return t('admin.staff.roleStaff')
-    default:
-      return role
-  }
+const roleLabelKeys: Record<string, string> = {
+  organization_owner: 'admin.staff.roleOwner',
+  staff: 'admin.staff.roleStaff',
+  customer: 'admin.staff.roleCustomer',
 }
 </script>
 
@@ -203,8 +181,10 @@ function getRoleLabel(role: string): string {
 
           <!-- Role Badge -->
           <div class="role-col">
-            <span class="role-badge" :class="`role-${member.role.toLowerCase()}`">
-              {{ getRoleLabel(member.role) }}
+            <span class="role-badge" :class="`role-${member.rawRole}`">
+              {{
+                roleLabelKeys[member.rawRole] ? t(roleLabelKeys[member.rawRole]!) : member.rawRole
+              }}
             </span>
           </div>
 
@@ -250,43 +230,45 @@ function getRoleLabel(role: string): string {
           </div>
 
           <!-- Action Buttons -->
+          <!-- Only staff rows are managed here; owner and customer rows have no actions. -->
           <div class="actions-col text-right">
-            <AuraButton
-              size="sm"
-              variant="secondary"
-              data-testid="edit-staff-btn"
-              :title="t('admin.staff.editStaff')"
-              @click="emit('editMember', member)"
-            >
-              <span class="material-symbols-outlined icon-16">edit</span>
-            </AuraButton>
+            <template v-if="member.rawRole === 'staff'">
+              <AuraButton
+                size="sm"
+                variant="secondary"
+                data-testid="edit-staff-btn"
+                :title="t('admin.staff.editStaff')"
+                @click="emit('editMember', member)"
+              >
+                <span class="material-symbols-outlined icon-16">edit</span>
+              </AuraButton>
 
-            <AuraButton
-              size="sm"
-              variant="secondary"
-              data-testid="toggle-status-btn"
-              :title="
-                member.status === 'active'
-                  ? t('admin.staff.lockStaff')
-                  : t('admin.staff.unlockStaff')
-              "
-              @click="emit('toggleStatus', member)"
-            >
-              <span class="material-symbols-outlined icon-16">
-                {{ member.status === 'active' ? 'lock' : 'lock_open' }}
-              </span>
-            </AuraButton>
+              <AuraButton
+                size="sm"
+                variant="secondary"
+                data-testid="toggle-status-btn"
+                :title="
+                  member.status === 'active'
+                    ? t('admin.staff.lockStaff')
+                    : t('admin.staff.unlockStaff')
+                "
+                @click="emit('toggleStatus', member)"
+              >
+                <span class="material-symbols-outlined icon-16">
+                  {{ member.status === 'active' ? 'lock' : 'lock_open' }}
+                </span>
+              </AuraButton>
 
-            <AuraButton
-              size="sm"
-              variant="danger"
-              data-testid="remove-staff-btn"
-              :disabled="member.role === 'Owner' || member.rawRole === 'organization_owner'"
-              :title="t('admin.staff.removeStaff')"
-              @click="emit('removeMember', member)"
-            >
-              <span class="material-symbols-outlined icon-16">delete</span>
-            </AuraButton>
+              <AuraButton
+                size="sm"
+                variant="danger"
+                data-testid="remove-staff-btn"
+                :title="t('admin.staff.removeStaff')"
+                @click="emit('removeMember', member)"
+              >
+                <span class="material-symbols-outlined icon-16">person_remove</span>
+              </AuraButton>
+            </template>
           </div>
         </div>
       </div>
@@ -493,35 +475,17 @@ function getRoleLabel(role: string): string {
   font-weight: 700;
 }
 
-.role-owner,
 .role-organization_owner {
   background: rgba(139, 92, 246, 0.15);
   color: #7c3aed;
 }
 
-.role-manager,
-.role-venue_manager {
-  background: rgba(59, 130, 246, 0.12);
-  color: #2563eb;
-}
-
-.role-receptionist,
-.role-cashier {
+.role-staff {
   background: rgba(16, 185, 129, 0.12);
   color: #059669;
 }
 
-.role-technician {
-  background: rgba(245, 158, 11, 0.12);
-  color: #d97706;
-}
-
-.role-referee {
-  background: rgba(236, 72, 153, 0.12);
-  color: #db2777;
-}
-
-.role-staff {
+.role-customer {
   background: rgba(107, 114, 128, 0.12);
   color: #4b5563;
 }
@@ -652,25 +616,17 @@ function getRoleLabel(role: string): string {
   color: var(--ink, #faf7f3);
 }
 
-:global(html.dark) .role-owner,
 :global(html.dark) .role-organization_owner {
   background: rgba(139, 92, 246, 0.25);
   color: #c4b5fd;
 }
 
-:global(html.dark) .role-manager,
-:global(html.dark) .role-venue_manager {
-  background: rgba(59, 130, 246, 0.25);
-  color: #93c5fd;
-}
-
-:global(html.dark) .role-receptionist,
-:global(html.dark) .role-cashier {
+:global(html.dark) .role-staff {
   background: rgba(16, 185, 129, 0.25);
   color: #6ee7b7;
 }
 
-:global(html.dark) .role-staff {
+:global(html.dark) .role-customer {
   background: rgba(148, 163, 184, 0.25);
   color: #cbd5e1;
 }

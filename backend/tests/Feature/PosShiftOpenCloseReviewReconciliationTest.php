@@ -45,7 +45,7 @@ class PosShiftOpenCloseReviewReconciliationTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenant->id,
             'user_id' => $this->cashier->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 
@@ -53,7 +53,7 @@ class PosShiftOpenCloseReviewReconciliationTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenant->id,
             'user_id' => $this->manager->id,
-            'role' => OrganizationMember::ROLE_VENUE_MANAGER,
+            'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER,
             'status' => 'active',
         ]);
 
@@ -74,6 +74,7 @@ class PosShiftOpenCloseReviewReconciliationTest extends TestCase
             'stock_quantity' => 50,
             'is_active' => true,
         ]);
+        $this->assignStaffVenues($this->tenant);
     }
 
     public function test_shift_open_close_and_reconciliation_lifecycle(): void

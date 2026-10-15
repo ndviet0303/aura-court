@@ -19,10 +19,9 @@ class SaveVenueScheduleExceptionRequest extends FormRequest
             && $venue !== null
             && (int) $venue->organization_id === (int) $this->route('organizationId')
             && ($courtId === null || $venue->courts()->whereKey($courtId)->exists())
-            && ($user->isPlatformAdmin() || ($user->canManageVenue($venue)
+            && (($user->canManageVenue($venue)
                 && $user->hasRoleInOrganization($venue->organization_id, [
                     OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                    OrganizationMember::ROLE_VENUE_MANAGER,
                 ])));
     }
 

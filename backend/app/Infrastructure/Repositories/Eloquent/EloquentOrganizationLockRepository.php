@@ -48,7 +48,15 @@ class EloquentOrganizationLockRepository implements OrganizationLockRepositoryIn
 
     public function findByTaxCode(string $taxCode): ?Organization
     {
-        return Organization::query()->where('tax_code', trim($taxCode))->first();
+        return Organization::query()->whereRaw('lower(tax_code) = ?', [mb_strtolower(trim($taxCode))])->first();
+    }
+
+    public function ownsActiveOrganization(int $userId): bool
+    {
+        return OrganizationMember::query()->where('user_id', $userId)
+            ->where('role', OrganizationMember::ROLE_ORGANIZATION_OWNER)->where('status', 'active')
+            ->whereHas('organization', fn ($org) => $org->where('status', 'active'))
+            ->exists();
     }
 
     public function updatePartnerStatus(Organization $org, string $status, ?string $reason = null): Organization

@@ -3,7 +3,6 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { PosShift } from '../types/pos'
 import { posApi } from '../api/posApi'
-import { api } from '@/core/api/client'
 
 const props = defineProps<{
   show: boolean
@@ -13,7 +12,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'openShift', openingCash: number): void
+  (e: 'openShift', openingCash: number, venueId?: number): void
   (e: 'closeShift', shiftId: number, declaredCash: number, note: string): void
 }>()
 
@@ -23,6 +22,8 @@ const activeTab = ref<'current' | 'history'>('current')
 const openingCash = ref(1000000)
 const declaredCash = ref(0)
 const shiftNote = ref('')
+const venues = ref<Array<{ id: number; name: string }>>([])
+const venueId = ref<number | null>(null)
 
 const shiftsHistory = ref<any[]>([])
 const loadingHistory = ref(false)
@@ -42,9 +43,7 @@ const expectedCash = computed(() => {
   return props.activeShift.expected_cash ?? opening + cashSales
 })
 
-const liveVariance = computed(() => {
-  return declaredCash.value - expectedCash.value
-})
+const liveVariance = computed(() => declaredCash.value - expectedCash.value)
 
 watch(
   () => props.activeShift,
@@ -58,18 +57,17 @@ watch(
 
 watch(
   () => props.show,
-  (isOpen) => {
-    if (isOpen && activeTab.value === 'history') {
-      loadHistory()
-    }
+  async (isOpen) => {
+    if (isOpen && activeTab.value === 'history') loadHistory()
+    // BR-20: a caller assigned to several venues picks the one this shift runs at.
+    if (isOpen && !venues.value.length) venues.value = await posApi.getVenues().catch(() => [])
   },
 )
 
 async function loadHistory() {
   loadingHistory.value = true
   try {
-    const data = await posApi.getShifts()
-    shiftsHistory.value = Array.isArray(data) ? data : (data as any)?.data || []
+    shiftsHistory.value = await posApi.getShifts()
   } catch (err) {
     console.error('Failed to load shifts history:', err)
   } finally {
@@ -88,7 +86,7 @@ function startReview(shiftId: number) {
 }
 
 function handleOpen() {
-  emit('openShift', openingCash.value)
+  emit('openShift', openingCash.value, venueId.value ?? undefined)
 }
 
 function handleClose() {
@@ -100,7 +98,7 @@ function handleClose() {
 async function handleReviewReconciliation(shiftId: number) {
   submittingReview.value = true
   try {
-    await api.post(`/pos/shifts/${shiftId}/review`, {
+    await posApi.reviewShift(shiftId, {
       status: reviewStatus.value,
       note: reviewNote.value || 'Quản lý duyệt đối soát ca',
     })
@@ -128,7 +126,6 @@ async function handleReviewReconciliation(shiftId: number) {
         </button>
       </div>
 
-      <!-- Tab Switcher -->
       <div class="modal-tabs">
         <button
           type="button"
@@ -151,9 +148,7 @@ async function handleReviewReconciliation(shiftId: number) {
       </div>
 
       <div class="modal-body">
-        <!-- TAB 1: CURRENT SHIFT -->
         <template v-if="activeTab === 'current'">
-          <!-- If Shift is Currently Open -->
           <div v-if="activeShift" class="shift-active-box">
             <div class="shift-status-badge">
               <span class="status-dot"></span>
@@ -215,7 +210,6 @@ async function handleReviewReconciliation(shiftId: number) {
                 />
               </div>
 
-              <!-- Live Variance Feedback -->
               <div
                 class="variance-banner"
                 :class="{
@@ -258,7 +252,6 @@ async function handleReviewReconciliation(shiftId: number) {
             </div>
           </div>
 
-          <!-- If No Shift is Open -->
           <div v-else class="shift-open-form">
             <div class="empty-shift-banner">
               <span class="material-symbols-outlined shift-banner-icon">lock_open</span>
@@ -276,10 +269,18 @@ async function handleReviewReconciliation(shiftId: number) {
                 :placeholder="t('admin.pos.openingCashPlaceholder')"
               />
             </div>
+            <select
+              v-if="venues.length > 1"
+              v-model="venueId"
+              class="form-select"
+              :aria-label="t('admin.pos.shiftVenueLabel')"
+            >
+              <option :value="null" disabled>{{ t('admin.pos.shiftVenueLabel') }}</option>
+              <option v-for="v in venues" :key="v.id" :value="v.id">{{ v.name }}</option>
+            </select>
           </div>
         </template>
 
-        <!-- TAB 2: SHIFTS HISTORY & RECONCILIATION -->
         <template v-else>
           <div class="history-container">
             <div v-if="loadingHistory" class="history-loading">
@@ -377,7 +378,6 @@ async function handleReviewReconciliation(shiftId: number) {
                 </tbody>
               </table>
 
-              <!-- Review Drawer/Modal -->
               <div v-if="reviewingShiftId" class="review-box">
                 <h4>{{ t('admin.pos.reviewTitle', { id: reviewingShiftId }) }}</h4>
                 <div class="review-fields">
@@ -430,7 +430,7 @@ async function handleReviewReconciliation(shiftId: number) {
           v-else
           type="button"
           class="btn-primary"
-          :disabled="loading || openingCash < 0"
+          :disabled="loading || openingCash < 0 || (venues.length > 1 && !venueId)"
           @click="handleOpen"
         >
           <span class="material-symbols-outlined icon-18">key</span>

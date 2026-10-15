@@ -13,15 +13,11 @@ class StoreVenueRequest extends FormRequest
         if (! $user) {
             return false;
         }
-        if ($user->isPlatformAdmin()) {
-            return true;
-        }
 
         return $user->organizationMembers()
             ->where('status', 'active')
             ->whereIn('role', [
                 OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                OrganizationMember::ROLE_VENUE_MANAGER,
             ])
             ->exists();
     }

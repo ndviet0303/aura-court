@@ -110,7 +110,7 @@ class AdvancedBookingController extends Controller
             })
             ->firstOrFail();
 
-        abort_unless($invoice->series()->withoutGlobalScope('tenant_isolation')->where('user_id', $request->user()->id)->exists() || $request->user()->isPlatformAdmin(), 404);
+        abort_unless($invoice->series()->withoutGlobalScope('tenant_isolation')->where('user_id', $request->user()->id)->exists(), 404);
 
         $invoice->load(['series.court.venue', 'series.user']);
 

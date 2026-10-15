@@ -34,10 +34,6 @@ class EloquentDisputeRepository implements DisputeRepositoryInterface
             if ($dispute->venue_id && $user->canManageVenue($dispute->venue_id)) {
                 return true;
             }
-
-            if ($dispute->venue_id === null && $user->hasRoleInOrganization($dispute->organization_id, [OrganizationMember::ROLE_VENUE_MANAGER])) {
-                return true;
-            }
         }
 
         return false;
@@ -84,7 +80,7 @@ class EloquentDisputeRepository implements DisputeRepositoryInterface
 
         $orgIds = $user->organizations()
             ->where('organization_members.status', 'active')
-            ->whereIn('organization_members.role', [OrganizationMember::ROLE_ORGANIZATION_OWNER, OrganizationMember::ROLE_VENUE_MANAGER])
+            ->whereIn('organization_members.role', [OrganizationMember::ROLE_ORGANIZATION_OWNER])
             ->pluck('organizations.id')
             ->toArray();
 

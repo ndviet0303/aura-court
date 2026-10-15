@@ -103,7 +103,7 @@ class CommunityActivityAndReputationTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenant->id,
             'user_id' => $this->manager->id,
-            'role' => OrganizationMember::ROLE_VENUE_MANAGER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 
@@ -697,8 +697,8 @@ class CommunityActivityAndReputationTest extends TestCase
         $dispRes->assertCreated();
         $disputeId = $dispRes->json('dispute.id');
 
-        // 3. Manager upholds the dispute
-        $resolveRes = $this->auth($this->manager)
+        // 3. The owner upholds the dispute (moderation is owner-only)
+        $resolveRes = $this->auth($this->owner)
             ->postJson("/api/social/reputation/disputes/{$disputeId}/resolve", [
                 'decision' => 'upheld',
                 'resolution' => 'Camera xác nhận khách có mặt đúng giờ',

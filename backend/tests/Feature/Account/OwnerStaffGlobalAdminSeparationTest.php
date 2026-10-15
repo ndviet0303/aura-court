@@ -197,9 +197,9 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
     }
 
     /**
-     * Scenario: Venue manager changes venue operations
-     * Manager of Venue A in a multi-venue organization can operate Venue A,
-     * but sibling venue Venue B operations and exports are denied.
+     * Scenario: Staff operate only their assigned venue (BR-20/BR-21)
+     * Staff of Venue A see its bookings and reports but leave venue details and pricing to the owner;
+     * sibling Venue B is denied.
      */
     public function test_venue_manager_can_operate_assigned_venue_but_is_denied_sibling_venue(): void
     {
@@ -213,22 +213,24 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $org->id,
             'user_id' => $manager->id,
-            'role' => OrganizationMember::ROLE_VENUE_MANAGER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'permissions' => ['venue_ids' => [$venueA->id]], // Only assigned to Venue A
             'status' => 'active',
         ]);
 
-        // 1. Can update assigned Venue A
+        // 1. Bookings and reports of assigned Venue A open; venue details stay with the owner
+        $this->actingAs($manager)->getJson("/api/admin/reservations?venue_id={$venueA->id}")->assertOk();
+        $this->actingAs($manager)->getJson("/api/admin/reports?venue_id={$venueA->id}")->assertOk();
         $this->actingAs($manager)
             ->patchJson("/api/admin/venues/{$venueA->id}", ['address' => 'Updated Venue A'])
-            ->assertOk();
+            ->assertStatus(403);
 
         // 2. Cannot update sibling Venue B
         $this->actingAs($manager)
             ->patchJson("/api/admin/venues/{$venueB->id}", ['address' => 'Hacked Venue B'])
             ->assertStatus(403);
 
-        // 3. Can set prices on Court A
+        // 3. Pricing is owner-only, even on Court A
         $this->actingAs($manager)
             ->postJson("/api/admin/courts/{$courtA->id}/prices", [
                 'weekday' => 2,
@@ -236,7 +238,7 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
                 'ends_at' => '15:00',
                 'price' => 120000,
             ])
-            ->assertCreated();
+            ->assertStatus(403);
 
         // 4. Cannot set prices on sibling Court B
         $this->actingAs($manager)
@@ -259,8 +261,8 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
     }
 
     /**
-     * Scenario: Scope escalation prevention
-     * Inviting an owner creates a customer-role account, NOT a global admin
+     * Scenario: Scope escalation
+     * An invitation always makes staff: never an owner, never a global admin
      */
     public function test_inviting_owner_does_not_grant_global_admin(): void
     {
@@ -274,18 +276,21 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
         ]);
 
         $newAccount = $this->createCustomerUser('new_owner@test.local');
+        $venue = $this->createVenue($org, 'Escalation Arena', 'escalation-arena');
         $invitationId = $this->actingAs($owner)->postJson("/api/organizations/{$org->id}/invitations", [
             'email' => 'new_owner@test.local',
             'role' => OrganizationMember::ROLE_ORGANIZATION_OWNER,
-        ])->assertCreated()->json('invitation.id');
+            'venue_ids' => [$venue->id],
+        ])->assertCreated()->assertJsonPath('invitation.role', OrganizationMember::ROLE_STAFF)->json('invitation.id');
         $this->actingAs($newAccount)->postJson("/api/invitations/{$invitationId}/accept")->assertOk();
         // Personal account role MUST remain customer, NOT admin
         $this->assertEquals('customer', $newAccount->role);
         $this->assertFalse($newAccount->isAdmin());
         $this->assertFalse($newAccount->isPlatformAdmin());
 
-        // But within the organization, they are organization_owner
-        $this->assertTrue($newAccount->hasRoleInOrganization($org->id, OrganizationMember::ROLE_ORGANIZATION_OWNER));
+        // Within the organization they are staff, not owner
+        $this->assertFalse($newAccount->hasRoleInOrganization($org->id, OrganizationMember::ROLE_ORGANIZATION_OWNER));
+        $this->assertTrue($newAccount->hasRoleInOrganization($org->id, OrganizationMember::ROLE_STAFF));
     }
 
     /**
@@ -331,7 +336,7 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $org->id,
             'user_id' => $cashier->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 

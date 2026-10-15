@@ -28,8 +28,8 @@ class AdminContractController extends Controller
             'venue_id' => $request->query('venue_id'),
         ];
 
-        if ($user && ! $user->isPlatformAdmin()) {
-            $authorizedVenueIds = $user->getAuthorizedVenueIds() ?? [];
+        if ($user) {
+            $authorizedVenueIds = $user->getAuthorizedVenueIds();
             if ($request->filled('venue_id')) {
                 $requestedVenueId = (int) $request->query('venue_id');
                 abort_unless(in_array($requestedVenueId, $authorizedVenueIds, true), 403, 'Unauthorized venue.');
@@ -50,7 +50,7 @@ class AdminContractController extends Controller
         $contract = $this->contracts->findById($id);
         abort_unless($contract, 404, 'Hợp đồng không tồn tại.');
         $user = $request->user();
-        if ($user && ! $user->isPlatformAdmin()) {
+        if ($user) {
             abort_unless($contract->court && $user->canManageVenue($contract->court->venue_id), 403, 'Unauthorized contract venue.');
         }
 
@@ -62,7 +62,7 @@ class AdminContractController extends Controller
         $contract = $this->contracts->findById($id);
         abort_unless($contract, 404, 'Hợp đồng không tồn tại.');
         $user = $request->user();
-        if ($user && ! $user->isPlatformAdmin()) {
+        if ($user) {
             abort_unless($contract->court && $user->canManageVenue($contract->court->venue_id), 403, 'Unauthorized contract venue.');
         }
 
@@ -85,8 +85,8 @@ class AdminContractController extends Controller
             'venue_id' => $request->query('venue_id'),
         ];
 
-        if ($user && ! $user->isPlatformAdmin()) {
-            $authorizedVenueIds = $user->getAuthorizedVenueIds() ?? [];
+        if ($user) {
+            $authorizedVenueIds = $user->getAuthorizedVenueIds();
             if ($request->filled('venue_id')) {
                 $requestedVenueId = (int) $request->query('venue_id');
                 abort_unless(in_array($requestedVenueId, $authorizedVenueIds, true), 403, 'Unauthorized venue export.');

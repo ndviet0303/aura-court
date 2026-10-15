@@ -7,7 +7,6 @@ defineProps<{
   totalCourts: number
   totalMembers: number
   ownersCount: number
-  managersCount: number
   staffCount: number
   autoApprove: boolean
   resaleFee: number
@@ -65,9 +64,7 @@ const { t } = useI18n()
           <span class="kpi-label">{{ t('admin.org.kpiTeam') }}</span>
           <div class="kpi-val-row">
             <span class="kpi-number">{{ totalMembers }}</span>
-            <span class="kpi-badge-sub">
-              {{ ownersCount }} O · {{ managersCount }} M · {{ staffCount }} S
-            </span>
+            <span class="kpi-badge-sub"> {{ ownersCount }} O · {{ staffCount }} S </span>
           </div>
         </div>
       </div>

@@ -40,7 +40,7 @@ class ReservationService
             abort(403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/auth/email/verification-notification.');
         }
 
-        return $this->transactionWithConflictHandling(function () use ($user, $organizationId, $data): Reservation {
+        return $this->transactionWithConflictHandling(function () use ($user, $organizationId, $data, $actor): Reservation {
             $quote = $this->findQuote($user->id, $organizationId, $data);
             if (! $quote) {
                 $quote = $this->quotes->create(
@@ -68,6 +68,8 @@ class ReservationService
                 ->first();
             abort_unless($lockedCourt && $lockedCourt->is_active, 409, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
             $lockedVenue = Venue::query()->whereKey($lockedCourt->venue_id)->lockForUpdate()->firstOrFail();
+            // BR-20/21: staff book for a customer only at a venue assigned to them.
+            abort_if($actor !== null && ! $actor->canOperateVenue($lockedVenue), 403, 'Bạn không được giao cơ sở này.');
             $couponUsage = $this->quoteCoupons->reserve($quote, $user, $lockedCourt);
             $directOwnerPayments = app(FeatureFlagService::class)
                 ->enabled('direct_owner_payments', (int) $lockedVenue->organization_id);

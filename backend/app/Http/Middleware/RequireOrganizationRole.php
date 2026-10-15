@@ -7,6 +7,10 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * BR-23: organization operations need a role in the request's organization; platform admin rights do not grant them.
+ * A platform function shared with owners (dispute arbitration) lists the `platform_admin` pseudo-role explicitly.
+ */
 class RequireOrganizationRole
 {
     public function __construct(private readonly TenantContext $tenantContext) {}
@@ -17,8 +21,7 @@ class RequireOrganizationRole
         if (! $user) {
             abort(401, 'Unauthenticated.');
         }
-
-        if ($user->isPlatformAdmin()) {
+        if (in_array('platform_admin', $roles, true) && $user->isPlatformAdmin()) {
             return $next($request);
         }
 
@@ -30,6 +33,8 @@ class RequireOrganizationRole
         if (! $user->hasRoleInOrganization($organization->id, $roles)) {
             abort(403, 'Insufficient organization role permissions.');
         }
+
+        $request->attributes->set('verified_organization_id', $organization->id);
 
         return $next($request);
     }

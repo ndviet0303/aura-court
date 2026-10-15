@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
 import SelectDropdown, { type DropdownOption } from '@/shared/components/forms/SelectDropdown.vue'
-import type { StaffMember, VenueOption } from '../../composables/useAdminStaff'
+import type { VenueOption } from '../../composables/useAdminStaff'
 
 const props = withDefaults(
   defineProps<{
@@ -19,16 +19,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (
-    e: 'invite',
-    member: {
-      name: string
-      email: string
-      phone: string
-      role: StaffMember['role']
-      venueIds: number[]
-    },
-  ): void
+  (e: 'invite', member: { email: string; venueIds: number[] }): void
 }>()
 
 const { t } = useI18n()
@@ -36,45 +27,26 @@ const { t } = useI18n()
 const name = ref('')
 const email = ref('')
 const phone = ref('')
-const role = ref<StaffMember['role']>('Receptionist')
 // The inviter picks the venue scope explicitly; nothing is preselected.
 const venueId = ref<number | string>('')
 
-const roleOptions = computed<DropdownOption[]>(() => [
-  { value: 'Manager', label: t('admin.staff.roleManager'), icon: 'manage_accounts' },
-  { value: 'Receptionist', label: t('admin.staff.roleReceptionist'), icon: 'point_of_sale' },
-  { value: 'Technician', label: t('admin.staff.roleTechnician'), icon: 'build' },
-  { value: 'Referee', label: t('admin.staff.roleReferee'), icon: 'sports' },
-  { value: 'Staff', label: t('admin.staff.roleStaff'), icon: 'badge' },
+const venueOptions = computed<DropdownOption[]>(() => [
+  { value: 'all', label: t('admin.staff.allVenuesOption'), icon: 'domain' },
+  ...props.venues.map((v) => ({ value: v.id, label: v.name, icon: 'location_on' })),
 ])
 
-const venueOptions = computed<DropdownOption[]>(() => {
-  const list: DropdownOption[] = [
-    { value: 'all', label: t('admin.staff.allVenuesOption'), icon: 'domain' },
-  ]
-  props.venues.forEach((v) => {
-    list.push({ value: v.id, label: v.name, icon: 'location_on' })
-  })
-  return list
-})
-
-const venueMissing = computed(() => props.venues.length > 0 && venueId.value === '')
+// Staff reach only the venues they are given, so "all" is sent as the explicit list.
+const venueIds = computed(() =>
+  venueId.value === 'all'
+    ? props.venues.map((v) => v.id)
+    : venueId.value === ''
+      ? []
+      : [Number(venueId.value)],
+)
 
 function handleSend() {
-  if (!name.value.trim() || !email.value.trim() || venueMissing.value) return
-  emit('invite', {
-    name: name.value.trim(),
-    email: email.value.trim(),
-    phone: phone.value.trim(),
-    role: role.value,
-    // Staff reach only the venues they are given, so "all" is sent as the explicit list.
-    venueIds:
-      venueId.value === 'all'
-        ? props.venues.map((v) => v.id)
-        : venueId.value === ''
-          ? []
-          : [Number(venueId.value)],
-  })
+  if (!name.value.trim() || !email.value.trim() || venueIds.value.length === 0) return
+  emit('invite', { email: email.value.trim(), venueIds: venueIds.value })
 }
 
 watch(
@@ -84,7 +56,6 @@ watch(
       name.value = ''
       email.value = ''
       phone.value = ''
-      role.value = 'Receptionist'
       venueId.value = ''
     }
   },
@@ -142,16 +113,6 @@ watch(
         </div>
 
         <div class="form-group">
-          <label class="form-label">{{ t('admin.staff.assignedRoleLabel') }}</label>
-          <SelectDropdown
-            v-model="role"
-            :options="roleOptions"
-            variant="bordered"
-            data-testid="invite-role-select"
-          />
-        </div>
-
-        <div v-if="venues && venues.length > 0" class="form-group">
           <label class="form-label"
             >{{ t('admin.staff.assignedVenueLabel') }} <span class="required">*</span></label
           >
@@ -173,7 +134,7 @@ watch(
           variant="primary"
           class="btn-send-invite"
           data-testid="send-invite-btn"
-          :disabled="!name.trim() || !email.trim() || venueMissing || saving"
+          :disabled="!name.trim() || !email.trim() || venueIds.length === 0 || saving"
           @click="handleSend"
         >
           <span class="material-symbols-outlined icon-18" :class="{ 'spin-icon': saving }">

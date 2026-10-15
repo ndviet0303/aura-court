@@ -172,7 +172,7 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
       expect(router.currentRoute.value.path).toBe('/')
     })
 
-    it('permits authorized admin role to navigate to /admin/venues', async () => {
+    it('keeps a platform admin without a membership out of organization routes (BR-23)', async () => {
       const auth = useAuthStore()
       auth.user = {
         id: 2,
@@ -180,44 +180,30 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
         email: 'admin@aura.com',
         role: 'admin',
         onboarded: true,
+      }
+      auth.loaded = true
+
+      for (const path of ['/admin/venues', '/admin/manage', '/admin/schedule']) {
+        await router.push(path)
+        expect(router.currentRoute.value.path).toBe('/admin')
+      }
+    })
+
+    it('permits a platform admin who also owns an organization to navigate to /admin/venues', async () => {
+      const auth = useAuthStore()
+      auth.user = {
+        id: 2,
+        name: 'Platform Admin',
+        email: 'admin@aura.com',
+        role: 'admin',
+        onboarded: true,
+        organizations: [{ organization_id: 1, role: 'organization_owner', status: 'active' }],
       }
       auth.loaded = true
 
       await router.push('/admin/venues')
 
       expect(router.currentRoute.value.path).toBe('/admin/venues')
-    })
-
-    it('permits authorized admin role to navigate to /admin/manage', async () => {
-      const auth = useAuthStore()
-      auth.user = {
-        id: 2,
-        name: 'Platform Admin',
-        email: 'admin@aura.com',
-        role: 'admin',
-        onboarded: true,
-      }
-      auth.loaded = true
-
-      await router.push('/admin/manage')
-
-      expect(router.currentRoute.value.path).toBe('/admin/manage')
-    })
-
-    it('permits authorized admin role to navigate to /admin/schedule', async () => {
-      const auth = useAuthStore()
-      auth.user = {
-        id: 2,
-        name: 'Platform Admin',
-        email: 'admin@aura.com',
-        role: 'admin',
-        onboarded: true,
-      }
-      auth.loaded = true
-
-      await router.push('/admin/schedule')
-
-      expect(router.currentRoute.value.path).toBe('/admin/schedule')
     })
   })
 

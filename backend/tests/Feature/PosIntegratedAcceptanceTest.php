@@ -48,7 +48,7 @@ class PosIntegratedAcceptanceTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenant->id,
             'user_id' => $this->cashier1->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 
@@ -56,7 +56,7 @@ class PosIntegratedAcceptanceTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenant->id,
             'user_id' => $this->cashier2->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 
@@ -86,6 +86,7 @@ class PosIntegratedAcceptanceTest extends TestCase
             'is_active' => true,
             'metadata' => ['tax_rate' => 8],
         ]);
+        $this->assignStaffVenues($this->tenant);
     }
 
     public function test_pos_errors_do_not_commit_partial_inventory_or_financial_effects(): void

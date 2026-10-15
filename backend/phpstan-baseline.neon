@@ -55,12 +55,6 @@ parameters:
 			path: app/Domain/Booking/Actions/ExpirePendingBookings.php
 
 		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:notify\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Domain/Booking/Actions/ExpirePendingBookings.php
-
-		-
 			message: '#^Parameter \#1 \$callback of static method Illuminate\\Database\\Connection\:\:transaction\(\) contains unresolvable type\.$#'
 			identifier: argument.unresolvableType
 			count: 1
@@ -539,12 +533,6 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: app/Http/Controllers/Loyalty/LoyaltyController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/Organization/OrganizationController.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\CashShift\:\:\$cash_sales\.$#'
@@ -2385,14 +2373,8 @@ parameters:
 		-
 			message: '#^Using nullsafe property access "\?\-\>venue_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
-			count: 2
-			path: app/Services/POS/PosService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$court_id\.$#'
-			identifier: property.notFound
 			count: 1
-			path: app/Services/POS/ServiceTabService.php
+			path: app/Services/POS/PosService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$line_total\.$#'
@@ -2416,12 +2398,6 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unit_price\.$#'
 			identifier: property.notFound
 			count: 4
-			path: app/Services/POS/ServiceTabService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user\.$#'
-			identifier: property.notFound
-			count: 1
 			path: app/Services/POS/ServiceTabService.php
 
 		-

@@ -65,23 +65,23 @@ class UserSeeder extends Seeder
             $this->member($org, $admin, OrganizationMember::ROLE_ORGANIZATION_OWNER, ['*']);
         }
 
-        // 2. Flagship club staff, from owner down to a cashier limited to the Cầu Giấy venue.
+        // 2. Flagship club owner and staff; staff share one permission set and differ only by venue.
         $owner = $this->user('owner@demo.auracourt.vn', ['name' => 'Trần Quốc Bảo', 'phone' => '0902222333', 'play_level' => 'advanced'], 75);
         $this->member($org, $owner, OrganizationMember::ROLE_ORGANIZATION_OWNER, ['*']);
 
         $manager = $this->user('manager@demo.auracourt.vn', ['name' => 'Nguyễn Hữu Thắng', 'phone' => '0906111222', 'play_level' => 'advanced'], 52);
         // Staff reach only the venues they are assigned, so "every venue" is spelled out.
         $orgVenueIds = Venue::where('organization_id', $org->id)->orderBy('id')->pluck('id')->all();
-        $this->member($org, $manager, OrganizationMember::ROLE_VENUE_MANAGER, ['venue_id' => $orgVenueIds[0] ?? null, 'venue_ids' => $orgVenueIds]);
+        $this->member($org, $manager, OrganizationMember::ROLE_STAFF, ['venue_id' => $orgVenueIds[0] ?? null, 'venue_ids' => $orgVenueIds]);
 
         $venueManager = $this->user('manager.caugiay@demo.auracourt.vn', ['name' => 'Đỗ Minh Khoa', 'phone' => '0906333444', 'play_level' => 'intermediate'], 49);
-        $this->member($org, $venueManager, OrganizationMember::ROLE_VENUE_MANAGER, $caugiayScope);
+        $this->member($org, $venueManager, OrganizationMember::ROLE_STAFF, $caugiayScope);
 
         $staff = $this->user('staff@demo.auracourt.vn', ['name' => 'Vũ Đức Thịnh', 'phone' => '0906555666', 'play_level' => 'intermediate'], 46);
         $this->member($org, $staff, OrganizationMember::ROLE_STAFF, $caugiayScope);
 
         $cashier = $this->user('cashier@demo.auracourt.vn', ['name' => 'Ngô Thị Lan', 'phone' => '0903333444', 'play_level' => 'beginner'], 43);
-        $this->member($org, $cashier, OrganizationMember::ROLE_CASHIER, $caugiayScope);
+        $this->member($org, $cashier, OrganizationMember::ROLE_STAFF, $caugiayScope);
 
         // 3. Owner of the second tenant, used to show tenant isolation.
         $partnerOwner = $this->user('owner.hoanggia@demo.auracourt.vn', ['name' => 'Lâm Gia Huy', 'phone' => '0909777888', 'play_level' => 'advanced'], 50);

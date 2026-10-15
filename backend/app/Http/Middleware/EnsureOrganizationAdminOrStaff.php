@@ -16,17 +16,11 @@ class EnsureOrganizationAdminOrStaff
             abort(401, 'Unauthenticated.');
         }
 
-        if ($user->isPlatformAdmin()) {
-            return $next($request);
-        }
-
         $hasActiveRole = $user->organizationMembers()
             ->where('status', 'active')
             ->whereIn('role', [
                 OrganizationMember::ROLE_ORGANIZATION_OWNER,
-                OrganizationMember::ROLE_VENUE_MANAGER,
                 OrganizationMember::ROLE_STAFF,
-                OrganizationMember::ROLE_CASHIER,
             ])
             ->exists();
 

@@ -61,7 +61,7 @@ class AdminKycPlatformAdminOnlyTest extends TestCase
 
     public function test_organization_owner_and_venue_manager_are_forbidden(): void
     {
-        foreach ([OrganizationMember::ROLE_ORGANIZATION_OWNER, OrganizationMember::ROLE_VENUE_MANAGER] as $role) {
+        foreach ([OrganizationMember::ROLE_ORGANIZATION_OWNER, OrganizationMember::ROLE_STAFF] as $role) {
             $member = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
             OrganizationMember::create([
                 'organization_id' => $this->organization->id,

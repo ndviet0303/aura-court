@@ -39,7 +39,7 @@ describe('Task 8.6: Community Feed, Connections, and Moderation Interfaces', () 
       id: 1,
       name: 'Alice Tester',
       email: 'alice@test.vn',
-      role: 'venue_manager',
+      role: 'staff',
     } as any
   })
 

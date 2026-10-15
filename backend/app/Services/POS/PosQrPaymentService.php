@@ -30,16 +30,27 @@ class PosQrPaymentService
     ) {}
 
     /** The order's own venue, else the cashier's only venue in the organization; null when ambiguous. */
+    /** The given venue, else the caller's only operable venue (BR-20: a staff member never falls back to the whole organization). */
     public function venueIdFor(User $cashier, int $organizationId, ?int $venueId): ?int
     {
         if ($venueId) {
             return $venueId;
         }
-        $member = OrganizationMember::query()->where('organization_id', $organizationId)
-            ->where('user_id', $cashier->id)->where('status', 'active')->first();
-        $venueIds = $member?->venue_ids ?: Venue::query()->where('organization_id', $organizationId)->pluck('id')->all();
+        $venueIds = $cashier->getAuthorizedVenueIds($organizationId);
 
-        return count($venueIds) === 1 ? (int) $venueIds[0] : null;
+        return count($venueIds) === 1 ? $venueIds[0] : null;
+    }
+
+    /** BR-20/21: a sale or shift belongs to a venue the caller operates; only the owner may work without one. */
+    public function assertOperableVenue(User $cashier, int $organizationId, ?int $venueId): void
+    {
+        if ($venueId === null) {
+            abort_unless($cashier->hasRoleInOrganization($organizationId, [OrganizationMember::ROLE_ORGANIZATION_OWNER]), 422, 'Vui lòng chọn cơ sở bạn được giao.');
+
+            return;
+        }
+        $venue = Venue::query()->where('organization_id', $organizationId)->find($venueId);
+        abort_unless($venue && $cashier->canOperateVenue($venue), 403, 'Bạn không được giao cơ sở này.');
     }
 
     public function connectionFor(int $organizationId, ?int $venueId): ?ReceivingConnection

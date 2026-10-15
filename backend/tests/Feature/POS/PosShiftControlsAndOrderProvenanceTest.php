@@ -63,7 +63,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenant->id,
             'user_id' => $this->cashier->id,
-            'role' => OrganizationMember::ROLE_CASHIER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 
@@ -71,7 +71,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         OrganizationMember::create([
             'organization_id' => $this->tenant->id,
             'user_id' => $this->manager->id,
-            'role' => OrganizationMember::ROLE_VENUE_MANAGER,
+            'role' => OrganizationMember::ROLE_STAFF,
             'status' => 'active',
         ]);
 
@@ -127,6 +127,7 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
             'features.pilot_organizations' => [(string) $this->tenant->id],
         ]);
         [$this->connection, $this->secret] = $this->connectOwnerReceiver($this->venue);
+        $this->assignStaffVenues($this->tenant, $this->venue);
     }
 
     public function test_qr_payment_enforces_amount_and_provenance_verification(): void
@@ -306,8 +307,8 @@ class PosShiftControlsAndOrderProvenanceTest extends TestCase
         $orderId = $orderRes->json('order.id');
         $this->assertSame(18, $this->drinkProduct->fresh()->stock_quantity);
 
-        // 3. Customer returns 1 drink for cash refund (15,000 VND)
-        $refundRes = $this->actingAs($this->cashier)->postJson("/api/pos/orders/{$orderId}/refund", [
+        // 3. Customer returns 1 drink for cash refund (15,000 VND); refunds are owner-only (BR-21).
+        $refundRes = $this->actingAs($this->ownerOf($this->tenant))->postJson("/api/pos/orders/{$orderId}/refund", [
             'items' => [
                 ['product_id' => $this->drinkProduct->id, 'quantity' => 1, 'restock' => true],
             ],

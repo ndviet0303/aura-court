@@ -26,10 +26,8 @@ const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 
-// Mode management: login vs register
 const mode = ref<'login' | 'register'>('login')
 
-// Form states
 const loginEmail = ref('')
 const loginPassword = ref('')
 const rememberMe = ref(true)
@@ -41,6 +39,8 @@ const regPasswordConfirmation = ref('')
 
 // Feedback & Loading
 const error = ref('')
+// Set by flows that end the session server-side, e.g. a password change (BR-10).
+const notice = ref<string>(typeof history.state?.notice === 'string' ? history.state.notice : '')
 const loading = ref(false)
 const socialLoading = ref<string | null>(null)
 
@@ -167,20 +167,15 @@ async function handleSocialLogin(provider: 'google' | 'facebook') {
 
 <template>
   <div class="auth-page-wrapper">
-    <!-- Ambient aura background effect -->
     <div class="aura-glow-bg" aria-hidden="true"></div>
 
     <div class="container auth-container">
       <div class="auth-split-card">
-        <!-- Left Side: Brand Showcase Panel -->
         <AuthBrandPanel />
 
-        <!-- Right Side: Interactive Auth Form -->
         <div class="form-panel">
-          <!-- Segmented Tab Switcher -->
           <AuthTabs :mode="mode" @update:mode="setMode" />
 
-          <!-- Form Header -->
           <div class="form-header">
             <h1 class="form-title">
               {{ mode === 'login' ? t('auth.loginTitle') : t('auth.registerTitle') }}
@@ -190,7 +185,6 @@ async function handleSocialLogin(provider: 'google' | 'facebook') {
             </p>
           </div>
 
-          <!-- Error Alert Banner -->
           <Transition name="fade-slide">
             <div v-if="error" class="error-banner" role="alert">
               <span class="material-symbols-outlined error-icon">error</span>
@@ -205,8 +199,10 @@ async function handleSocialLogin(provider: 'google' | 'facebook') {
               </button>
             </div>
           </Transition>
-
-          <!-- Login Form -->
+          <div v-if="notice && !error" class="error-banner notice-banner" role="status">
+            <span class="material-symbols-outlined error-icon">check_circle</span>
+            <span class="error-text">{{ notice }}</span>
+          </div>
           <LoginForm
             v-if="mode === 'login'"
             :email="loginEmail"
@@ -219,7 +215,6 @@ async function handleSocialLogin(provider: 'google' | 'facebook') {
             @submit="handleLogin"
           />
 
-          <!-- Register Form -->
           <RegisterForm
             v-else
             :name="regName"
@@ -234,7 +229,6 @@ async function handleSocialLogin(provider: 'google' | 'facebook') {
             @submit="handleRegister"
           />
 
-          <!-- Social Login Buttons -->
           <SocialLoginButtons
             :loading="loading"
             :social-loading="socialLoading"
@@ -242,7 +236,6 @@ async function handleSocialLogin(provider: 'google' | 'facebook') {
             @facebook="handleSocialLogin('facebook')"
           />
 
-          <!-- Toggle Bottom Link -->
           <div class="auth-switch-footer">
             <p class="switch-text">
               <span>{{
@@ -371,6 +364,13 @@ html.dark .auth-split-card {
   margin-bottom: 16px;
   font-size: 13px;
   animation: shake 0.4s ease;
+}
+
+.error-banner.notice-banner {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+  animation: none;
 }
 
 html.dark .error-banner {
