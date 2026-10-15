@@ -286,14 +286,22 @@ html.dark .slot.selected small {
 }
 
 .slot-preview {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
   gap: 8px;
-  flex-wrap: wrap;
   margin: 18px 0 30px;
 }
 
-.slot-preview .slot {
-  min-width: 86px;
+.slot-preview .skeleton-group {
+  grid-column: 1 / -1;
+}
+
+/* Past/booked slots recede instead of shouting with a strike-through. */
+.slot-preview .slot.unavailable {
+  opacity: 0.4;
+  text-decoration: none;
+  background: transparent;
+  border-style: dashed;
 }
 
 .slot-preview small {

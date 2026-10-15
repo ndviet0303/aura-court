@@ -188,8 +188,7 @@ export default {
     filterSearchBtn: 'Find Available Slots',
     availability: {
       eyebrow: 'Live Availability',
-      title: 'Availability — {court} — {date}',
-      dynamicTitle: 'Availability — {court} — {date}',
+      summary: '{date} · {count} slots open',
       fallbackTitle: 'Live Availability',
       nearbyCourts: 'Select Court',
       areaTabs: 'Areas',

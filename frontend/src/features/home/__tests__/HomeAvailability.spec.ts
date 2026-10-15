@@ -160,7 +160,7 @@ describe('HomeAvailability (Phase 8: Tasks 8.1, 8.2, 8.3)', () => {
     const heading = wrapper.find('.availability-title')
     expect(heading.exists()).toBe(true)
     expect(heading.text()).toContain('Court A')
-    expect(heading.text()).toContain('2026-09-22')
+    expect(wrapper.find('.availability-meta').text()).toContain('22/09/2026')
     expect(heading.text()).not.toContain('hôm nay')
     expect(heading.text()).not.toContain('Today')
 
@@ -257,7 +257,7 @@ describe('HomeAvailability (Phase 8: Tasks 8.1, 8.2, 8.3)', () => {
     // Heading identifies 2026-09-25 and Court A
     const heading = wrapper.find('.availability-title')
     expect(heading.text()).toContain('Court A')
-    expect(heading.text()).toContain('2026-09-25')
+    expect(wrapper.find('.availability-meta').text()).toContain('25/09/2026')
     expect(heading.text()).not.toContain('hôm nay')
     expect(heading.text()).not.toContain('today')
 

@@ -229,13 +229,19 @@ const visibleSlots = computed(() =>
 const selectedCourtName = computed(
   () => selectedCourtObj.value?.name || (selected.value ? `Sân ${selected.value}` : ''),
 )
-const availabilityHeading = computed(() => {
-  if (!selectedCourtName.value) {
-    return t('home.availability.fallbackTitle')
-  }
-  return t('home.availability.title', {
-    court: selectedCourtName.value,
-    date: date.value,
+const availabilitySummary = computed(() => {
+  if (!date.value) return ''
+  // date.value is a venue-local YYYY-MM-DD; format it as a UTC midnight so no shift happens.
+  const label = new Intl.DateTimeFormat(locale.value === 'en' ? 'en-US' : 'vi-VN', {
+    weekday: 'long',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${date.value}T00:00:00Z`))
+  return t('home.availability.summary', {
+    date: label.charAt(0).toUpperCase() + label.slice(1),
+    count: visibleSlots.value.filter((slot: AvailabilitySlot) => slot.available).length,
   })
 })
 
@@ -395,7 +401,12 @@ onMounted(async () => {
     <div class="section-head">
       <div>
         <div class="eyebrow">{{ t('home.availability.eyebrow') }}</div>
-        <h2 class="availability-title">{{ availabilityHeading }}</h2>
+        <h2 class="availability-title">
+          {{ selectedCourtName || t('home.availability.fallbackTitle') }}
+        </h2>
+        <p v-if="selectedCourtName && !store.slotsLoading" class="availability-meta">
+          {{ availabilitySummary }}
+        </p>
       </div>
       <RouterLink to="/courts" class="muted">
         {{ t('home.availability.viewAllCourts') }}
@@ -715,11 +726,20 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
+.availability-meta {
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
 .availability-search-box {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
+  height: 34px;
+  box-sizing: border-box;
+  padding: 0 12px;
   border-radius: 999px;
   background: var(--surface-subtle);
   border: 1px solid var(--outline);
@@ -757,6 +777,32 @@ onMounted(async () => {
 .availability-date-wrapper {
   display: flex;
   align-items: center;
+}
+
+/* The shared picker is an underlined form field; here it sits beside pills. */
+.availability-date-wrapper :deep(.date-picker) {
+  min-width: 0;
+}
+
+.availability-date-wrapper :deep(.date-picker-trigger) {
+  height: 34px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  gap: 8px;
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  background: var(--surface-subtle);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.availability-date-wrapper :deep(.date-picker-trigger .material-symbols-outlined) {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.availability-date-wrapper :deep(.date-picker-trigger:hover) {
+  border-color: var(--accent);
 }
 
 .no-filtered-courts {
@@ -834,10 +880,12 @@ onMounted(async () => {
 
 .court-carousel-row {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 8px;
   width: 100%;
   position: relative;
+  padding-top: 12px;
+  border-top: 1px solid var(--outline);
 }
 
 .carousel-nav-btn {
@@ -845,7 +893,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   width: 32px;
-  height: 36px;
+  margin: 4px 0;
   border-radius: 10px;
   border: 1px solid var(--outline);
   background: var(--surface-subtle);
