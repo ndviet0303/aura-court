@@ -134,7 +134,7 @@ const isOwner = computed(() => accountType.value === 'court_owner')
 
 async function handleComplete() {
   if (isOwner.value && !organizationName.value.trim()) {
-    error.value = 'Vui lòng nhập tên cụm sân / CLB của bạn.'
+    error.value = 'Vui lòng nhập tên cơ sở / CLB của bạn.'
     return
   }
   if (isOwner.value && !phone.value.trim()) {
@@ -247,7 +247,7 @@ async function handleComplete() {
                 >check_circle</span
               >
             </div>
-            <h3 class="role-title">Chủ sân / Quản lý cụm sân</h3>
+            <h3 class="role-title">Chủ sân / Quản lý cơ sở</h3>
             <p class="role-desc">
               Tự động hóa lịch đặt sân, cấu hình biểu giá động, POS thu ngân và báo cáo doanh thu.
             </p>
@@ -302,13 +302,13 @@ async function handleComplete() {
           <template v-if="accountType === 'court_owner'">
             <div class="form-section-title">
               <span class="material-symbols-outlined">storefront</span>
-              <span>Thông tin cơ sở cụm sân</span>
+              <span>Thông tin cơ sở</span>
             </div>
 
             <!-- Club Name -->
             <div class="input-group">
               <label for="o-name" class="input-label"
-                >Tên cụm sân / CLB thể thao <span class="required">*</span></label
+                >Tên cơ sở / CLB thể thao <span class="required">*</span></label
               >
               <div class="input-wrapper">
                 <span class="material-symbols-outlined input-icon">domain</span>
@@ -361,7 +361,7 @@ async function handleComplete() {
 
             <!-- Address -->
             <div class="input-group">
-              <label for="o-address" class="input-label">Địa chỉ cơ sở cụm sân</label>
+              <label for="o-address" class="input-label">Địa chỉ cơ sở</label>
               <div class="input-wrapper">
                 <span class="material-symbols-outlined input-icon">location_on</span>
                 <input

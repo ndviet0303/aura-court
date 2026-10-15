@@ -239,7 +239,7 @@ const partnerRoute = computed(() =>
       class="nav-pill-link"
       :class="{ active: (route?.path || '').startsWith('/partner') }"
     >
-      {{ isUnderReview ? 'Hồ sơ đối tác' : 'Thiết lập cụm sân' }}
+      {{ isUnderReview ? 'Hồ sơ đối tác' : 'Thiết lập cơ sở' }}
     </RouterLink>
   </nav>
 </template>

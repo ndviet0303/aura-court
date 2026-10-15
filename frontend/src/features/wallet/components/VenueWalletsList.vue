@@ -98,7 +98,7 @@ function formatMoney(amount: number): string {
           <div class="add-icon-circle">
             <span class="material-symbols-outlined">add</span>
           </div>
-          <strong class="add-title">Liên Kết Cụm Sân Mới</strong>
+          <strong class="add-title">Liên Kết Cơ Sở Mới</strong>
           <p class="add-desc">
             Kích hoạt ví trả trước hoặc nhập mã thẻ hội viên tại cơ sở khác thuộc chuỗi Aura.
           </p>

@@ -44,12 +44,12 @@ const todayMin = computed(() => {
         <span class="material-symbols-outlined head-icon">location_on</span>
         <h3 class="section-title">Địa Điểm & Thời Gian Trận Đấu</h3>
       </div>
-      <span class="section-desc">Chọn cụm sân Aura và khung giờ diễn ra trận đấu</span>
+      <span class="section-desc">Chọn cơ sở Aura và khung giờ diễn ra trận đấu</span>
     </div>
 
     <!-- Quick Venues Selection -->
     <div class="quick-venues-box">
-      <span class="quick-label">Cụm sân gợi ý:</span>
+      <span class="quick-label">Cơ sở gợi ý:</span>
       <div class="quick-pills-row">
         <button
           v-for="v in quickVenues"
@@ -77,7 +77,7 @@ const todayMin = computed(() => {
           :value="selectedVenueName"
           type="text"
           class="styled-input"
-          placeholder="Nhập tên cụm sân..."
+          placeholder="Nhập tên cơ sở..."
           @input="emit('update:selectedVenueName', ($event.target as HTMLInputElement).value)"
         />
       </div>

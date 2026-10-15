@@ -130,7 +130,7 @@ describe('Navbar', () => {
       }
       vi.spyOn(useBookingStore(), 'fetchWalletBalance').mockResolvedValue(undefined as never)
       const href = underReview ? '/partner/application-status' : '/partner-registration'
-      const label = underReview ? 'Hồ sơ đối tác' : 'Thiết lập cụm sân'
+      const label = underReview ? 'Hồ sơ đối tác' : 'Thiết lập cơ sở'
       const badge = underReview ? 'CHỜ DUYỆT' : 'ĐỐI TÁC'
 
       const wrapper = createWrapper()

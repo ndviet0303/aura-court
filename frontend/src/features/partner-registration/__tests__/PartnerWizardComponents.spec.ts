@@ -144,7 +144,7 @@ describe('BusinessInfoStep', () => {
     const sections = wrapper.findAll('.form-section-card')
     expect(sections.length).toBe(5)
     expect(wrapper.text()).toContain('1. Thông tin Cơ sở & Quy mô Sân')
-    expect(wrapper.text()).toContain('2. Địa chỉ & Vị trí Cụm sân')
+    expect(wrapper.text()).toContain('2. Địa chỉ & Vị trí Cơ sở')
     expect(wrapper.text()).toContain('3. Người đại diện & Pháp lý')
     expect(wrapper.text()).toContain('4. Tài khoản Ngân hàng nhận tiền (VietQR)')
     expect(wrapper.text()).toContain('5. Người liên hệ vận hành')

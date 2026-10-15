@@ -85,7 +85,7 @@ function formatMoney(amount: number): string {
         </div>
 
         <div class="form-group">
-          <label class="form-label">Sân và Cụm Sân:</label>
+          <label class="form-label">Sân và Cơ Sở:</label>
           <SelectDropdown
             :model-value="selectedCourtId"
             :options="courtOptions"

@@ -80,9 +80,9 @@ const hasActiveFilters = computed(() => {
         <SelectDropdown
           :model-value="venue"
           :options="venueOptions"
-          placeholder="Tất cả cụm sân"
+          placeholder="Tất cả cơ sở"
           variant="bordered"
-          aria-label="Cụm sân"
+          aria-label="Cơ sở"
           @update:model-value="emit('update:venue', String($event))"
         />
       </div>

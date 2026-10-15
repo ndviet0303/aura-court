@@ -164,7 +164,7 @@ async function handleNext() {
     <div class="step-head">
       <h3 class="step-title">Bước 1: Thông tin Cơ sở & Người đại diện</h3>
       <p class="step-sub">
-        Vui lòng hoàn tất 5 mục bên dưới để đội ngũ Aura xác minh và mở cổng vận hành cụm sân.
+        Vui lòng hoàn tất 5 mục bên dưới để đội ngũ Aura xác minh và mở cổng vận hành cơ sở.
       </p>
     </div>
 
@@ -213,7 +213,7 @@ async function handleNext() {
       <div class="form-grid">
         <div class="form-field-item form-grid-full">
           <label for="business_name" class="field-label"
-            >Tên cơ sở / thương hiệu cụm sân <span class="req-star">*</span></label
+            >Tên cơ sở / thương hiệu <span class="req-star">*</span></label
           >
           <input
             id="business_name"

@@ -13,7 +13,7 @@ const postalCode = defineModel<string>('postalCode', { required: true })
     <div class="form-section-header">
       <div class="section-icon-box"><span class="material-symbols-outlined">location_on</span></div>
       <div class="section-title-wrap">
-        <h4 class="section-title">2. Địa chỉ & Vị trí Cụm sân</h4>
+        <h4 class="section-title">2. Địa chỉ & Vị trí Cơ sở</h4>
         <p class="section-subtitle">
           Vị trí thực tế để khách hàng tìm đường và định vị trên bản đồ
         </p>
