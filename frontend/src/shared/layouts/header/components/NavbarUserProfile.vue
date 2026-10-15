@@ -264,7 +264,7 @@ onBeforeUnmount(() => {
           >
             <span class="material-symbols-outlined item-ico">storefront</span>
             <span class="item-label">{{
-              isUnderReview ? 'Hồ sơ đối tác' : 'Thiết lập cụm sân'
+              isUnderReview ? 'Hồ sơ đối tác' : 'Thiết lập cơ sở'
             }}</span>
           </RouterLink>
         </div>

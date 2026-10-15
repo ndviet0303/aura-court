@@ -153,8 +153,8 @@ onUnmounted(() => {
                 <h4>Các thuật ngữ chính:</h4>
                 <ul>
                   <li>
-                    <strong>"Aura Court" / "Chúng tôi":</strong> Đơn vị vận hành cụm sân cầu lông
-                    tiêu chuẩn quốc tế và nền tảng công nghệ đặt lịch trực tuyến.
+                    <strong>"Aura Court" / "Chúng tôi":</strong> Đơn vị vận hành cơ sở cầu lông tiêu
+                    chuẩn quốc tế và nền tảng công nghệ đặt lịch trực tuyến.
                   </li>
                   <li>
                     <strong>"Hội viên" / "Khách hàng" / "Bạn":</strong> Cá nhân, câu lạc bộ hoặc tổ
@@ -224,7 +224,7 @@ onUnmounted(() => {
                   <div>
                     <h5>Chọn sân &amp; khung giờ</h5>
                     <p>
-                      Khách hàng lựa chọn cụm sân, loại sân (Sân Tiêu chuẩn hoặc VIP Arena) và khung
+                      Khách hàng lựa chọn cơ sở, loại sân (Sân Tiêu chuẩn hoặc VIP Arena) và khung
                       giờ thi đấu trống trên bảng lịch điện tử.
                     </p>
                   </div>
@@ -411,7 +411,7 @@ onUnmounted(() => {
                 <div class="c-item">
                   <span class="material-symbols-outlined">location_on</span>
                   <div>
-                    <strong>Trụ sở cụm sân:</strong>
+                    <strong>Trụ sở:</strong>
                     <span>Tổ hợp Thể thao Aura Court, Hà Nội, Việt Nam</span>
                   </div>
                 </div>

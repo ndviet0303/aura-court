@@ -229,7 +229,7 @@ const partnerRoute = computed(() =>
       >
         <div class="nav-row-main">
           <span class="material-symbols-outlined row-icon">storefront</span>
-          <span class="row-label">{{ isUnderReview ? 'Hồ sơ đối tác' : 'Thiết lập cụm sân' }}</span>
+          <span class="row-label">{{ isUnderReview ? 'Hồ sơ đối tác' : 'Thiết lập cơ sở' }}</span>
         </div>
         <span class="drawer-admin-tag">{{ isUnderReview ? 'CHỜ DUYỆT' : 'ĐỐI TÁC' }}</span>
       </RouterLink>

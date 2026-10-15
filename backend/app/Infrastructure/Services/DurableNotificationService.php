@@ -165,9 +165,9 @@ class DurableNotificationService implements DurableNotificationServiceInterface
         $venue = $revision->venue;
 
         $title = match ($decision) {
-            'approved' => "Cụm sân {$venue?->name} đã được phê duyệt xuất bản",
-            'revision_required' => "Cụm sân {$venue?->name} cần chỉnh sửa trước khi xuất bản",
-            default => "Kết quả xét duyệt xuất bản cụm sân {$venue?->name}",
+            'approved' => "Cơ sở {$venue?->name} đã được phê duyệt xuất bản",
+            'revision_required' => "Cơ sở {$venue?->name} cần chỉnh sửa trước khi xuất bản",
+            default => "Kết quả xét duyệt xuất bản cơ sở {$venue?->name}",
         };
 
         return $this->recordOutboxNotification(

@@ -227,7 +227,7 @@ function localizeMemberTier(tier?: string): string {
                   <div class="meta-item">
                     <span class="meta-label">{{ t('admin.exceptions.courtVenue') }}</span>
                     <span class="meta-value">{{
-                      item.metadata?.court || 'Cụm Sân Thể Thao Aura'
+                      item.metadata?.court || 'Cơ Sở Thể Thao Aura'
                     }}</span>
                   </div>
                 </div>

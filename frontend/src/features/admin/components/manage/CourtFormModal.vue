@@ -163,7 +163,7 @@ onBeforeUnmount(() => {
         <div class="modal-form-grid">
           <div class="form-group">
             <label class="form-label"
-              >{{ t('admin.manage.courtNameLabel') }} <span class="required">*</span>:</label
+              >{{ t('admin.manage.courtNameLabel') }} <span class="required">*</span></label
             >
             <input
               v-model="name"
@@ -175,7 +175,7 @@ onBeforeUnmount(() => {
 
           <div class="form-group">
             <label class="form-label"
-              >{{ t('admin.manage.venueLabel') }} <span class="required">*</span>:</label
+              >{{ t('admin.manage.venueLabel') }} <span class="required">*</span></label
             >
             <select v-model="venueId" class="form-input">
               <option v-for="v in venues" :key="v.id" :value="v.id">
@@ -280,17 +280,20 @@ onBeforeUnmount(() => {
               </button>
             </div>
 
-            <div class="presets-row">
-              <span class="tag-prompt">{{ t('admin.manage.presetImagesLabel') }}</span>
+            <span class="tag-prompt presets-label">{{ t('admin.manage.presetImagesLabel') }}</span>
+            <div class="presets-grid">
               <button
                 v-for="preset in courtImagePresets"
                 :key="preset.name"
                 type="button"
                 class="preset-thumb-btn"
+                :class="{ active: imageUrl === preset.url }"
+                :aria-pressed="imageUrl === preset.url"
+                :title="preset.sub"
                 @click="imageUrl = preset.url"
               >
-                <img :src="preset.url" :alt="preset.name" />
-                <span>{{ preset.name }}</span>
+                <img :src="preset.url" alt="" loading="lazy" />
+                <span class="preset-name">{{ preset.name }}</span>
               </button>
             </div>
           </div>
@@ -401,32 +404,61 @@ onBeforeUnmount(() => {
   gap: 4px;
 }
 
-.presets-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-  overflow-x: auto;
+.presets-label {
+  display: block;
+  margin: 12px 0 6px;
+}
+
+.presets-grid {
+  display: grid;
+  /* Six presets: 3 or 2 columns keep the rows even. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (max-width: 560px) {
+  .presets-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .preset-thumb-btn {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 6px;
-  padding: 4px 8px;
-  border-radius: 8px;
+  min-width: 0;
+  padding: 6px;
+  border-radius: 10px;
   border: 1px solid var(--outline);
   background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
   cursor: pointer;
-  font-size: 11px;
-  white-space: nowrap;
+  transition: border-color 0.15s ease;
+}
+
+.preset-thumb-btn:hover {
+  border-color: var(--accent);
+}
+
+.preset-thumb-btn.active {
+  border-color: var(--pink-dark, #db2777);
+  box-shadow: 0 0 0 1px var(--pink-dark, #db2777);
 }
 
 .preset-thumb-btn img {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
   object-fit: cover;
+}
+
+.preset-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .btn-cancel {

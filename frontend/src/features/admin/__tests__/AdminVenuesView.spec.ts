@@ -85,7 +85,7 @@ describe('AdminVenuesView', () => {
 
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Quản lý Cụm sân & Cơ sở')
+    expect(wrapper.text()).toContain('Quản lý cơ sở')
     expect(wrapper.text()).toContain('Aura Center')
     expect(wrapper.text()).toContain('Riverside Club')
     expect(wrapper.text()).toContain('District 1 Hub')
