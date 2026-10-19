@@ -15,9 +15,8 @@ class EloquentVenueRepository implements VenueRepositoryInterface
             ->where('is_active', true)
             ->whereIn('status', ['published', 'active'])
             ->whereHas('organization', fn ($q) => $q->where('partner_status', 'approved')->where('status', 'active'))
-            ->with(['sportZones' => fn ($q) => $q->where('is_active', true)->withCount('courts')])
             ->when($sportType, function ($q, $sportType) {
-                $q->whereHas('sportZones', fn ($z) => $z->where('sport_type', $sportType)->where('is_active', true));
+                $q->whereHas('courts', fn ($c) => $c->where('sport_type', $sportType)->where('is_active', true));
             })
             ->orderBy('id')
             ->get();
@@ -29,7 +28,7 @@ class EloquentVenueRepository implements VenueRepositoryInterface
             ->where('is_active', true)
             ->whereIn('status', ['published', 'active'])
             ->whereHas('organization', fn ($q) => $q->where('partner_status', 'approved')->where('status', 'active'))
-            ->with(['sportZones' => fn ($q) => $q->where('is_active', true)->with(['courts' => fn ($c) => $c->where('is_active', true)->with('priceSlots')])])
+            ->with(['courts' => fn ($c) => $c->where('is_active', true)->with('priceSlots')])
             ->first();
     }
 

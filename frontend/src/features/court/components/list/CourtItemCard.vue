@@ -13,27 +13,12 @@ const props = defineProps<{
 // No invented price: a court without a configured price shows none.
 const fromPrice = computed(() => props.court.price_slots?.[0]?.price ?? null)
 
-const sportTag = computed(() => {
-  if (props.court.sport_zone?.name) {
-    return props.court.sport_zone.name
-  }
-  const name = props.court.name.toLowerCase()
-  if (name.includes('pickleball')) return 'Pickleball Pro'
-  if (name.includes('tennis')) return 'Hard Court Tennis'
-  if (name.includes('bóng rổ') || name.includes('basketball')) return 'FIBA Hardwood'
-  if (name.includes('bóng đá') || name.includes('football')) return 'FIFA Turf'
-  return 'BWF Taraflex'
-})
-
 const sportIcon = computed(() => {
-  const type = props.court.sport_zone?.sport_type?.toLowerCase() || ''
-  const name = props.court.name.toLowerCase()
-  if (type === 'basketball' || name.includes('bóng rổ') || name.includes('basketball'))
-    return 'sports_basketball'
-  if (type.startsWith('football') || name.includes('bóng đá') || name.includes('football'))
-    return 'sports_soccer'
-  if (type === 'table_tennis' || name.includes('bóng bàn')) return 'table_restaurant'
-  if (type === 'volleyball' || name.includes('bóng chuyền')) return 'sports_volleyball'
+  const type = props.court.sport_type
+  if (type === 'basketball') return 'sports_basketball'
+  if (type.startsWith('football')) return 'sports_soccer'
+  if (type === 'table_tennis') return 'table_restaurant'
+  if (type === 'volleyball') return 'sports_volleyball'
   return 'sports_tennis'
 })
 
@@ -60,7 +45,7 @@ function handleImageError(event: Event) {
       />
       <span class="sport-tag font-mono">
         <span class="material-symbols-outlined tag-icon">{{ sportIcon }}</span>
-        <span>{{ sportTag }}</span>
+        <span>{{ $t(`sportTypes.${court.sport_type}`) }}</span>
       </span>
     </div>
 

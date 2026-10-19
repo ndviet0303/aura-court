@@ -5,13 +5,12 @@ import { formatCurrency, resolveLocalizedText } from '@/i18n'
 import { AuraButton, SelectDropdown, DatePicker, TimePicker } from '@/shared/components'
 import type { DropdownOption } from '@/shared/components'
 import type { PriceRuleItem, PriceRuleFormPayload, PriceRuleType } from '../../types/pricing'
-import type { Venue, SportZone, Court } from '@/features/court/types/court'
+import type { Venue, Court, SportType } from '@/features/court/types/court'
 
 const props = defineProps<{
   show: boolean
   rule: PriceRuleItem | null
   venues: Venue[]
-  sportZones: SportZone[]
   courts: Court[]
   saving?: boolean
 }>()
@@ -27,7 +26,7 @@ const { t } = useI18n()
 const name = ref('')
 const type = ref<PriceRuleType>('peak')
 const venueId = ref<number | ''>('')
-const sportZoneId = ref<number | ''>('')
+const sportType = ref<SportType | ''>('')
 const courtId = ref<number | ''>('')
 const weekday = ref<number | null>(null)
 const exceptionDate = ref<string>(new Date().toISOString().slice(0, 10))
@@ -65,29 +64,27 @@ const venueOptions = computed<DropdownOption[]>(() => [
   })),
 ])
 
-const availableSportZones = computed(() => {
-  if (!venueId.value) return props.sportZones
-  return props.sportZones.filter((z) => z.venue_id === venueId.value)
+const venueCourts = computed(() =>
+  venueId.value
+    ? props.courts.filter((c) => (c.venue_id || c.venue?.id) === venueId.value)
+    : props.courts,
+)
+
+const sportOptions = computed<DropdownOption[]>(() => {
+  const sports = new Set(venueId.value ? venueCourts.value.map((c) => c.sport_type) : [])
+  // An edited rule keeps its sport listed even when the venue has no court of it any more.
+  if (sportType.value) sports.add(sportType.value)
+  return [
+    { value: '', label: t('admin.pricing.allSportTypes') },
+    ...[...sports].map((s) => ({ value: s, label: t(`sportTypes.${s}`), icon: 'category' })),
+  ]
 })
 
-const sportZoneOptions = computed<DropdownOption[]>(() => [
-  { value: '', label: t('admin.pricing.allSportZones') },
-  ...availableSportZones.value.map((z) => ({
-    value: z.id,
-    label: resolveLocalizedText(z.name),
-    icon: 'category',
-  })),
-])
-
-const availableCourts = computed(() => {
-  if (sportZoneId.value) {
-    return props.courts.filter((c) => c.sport_zone_id === sportZoneId.value)
-  }
-  if (venueId.value) {
-    return props.courts.filter((c) => (c.venue_id || c.venue?.id) === venueId.value)
-  }
-  return props.courts
-})
+const availableCourts = computed(() =>
+  sportType.value
+    ? venueCourts.value.filter((c) => c.sport_type === sportType.value)
+    : venueCourts.value,
+)
 
 const courtOptions = computed<DropdownOption[]>(() => [
   { value: '', label: t('admin.pricing.allCourtsInScope') },
@@ -105,7 +102,7 @@ watch(
       name.value = r.name || ''
       type.value = r.type || 'peak'
       venueId.value = r.venue_id || ''
-      sportZoneId.value = r.sport_zone_id || ''
+      sportType.value = r.sport_type || ''
       courtId.value = r.court_id || ''
       weekday.value = r.weekday || null
       exceptionDate.value = r.exception_date || new Date().toISOString().slice(0, 10)
@@ -127,7 +124,7 @@ watch(
       name.value = ''
       type.value = 'peak'
       venueId.value = ''
-      sportZoneId.value = ''
+      sportType.value = ''
       courtId.value = ''
       weekday.value = null
       exceptionDate.value = new Date().toISOString().slice(0, 10)
@@ -146,12 +143,12 @@ watch(
 
 function handleVenueChange(val: string | number) {
   venueId.value = val ? Number(val) : ''
-  sportZoneId.value = ''
+  sportType.value = ''
   courtId.value = ''
 }
 
-function handleZoneChange(val: string | number) {
-  sportZoneId.value = val ? Number(val) : ''
+function handleSportChange(val: string | number) {
+  sportType.value = val as SportType | ''
   courtId.value = ''
 }
 
@@ -176,7 +173,7 @@ function handleSave() {
     name: name.value.trim() || undefined,
     type: type.value,
     venue_id: venueId.value ? Number(venueId.value) : null,
-    sport_zone_id: sportZoneId.value ? Number(sportZoneId.value) : null,
+    sport_type: sportType.value || null,
     court_id: courtId.value ? Number(courtId.value) : null,
     weekday: type.value === 'weekly' ? weekday.value || 1 : null,
     exception_date: ['holiday', 'date_exception', 'special_event'].includes(type.value)
@@ -230,7 +227,7 @@ function handleSave() {
             </div>
           </div>
 
-          <!-- Row 2: Target Scope (Venue -> Zone -> Court) -->
+          <!-- Row 2: Target Scope (Venue -> Sport -> Court) -->
           <div class="form-section">
             <h4 class="section-heading">{{ t('admin.pricing.scopeHeading') }}</h4>
             <div class="form-row">
@@ -245,12 +242,14 @@ function handleSave() {
               </div>
 
               <div class="form-group flex-1">
-                <label class="form-label">{{ t('admin.pricing.sportZoneLabel') }}</label>
+                <label class="form-label">{{ t('admin.pricing.sportTypeLabel') }}</label>
                 <SelectDropdown
-                  :model-value="sportZoneId"
-                  :options="sportZoneOptions"
+                  :model-value="sportType"
+                  :options="sportOptions"
+                  :disabled="!venueId"
                   variant="bordered"
-                  @update:model-value="handleZoneChange"
+                  :aria-label="t('admin.pricing.sportTypeLabel')"
+                  @update:model-value="handleSportChange"
                 />
               </div>
 

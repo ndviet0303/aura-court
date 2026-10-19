@@ -475,12 +475,6 @@ parameters:
 			path: app/Http/Controllers/Booking/AvailabilityController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$slot_duration\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Booking/AvailabilityController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$starts_at\.$#'
 			identifier: property.notFound
 			count: 2
@@ -1729,18 +1723,6 @@ parameters:
 			path: app/Models/Reservation.php
 
 		-
-			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Models/SportZone.php
-
-		-
-			message: '#^Left side of && is always true\.$#'
-			identifier: booleanAnd.leftAlwaysTrue
-			count: 1
-			path: app/Models/SportZone.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
 			identifier: property.notFound
 			count: 2
@@ -2014,12 +1996,6 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$reference\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$slot_duration\.$#'
-			identifier: property.notFound
-			count: 3
 			path: app/Services/Booking/RecurringSeriesService.php
 
 		-
@@ -2663,12 +2639,6 @@ parameters:
 			identifier: property.notFound
 			count: 2
 			path: app/Services/Reservation/LegacyBookingBackfillService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$slot_duration\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/Reservation/PriceQuoteService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$expected_amount\.$#'

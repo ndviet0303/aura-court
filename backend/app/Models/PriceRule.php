@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Cache;
 
-#[Fillable(['organization_id', 'venue_id', 'sport_zone_id', 'court_id', 'type', 'weekday', 'exception_date', 'starts_at', 'ends_at', 'price', 'version', 'priority', 'effective_from', 'effective_until', 'is_active', 'metadata'])]
+#[Fillable(['organization_id', 'venue_id', 'sport_type', 'court_id', 'type', 'weekday', 'exception_date', 'starts_at', 'ends_at', 'price', 'version', 'priority', 'effective_from', 'effective_until', 'is_active', 'metadata'])]
 class PriceRule extends Model
 {
     use BelongsToTenant;
@@ -38,11 +38,6 @@ class PriceRule extends Model
     public function venue(): BelongsTo
     {
         return $this->belongsTo(Venue::class);
-    }
-
-    public function sportZone(): BelongsTo
-    {
-        return $this->belongsTo(SportZone::class);
     }
 
     public function court(): BelongsTo

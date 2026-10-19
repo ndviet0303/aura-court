@@ -1,25 +1,16 @@
-export type SportType =
-  | 'badminton'
-  | 'football_5v5'
-  | 'football_7v7'
-  | 'tennis'
-  | 'pickleball'
-  | 'basketball'
-  | 'volleyball'
-  | 'table_tennis'
+// Mirrors Court::SPORT_TYPES on the backend.
+export const SPORT_TYPES = [
+  'badminton',
+  'football_5v5',
+  'football_7v7',
+  'tennis',
+  'pickleball',
+  'basketball',
+  'volleyball',
+  'table_tennis',
+] as const
 
-export type SportZone = {
-  id: number
-  venue_id: number
-  name: string
-  sport_type: SportType
-  slot_duration: number
-  description?: string | null
-  is_active: boolean
-  courts_count?: number
-  courts?: Court[]
-  venue?: Venue
-}
+export type SportType = (typeof SPORT_TYPES)[number]
 
 export type Venue = {
   id: number
@@ -42,7 +33,7 @@ export type Venue = {
   is_active: boolean
   share_url?: string
   courts_count?: number
-  sport_zones?: SportZone[]
+  courts?: Array<Pick<Court, 'id' | 'venue_id' | 'sport_type'>>
   image_url?: string
   amenities?: string[]
   timezone?: string
@@ -78,9 +69,9 @@ export type Court = {
   name: string
   slug?: string
   venue_id?: number
-  sport_zone_id?: number | null
   venue: Venue
-  sport_zone?: SportZone | null
+  sport_type: SportType
+  slot_duration: number
   description?: string
   image_url?: string
   is_active?: boolean

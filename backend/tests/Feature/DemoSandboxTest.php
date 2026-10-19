@@ -44,6 +44,7 @@ class DemoSandboxTest extends TestCase
         $this->actingAs($admin)->postJson('/api/admin/courts', [
             'name' => 'Sân mô phỏng',
             'venue_id' => Venue::firstOrFail()->id,
+            'sport_type' => 'badminton',
             'description' => 'Không được lưu',
             'image_url' => 'https://example.com/demo-simulated.jpg',
             'is_active' => true,

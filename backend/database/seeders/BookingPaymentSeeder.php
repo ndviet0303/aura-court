@@ -169,7 +169,7 @@ class BookingPaymentSeeder extends Seeder
         $emails = array_map(fn (int $number): string => $this->customerEmail($number), range(0, 24));
         $users = User::whereIn('email', [...$emails, 'admin@auracourt.vn', 'manager@demo.auracourt.vn', ...array_values(self::CHECK_IN_STAFF)])
             ->get()->keyBy('email');
-        $courts = Court::with(['venue', 'sportZone'])->whereIn('slug', array_column(self::SCHEDULE, 0))->get()->keyBy('slug');
+        $courts = Court::with(['venue'])->whereIn('slug', array_column(self::SCHEDULE, 0))->get()->keyBy('slug');
         if ($courts->isEmpty() || ! $users->has('user@example.com')) {
             return;
         }
@@ -272,7 +272,7 @@ class BookingPaymentSeeder extends Seeder
                 }
 
                 if ($rating) {
-                    $sport = str_starts_with($court->sportZone->sport_type, 'football') ? 'football' : $court->sportZone->sport_type;
+                    $sport = str_starts_with($court->sport_type, 'football') ? 'football' : $court->sport_type;
                     $pool = $rating === 3 ? self::CRITICAL_REVIEWS : self::REVIEWS[$sport];
                     $key = $rating === 3 ? 'critical' : $sport;
                     $reviewCounts[$key] = ($reviewCounts[$key] ?? -1) + 1;

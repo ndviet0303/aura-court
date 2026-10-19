@@ -1,5 +1,5 @@
 import { api } from '@/core/api/client'
-import type { Court, Venue, SportZone, PriceSlot, CourtBlock } from '@/features/court/types/court'
+import type { Court, Venue, PriceSlot, CourtBlock } from '@/features/court/types/court'
 import type { Coupon } from '@/features/booking/types/booking'
 import type { CourtForm, PriceForm, BlockForm, VenueForm } from '../types/admin'
 import type { VenueBookingPolicySettings, VenueBookingPolicyVersion } from '../types/admin'
@@ -48,14 +48,6 @@ export const adminApi = {
     api.delete(
       `/partner/organizations/${organizationId}/venues/${venueId}/schedule-exceptions/${exceptionId}`,
     ),
-
-  // Sport Zones
-  getSportZones: (venueId?: number) =>
-    api.get<SportZone[]>(`/admin/sport-zones${venueId ? `?venue_id=${venueId}` : ''}`),
-  createSportZone: (payload: any) => api.post<SportZone>('/admin/sport-zones', payload),
-  updateSportZone: (id: number, payload: any) =>
-    api.patch<SportZone>(`/admin/sport-zones/${id}`, payload),
-  deleteSportZone: (id: number) => api.delete(`/admin/sport-zones/${id}`),
 
   // Courts
   getCourts: (venueId?: number) =>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Reservation;
 use App\Domain\Subscription\Actions\EvaluatePlatformEntitlement;
 use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
+use App\Models\Court;
 use App\Models\Organization;
 use App\Models\PriceRule;
 use App\Services\Infrastructure\IdempotencyService;
@@ -24,9 +25,9 @@ class PriceRuleController extends Controller
         return response()->json(['rules' => PriceRule::query()
             ->where('organization_id', $organization->id)
             ->when($request->query('venue_id'), fn ($q, $venueId) => $q->where('venue_id', $venueId))
-            ->when($request->query('sport_zone_id'), fn ($q, $zoneId) => $q->where('sport_zone_id', $zoneId))
+            ->when($request->query('sport_type'), fn ($q, $sportType) => $q->where('sport_type', $sportType))
             ->when($request->query('court_id'), fn ($q, $courtId) => $q->where('court_id', $courtId))
-            ->with(['venue', 'sportZone', 'court'])
+            ->with(['venue', 'court'])
             ->latest()
             ->get()]);
     }
@@ -38,11 +39,12 @@ class PriceRuleController extends Controller
         $this->assertActivePlatformEntitlement($request, $organization);
         $data = $this->validated($request);
         $this->assertEffectiveRange($data);
+        $this->assertSportHasVenue($data);
 
         return $this->idempotency->run($request, function () use ($organization, $data) {
             $rule = PriceRule::create(array_merge($data, ['organization_id' => $organization->id, 'version' => 1]));
 
-            return response()->json(['rule' => $rule->load(['venue', 'sportZone', 'court'])], 201);
+            return response()->json(['rule' => $rule->load(['venue', 'court'])], 201);
         });
     }
 
@@ -54,11 +56,12 @@ class PriceRuleController extends Controller
         $record = PriceRule::query()->where('organization_id', $organization->id)->whereKey($rule)->firstOrFail();
         $data = $this->validated($request, true);
         $this->assertEffectiveRange($data, $record);
+        $this->assertSportHasVenue($data, $record);
 
         return $this->idempotency->run($request, function () use ($record, $data) {
             $record->update(array_merge($data, ['version' => $record->version + 1]));
 
-            return response()->json(['rule' => $record->fresh(['venue', 'sportZone', 'court'])]);
+            return response()->json(['rule' => $record->fresh(['venue', 'court'])]);
         });
     }
 
@@ -99,7 +102,7 @@ class PriceRuleController extends Controller
 
         return $request->validate([
             'venue_id' => $prefix.'nullable|integer',
-            'sport_zone_id' => $prefix.'nullable|integer',
+            'sport_type' => $prefix.'nullable|in:'.implode(',', Court::SPORT_TYPES),
             'court_id' => $prefix.'nullable|integer',
             'type' => $prefix.'required|in:base,weekly,peak,date_exception,holiday,standard,special_event,bad_weather,surge',
             'weekday' => $prefix.'nullable|integer|min:1|max:7',
@@ -113,6 +116,19 @@ class PriceRuleController extends Controller
             'is_active' => $prefix.'boolean',
             'metadata' => $prefix.'nullable|array',
         ]);
+    }
+
+    /** A sport rule is scoped to one venue, like the sport zone it replaced. */
+    private function assertSportHasVenue(array $data, ?PriceRule $existing = null): void
+    {
+        $sportType = array_key_exists('sport_type', $data) ? $data['sport_type'] : $existing?->sport_type;
+        $venueId = array_key_exists('venue_id', $data) ? $data['venue_id'] : $existing?->venue_id;
+
+        if ($sportType !== null && $venueId === null) {
+            throw ValidationException::withMessages([
+                'venue_id' => 'A sport price rule must name its venue.',
+            ]);
+        }
     }
 
     private function assertEffectiveRange(array $data, ?PriceRule $existing = null): void

@@ -21,9 +21,9 @@ trait FindsFreeCourtTime
      */
     protected function firstFit(Court $court, int $hour, int $hours, callable $fits): array
     {
-        $courts = Court::with(['venue', 'sportZone'])
+        $courts = Court::with(['venue'])
             ->where('venue_id', $court->venue_id)
-            ->where('sport_zone_id', $court->sport_zone_id)
+            ->where('sport_type', $court->sport_type)
             ->whereKeyNot($court->id)
             ->orderBy('slug')
             ->get()

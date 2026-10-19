@@ -36,13 +36,11 @@ class PriceQuoteService
     {
         $eligibility = app(VerifyEffectiveBookingEligibility::class);
         $court = $eligibility->assertEligible($courtId, publicFacing: true);
-        $court->loadMissing(['sportZone']);
-
         if ($court->venue?->organization_id) {
             $organizationId = (int) $court->venue->organization_id;
         }
 
-        $duration = (int) ($court->sportZone?->slot_duration ?: 60);
+        $duration = (int) $court->slot_duration;
         $timezone = $court->venue?->timezone ?: config('app.timezone');
         $resolvedSlots = $this->resolveSlots($slots, $duration, $timezone);
         foreach ($resolvedSlots as $time) {
@@ -108,7 +106,7 @@ class PriceQuoteService
             'slot_snapshot' => $snapshot,
             'applied_rule_ids' => array_values(array_unique($appliedRuleIds)),
             'expires_at' => now()->addMinutes(15),
-        ])->load(['court.venue', 'court.sportZone']);
+        ])->load(['court.venue']);
     }
 
     /**
@@ -118,8 +116,8 @@ class PriceQuoteService
      */
     public function calculateSubtotal(Court $court, array $slots): int
     {
-        $court->loadMissing(['venue', 'sportZone']);
-        $duration = (int) ($court->sportZone?->slot_duration ?: 60);
+        $court->loadMissing(['venue']);
+        $duration = (int) $court->slot_duration;
         $timezone = $court->venue?->timezone ?: config('app.timezone');
 
         if (empty($slots)) {
@@ -141,8 +139,8 @@ class PriceQuoteService
      */
     public function priceSnapshots(Court $court, array $times, ?int $duration = null, bool $skipUnpriced = false): array
     {
-        $court->loadMissing(['venue', 'sportZone']);
-        $duration ??= (int) ($court->sportZone?->slot_duration ?: 60);
+        $court->loadMissing(['venue']);
+        $duration ??= (int) $court->slot_duration;
         $timezone = $court->venue?->timezone ?: config('app.timezone');
         ['rules' => $rules, 'slots' => $legacyRules] = $this->priceRules->forCourt($court);
 
@@ -242,7 +240,7 @@ class PriceQuoteService
         if ($rule->court_id === $court->id) {
             return 4;
         }
-        if ($rule->sport_zone_id !== null && $rule->sport_zone_id === $court->sport_zone_id) {
+        if ($rule->sport_type !== null && $rule->sport_type === $court->sport_type) {
             return 3;
         }
         if ($rule->venue_id === $court->venue_id) {

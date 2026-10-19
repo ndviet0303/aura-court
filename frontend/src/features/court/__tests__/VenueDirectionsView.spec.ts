@@ -39,14 +39,8 @@ describe('VenueDirectionsView', () => {
       is_active: true,
       share_url: '',
     },
-    sport_zone: {
-      id: 1,
-      venue_id: 1,
-      name: 'Thảm BWF VIP',
-      sport_type: 'badminton' as const,
-      slot_duration: 60,
-      is_active: true,
-    },
+    sport_type: 'badminton' as const,
+    slot_duration: 60,
   }
 
   it('resolves venue and renders hero, map action card, transport guide, and courts', async () => {

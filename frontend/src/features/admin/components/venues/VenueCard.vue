@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { resolveLocalizedText } from '@/i18n'
 import type { AdminVenueItem } from '../../composables/useAdminVenues'
 
-defineProps<{
+const props = defineProps<{
   venue: AdminVenueItem
 }>()
 
@@ -15,6 +16,8 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+const sports = computed(() => [...new Set(props.venue.courts?.map((court) => court.sport_type))])
 </script>
 
 <template>
@@ -47,10 +50,10 @@ const { t } = useI18n()
       </label>
     </div>
 
-    <!-- Sport Zones Tags if available -->
-    <div v-if="venue.sport_zones && venue.sport_zones.length > 0" class="venue-zones-row">
-      <span v-for="zone in venue.sport_zones" :key="zone.id" class="zone-tag">
-        {{ resolveLocalizedText(zone.name) }}
+    <!-- Sports offered by the venue's active courts -->
+    <div v-if="sports.length > 0" class="venue-sports-row">
+      <span v-for="sport in sports" :key="sport" class="sport-tag">
+        {{ t(`sportTypes.${sport}`) }}
       </span>
     </div>
 
@@ -185,13 +188,13 @@ const { t } = useI18n()
   line-height: 1.4;
 }
 
-.venue-zones-row {
+.venue-sports-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.zone-tag {
+.sport-tag {
   font-size: 11px;
   font-weight: 600;
   padding: 2px 8px;

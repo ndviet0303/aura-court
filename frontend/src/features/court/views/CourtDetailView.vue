@@ -29,7 +29,7 @@ const {
         <CourtDetailHero :court="court" @open-gallery="isGalleryOpen = true" />
 
         <!-- Technical Specs -->
-        <CourtSpecsGrid :sport-type="court.sport_zone?.sport_type" />
+        <CourtSpecsGrid :sport-type="court.sport_type" />
 
         <!-- Amenities -->
         <CourtAmenitiesGrid :amenities="court.amenities" />

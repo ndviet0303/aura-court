@@ -10,7 +10,6 @@ use App\Models\ModerationRecord;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\Reservation;
-use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Payment\WalletPaymentService;
@@ -42,8 +41,6 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
     private Venue $venueAlpha;
 
     private Court $courtAlpha;
-
-    private SportZone $zoneAlpha;
 
     private Venue $venueAlpha2;
 
@@ -102,17 +99,9 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->zoneAlpha = SportZone::create([
-            'venue_id' => $this->venueAlpha->id,
-            'name' => ['vi' => 'Khu Cầu Lông Alpha', 'en' => 'Alpha Badminton Zone'],
-            'sport_type' => 'badminton',
-            'slot_duration' => 60,
-            'is_active' => true,
-        ]);
-
         $this->courtAlpha = Court::create([
             'venue_id' => $this->venueAlpha->id,
-            'sport_zone_id' => $this->zoneAlpha->id,
+            'sport_type' => 'badminton',
             'name' => ['vi' => 'Sân Alpha A1', 'en' => 'Court Alpha A1'],
             'is_active' => true,
         ]);
@@ -127,17 +116,9 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
             'is_active' => true,
         ]);
 
-        $zoneAlpha2 = SportZone::create([
-            'venue_id' => $this->venueAlpha2->id,
-            'name' => ['vi' => 'Khu Pickleball Alpha 2', 'en' => 'Alpha Pickleball Zone'],
-            'sport_type' => 'pickleball',
-            'slot_duration' => 60,
-            'is_active' => true,
-        ]);
-
         $this->courtAlpha2 = Court::create([
             'venue_id' => $this->venueAlpha2->id,
-            'sport_zone_id' => $zoneAlpha2->id,
+            'sport_type' => 'pickleball',
             'name' => ['vi' => 'Sân Alpha A2', 'en' => 'Court Alpha A2'],
             'is_active' => true,
         ]);
@@ -182,17 +163,9 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
             'is_active' => true,
         ]);
 
-        $zoneBeta = SportZone::create([
-            'venue_id' => $this->venueBeta->id,
-            'name' => ['vi' => 'Khu Cầu Lông Beta', 'en' => 'Beta Badminton Zone'],
-            'sport_type' => 'badminton',
-            'slot_duration' => 60,
-            'is_active' => true,
-        ]);
-
         $this->courtBeta = Court::create([
             'venue_id' => $this->venueBeta->id,
-            'sport_zone_id' => $zoneBeta->id,
+            'sport_type' => 'badminton',
             'name' => ['vi' => 'Sân Beta B1', 'en' => 'Court Beta B1'],
             'is_active' => true,
         ]);

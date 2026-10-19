@@ -1,4 +1,5 @@
 import type { Court } from '@/features/court/types/court'
+import { i18n } from '@/i18n'
 
 export type LatLng = { lat: number; lng: number }
 export type CourtArea = { key: string; label: string; count: number; distanceKm: number | null }
@@ -71,7 +72,8 @@ export function filterCourts(
       court.venue?.name,
       court.venue?.district,
       court.venue?.address,
-      court.sport_zone?.name,
+      // The sport label in the current locale, so "cầu lông" finds badminton courts.
+      i18n.global.t(`sportTypes.${court.sport_type}`),
     ]
     return fields.some((text) => (text || '').toLowerCase().includes(q))
   })

@@ -28,7 +28,7 @@ function getCourtPrice(c: Court): number | null {
     <div class="courts-grid">
       <div v-for="c in courts" :key="c.id" class="court-item-card">
         <div class="card-top-info">
-          <span class="sport-zone-tag">{{ c.sport_zone?.name || 'Thảm BWF Tiêu Chuẩn' }}</span>
+          <span class="sport-tag">{{ $t(`sportTypes.${c.sport_type}`) }}</span>
           <strong class="court-name">{{ c.name }}</strong>
         </div>
 
@@ -149,14 +149,14 @@ function getCourtPrice(c: Court): number | null {
   gap: 4px;
 }
 
-.sport-zone-tag {
+.sport-tag {
   font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
   color: var(--accent);
 }
 
-:global(html.dark) .sport-zone-tag {
+:global(html.dark) .sport-tag {
   color: #d8b46e;
 }
 

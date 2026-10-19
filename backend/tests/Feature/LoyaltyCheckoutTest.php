@@ -12,7 +12,6 @@ use App\Models\OrganizationMember;
 use App\Models\PointLedger;
 use App\Models\PriceRule;
 use App\Models\Reservation;
-use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
 use App\Models\WalletAccount;
@@ -52,16 +51,9 @@ class LoyaltyCheckoutTest extends TestCase
             'status' => 'active',
         ]);
 
-        $sportZone = SportZone::create([
-            'venue_id' => $venue->id,
-            'name' => 'Badminton Zone',
-            'sport_type' => 'badminton',
-            'slot_duration' => 60,
-            'is_active' => true,
-        ]);
         $court = Court::create([
             'venue_id' => $venue->id,
-            'sport_zone_id' => $sportZone->id,
+            'sport_type' => 'badminton',
             'name' => 'Court 1',
             'is_active' => true,
         ]);

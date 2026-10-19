@@ -28,7 +28,6 @@ const {
   editingRule,
   rules,
   venues,
-  sportZones,
   courts,
   searchQuery,
   selectedVenueId,
@@ -217,7 +216,6 @@ onMounted(() => {
       :show="showRuleModal"
       :rule="editingRule"
       :venues="venues"
-      :sport-zones="sportZones"
       :courts="courts"
       :saving="saving"
       @close="showRuleModal = false"

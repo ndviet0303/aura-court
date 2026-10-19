@@ -63,7 +63,7 @@ class MarketplaceSeeder extends Seeder
 
         foreach (self::RESALES as $index => [$code, $sellerNo, $slug, $daysAhead, $hour, $hours, $listed, $percent, $badge, $notes]) {
             $seller = $this->customer($sellerNo);
-            $court = Court::with(['venue', 'sportZone'])->where('slug', $slug)->first();
+            $court = Court::with(['venue'])->where('slug', $slug)->first();
             // The code is the idempotency key: a seeded resale is never rebuilt or moved.
             if (! $seller || ! $court || Reservation::withoutGlobalScope('tenant_isolation')->where('code', $code)->exists()) {
                 continue;
@@ -81,7 +81,7 @@ class MarketplaceSeeder extends Seeder
         foreach (self::SOLD as $index => [$code, $sellerNo, $buyerNo, $slug, $daysAhead, $hour, $percent, $notes]) {
             $seller = $this->customer($sellerNo);
             $buyer = $this->customer($buyerNo);
-            $court = Court::with(['venue', 'sportZone'])->where('slug', $slug)->first();
+            $court = Court::with(['venue'])->where('slug', $slug)->first();
             if (! $seller || ! $buyer || ! $court || Reservation::withoutGlobalScope('tenant_isolation')->where('code', $code)->exists()) {
                 continue;
             }

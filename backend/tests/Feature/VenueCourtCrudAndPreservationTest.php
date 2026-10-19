@@ -11,7 +11,6 @@ use App\Models\OrganizationMember;
 use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\ReservationSlot;
-use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Reservation\LegacyBookingBackfillService;
@@ -54,6 +53,9 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             'id' => $venueId,
             'address' => '88 Cau Giay, Hanoi',
         ]);
+        // A new venue starts empty: no default zone, court or price rule.
+        $this->assertDatabaseMissing('courts', ['venue_id' => $venueId]);
+        $this->assertDatabaseMissing('price_rules', ['venue_id' => $venueId]);
 
         // 2. Update venue amenities
         $updateRes = $this->actingAs($admin)->patchJson("/api/admin/venues/{$venueId}", [
@@ -79,7 +81,7 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             ->assertJsonPath('longitude', 105.783);
     }
 
-    public function test_sport_zone_crud_and_slot_duration_association(): void
+    public function test_court_carries_its_own_sport_and_slot_length(): void
     {
         $org = Organization::create(['name' => 'Aura District 7 Org', 'slug' => 'aura-d7-org-'.uniqid(), 'status' => 'active', 'partner_status' => 'approved']);
         $admin = $this->ownerOf($org);
@@ -88,39 +90,31 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             'name' => 'Aura District 7',
             'slug' => 'aura-d7-'.uniqid(),
             'address' => 'Nguyen Van Linh, D7',
-            'google_maps_url' => 'https://maps.google.com/?q=aura+d7',
             'is_active' => true,
         ]);
+        $payload = ['name' => 'Pickleball 1', 'venue_id' => $venue->id, 'is_active' => true];
 
-        // 1. Create sport zone
-        $createRes = $this->actingAs($admin)->postJson('/api/admin/sport-zones', [
-            'venue_id' => $venue->id,
-            'name' => ['vi' => 'Khu Pickleball VIP', 'en' => 'Pickleball VIP Zone'],
-            'sport_type' => 'pickleball',
-            'slot_duration' => 60,
-            'is_active' => true,
-        ]);
+        $this->actingAs($admin)->postJson('/api/admin/courts', $payload)->assertUnprocessable()->assertJsonValidationErrors('sport_type');
+        $this->actingAs($admin)->postJson('/api/admin/courts', $payload + ['sport_type' => 'squash'])->assertUnprocessable()->assertJsonValidationErrors('sport_type');
+        $this->actingAs($admin)->postJson('/api/admin/courts', $payload + ['sport_type' => 'pickleball', 'slot_duration' => 50])->assertUnprocessable()->assertJsonValidationErrors('slot_duration');
+        $this->assertSame(0, Court::query()->where('venue_id', $venue->id)->count());
 
-        $createRes->assertStatus(201)
+        $courtId = $this->actingAs($admin)->postJson('/api/admin/courts', $payload + ['sport_type' => 'pickleball'])
+            ->assertCreated()
             ->assertJsonPath('sport_type', 'pickleball')
-            ->assertJsonPath('slot_duration', 60);
+            ->assertJsonPath('slot_duration', 60)
+            ->assertJsonMissingPath('sport_zone_id')
+            ->json('id');
 
-        $zoneId = $createRes->json('id');
-
-        // 2. Update sport zone
-        $updateRes = $this->actingAs($admin)->patchJson("/api/admin/sport-zones/{$zoneId}", [
-            'slot_duration' => 90,
-        ]);
-
-        $updateRes->assertOk()
+        $this->actingAs($admin)->patchJson("/api/admin/courts/{$courtId}", ['sport_type' => 'tennis', 'slot_duration' => 90])
+            ->assertOk()
+            ->assertJsonPath('sport_type', 'tennis')
             ->assertJsonPath('slot_duration', 90);
 
-        // 3. Public view of sport zone
-        $publicRes = $this->getJson("/api/sport-zones/{$zoneId}");
-        $publicRes->assertOk()
-            ->assertJsonPath('id', $zoneId)
-            ->assertJsonPath('sport_type', 'pickleball')
-            ->assertJsonPath('slot_duration', 90);
+        $this->getJson('/api/sport-zones')->assertNotFound();
+        $this->getJson('/api/sport-zones/1')->assertNotFound();
+        $this->actingAs($admin)->getJson('/api/admin/sport-zones')->assertNotFound();
+        $this->actingAs($admin)->postJson('/api/admin/sport-zones', ['venue_id' => $venue->id])->assertNotFound();
     }
 
     public function test_court_crud_amenities_and_public_detail_integration(): void
@@ -140,19 +134,12 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         ]);
         // Only priced courts are public; an organization-wide rule prices every court.
         PriceRule::create(['organization_id' => $org->id, 'type' => 'base', 'price' => 100000, 'is_active' => true]);
-        $zone = SportZone::create([
-            'venue_id' => $venue->id,
-            'name' => 'Badminton Zone',
-            'sport_type' => 'badminton',
-            'slot_duration' => 60,
-            'is_active' => true,
-        ]);
 
         // 1. Create Court with custom amenities
         $courtRes = $this->actingAs($admin)->postJson('/api/admin/courts', [
             'name' => 'San 01 BWF Da Nang',
             'venue_id' => $venue->id,
-            'sport_zone_id' => $zone->id,
+            'sport_type' => 'badminton',
             'description' => 'Tham thi dau tieu chuan BWF',
             'amenities' => ['wifi', 'pro_shop', 'air_conditioning'],
             'is_active' => true,
@@ -178,6 +165,11 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         $courtInList = collect($listRes->json())->firstWhere('id', $courtId);
         $this->assertNotNull($courtInList);
         $this->assertSame(['wifi', 'pro_shop', 'air_conditioning'], $courtInList['amenities']);
+        // Sport filters match the court's own sport.
+        $this->assertNotNull(collect($this->getJson('/api/courts?sport_type=badminton')->json())->firstWhere('id', $courtId));
+        $this->assertNull(collect($this->getJson('/api/courts?sport_type=tennis')->json())->firstWhere('id', $courtId));
+        $this->assertNotNull(collect($this->getJson('/api/venues?sport_type=badminton')->json())->firstWhere('id', $venue->id));
+        $this->assertNull(collect($this->getJson('/api/venues?sport_type=tennis')->json())->firstWhere('id', $venue->id));
         // The home page groups courts by district and sorts them by distance from these coordinates.
         $this->assertSame(['Hải Châu', 16.0544, 108.2022], [$courtInList['venue']['district'], $courtInList['venue']['latitude'], $courtInList['venue']['longitude']]);
 
@@ -246,17 +238,11 @@ class VenueCourtCrudAndPreservationTest extends TestCase
         ]);
         // Only priced courts are public; an organization-wide rule prices every court.
         PriceRule::create(['organization_id' => $org->id, 'type' => 'base', 'price' => 100000, 'is_active' => true]);
-        SportZone::create([
-            'venue_id' => $venue->id,
-            'name' => 'Badminton Zone',
-            'sport_type' => 'badminton',
-            'slot_duration' => 60,
-            'is_active' => true,
-        ]);
 
         $created = $this->actingAs($admin)->postJson('/api/admin/courts', [
             'name' => 'Court with specifications',
             'venue_id' => $venue->id,
+            'sport_type' => 'badminton',
             'surface_type' => 'synthetic',
             'capacity' => 4,
             'is_active' => true,
@@ -325,18 +311,11 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             'google_maps_url' => 'https://maps.google.com/?q=aura+central',
             'is_active' => true,
         ]);
-        $zone = SportZone::create([
-            'venue_id' => $venue->id,
-            'name' => 'Tennis Court Zone',
-            'sport_type' => 'tennis',
-            'slot_duration' => 60,
-            'is_active' => true,
-        ]);
         $court = Court::create([
             'name' => 'Tennis Court 1',
             'slug' => 'tennis-court-1-'.uniqid(),
             'venue_id' => $venue->id,
-            'sport_zone_id' => $zone->id,
+            'sport_type' => 'tennis',
             'is_active' => true,
         ]);
 

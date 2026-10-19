@@ -4,7 +4,7 @@ import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { resolveLocalizedText } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
-import type { Court, Venue, SportZone } from '@/features/court/types/court'
+import type { Court, Venue, SportType } from '@/features/court/types/court'
 import type { Coupon } from '@/features/booking/types/booking'
 export type { Coupon }
 
@@ -13,7 +13,7 @@ export type CourtForm = {
   venue_id: number
   // Lives on the venue; edited here so admins never have to pick a venue.
   address: string
-  sport_zone_id: number | null
+  sport_type: SportType
   description: string
   image_url: string
   surface_type: NonNullable<Court['surface_type']> | ''
@@ -42,7 +42,6 @@ export function useAdminManageCourts() {
 
   const courts = ref<Court[]>([])
   const venues = ref<Venue[]>([])
-  const sportZones = ref<SportZone[]>([])
   const coupons = ref<Coupon[]>([])
   const error = ref('')
   const notice = ref('')
@@ -61,7 +60,7 @@ export function useAdminManageCourts() {
     name: '',
     venue_id: 0,
     address: '',
-    sport_zone_id: null,
+    sport_type: 'badminton',
     description: '',
     image_url: '',
     surface_type: '',
@@ -130,15 +129,13 @@ export function useAdminManageCourts() {
     loading.value = true
     clearAlerts()
     try {
-      const [loadedCourts, loadedVenues, loadedZones, loadedCoupons] = await Promise.all([
+      const [loadedCourts, loadedVenues, loadedCoupons] = await Promise.all([
         adminApi.getCourts(),
         adminApi.getVenues(),
-        adminApi.getSportZones(),
         adminApi.getCoupons<{ data: Coupon[] } | Coupon[]>(activeOrganizationId()),
       ])
       courts.value = loadedCourts || []
       venues.value = loadedVenues || []
-      sportZones.value = loadedZones || []
       coupons.value = Array.isArray(loadedCoupons)
         ? loadedCoupons
         : (loadedCoupons as { data: Coupon[] })?.data || []
@@ -189,7 +186,7 @@ export function useAdminManageCourts() {
       name: '',
       venue_id: venueId,
       address: openedAddress,
-      sport_zone_id: null,
+      sport_type: 'badminton',
       description: '',
       image_url: '',
       surface_type: '',
@@ -206,7 +203,7 @@ export function useAdminManageCourts() {
       name: resolveLocalizedText(court.name),
       venue_id: court.venue?.id || activeVenues.value[0]?.id || 0,
       address: openedAddress,
-      sport_zone_id: court.sport_zone_id || null,
+      sport_type: court.sport_type,
       description: resolveLocalizedText(court.description) || '',
       image_url: court.image_url || '',
       surface_type: court.surface_type || '',
@@ -227,7 +224,6 @@ export function useAdminManageCourts() {
       }
       const payload = {
         ...court,
-        sport_zone_id: courtForm.value.sport_zone_id || null,
         image_url: courtForm.value.image_url || null,
         surface_type: courtForm.value.surface_type || null,
         capacity: courtForm.value.capacity ? Number(courtForm.value.capacity) : null,
@@ -350,7 +346,6 @@ export function useAdminManageCourts() {
   return {
     courts,
     venues,
-    sportZones,
     coupons,
     error,
     notice,

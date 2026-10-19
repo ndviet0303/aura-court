@@ -10,12 +10,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Spatie\Translatable\HasTranslations;
 
-#[Fillable(['name', 'slug', 'venue_id', 'sport_zone_id', 'description', 'image_url', 'amenities', 'surface_type', 'capacity', 'is_active'])]
+#[Fillable(['name', 'slug', 'venue_id', 'sport_type', 'slot_duration', 'description', 'image_url', 'amenities', 'surface_type', 'capacity', 'is_active'])]
 class Court extends Model
 {
     use HasTranslations;
 
+    public const SPORT_TYPES = ['badminton', 'football_5v5', 'football_7v7', 'tennis', 'pickleball', 'basketball', 'volleyball', 'table_tennis'];
+
+    public const SLOT_DURATIONS = [30, 45, 60, 90, 120];
+
     public array $translatable = ['name', 'description'];
+
+    /** Mirrors the column defaults so a court built in memory already has its sport and slot length. */
+    protected $attributes = ['sport_type' => 'badminton', 'slot_duration' => 60];
 
     protected $appends = ['timezone'];
 
@@ -53,6 +60,7 @@ class Court extends Model
             'is_active' => 'boolean',
             'amenities' => 'array',
             'capacity' => 'integer',
+            'slot_duration' => 'integer',
         ];
     }
 
@@ -87,11 +95,6 @@ class Court extends Model
     public function venue(): BelongsTo
     {
         return $this->belongsTo(Venue::class);
-    }
-
-    public function sportZone(): BelongsTo
-    {
-        return $this->belongsTo(SportZone::class);
     }
 
     public function blocks(): HasMany

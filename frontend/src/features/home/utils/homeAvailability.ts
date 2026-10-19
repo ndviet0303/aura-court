@@ -103,22 +103,12 @@ export function formatAvailabilityDate(date: string, locale: string): string {
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
-/** Material icon for a court chip, from its sport zone or, failing that, its name. */
+/** Material icon for a court chip, from the court's sport. */
 export function getCourtIcon(court: Court): string {
-  const sport = (court.sport_zone?.sport_type || '').toLowerCase()
-  if (sport === 'football_5v5' || sport === 'football_7v7' || sport === 'football')
-    return 'sports_soccer'
+  const sport = court.sport_type
+  if (sport === 'football_5v5' || sport === 'football_7v7') return 'sports_soccer'
   if (sport === 'basketball') return 'sports_basketball'
   if (sport === 'volleyball') return 'sports_volleyball'
   if (sport === 'table_tennis') return 'table_restaurant'
-  if (sport === 'tennis' || sport === 'pickleball' || sport === 'badminton') return 'sports_tennis'
-
-  const name = (court.name || '').toLowerCase()
-  if (name.includes('bóng đá') || name.includes('football')) return 'sports_soccer'
-  if (name.includes('bóng rổ') || name.includes('basketball') || name.includes('nba'))
-    return 'sports_basketball'
-  if (name.includes('bóng chuyền') || name.includes('volleyball')) return 'sports_volleyball'
-  if (name.includes('bóng bàn') || name.includes('table tennis') || name.includes('stiga'))
-    return 'table_restaurant'
   return 'sports_tennis'
 }

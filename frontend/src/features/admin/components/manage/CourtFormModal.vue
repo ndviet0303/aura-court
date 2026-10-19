@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { resolveLocalizedText } from '@/i18n'
 import type { CourtForm } from '../../composables/useAdminManageCourts'
-import type { SportZone } from '@/features/court/types/court'
+import { SPORT_TYPES, type SportType } from '@/features/court/types/court'
 import { adminApi } from '../../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 import SelectDropdown from '@/shared/components/forms/SelectDropdown.vue'
@@ -12,15 +11,12 @@ import CourtImagePresets from './CourtImagePresets.vue'
 const props = defineProps<{
   show: boolean
   editingCourtId: number | null
-  // Picked by the caller; only used to list that venue's sport zones.
-  venueId: number
-  sportZones: SportZone[]
   saving?: boolean
 }>()
 
 const name = defineModel<string>('name', { required: true })
 const address = defineModel<string>('address', { required: true })
-const sportZoneId = defineModel<number | null>('sportZoneId', { required: true })
+const sportType = defineModel<SportType>('sportType', { required: true })
 const surfaceType = defineModel<CourtForm['surface_type']>('surfaceType', { required: true })
 // A cleared number input yields '', which is not a valid capacity.
 const capacity = defineModel<number | null>('capacity', {
@@ -42,12 +38,9 @@ const uploadingImage = ref(false)
 const uploadError = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
 
-const sportZoneOptions = computed(() => [
-  { value: '', label: t('admin.manage.defaultSportZone') },
-  ...props.sportZones
-    .filter((z) => z.venue_id === props.venueId)
-    .map((z) => ({ value: z.id, label: resolveLocalizedText(z.name) })),
-])
+const sportOptions = computed(() =>
+  SPORT_TYPES.map((sport) => ({ value: sport, label: t(`sportTypes.${sport}`) })),
+)
 
 const surfaceOptions = computed(() => [
   { value: '', label: t('admin.manage.unspecified') },
@@ -177,14 +170,13 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="form-group">
-            <label class="form-label">{{ t('admin.manage.sportZoneLabel') }}</label>
-            <!-- The dropdown only carries strings/numbers, so '' stands for "no zone" (null). -->
+            <label class="form-label">{{ t('admin.manage.sportTypeLabel') }}</label>
             <SelectDropdown
-              :model-value="sportZoneId ?? ''"
-              :options="sportZoneOptions"
+              :model-value="sportType"
+              :options="sportOptions"
               variant="bordered"
-              :aria-label="t('admin.manage.sportZoneLabel')"
-              @update:model-value="(value) => (sportZoneId = value === '' ? null : Number(value))"
+              :aria-label="t('admin.manage.sportTypeLabel')"
+              @update:model-value="(value) => (sportType = value as SportType)"
             />
           </div>
 

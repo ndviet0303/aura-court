@@ -51,7 +51,7 @@ class RecurringSeriesSeeder extends Seeder
             $from = $thisMonth->copy()->addMonths($firstMonth);
             $contractCode = sprintf('CTR-%d-%03d', $from->year, $no);
             $contact = User::where('email', sprintf('khach%02d@demo.auracourt.vn', $contactNo))->first();
-            $court = Court::with(['venue', 'sportZone'])->where('slug', $slug)->first();
+            $court = Court::with(['venue'])->where('slug', $slug)->first();
             // The contract code is the idempotency key: a seeded contract is never rebuilt or moved.
             if (! $contact || ! $court || RecurringSeries::withoutGlobalScope('tenant_isolation')->where('metadata->contract_code', $contractCode)->exists()) {
                 continue;
@@ -81,7 +81,7 @@ class RecurringSeriesSeeder extends Seeder
                 return true;
             });
 
-            $minutes = (int) ($court->sportZone?->slot_duration ?: 60);
+            $minutes = (int) $court->slot_duration;
             $sessions = array_map(function (array $occurrence) use ($court, $quotes, $hours, $minutes, $releaseFrom): array {
                 $starts = array_map(fn (int $position): Carbon => $occurrence['starts_at']->copy()->addMinutes($position * $minutes), range(0, intdiv($hours * 60, $minutes) - 1));
                 $snapshots = $quotes->priceSnapshots($court, $starts, $minutes);

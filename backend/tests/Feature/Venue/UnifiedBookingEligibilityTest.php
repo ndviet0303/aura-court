@@ -8,7 +8,6 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
 use App\Models\PlatformSubscription;
-use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Payment\WalletPaymentService;
@@ -53,8 +52,7 @@ class UnifiedBookingEligibilityTest extends TestCase
             'is_active' => false,
         ]);
 
-        $sportZone = SportZone::create(['venue_id' => $venue->id, 'name' => 'Zone 1', 'sport_type' => 'badminton', 'is_active' => true]);
-        $court = Court::create(['venue_id' => $venue->id, 'sport_zone_id' => $sportZone->id, 'name' => 'Draft Court', 'slug' => 'draft-court', 'is_active' => true]);
+        $court = Court::create(['venue_id' => $venue->id, 'sport_type' => 'badminton', 'name' => 'Draft Court', 'slug' => 'draft-court', 'is_active' => true]);
         CourtPriceSlot::create([
             'court_id' => $court->id,
             'weekday' => now()->addDay()->dayOfWeekIso,
@@ -76,7 +74,6 @@ class UnifiedBookingEligibilityTest extends TestCase
         $detailRes->assertStatus(404);
 
         $this->getJson("/api/courts/{$court->slug}")->assertNotFound();
-        $this->getJson("/api/sport-zones/{$sportZone->id}")->assertNotFound();
 
         // 3. Availability on draft court must return 404
         $availRes = $this->getJson('/api/availability?court_id='.$court->id.'&date='.now()->addDay()->toDateString());
@@ -123,8 +120,7 @@ class UnifiedBookingEligibilityTest extends TestCase
             'approved_public_snapshot' => ['venue' => ['name' => 'Public Venue']],
         ]);
 
-        $sportZone = SportZone::create(['venue_id' => $venue->id, 'name' => 'Zone 1', 'sport_type' => 'badminton', 'is_active' => true]);
-        $court = Court::create(['venue_id' => $venue->id, 'sport_zone_id' => $sportZone->id, 'name' => 'Court 1', 'slug' => 'court-1', 'is_active' => true]);
+        $court = Court::create(['venue_id' => $venue->id, 'sport_type' => 'badminton', 'name' => 'Court 1', 'slug' => 'court-1', 'is_active' => true]);
         CourtPriceSlot::create([
             'court_id' => $court->id,
             'weekday' => now()->addDay()->dayOfWeekIso,
@@ -139,7 +135,6 @@ class UnifiedBookingEligibilityTest extends TestCase
         // Warm public list caches before the partner changes state.
         $this->getJson('/api/venues')->assertOk()->assertJsonFragment(['slug' => 'public-venue']);
         $this->getJson('/api/courts')->assertOk()->assertJsonFragment(['id' => $court->id]);
-        $this->getJson('/api/sport-zones')->assertOk()->assertJsonFragment(['id' => $sportZone->id]);
 
         // Customer loaded availability earlier:
         $availRes = $this->getJson('/api/availability?court_id='.$court->id.'&date='.now()->addDay()->toDateString());
@@ -150,10 +145,8 @@ class UnifiedBookingEligibilityTest extends TestCase
 
         $this->getJson('/api/venues')->assertOk()->assertJsonMissing(['slug' => 'public-venue']);
         $this->getJson('/api/courts')->assertOk()->assertJsonMissing(['id' => $court->id]);
-        $this->getJson('/api/sport-zones')->assertOk()->assertJsonMissing(['id' => $sportZone->id]);
         $this->getJson('/api/venues/public-venue')->assertNotFound();
         $this->getJson("/api/courts/{$court->slug}")->assertNotFound();
-        $this->getJson("/api/sport-zones/{$sportZone->id}")->assertNotFound();
 
         // Customer attempts to submit booking with the previously-loaded slot
         $slotTime = now()->addDay()->setTime(8, 0, 0)->toIso8601String();
@@ -199,8 +192,7 @@ class UnifiedBookingEligibilityTest extends TestCase
             'status' => 'published',
             'is_active' => true,
         ]);
-        $zone = SportZone::create(['venue_id' => $venue->id, 'name' => 'Zone', 'sport_type' => 'badminton', 'is_active' => true]);
-        $court = Court::create(['venue_id' => $venue->id, 'sport_zone_id' => $zone->id, 'name' => 'Court', 'slug' => 'expiring-court', 'is_active' => true]);
+        $court = Court::create(['venue_id' => $venue->id, 'sport_type' => 'badminton', 'name' => 'Court', 'slug' => 'expiring-court', 'is_active' => true]);
         $slotDate = now()->addDays(4);
         CourtPriceSlot::create([
             'court_id' => $court->id,
@@ -214,16 +206,13 @@ class UnifiedBookingEligibilityTest extends TestCase
 
         $this->getJson('/api/venues')->assertOk()->assertJsonFragment(['slug' => $venue->slug]);
         $this->getJson('/api/courts')->assertOk()->assertJsonFragment(['id' => $court->id]);
-        $this->getJson('/api/sport-zones')->assertOk()->assertJsonFragment(['id' => $zone->id]);
         $this->getJson("/api/venues/{$venue->slug}")->assertOk();
 
         $this->travel(2)->days();
         $this->getJson('/api/venues')->assertOk()->assertJsonMissing(['slug' => $venue->slug]);
         $this->getJson('/api/courts')->assertOk()->assertJsonMissing(['id' => $court->id]);
-        $this->getJson('/api/sport-zones')->assertOk()->assertJsonMissing(['id' => $zone->id]);
         $this->getJson("/api/venues/{$venue->slug}")->assertNotFound();
         $this->getJson("/api/courts/{$court->slug}")->assertNotFound();
-        $this->getJson("/api/sport-zones/{$zone->id}")->assertNotFound();
         $this->assertSame('expired', $subscription->fresh()->status);
 
         $slot = now()->addDays(4)->setTime(8, 0)->toIso8601String();

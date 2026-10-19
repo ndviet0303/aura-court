@@ -63,7 +63,7 @@ class AdminController extends Controller
             $venues = Venue::query()
                 ->whereIn('id', $authorizedVenueIds)
                 ->withCount(['courts' => fn ($query) => $query->where('is_active', true)])
-                ->with(['sportZones' => fn ($query) => $query->where('is_active', true)->withCount('courts')])
+                ->with(['courts' => fn ($query) => $query->where('is_active', true)->select(['id', 'venue_id', 'sport_type'])])
                 ->orderBy('id')
                 ->get();
 
@@ -126,7 +126,7 @@ class AdminController extends Controller
         Cache::increment('venues_version');
         $this->audits->record($request, 'venue.updated', $venue, ['fields' => array_keys($request->all())]);
 
-        return $venue->fresh('sportZones');
+        return $venue->fresh(['courts' => fn ($query) => $query->where('is_active', true)->select(['id', 'venue_id', 'sport_type'])]);
     }
 
     public function destroyVenue(Venue $venue)

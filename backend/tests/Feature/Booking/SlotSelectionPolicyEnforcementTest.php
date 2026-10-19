@@ -8,7 +8,6 @@ use App\Models\Court;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PriceRule;
-use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
 use App\Models\VenueBookingPolicy;
@@ -41,8 +40,7 @@ class SlotSelectionPolicyEnforcementTest extends TestCase
         $user = User::factory()->create(['email_verified_at' => now()]);
         OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $user->id, 'role' => OrganizationMember::ROLE_CUSTOMER, 'status' => 'active']);
         $venue = Venue::create(['organization_id' => $org->id, 'name' => 'Slot Policy Venue', 'slug' => 'slot-policy-venue-'.uniqid(), 'is_active' => true]);
-        $zone = SportZone::create(['venue_id' => $venue->id, 'name' => 'Zone', 'sport_type' => 'badminton', 'slot_duration' => $slotDuration, 'is_active' => true]);
-        $court = Court::create(['venue_id' => $venue->id, 'sport_zone_id' => $zone->id, 'name' => 'Court', 'is_active' => true]);
+        $court = Court::create(['venue_id' => $venue->id, 'sport_type' => 'badminton', 'slot_duration' => $slotDuration, 'name' => 'Court', 'is_active' => true]);
         PriceRule::create(['organization_id' => $org->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 150000, 'is_active' => true]);
 
         if ($bookingPolicy !== null) {

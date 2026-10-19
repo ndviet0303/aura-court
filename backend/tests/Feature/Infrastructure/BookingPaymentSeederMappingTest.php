@@ -6,8 +6,8 @@ use App\Models\Booking;
 use App\Models\LegacyBookingMapping;
 use App\Models\Review;
 use Database\Seeders\BookingPaymentSeeder;
+use Database\Seeders\CourtSeeder;
 use Database\Seeders\OrganizationVenueSeeder;
-use Database\Seeders\SportZoneCourtSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -18,7 +18,7 @@ class BookingPaymentSeederMappingTest extends TestCase
 
     public function test_demo_bookings_are_mapped_and_reseeding_is_idempotent(): void
     {
-        $this->seed([OrganizationVenueSeeder::class, UserSeeder::class, SportZoneCourtSeeder::class]);
+        $this->seed([OrganizationVenueSeeder::class, UserSeeder::class, CourtSeeder::class]);
 
         $this->seed(BookingPaymentSeeder::class);
         $mappings = LegacyBookingMapping::withoutGlobalScope('tenant_isolation')->orderBy('id')->pluck('reservation_id', 'legacy_booking_id')->all();

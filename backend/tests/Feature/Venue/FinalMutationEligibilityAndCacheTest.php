@@ -11,7 +11,6 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
 use App\Models\PlatformSubscription;
-use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Payment\WalletPaymentService;
@@ -119,8 +118,7 @@ class FinalMutationEligibilityAndCacheTest extends TestCase
             'approved_public_snapshot' => ['venue' => ['name' => 'Race Venue']],
         ]);
 
-        $sportZone = SportZone::create(['venue_id' => $venue->id, 'name' => 'Zone 1', 'sport_type' => 'badminton', 'is_active' => true]);
-        $court = Court::create(['venue_id' => $venue->id, 'sport_zone_id' => $sportZone->id, 'name' => 'Court R', 'slug' => 'court-r', 'is_active' => true]);
+        $court = Court::create(['venue_id' => $venue->id, 'sport_type' => 'badminton', 'name' => 'Court R', 'slug' => 'court-r', 'is_active' => true]);
         CourtPriceSlot::create([
             'court_id' => $court->id,
             'weekday' => now()->addDay()->dayOfWeekIso,

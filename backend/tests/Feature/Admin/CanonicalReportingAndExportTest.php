@@ -11,7 +11,6 @@ use App\Models\OwnerRefundObligation;
 use App\Models\PlatformPaymentAttempt;
 use App\Models\PosOrder;
 use App\Models\Reservation;
-use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Reservation\LegacyBookingBackfillService;
@@ -101,17 +100,9 @@ class CanonicalReportingAndExportTest extends TestCase
             'is_active' => true,
         ]);
 
-        $zone = SportZone::create([
-            'venue_id' => $this->venueAlpha->id,
-            'name' => ['vi' => 'Khu Cầu Lông', 'en' => 'Badminton Zone'],
-            'sport_type' => 'badminton',
-            'slot_duration' => 60,
-            'is_active' => true,
-        ]);
-
         $this->courtAlpha = Court::create([
             'venue_id' => $this->venueAlpha->id,
-            'sport_zone_id' => $zone->id,
+            'sport_type' => 'badminton',
             'name' => ['vi' => 'Sân 1', 'en' => 'Court 1'],
             'is_active' => true,
         ]);

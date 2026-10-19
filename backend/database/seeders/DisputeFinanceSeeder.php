@@ -269,7 +269,7 @@ class DisputeFinanceSeeder extends Seeder
     private function courtMap(Reservation $reservation, array $spec): array
     {
         return $reservation->court->venue->courts()
-            ->where('sport_zone_id', $reservation->court->sport_zone_id)
+            ->where('sport_type', $reservation->court->sport_type)
             ->orderBy('id')
             ->get()
             ->sortBy(fn ($court): int => $court->id === $reservation->court_id ? 0 : 1)

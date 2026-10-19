@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import type { Court } from '@/features/court/types/court'
+import type { Court, SportType } from '@/features/court/types/court'
+import { setAppLocale } from '@/i18n'
 import {
   OTHER_AREA,
   describeCourtPlace,
@@ -8,8 +9,12 @@ import {
   groupCourtAreas,
 } from '../utils/courtArea'
 
-const court = (id: number, venue: Partial<NonNullable<Court['venue']>> | null): Court =>
-  ({ id, name: `Sân ${id}`, slug: `san-${id}`, venue: venue ?? undefined }) as Court
+const court = (
+  id: number,
+  venue: Partial<NonNullable<Court['venue']>> | null,
+  sport_type: SportType = 'badminton',
+): Court =>
+  ({ id, name: `Sân ${id}`, slug: `san-${id}`, venue: venue ?? undefined, sport_type }) as Court
 
 // Cầu Giấy and Tây Hồ in Hà Nội; Quận 7 in Sài Gòn; one city-only venue; one without location data.
 const cauGiay = court(1, {
@@ -26,13 +31,17 @@ const tayHo = court(2, {
   latitude: 21.0655,
   longitude: 105.827,
 })
-const quan7 = court(3, {
-  name: 'Hoàng Gia',
-  district: 'Quận 7',
-  city: 'TP. Hồ Chí Minh',
-  latitude: 10.729,
-  longitude: 106.721,
-})
+const quan7 = court(
+  3,
+  {
+    name: 'Hoàng Gia',
+    district: 'Quận 7',
+    city: 'TP. Hồ Chí Minh',
+    latitude: 10.729,
+    longitude: 106.721,
+  },
+  'tennis',
+)
 const cityOnly = court(4, { name: 'Sân Đà Nẵng', district: null, city: 'Đà Nẵng' })
 const unknown = court(5, null)
 const courts = [quan7, cauGiay, tayHo, cityOnly, unknown]
@@ -75,6 +84,15 @@ describe('courtArea', () => {
     expect(filterCourts(courts, OTHER_AREA, '', null)).toEqual([unknown])
     expect(filterCourts(courts, null, 'tây hồ', null)).toEqual([tayHo])
     expect(filterCourts(courts, null, 'hoàng gia', null)).toEqual([quan7])
+  })
+
+  it('searches the sport label in the current locale', () => {
+    setAppLocale('vi')
+    expect(filterCourts(courts, null, 'quần vợt', null)).toEqual([quan7])
+    expect(filterCourts(courts, null, 'cầu lông', null)).toHaveLength(4)
+    setAppLocale('en')
+    expect(filterCourts(courts, null, 'tennis', null)).toEqual([quan7])
+    setAppLocale('vi')
   })
 
   it('describes where a court is and how far away', () => {

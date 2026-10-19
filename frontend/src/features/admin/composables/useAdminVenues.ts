@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
-import type { Venue, SportZone } from '@/features/court/types/court'
+import type { Venue } from '@/features/court/types/court'
 import type { VenueForm } from '../types/admin'
 import type { VenueBookingPolicySettings, VenueBookingPolicyVersion } from '../types/admin'
 
@@ -23,7 +23,6 @@ export function useAdminVenues() {
   const statusFilter = ref<'all' | 'active' | 'inactive'>('all')
 
   const venues = ref<AdminVenueItem[]>([])
-  const sportZones = ref<SportZone[]>([])
 
   const showVenueModal = ref(false)
   const editingVenue = ref<AdminVenueItem | null>(null)
@@ -87,9 +86,8 @@ export function useAdminVenues() {
     loading.value = true
     error.value = ''
     try {
-      const [vRes, zRes] = await Promise.all([adminApi.getVenues(), adminApi.getSportZones()])
+      const vRes = await adminApi.getVenues()
       if (vRes) venues.value = vRes as AdminVenueItem[]
-      if (zRes) sportZones.value = zRes
     } catch (e) {
       showError(errorMessage(e, t('admin.venues.noVenuesFound')))
     } finally {
@@ -203,7 +201,6 @@ export function useAdminVenues() {
     searchQuery,
     statusFilter,
     venues,
-    sportZones,
     showVenueModal,
     editingVenue,
     bookingPolicy,

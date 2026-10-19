@@ -15,7 +15,6 @@ import CouponManagerModal from '../components/manage/CouponManagerModal.vue'
 const {
   venues,
   courts,
-  sportZones,
   coupons,
   error,
   notice,
@@ -122,7 +121,7 @@ onMounted(() => {
     <CourtFormModal
       v-model:name="courtForm.name"
       v-model:address="courtForm.address"
-      v-model:sport-zone-id="courtForm.sport_zone_id"
+      v-model:sport-type="courtForm.sport_type"
       v-model:surface-type="courtForm.surface_type"
       v-model:capacity="courtForm.capacity"
       v-model:is-active="courtForm.is_active"
@@ -130,8 +129,6 @@ onMounted(() => {
       v-model:image-url="courtForm.image_url"
       :show="showCourtModal"
       :editing-court-id="editingCourtId"
-      :venue-id="courtForm.venue_id"
-      :sport-zones="sportZones"
       :saving="saving"
       @close="showCourtModal = false"
       @save="saveCourt"

@@ -1,11 +1,6 @@
 export interface CourtImageEntity {
-  id?: number | string
-  name?: string
   image_url?: string | null
-  sport_zone?: {
-    name?: string
-    sport_type?: string
-  } | null
+  sport_type?: string
 }
 
 export const BADMINTON_DEFAULT_IMAGE = '/courts/badminton-0.jpg'
@@ -56,74 +51,12 @@ export const SPORT_GALLERY_COLLECTIONS: Record<string, string[]> = {
   badminton: BADMINTON_GALLERY,
 }
 
-/**
- * Detect sport category key from court attributes
- */
+/** The court's own sport when it has a default image, else badminton. */
 export function detectCourtSport(
   court?: CourtImageEntity | null,
 ): keyof typeof SPORT_DEFAULT_IMAGES {
-  const sportType = (court?.sport_zone?.sport_type || '').toLowerCase()
-  const name = (court?.name || '').toLowerCase()
-  const zoneName = (court?.sport_zone?.name || '').toLowerCase()
-
-  if (
-    sportType.includes('football') ||
-    sportType.includes('soccer') ||
-    name.includes('bóng đá') ||
-    name.includes('football') ||
-    zoneName.includes('bóng đá')
-  ) {
-    if (sportType.includes('7v7') || name.includes('7v7') || zoneName.includes('7v7')) {
-      return 'football_7v7'
-    }
-    return 'football_5v5'
-  }
-
-  if (
-    sportType.includes('tennis') ||
-    name.includes('tennis') ||
-    name.includes('quần vợt') ||
-    zoneName.includes('tennis')
-  ) {
-    return 'tennis'
-  }
-
-  if (
-    sportType.includes('pickleball') ||
-    name.includes('pickleball') ||
-    zoneName.includes('pickleball')
-  ) {
-    return 'pickleball'
-  }
-
-  if (
-    sportType.includes('basketball') ||
-    name.includes('bóng rổ') ||
-    name.includes('basketball') ||
-    zoneName.includes('bóng rổ')
-  ) {
-    return 'basketball'
-  }
-
-  if (
-    sportType.includes('table_tennis') ||
-    name.includes('bóng bàn') ||
-    name.includes('table tennis') ||
-    zoneName.includes('bóng bàn')
-  ) {
-    return 'table_tennis'
-  }
-
-  if (
-    sportType.includes('volleyball') ||
-    name.includes('bóng chuyền') ||
-    name.includes('volleyball') ||
-    zoneName.includes('bóng chuyền')
-  ) {
-    return 'volleyball'
-  }
-
-  return 'badminton'
+  const sport = court?.sport_type ?? ''
+  return sport in SPORT_DEFAULT_IMAGES ? sport : 'badminton'
 }
 
 /**
