@@ -268,6 +268,7 @@ See `proposal.md` (Why) for motivation and the specs in this change for the requ
   - The superseded-by-policy-governed-requests sentence goes.
   - The stale-client scenario names the removed cancellation, refund and reschedule commands.
 - Whichever change archives second rebases its MODIFIED block onto the main spec the first one left.
+- The `organization-access` "Role-based owner operations" delta is rebased onto the main spec's Staff wording, from `30ea36a0` (BR-21 folded cashier into staff). The "Staff requests payout administration" scenario is kept unchanged because this change only drops owner refund obligations from that requirement.
 - Some main spec Purposes mention refunds and do not change through deltas. They are edited by hand at archive:
   - `direct-owner-payments` ("owner-executed refunds")
   - `reservations-and-pricing` ("policy-governed cancellations and reschedules")
