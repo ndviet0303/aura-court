@@ -5,7 +5,6 @@ namespace Tests\Feature\Account;
 use App\Models\Court;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -50,17 +49,10 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
 
     private function createCourt(Venue $venue, string $name): Court
     {
-        $zone = SportZone::create([
-            'venue_id' => $venue->id,
-            'name' => ['vi' => 'Khu Cầu Lông', 'en' => 'Badminton Zone'],
-            'sport_type' => 'badminton',
-            'slot_duration' => 60,
-            'is_active' => true,
-        ]);
 
         return Court::create([
             'venue_id' => $venue->id,
-            'sport_zone_id' => $zone->id,
+            'sport_type' => 'badminton',
             'name' => ['vi' => $name, 'en' => $name],
             'is_active' => true,
         ]);
@@ -172,6 +164,7 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
         $this->actingAs($ownerAlpha)
             ->postJson('/api/admin/courts', [
                 'venue_id' => $venueBeta->id,
+                'sport_type' => 'badminton',
                 'name' => 'Hacked Court',
             ])
             ->assertStatus(403);

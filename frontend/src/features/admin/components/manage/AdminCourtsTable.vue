@@ -174,8 +174,8 @@ function goToPage(page: number) {
             }}
           </span>
 
-          <span v-if="court.sport_zone" class="zone-chip">
-            {{ resolveLocalizedText(court.sport_zone.name) }}
+          <span class="sport-chip">
+            {{ t(`sportTypes.${court.sport_type}`) }}
           </span>
         </div>
 
@@ -581,7 +581,7 @@ function goToPage(page: number) {
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
-.zone-chip {
+.sport-chip {
   position: absolute;
   top: 10px;
   right: 10px;

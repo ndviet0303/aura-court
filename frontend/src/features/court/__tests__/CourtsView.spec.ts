@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import CourtsView from '../views/CourtsView.vue'
+import { courtMatchesSport } from '../composables/useCourtsList'
+import type { Court, SportType } from '../types/court'
 import { i18n } from '@/i18n'
 import { useBookingStore } from '@/stores/booking'
 import { api } from '@/core/api/client'
@@ -58,6 +60,8 @@ describe('CourtsView', () => {
         id: 1,
         name: 'Sân 01 - Tiêu Chuẩn Quốc Tế',
         slug: 'san-01',
+        sport_type: 'badminton',
+        slot_duration: 60,
         venue: {
           id: 1,
           name: 'Aura Center Thảo Điền',
@@ -76,6 +80,8 @@ describe('CourtsView', () => {
         id: 2,
         name: 'Sân 02 - VIP Lounge',
         slug: 'san-02',
+        sport_type: 'badminton',
+        slot_duration: 60,
         venue: {
           id: 2,
           name: 'Aura Premium Landmark',
@@ -113,6 +119,8 @@ describe('CourtsView', () => {
         id: 1,
         name: 'Sân 01',
         slug: 'san-01',
+        sport_type: 'badminton',
+        slot_duration: 60,
         venue: {
           id: 1,
           name: 'Aura Thảo Điền',
@@ -146,6 +154,8 @@ describe('CourtsView', () => {
         id: 1,
         name: 'Sân 01',
         slug: 'san-01',
+        sport_type: 'badminton',
+        slot_duration: 60,
         venue: {
           id: 1,
           name: 'Aura Thảo Điền',
@@ -160,6 +170,8 @@ describe('CourtsView', () => {
         id: 2,
         name: 'Sân 02',
         slug: 'san-02',
+        sport_type: 'badminton',
+        slot_duration: 60,
         venue: {
           id: 2,
           name: 'Aura Landmark',
@@ -199,14 +211,8 @@ describe('CourtsView', () => {
         id: 1,
         name: 'Sân Cầu Lông 01',
         slug: 'san-cau-long-01',
-        sport_zone: {
-          id: 1,
-          venue_id: 1,
-          name: 'Khu Cầu Lông',
-          sport_type: 'badminton',
-          slot_duration: 60,
-          is_active: true,
-        },
+        sport_type: 'badminton',
+        slot_duration: 60,
         venue: {
           id: 1,
           name: 'Aura Thảo Điền',
@@ -221,14 +227,8 @@ describe('CourtsView', () => {
         id: 2,
         name: 'Sân Pickleball Pro',
         slug: 'san-pickleball-pro',
-        sport_zone: {
-          id: 2,
-          venue_id: 1,
-          name: 'Khu Pickleball',
-          sport_type: 'pickleball',
-          slot_duration: 60,
-          is_active: true,
-        },
+        sport_type: 'pickleball',
+        slot_duration: 60,
         venue: {
           id: 1,
           name: 'Aura Thảo Điền',
@@ -264,6 +264,8 @@ describe('CourtsView', () => {
         id: 1,
         name: 'Sân Giá Rẻ',
         slug: 'san-gia-re',
+        sport_type: 'badminton',
+        slot_duration: 60,
         venue: {
           id: 1,
           name: 'Aura Thảo Điền',
@@ -281,6 +283,8 @@ describe('CourtsView', () => {
         id: 2,
         name: 'Sân Cao Cấp VIP',
         slug: 'san-cao-cap-vip',
+        sport_type: 'badminton',
+        slot_duration: 60,
         venue: {
           id: 1,
           name: 'Aura Thảo Điền',
@@ -334,6 +338,8 @@ describe('CourtsView', () => {
         id: 1,
         name: 'Sân Giá 200k',
         slug: 'san-200k',
+        sport_type: 'badminton',
+        slot_duration: 60,
         venue: {
           id: 1,
           name: 'Aura Club',
@@ -351,6 +357,8 @@ describe('CourtsView', () => {
         id: 2,
         name: 'Sân Giá 90k',
         slug: 'san-90k',
+        sport_type: 'badminton',
+        slot_duration: 60,
         venue: {
           id: 1,
           name: 'Aura Club',
@@ -394,6 +402,8 @@ describe('CourtsView', () => {
         id: 1,
         name: 'Sân Test',
         slug: 'san-test',
+        sport_type: 'badminton',
+        slot_duration: 60,
         venue: {
           id: 1,
           name: 'Aura Thảo Điền',
@@ -423,5 +433,14 @@ describe('CourtsView', () => {
     await emptyResetBtn.trigger('click')
 
     expect(wrapper.findAll('.court-card-item').length).toBe(1)
+  })
+
+  it('matches the sport filter on the court sport, football covering both pitch sizes', () => {
+    const court = (sport_type: SportType) => ({ sport_type }) as Court
+    expect(courtMatchesSport(court('football_5v5'), 'football')).toBe(true)
+    expect(courtMatchesSport(court('football_7v7'), 'football')).toBe(true)
+    expect(courtMatchesSport(court('badminton'), 'football')).toBe(false)
+    expect(courtMatchesSport(court('tennis'), 'table_tennis')).toBe(false)
+    expect(courtMatchesSport(court('tennis'), 'all')).toBe(true)
   })
 })

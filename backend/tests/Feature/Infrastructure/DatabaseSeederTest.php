@@ -87,7 +87,7 @@ class DatabaseSeederTest extends TestCase
         // Every public court is priced; booking time is whole hours everywhere.
         $courts = Court::with('venue')->where('is_active', true)->get();
         $this->assertCount($courts->count(), app(CourtPriceRuleService::class)->pricedCourtIds($courts));
-        $this->assertSame(0, DB::table('sport_zones')->where('slot_duration', '!=', 60)->count());
+        $this->assertSame(0, DB::table('courts')->where('slot_duration', '!=', 60)->count());
         $offHour = "extract(minute from starts_at) <> 0 or extract(second from starts_at) <> 0 or ends_at - starts_at <> interval '1 hour'";
         foreach (['reservation_slots', 'reservation_entitlements', 'booking_slots', 'court_price_slots'] as $table) {
             $this->assertGreaterThan(0, DB::table($table)->count(), $table);

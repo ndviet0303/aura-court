@@ -70,7 +70,6 @@ describe('Admin Venue API & Consumers (Task 2.3 & 2.4)', () => {
     vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url === '/admin/venues') return mockVenues
       if (url === '/admin/courts') return []
-      if (url.startsWith('/admin/sport-zones')) return []
       if (url === '/admin/coupons') return []
       if (url === '/admin/audit-logs') return { data: [] }
       if (url.includes('/members')) return { members: [] }

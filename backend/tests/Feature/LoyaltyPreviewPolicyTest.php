@@ -11,7 +11,6 @@ use App\Models\OrganizationMember;
 use App\Models\PointLedger;
 use App\Models\PriceQuote;
 use App\Models\PriceRule;
-use App\Models\SportZone;
 use App\Models\TenantMembership;
 use App\Models\TenantMembershipPlan;
 use App\Models\User;
@@ -47,17 +46,9 @@ class LoyaltyPreviewPolicyTest extends TestCase
             'is_active' => true,
         ]);
 
-        $sportZone = SportZone::create([
-            'venue_id' => $venue->id,
-            'name' => 'Badminton Zone',
-            'sport_type' => 'badminton',
-            'slot_duration' => 60,
-            'is_active' => true,
-        ]);
-
         $court = Court::create([
             'venue_id' => $venue->id,
-            'sport_zone_id' => $sportZone->id,
+            'sport_type' => 'badminton',
             'name' => 'Court 1',
             'is_active' => true,
         ]);

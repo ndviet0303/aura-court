@@ -6,7 +6,6 @@ use App\Models\Court;
 use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\PriceRule;
-use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,24 +19,21 @@ class PricedCourtVisibilityTest extends TestCase
 
     private Venue $venue;
 
-    private SportZone $zone;
-
     protected function setUp(): void
     {
         parent::setUp();
         $org = Organization::create(['name' => 'Priced Org', 'slug' => 'priced-org-'.uniqid(), 'status' => 'active', 'partner_status' => 'approved']);
         $this->venue = Venue::create(['organization_id' => $org->id, 'name' => 'Priced Venue', 'slug' => 'priced-venue-'.uniqid(), 'status' => 'published', 'is_active' => true]);
-        $this->zone = SportZone::create(['venue_id' => $this->venue->id, 'name' => 'Zone', 'sport_type' => 'badminton', 'slot_duration' => 60, 'is_active' => true]);
     }
 
     private function court(string $name): Court
     {
-        return Court::create(['venue_id' => $this->venue->id, 'sport_zone_id' => $this->zone->id, 'name' => $name, 'slug' => 'court-'.uniqid(), 'is_active' => true]);
+        return Court::create(['venue_id' => $this->venue->id, 'sport_type' => 'badminton', 'name' => $name, 'slug' => 'court-'.uniqid(), 'is_active' => true]);
     }
 
-    private function zoneRule(): PriceRule
+    private function sportRule(): PriceRule
     {
-        return PriceRule::create(['organization_id' => $this->venue->organization_id, 'sport_zone_id' => $this->zone->id, 'type' => 'base', 'price' => 100000, 'is_active' => true]);
+        return PriceRule::create(['organization_id' => $this->venue->organization_id, 'venue_id' => $this->venue->id, 'sport_type' => 'badminton', 'type' => 'base', 'price' => 100000, 'is_active' => true]);
     }
 
     public function test_court_without_rules_is_hidden_and_not_bookable(): void
@@ -45,8 +41,7 @@ class PricedCourtVisibilityTest extends TestCase
         $unpriced = $this->court('Unpriced Court');
         $slotPriced = $this->court('Slot Priced Court');
         CourtPriceSlot::create(['court_id' => $slotPriced->id, 'weekday' => 1, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 90000, 'is_active' => true]);
-        $otherZone = SportZone::create(['venue_id' => $this->venue->id, 'name' => 'Other', 'sport_type' => 'tennis', 'slot_duration' => 60, 'is_active' => true]);
-        PriceRule::create(['organization_id' => $this->venue->organization_id, 'sport_zone_id' => $otherZone->id, 'type' => 'base', 'price' => 100000, 'is_active' => true]);
+        PriceRule::create(['organization_id' => $this->venue->organization_id, 'venue_id' => $this->venue->id, 'sport_type' => 'tennis', 'type' => 'base', 'price' => 100000, 'is_active' => true]);
         PriceRule::create(['organization_id' => $this->venue->organization_id, 'court_id' => $unpriced->id, 'type' => 'base', 'price' => 100000, 'is_active' => false]);
 
         $ids = collect($this->getJson('/api/courts')->assertOk()->json())->pluck('id')->all();
@@ -75,14 +70,14 @@ class PricedCourtVisibilityTest extends TestCase
         $court = $this->court('Late Priced Court');
         $this->getJson('/api/courts')->assertOk()->assertJsonCount(0);
 
-        $this->zoneRule();
+        $this->sportRule();
 
         $this->getJson('/api/courts')->assertOk()->assertJsonPath('0.id', $court->id);
     }
 
     public function test_public_list_query_count_does_not_grow_with_courts(): void
     {
-        $this->zoneRule();
+        $this->sportRule();
         // Returns [query count, listed courts] for an uncached request.
         $measure = function (): array {
             Cache::flush();

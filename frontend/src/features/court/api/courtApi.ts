@@ -1,5 +1,5 @@
 import { api } from '@/core/api/client'
-import type { Court, Venue, AvailabilitySlot, SportZone } from '../types/court'
+import type { Court, Venue, AvailabilitySlot } from '../types/court'
 
 export interface CourtQueryParams {
   sport_type?: string
@@ -27,8 +27,4 @@ export const courtApi = {
     api.get<AvailabilitySlot[]>(`/availability?court_id=${courtId}&date=${date}`),
 
   getReviews: (courtId: number) => api.get<any>(`/courts/${courtId}/reviews`),
-
-  getSportZones: () => api.get<SportZone[]>('/sport-zones'),
-
-  getSportZone: (id: number) => api.get<SportZone>(`/sport-zones/${id}`),
 }

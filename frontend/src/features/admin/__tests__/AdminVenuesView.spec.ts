@@ -66,7 +66,6 @@ describe('AdminVenuesView', () => {
 
     vi.mocked(api.get).mockImplementation(async (url: string) => {
       if (url === '/admin/venues') return mockVenues
-      if (url.startsWith('/admin/sport-zones')) return []
       return []
     })
   })

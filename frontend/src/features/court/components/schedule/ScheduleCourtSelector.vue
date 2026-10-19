@@ -21,15 +21,6 @@ function scrollCourts(direction: 'left' | 'right') {
   const offset = direction === 'left' ? -280 : 280
   courtsScrollRef.value.scrollBy({ left: offset, behavior: 'smooth' })
 }
-
-function getCourtTypeTag(c: Court): string {
-  if (c.sport_zone?.name) return c.sport_zone.name
-  if (c.name.toLowerCase().includes('vip')) return 'Sân VIP'
-  if (c.name.toLowerCase().includes('bwf') || c.name.toLowerCase().includes('thảm'))
-    return 'Thảm BWF'
-  if (c.name.toLowerCase().includes('khán đài')) return 'Khán Đài'
-  return 'Tiêu chuẩn'
-}
 </script>
 
 <template>
@@ -92,7 +83,7 @@ function getCourtTypeTag(c: Court): string {
           @click="emit('selectCourt', c.id)"
         >
           <div class="c-card-top">
-            <span class="c-type-badge">{{ getCourtTypeTag(c) }}</span>
+            <span class="c-type-badge">{{ $t(`sportTypes.${c.sport_type}`) }}</span>
             <span v-if="selectedCourtId === c.id" class="material-symbols-outlined active-check">
               check_circle
             </span>

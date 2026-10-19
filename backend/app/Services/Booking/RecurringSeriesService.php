@@ -43,7 +43,7 @@ class RecurringSeriesService
             abort(403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/auth/email/verification-notification.');
         }
 
-        $court = Court::with(['venue', 'sportZone'])->findOrFail((int) $data['court_id']);
+        $court = Court::with(['venue'])->findOrFail((int) $data['court_id']);
         if ($court->venue?->organization_id) {
             $organizationId = (int) $court->venue->organization_id;
         }
@@ -55,7 +55,7 @@ class RecurringSeriesService
         $firstStart = Carbon::parse($data['starts_at'])->setTimezone(config('app.timezone'))->setSecond(0);
         $firstEnd = isset($data['ends_at']) ? Carbon::parse($data['ends_at'])->setTimezone(config('app.timezone'))->setSecond(0) : $firstStart->copy()->addHour();
         $sessionMinutes = (int) abs($firstStart->diffInMinutes($firstEnd));
-        // Fail fast (before any transaction) if the session is not a whole multiple of the zone slot.
+        // Fail fast (before any transaction) if the session is not a whole multiple of the court slot.
         $this->sessionSlotStarts($court, $firstStart, $sessionMinutes);
         $until = isset($data['until']) ? Carbon::parse($data['until'])->setTimezone(config('app.timezone'))->setSecond(0) : null;
         if ($until && $until->greaterThan($firstStart->copy()->addMonths(12))) {
@@ -144,7 +144,7 @@ class RecurringSeriesService
         $guaranteeConfirm = (bool) data_get($settings, 'recurring.guarantee_confirm', false);
         $graceHours = (int) data_get($settings, 'recurring.overdue_release_hours', 24);
         $holdTtlMinutes = (int) data_get($settings, 'booking.hold_ttl_minutes', 30);
-        $slotMinutes = (int) ($court->sportZone?->slot_duration ?: 60);
+        $slotMinutes = (int) $court->slot_duration;
 
         // Re-price + re-check conflicts against LIVE inventory using the shared generator output.
         $priced = [];
@@ -584,7 +584,7 @@ class RecurringSeriesService
      */
     public function previewSeries(User $user, array $data): array
     {
-        $court = Court::with(['venue', 'sportZone'])->findOrFail((int) $data['court_id']);
+        $court = Court::with(['venue'])->findOrFail((int) $data['court_id']);
 
         $frequency = strtolower((string) ($data['frequency'] ?? ''));
         if (! in_array($frequency, ['weekly', 'biweekly', 'monthly'], true)) {
@@ -613,7 +613,7 @@ class RecurringSeriesService
         }
 
         $sessionMinutes = (int) abs($firstStart->diffInMinutes($firstEnd));
-        $slotMinutes = (int) ($court->sportZone?->slot_duration ?: 60);
+        $slotMinutes = (int) $court->slot_duration;
         // Validate divisibility up front so preview rejects the same sessions create would.
         $this->sessionSlotStarts($court, $firstStart, $sessionMinutes);
         $occurrences = [];
@@ -721,7 +721,7 @@ class RecurringSeriesService
 
     /**
      * Enumerate every sub-interval start (ISO8601) within a single session, stepping by the
-     * court's zone slot_duration so a multi-hour session reserves/prices EVERY interval, not
+     * court's slot_duration so a multi-hour session reserves/prices EVERY interval, not
      * just the first. The session length MUST be a positive integer multiple of the slot
      * duration and MUST NOT exceed the 24-slot per-quote cap.
      *
@@ -729,8 +729,7 @@ class RecurringSeriesService
      */
     private function sessionSlotStarts(Court $court, Carbon $start, int $sessionMinutes): array
     {
-        $court->loadMissing('sportZone');
-        $slotMinutes = (int) ($court->sportZone?->slot_duration ?: 60);
+        $slotMinutes = (int) $court->slot_duration;
         if ($slotMinutes < 1 || $sessionMinutes < 1 || $sessionMinutes % $slotMinutes !== 0) {
             throw ValidationException::withMessages(['ends_at' => 'Độ dài buổi phải là bội số của 1h.']);
         }

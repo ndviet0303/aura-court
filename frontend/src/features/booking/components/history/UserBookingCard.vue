@@ -55,18 +55,7 @@ const statusMeta = computed(() => {
   return { label: t('booking.statusCancelled'), icon: 'cancel', class: 'status-cancelled' }
 })
 
-const sportLabel = computed(() => {
-  const st = props.booking.court?.sport_zone?.sport_type || 'badminton'
-  const map: Record<string, string> = {
-    badminton: t('home.filterBadminton'),
-    pickleball: t('home.filterPickleball'),
-    tennis: t('home.filterTennis'),
-    football_5v5: t('home.filterFootball5'),
-    football_7v7: t('home.filterFootball7'),
-    basketball: t('home.filterBasketball'),
-  }
-  return map[st] || t('home.filterCourt')
-})
+const sportLabel = computed(() => t(`sportTypes.${props.booking.court?.sport_type ?? 'badminton'}`))
 </script>
 
 <template>

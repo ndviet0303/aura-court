@@ -213,7 +213,7 @@ class LoyaltyPolicyService
             $venueId = (int) Court::query()->whereKey($courtId)->value('venue_id');
             $payableAmount = (int) $quote->total_amount;
         } elseif (! empty($params['court_id'])) {
-            $court = Court::query()->with(['venue.organization', 'sportZone'])->find($params['court_id']);
+            $court = Court::query()->with(['venue.organization'])->find($params['court_id']);
 
             if (! $court) {
                 throw ValidationException::withMessages([

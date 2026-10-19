@@ -63,7 +63,7 @@ class BookingFlowsTest extends TestCase
         $venue = Venue::firstOrFail();
         $admin = $this->ownerOf($venue->organization);
 
-        $court = $this->actingAs($admin)->postJson('/api/admin/courts', ['name' => 'Sân Test', 'venue_id' => $venue->id])->assertCreated()->json();
+        $court = $this->actingAs($admin)->postJson('/api/admin/courts', ['name' => 'Sân Test', 'venue_id' => $venue->id, 'sport_type' => 'badminton'])->assertCreated()->json();
         $courtId = $court['id'];
 
         $this->actingAs($admin)->postJson("/api/admin/courts/{$courtId}/prices", [

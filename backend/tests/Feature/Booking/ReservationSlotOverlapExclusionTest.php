@@ -13,7 +13,6 @@ use App\Models\ReceivingConnection;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
-use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
 use App\Models\VenueBookingPolicy;
@@ -219,14 +218,7 @@ class ReservationSlotOverlapExclusionTest extends TestCase
             'status' => 'published',
             'is_active' => true,
         ]);
-        $zone = SportZone::create([
-            'venue_id' => $venue->id,
-            'name' => 'Overlap Zone',
-            'sport_type' => 'badminton',
-            'slot_duration' => $slotDuration,
-            'is_active' => true,
-        ]);
-        $court = Court::create(['venue_id' => $venue->id, 'sport_zone_id' => $zone->id, 'name' => 'Overlap Court', 'is_active' => true]);
+        $court = Court::create(['venue_id' => $venue->id, 'sport_type' => 'badminton', 'slot_duration' => $slotDuration, 'name' => 'Overlap Court', 'is_active' => true]);
         VenueBookingPolicy::create([
             'venue_id' => $venue->id,
             'version' => 1,

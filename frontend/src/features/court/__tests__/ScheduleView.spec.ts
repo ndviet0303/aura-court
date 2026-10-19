@@ -59,14 +59,8 @@ describe('ScheduleView', () => {
       is_active: true,
       share_url: '',
     },
-    sport_zone: {
-      id: 1,
-      venue_id: 1,
-      name: 'Thảm BWF Tiêu Chuẩn',
-      sport_type: 'badminton' as const,
-      slot_duration: 60,
-      is_active: true,
-    },
+    sport_type: 'badminton' as const,
+    slot_duration: 60,
   }
 
   const mockSlots = [

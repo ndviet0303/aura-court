@@ -60,10 +60,10 @@ A confirmed booking SHALL be final. Customers, staff and owners SHALL NOT be off
 - **THEN** it SHALL retain them as historical evidence without making cancellation, refunds or rescheduling available again
 
 ### Requirement: One-hour booking slots
-A booking SHALL consist of one or more booking slots, each priced for its own interval and each resellable on its own. Seeded venues SHALL use one-hour slots that start on the hour, with booking policies that state whole-hour durations, and venue setup SHALL create zones with a one-hour slot length. Extra time on site SHALL be booked as further slots with their own payment, never by lengthening a booked slot. Existing bookings SHALL keep their recorded slots. Vietnamese interfaces, error messages and notifications SHALL name the booking unit as an hour ("giờ", "1h" or "khung giờ") and SHALL NOT show the word "slot".
+A booking SHALL consist of one or more booking slots, each priced for its own interval and each resellable on its own. Seeded venues SHALL use one-hour slots that start on the hour, with booking policies that state whole-hour durations, and new courts SHALL default to a one-hour slot length. Extra time on site SHALL be booked as further slots with their own payment, never by lengthening a booked slot. Existing bookings SHALL keep their recorded slots. Vietnamese interfaces, error messages and notifications SHALL name the booking unit as an hour ("giờ", "1h" or "khung giờ") and SHALL NOT show the word "slot".
 
 #### Scenario: Two-hour booking
-- **WHEN** a customer books a court in a one-hour zone from 19:00 to 21:00
+- **WHEN** a customer books a court with a one-hour slot length from 19:00 to 21:00
 - **THEN** the booking SHALL hold two one-hour slots, 19:00–20:00 and 20:00–21:00, each priced for its own hour and each resellable on its own
 
 #### Scenario: Hour wording
@@ -72,7 +72,7 @@ A booking SHALL consist of one or more booking slots, each priced for its own in
 
 #### Scenario: Seeded data uses one-hour slots
 - **WHEN** the demo seed finishes
-- **THEN** every seeded zone SHALL have a 60-minute slot length, every seeded reservation slot, entitlement and price slot SHALL start on the hour and last 60 minutes, and every seeded booking policy SHALL state whole-hour durations
+- **THEN** every seeded court SHALL have a 60-minute slot length, every seeded reservation slot, entitlement and price slot SHALL start on the hour and last 60 minutes, and every seeded booking policy SHALL state whole-hour durations
 
 ## REMOVED Requirements
 

@@ -24,6 +24,8 @@ describe('CouponManagerModal', () => {
         slug: 'court-8',
         venue_id: 3,
         venue: venues[0]!,
+        sport_type: 'badminton',
+        slot_duration: 60,
         is_active: true,
       },
     ]

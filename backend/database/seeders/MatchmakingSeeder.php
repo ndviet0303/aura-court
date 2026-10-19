@@ -201,12 +201,12 @@ class MatchmakingSeeder extends Seeder
         $users = $this->customers->keyBy('id');
 
         return Reservation::query()
-            ->with(['court.venue', 'court.sportZone', 'slots'])
+            ->with(['court.venue', 'slots'])
             ->where('status', 'confirmed')
             ->whereIn('user_id', $users->keys())
             ->get()
             ->filter(fn (Reservation $r) => $r->slots->isNotEmpty() && $r->court?->venue
-                && isset(self::SPORTS[$r->court->sportZone?->sport_type], self::VENUE_COORDINATES[$r->court->venue->slug]))
+                && isset(self::SPORTS[$r->court->sport_type], self::VENUE_COORDINATES[$r->court->venue->slug]))
             ->map(fn (Reservation $r) => [
                 'id' => $r->id,
                 'reservation' => $r,
@@ -214,7 +214,7 @@ class MatchmakingSeeder extends Seeder
                 'user_id' => $r->user_id,
                 'host' => $users[$r->user_id],
                 'court' => $r->court,
-                'sport' => $r->court->sportZone->sport_type,
+                'sport' => $r->court->sport_type,
                 'start' => $this->local($r->slots->min('starts_at')),
                 'end' => $this->local($r->slots->max('ends_at')),
             ])
@@ -329,7 +329,7 @@ class MatchmakingSeeder extends Seeder
         $courts = Court::query()
             ->with('venue')
             ->whereHas('venue', fn ($q) => $q->where('organization_id', $this->orgId)->whereIn('slug', $venues))
-            ->whereHas('sportZone', fn ($q) => $q->where('sport_type', 'badminton'))
+            ->where('sport_type', 'badminton')
             ->orderBy('slug')
             ->get()
             ->sortBy(fn (Court $court) => array_search($court->venue->slug, $venues, true))

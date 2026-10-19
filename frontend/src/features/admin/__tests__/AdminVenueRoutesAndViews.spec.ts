@@ -83,11 +83,12 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
             name: 'Court 1',
             venue_id: 1,
             venue: mockVenues[0],
+            sport_type: 'badminton',
+            slot_duration: 60,
             is_active: true,
             blocks: [],
           },
         ]
-      if (url.startsWith('/admin/sport-zones')) return []
       if (url === '/admin/coupons') return []
       if (url === '/admin/audit-logs') return { data: [] }
       if (url.includes('/members'))
@@ -288,6 +289,11 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
       const addressInput = modal.find<HTMLInputElement>('#court-address')
       expect(addressInput.element.value).toBe('142 Wellness Blvd, Downtown')
       await addressInput.setValue('  9 New Street  ')
+      await modal
+        .find(`button[aria-label="${i18n.global.t('admin.manage.sportTypeLabel')}"]`)
+        .trigger('click')
+      const pickleball = modal.findAll('.dropdown-item').find((o) => o.text() === 'Pickleball')
+      await pickleball!.trigger('click')
       await modal.find('input[type="number"]').setValue('8')
       await modal.find('input[type="checkbox"]').setValue(false)
       const tag = modal.find('.tag-btn')
@@ -301,13 +307,43 @@ describe('Role-Aware Route & View Integration (Task 2.4)', () => {
       expect(api.post).toHaveBeenCalledWith('/admin/courts', {
         name: 'Court 9',
         venue_id: 1,
-        sport_zone_id: null,
+        sport_type: 'pickleball',
         surface_type: null,
         capacity: 8,
         is_active: false,
         description: tagLabel,
         image_url: '/courts/football-mini-turf.jpg',
       })
+    })
+
+    it('AdminManageView creates a badminton court in the implicit venue without touching it', async () => {
+      const auth = useAuthStore()
+      auth.user = adminUser
+      auth.loaded = true
+      vi.mocked(api.post).mockResolvedValueOnce({ id: 2 })
+
+      const wrapper = mount(AdminManageView, {
+        global: {
+          plugins: [i18n],
+          stubs: {
+            RouterLink: { template: '<a><slot /></a>' },
+          },
+        },
+      })
+      await flushPromises()
+      const modal = wrapper.findComponent(CourtFormModal)
+
+      await wrapper.find('.add-court-btn').trigger('click')
+      await modal.find('input[type="text"]').setValue('Court 10')
+      await modal.find('.btn-primary').trigger('click')
+      await flushPromises()
+
+      // The address was left as loaded, so the venue is not written.
+      expect(api.patch).not.toHaveBeenCalled()
+      expect(api.post).toHaveBeenCalledWith(
+        '/admin/courts',
+        expect.objectContaining({ name: 'Court 10', venue_id: 1, sport_type: 'badminton' }),
+      )
     })
 
     it('AdminStaffView loads venues and associates staff with venues', async () => {

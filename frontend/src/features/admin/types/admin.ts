@@ -1,10 +1,10 @@
-import type { Court } from '@/features/court/types/court'
+import type { Court, SportType } from '@/features/court/types/court'
 import type { User } from '@/core/types/common'
 
 export type CourtForm = {
   name: string
   venue_id: number
-  sport_zone_id?: number | null
+  sport_type: SportType
   description?: string | null
   image_url?: string | null
   surface_type?: Court['surface_type']

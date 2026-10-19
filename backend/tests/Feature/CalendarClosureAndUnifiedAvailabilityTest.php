@@ -11,7 +11,6 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\Reservation;
 use App\Models\ReservationSlot;
-use App\Models\SportZone;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Reservation\LegacyBookingBackfillService;
@@ -40,19 +39,11 @@ class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
             'is_active' => true,
         ]);
 
-        $zone = SportZone::create([
-            'venue_id' => $venue->id,
-            'name' => 'Badminton Zone',
-            'sport_type' => 'badminton',
-            'slot_duration' => 60,
-            'is_active' => true,
-        ]);
-
         $court = Court::create([
             'name' => 'Court Alpha',
             'slug' => 'court-alpha-'.uniqid(),
             'venue_id' => $venue->id,
-            'sport_zone_id' => $zone->id,
+            'sport_type' => 'badminton',
             'is_active' => true,
         ]);
 
@@ -71,7 +62,7 @@ class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
             ]);
         }
 
-        return compact('org', 'venue', 'zone', 'court', 'tomorrow', 'weekday');
+        return compact('org', 'venue', 'court', 'tomorrow', 'weekday');
     }
 
     public function test_court_block_creation_rejects_when_conflicting_with_confirmed_legacy_bookings(): void

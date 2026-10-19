@@ -18,7 +18,8 @@ describe('BookingDetailLoyalty (Task 7.3 & 7.4)', () => {
       name: 'Sân VIP 1',
       slug: 'san-vip-1',
       is_active: true,
-      sport_zone: { id: 1, name: 'Zone A', sport_type: 'badminton' } as any,
+      sport_type: 'badminton',
+      slot_duration: 60,
       venue: { id: 1, name: 'Aura Badminton Center', address: '123 HCM' } as any,
     },
     slots: [

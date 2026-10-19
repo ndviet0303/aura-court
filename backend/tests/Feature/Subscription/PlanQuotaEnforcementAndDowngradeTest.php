@@ -101,6 +101,7 @@ class PlanQuotaEnforcementAndDowngradeTest extends TestCase
         $res1 = $this->actingAs($owner)->postJson('/api/admin/courts', [
             'name' => 'Sân 1',
             'venue_id' => $venue->id,
+            'sport_type' => 'badminton',
             'is_active' => true,
         ]);
         $res1->assertStatus(201);
@@ -109,6 +110,7 @@ class PlanQuotaEnforcementAndDowngradeTest extends TestCase
         $res2 = $this->actingAs($owner)->postJson('/api/admin/courts', [
             'name' => 'Sân 2',
             'venue_id' => $venue->id,
+            'sport_type' => 'badminton',
             'is_active' => true,
         ]);
         $res2->assertStatus(201);
@@ -117,6 +119,7 @@ class PlanQuotaEnforcementAndDowngradeTest extends TestCase
         $res3 = $this->actingAs($owner)->postJson('/api/admin/courts', [
             'name' => 'Sân 3',
             'venue_id' => $venue->id,
+            'sport_type' => 'badminton',
             'is_active' => true,
         ]);
         $res3->assertStatus(422);

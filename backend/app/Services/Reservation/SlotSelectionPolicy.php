@@ -40,7 +40,7 @@ class SlotSelectionPolicy
             return;
         }
 
-        $court->loadMissing(['venue', 'sportZone']);
+        $court->loadMissing(['venue']);
         $venue = $court->venue;
         $timezone = $venue?->timezone ?: config('app.timezone');
 

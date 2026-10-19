@@ -80,11 +80,6 @@ class Venue extends Model
         return $this->hasMany(Court::class);
     }
 
-    public function sportZones(): HasMany
-    {
-        return $this->hasMany(SportZone::class);
-    }
-
     public function publicationRevisions(): HasMany
     {
         return $this->hasMany(VenuePublicationRevision::class)->orderBy('revision_number', 'desc');

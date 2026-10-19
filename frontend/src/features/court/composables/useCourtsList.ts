@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import { useBookingStore } from '@/stores/booking'
+import { i18n } from '@/i18n'
 import type { Court } from '../types/court'
 
 export function getCourtMinPrice(court: Court): number {
@@ -12,74 +13,9 @@ export function getCourtMinPrice(court: Court): number {
 
 export function courtMatchesSport(court: Court, sport: string): boolean {
   if (!sport || sport === 'all') return true
-  const zoneSport = court.sport_zone?.sport_type?.toLowerCase() || ''
-  const zoneName = court.sport_zone?.name?.toLowerCase() || ''
-  const courtName = court.name.toLowerCase()
-  const courtDesc = (court.description || '').toLowerCase()
-
-  if (zoneSport === sport) return true
-
-  if (sport === 'badminton') {
-    return (
-      zoneSport === 'badminton' ||
-      zoneName.includes('cầu lông') ||
-      zoneName.includes('badminton') ||
-      courtName.includes('cầu lông') ||
-      courtName.includes('bwf') ||
-      courtDesc.includes('cầu lông')
-    )
-  }
-  if (sport === 'pickleball') {
-    return (
-      zoneSport === 'pickleball' ||
-      zoneName.includes('pickleball') ||
-      courtName.includes('pickleball') ||
-      courtDesc.includes('pickleball')
-    )
-  }
-  if (sport === 'tennis') {
-    return (
-      zoneSport === 'tennis' ||
-      zoneName.includes('tennis') ||
-      courtName.includes('tennis') ||
-      courtDesc.includes('tennis')
-    )
-  }
-  if (sport === 'basketball') {
-    return (
-      zoneSport === 'basketball' ||
-      zoneName.includes('bóng rổ') ||
-      zoneName.includes('basketball') ||
-      courtName.includes('bóng rổ') ||
-      courtDesc.includes('bóng rổ')
-    )
-  }
-  if (sport === 'football' || sport === 'football_5v5' || sport === 'football_7v7') {
-    return (
-      zoneSport.startsWith('football') ||
-      zoneName.includes('bóng đá') ||
-      courtName.includes('bóng đá') ||
-      courtDesc.includes('bóng đá')
-    )
-  }
-  if (sport === 'table_tennis') {
-    return (
-      zoneSport === 'table_tennis' ||
-      zoneName.includes('bóng bàn') ||
-      courtName.includes('bóng bàn') ||
-      courtDesc.includes('bóng bàn')
-    )
-  }
-  if (sport === 'volleyball') {
-    return (
-      zoneSport === 'volleyball' ||
-      zoneName.includes('bóng chuyền') ||
-      courtName.includes('bóng chuyền') ||
-      courtDesc.includes('bóng chuyền')
-    )
-  }
-
-  return false
+  // The "football" filter covers both pitch sizes.
+  if (sport === 'football') return court.sport_type.startsWith('football')
+  return court.sport_type === sport
 }
 
 export function courtMatchesPriceRange(court: Court, range: string): boolean {
@@ -184,7 +120,7 @@ export function useCourtsList() {
         c.name.toLowerCase().includes(q) ||
         (c.venue?.name && c.venue.name.toLowerCase().includes(q)) ||
         (c.venue?.address && c.venue.address.toLowerCase().includes(q)) ||
-        (c.sport_zone?.name && c.sport_zone.name.toLowerCase().includes(q))
+        i18n.global.t(`sportTypes.${c.sport_type}`).toLowerCase().includes(q)
 
       const matchVenue =
         selectedVenue.value === 'all' ||

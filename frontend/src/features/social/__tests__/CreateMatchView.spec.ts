@@ -4,6 +4,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import CreateMatchView from '../views/CreateMatchView.vue'
 import { i18n } from '@/i18n'
 import { api } from '@/core/api/client'
+import { SelectDropdown, type DropdownOption } from '@/shared/components'
 
 const pushMock = vi.fn()
 
@@ -91,6 +92,17 @@ describe('CreateMatchView', () => {
     const quickPill = wrapper.find('.quick-pill')
     await quickPill.trigger('click')
     expect(quickPill.classes()).toContain('active')
+  })
+
+  it('labels each court option with its translated sport', async () => {
+    const wrapper = mount(CreateMatchView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    const courtOption = wrapper
+      .findAllComponents(SelectDropdown)
+      .flatMap((d) => d.props('options') as DropdownOption[])
+      .find((o) => o.value === 1 && String(o.label).includes('Sân VIP 1'))
+    expect(courtOption?.sublabel).toMatch(/^Cầu lông · /)
   })
 
   it('submits match successfully and triggers redirect', async () => {

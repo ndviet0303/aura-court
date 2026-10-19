@@ -111,7 +111,7 @@
   },
   "src/features/admin/api/adminApi.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 26
+      "count": 24
     }
   },
   "src/features/admin/api/contractsApi.ts": {
@@ -261,7 +261,7 @@
   },
   "src/features/booking/__tests__/BookingDetailLoyalty.spec.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 2
+      "count": 1
     }
   },
   "src/features/booking/__tests__/BookingView.spec.ts": {

@@ -20,7 +20,7 @@ class AvailabilityController extends Controller
     ) {
         $data = $request->validate(['court_id' => 'required|integer|exists:courts,id', 'date' => 'required|date_format:Y-m-d']);
         $court = $eligibility->assertEligible((int) $data['court_id'], publicFacing: true);
-        $court->loadMissing(['priceSlots', 'blocks', 'sportZone']);
+        $court->loadMissing(['priceSlots', 'blocks']);
 
         $zone = $court->venue?->timezone ?: config('app.timezone', 'Asia/Ho_Chi_Minh');
         $date = Carbon::createFromFormat('Y-m-d', $data['date'], $zone)->startOfDay();
@@ -36,7 +36,7 @@ class AvailabilityController extends Controller
             ->where('starts_at', '>=', $dayStartUtc->copy()->subHours(24))
             ->where('starts_at', '<=', $dayEndUtc->copy()->addHours(24))
             ->get();
-        $duration = (int) ($court->sportZone?->slot_duration ?: 60);
+        $duration = (int) $court->slot_duration;
         $toUtcCarbon = function ($dateTime): Carbon {
             if ($dateTime instanceof \DateTimeInterface) {
                 return Carbon::createFromFormat('Y-m-d H:i:s', $dateTime->format('Y-m-d H:i:s'), 'UTC');

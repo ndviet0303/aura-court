@@ -117,14 +117,14 @@ function getSlotPricing(
     if (rule.effective_from && day.isoDate < rule.effective_from.slice(0, 10)) return false
     if (rule.effective_until && day.isoDate > rule.effective_until.slice(0, 10)) return false
     if (rule.court_id && rule.court_id !== court?.id) return false
-    if (rule.sport_zone_id && rule.sport_zone_id !== court?.sport_zone_id) return false
+    if (rule.sport_type && rule.sport_type !== court?.sport_type) return false
     if (rule.venue_id && rule.venue_id !== venueId) return false
     return true
   })
   const baseCourtPrice = 120000
   const compareRules = (a: PriceRuleItem, b: PriceRuleItem) => {
     const scopeRank = (rule: PriceRuleItem) =>
-      rule.court_id ? 4 : rule.sport_zone_id ? 3 : rule.venue_id ? 2 : 1
+      rule.court_id ? 4 : rule.sport_type ? 3 : rule.venue_id ? 2 : 1
     return (
       scopeRank(b) - scopeRank(a) || b.priority - a.priority || b.version - a.version || b.id - a.id
     )

@@ -29,6 +29,8 @@ describe('CourtDetailView', () => {
         id: 1,
         name: 'Sân 01 - Tiêu Chuẩn',
         slug: 'san-01-tieu-chuan',
+        sport_type: 'badminton',
+        slot_duration: 60,
         venue: {
           id: 1,
           name: 'Aura Center Thảo Điền',
@@ -73,6 +75,8 @@ describe('CourtDetailView', () => {
         id: 1,
         name: 'Sân 01',
         slug: 'san-01',
+        sport_type: 'badminton',
+        slot_duration: 60,
         venue: {
           id: 1,
           name: 'Aura Center',
@@ -111,6 +115,8 @@ describe('CourtDetailView', () => {
         id: 1,
         name: 'Sân 01',
         slug: 'san-01',
+        sport_type: 'badminton',
+        slot_duration: 60,
         venue: {
           id: 1,
           name: 'Aura Center',
@@ -138,6 +144,8 @@ describe('CourtDetailView', () => {
         id: 1,
         name: 'Sân 01',
         slug: 'san-01',
+        sport_type: 'badminton',
+        slot_duration: 60,
         venue: {
           id: 1,
           name: 'Aura Center',

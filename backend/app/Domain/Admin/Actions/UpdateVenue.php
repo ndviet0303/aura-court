@@ -15,6 +15,6 @@ class UpdateVenue
     {
         $this->venues->update($venue, $data);
 
-        return $venue->fresh('sportZones');
+        return $venue->fresh();
     }
 }

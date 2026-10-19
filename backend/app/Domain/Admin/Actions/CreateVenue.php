@@ -43,17 +43,7 @@ class CreateVenue
                 }
             }
 
-            $venue = $this->venues->create($data + ['slug' => $slug]);
-
-            // Automatically create a default sport zone for the new venue
-            $venue->sportZones()->create([
-                'name' => 'Khu Cầu Lông',
-                'sport_type' => 'badminton',
-                'slot_duration' => 60,
-                'is_active' => true,
-            ]);
-
-            return $venue->load('sportZones');
+            return $this->venues->create($data + ['slug' => $slug]);
         });
     }
 

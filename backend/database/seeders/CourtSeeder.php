@@ -5,12 +5,11 @@ namespace Database\Seeders;
 use App\Models\Court;
 use App\Models\CourtPriceSlot;
 use App\Models\PriceRule;
-use App\Models\SportZone;
 use App\Models\Venue;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
-class SportZoneCourtSeeder extends Seeder
+class CourtSeeder extends Seeder
 {
     public function run(): void
     {
@@ -24,210 +23,7 @@ class SportZoneCourtSeeder extends Seeder
             return;
         }
 
-        // 1. Sport Zones
-        $sportZonesData = [
-            // Venue 1: Cầu Giấy
-            [
-                'venue_slug' => 'aura-court',
-                'key' => 'cg-badminton',
-                'name' => 'Khu Sân Cầu Lông Tiêu Chuẩn',
-                'sport_type' => 'badminton',
-                'slot_duration' => 60,
-                'description' => 'Khu sân cầu lông thảm BWF cao cấp, trần cao 9.5m, ánh sáng LED 500 Lux',
-            ],
-            [
-                'venue_slug' => 'aura-court',
-                'key' => 'cg-pickleball',
-                'name' => 'Khu Sân Pickleball Dynamic',
-                'sport_type' => 'pickleball',
-                'slot_duration' => 60,
-                'description' => 'Cụm sân pickleball mặt phủ sơn acrylic 5 lớp giảm chấn, hệ thống lưới chuyên nghiệp',
-            ],
-            [
-                'venue_slug' => 'aura-court',
-                'key' => 'cg-table-tennis',
-                'name' => 'Khu Sân Bóng Bàn Tiêu Chuẩn',
-                'sport_type' => 'table_tennis',
-                'slot_duration' => 60,
-                'description' => 'Bàn bóng bàn thi đấu Double Fish ITTF Approved, sàn cao su chống trơn trượt',
-            ],
-
-            // Venue 2: Quần Ngựa
-            [
-                'venue_slug' => 'aura-arena-quan-ngua',
-                'key' => 'qn-badminton',
-                'name' => 'Khu Sân Cầu Lông Thi Đấu Quần Ngựa',
-                'sport_type' => 'badminton',
-                'slot_duration' => 60,
-                'description' => 'Sân cầu lông trung tâm có khán đài mini và hệ thống camera replay VAR',
-            ],
-            [
-                'venue_slug' => 'aura-arena-quan-ngua',
-                'key' => 'qn-football-5v5',
-                'name' => 'Khu Sân Bóng Đá Mini 5v5 Quần Ngựa',
-                'sport_type' => 'football_5v5',
-                'slot_duration' => 60,
-                'description' => 'Cụm sân cỏ nhân tạo FIFA Quality Pro, hạt cao su EPDM không mùi, dàn đèn cao áp',
-            ],
-            [
-                'venue_slug' => 'aura-arena-quan-ngua',
-                'key' => 'qn-football-7v7',
-                'name' => 'Khu Sân Bóng Đá 7v7 Quần Ngựa',
-                'sport_type' => 'football_7v7',
-                'slot_duration' => 60,
-                'description' => 'Sân bóng 7 người kích thước chuẩn 50x30m, thoát nước siêu nhanh',
-            ],
-            [
-                'venue_slug' => 'aura-arena-quan-ngua',
-                'key' => 'qn-table-tennis',
-                'name' => 'Khu Sân Bóng Bàn Quần Ngựa',
-                'sport_type' => 'table_tennis',
-                'slot_duration' => 60,
-                'description' => 'Phòng bóng bàn máy lạnh Stiga Master, hàng rào chắn bóng tiêu chuẩn',
-            ],
-
-            // Venue 3: Tây Hồ
-            [
-                'venue_slug' => 'aura-complex-tay-ho',
-                'key' => 'th-tennis',
-                'name' => 'Khu Sân Tennis Pro Grandslam Tây Hồ',
-                'sport_type' => 'tennis',
-                'slot_duration' => 60,
-                'description' => 'Sân quần vợt mặt cứng DecoTurf và sân đất nện tiêu chuẩn Roland Garros',
-            ],
-            [
-                'venue_slug' => 'aura-complex-tay-ho',
-                'key' => 'th-pickleball',
-                'name' => 'Khu Sân Pickleball View Hồ Tây',
-                'sport_type' => 'pickleball',
-                'slot_duration' => 60,
-                'description' => 'Sân pickleball ngoài trời đón gió hồ, có mái che bán phần và quán lounge thư giãn',
-            ],
-            [
-                'venue_slug' => 'aura-complex-tay-ho',
-                'key' => 'th-badminton',
-                'name' => 'Khu Sân Cầu Lông Victor Tây Hồ',
-                'sport_type' => 'badminton',
-                'slot_duration' => 60,
-                'description' => 'Sân cầu lông chuyên dụng Victor, hệ thống quạt mát đối lưu trần cao',
-            ],
-            [
-                'venue_slug' => 'aura-complex-tay-ho',
-                'key' => 'th-basketball',
-                'name' => 'Khu Sân Bóng Rổ Tây Hồ Streetball',
-                'sport_type' => 'basketball',
-                'slot_duration' => 60,
-                'description' => 'Sân bóng rổ ngoài trời sơn nghệ thuật street-art, rổ chuẩn NBA chịu lực',
-            ],
-
-            // Venue 4: Landmark 72
-            [
-                'venue_slug' => 'aura-landmark-72',
-                'key' => 'lm-basketball',
-                'name' => 'Khu Sân Bóng Rổ Trong Nhà NBA Landmark',
-                'sport_type' => 'basketball',
-                'slot_duration' => 60,
-                'description' => 'Sàn gỗ phong Bắc Mỹ Robbins All-Star, trụ rổ thủy lực Schelde Sports',
-            ],
-            [
-                'venue_slug' => 'aura-landmark-72',
-                'key' => 'lm-tennis',
-                'name' => 'Khu Sân Tennis Mặt Cứng US Open Landmark',
-                'sport_type' => 'tennis',
-                'slot_duration' => 60,
-                'description' => 'Sân tennis trong nhà điều hòa trung tâm 24/7, ánh sáng 750 Lux chuẩn ATP',
-            ],
-            [
-                'venue_slug' => 'aura-landmark-72',
-                'key' => 'lm-badminton',
-                'name' => 'Khu Sân Cầu Lông Yonex Pro Landmark',
-                'sport_type' => 'badminton',
-                'slot_duration' => 60,
-                'description' => 'Khu sân cầu lông sang trọng phân khu VIP, phòng thay đồ và sauna tiện nghi',
-            ],
-            [
-                'venue_slug' => 'aura-landmark-72',
-                'key' => 'lm-volleyball',
-                'name' => 'Khu Sân Bóng Chuyền Taraflex Landmark',
-                'sport_type' => 'volleyball',
-                'slot_duration' => 60,
-                'description' => 'Thảm Gerflor Taraflex bóng chuyền thi đấu quốc tế, lưới và cột căng trợ lực',
-            ],
-
-            // Venue 5: Sài Gòn
-            [
-                'venue_slug' => 'aura-central-saigon',
-                'key' => 'sg-badminton',
-                'name' => 'Khu Sân Cầu Lông Sài Gòn Central',
-                'sport_type' => 'badminton',
-                'slot_duration' => 60,
-                'description' => 'Cụm sân cầu lông trung tâm Bình Thạnh, thảm BWF 5 lớp êm ái, bãi đỗ xe ô tô',
-            ],
-            [
-                'venue_slug' => 'aura-central-saigon',
-                'key' => 'sg-football-5v5',
-                'name' => 'Khu Sân Bóng Đá Mini 5v5 Sài Gòn',
-                'sport_type' => 'football_5v5',
-                'slot_duration' => 60,
-                'description' => 'Sân bóng đá mini cỏ nhân tạo đệm hạt cao su nguyên sinh, thoát nước tối ưu',
-            ],
-            [
-                'venue_slug' => 'aura-central-saigon',
-                'key' => 'sg-pickleball',
-                'name' => 'Khu Sân Pickleball Rooftop Sài Gòn',
-                'sport_type' => 'pickleball',
-                'slot_duration' => 60,
-                'description' => 'Sân pickleball tầng thượng thoáng đãng ngắm trọn Landmark 81 lung linh về đêm',
-            ],
-
-            // Venue 6: Hoàng Gia Sports Phú Mỹ Hưng (second tenant)
-            [
-                'venue_slug' => 'hoang-gia-phu-my-hung',
-                'key' => 'pmh-pickleball',
-                'name' => 'Khu Sân Pickleball Phú Mỹ Hưng',
-                'sport_type' => 'pickleball',
-                'slot_duration' => 60,
-                'description' => 'Hai sân pickleball ngoài trời có mái che, mặt sân acrylic chuẩn thi đấu',
-            ],
-            [
-                'venue_slug' => 'hoang-gia-phu-my-hung',
-                'key' => 'pmh-tennis',
-                'name' => 'Khu Sân Tennis Phú Mỹ Hưng',
-                'sport_type' => 'tennis',
-                'slot_duration' => 60,
-                'description' => 'Sân tennis mặt cứng cạnh hồ bán nguyệt, có đèn chiếu sáng thi đấu buổi tối',
-            ],
-            [
-                'venue_slug' => 'hoang-gia-phu-my-hung',
-                'key' => 'pmh-football-5v5',
-                'name' => 'Khu Sân Bóng Đá Mini Phú Mỹ Hưng',
-                'sport_type' => 'football_5v5',
-                'slot_duration' => 60,
-                'description' => 'Sân bóng đá 5 người cỏ nhân tạo thế hệ mới, khán đài nhỏ cho người xem',
-            ],
-        ];
-
-        $sportZones = [];
-        foreach ($sportZonesData as $sz) {
-            if (! isset($venues[$sz['venue_slug']])) {
-                continue;
-            }
-            $venue = $venues[$sz['venue_slug']];
-            $zone = SportZone::updateOrCreate(
-                ['venue_id' => $venue->id, 'sport_type' => $sz['sport_type']],
-                [
-                    'name' => $sz['name'],
-                    'sport_type' => $sz['sport_type'],
-                    'slot_duration' => $sz['slot_duration'],
-                    'description' => $sz['description'],
-                    'is_active' => true,
-                ]
-            );
-            $zone->forceFill(['created_at' => $venue->created_at])->save();
-            $sportZones[$sz['key']] = $zone;
-        }
-
-        // 2. Court Definitions
+        // Court definitions; each court carries its own sport.
         $courtDefs = [
             // Cầu lông - Cầu Giấy (5 sân)
             [
@@ -235,7 +31,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-1-tham-bwf-cau-giay',
                 'description' => 'Sân cầu lông thảm BWF tiêu chuẩn 5 lớp, hệ thống đèn LED 500 Lux chống chói.',
                 'venue_slug' => 'aura-court',
-                'zone_key' => 'cg-badminton',
                 'image_url' => '/courts/badminton-0.jpg',
                 'base_price' => 100000,
                 'sport_type' => 'badminton',
@@ -245,7 +40,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-2-tieu-chuan-cau-giay',
                 'description' => 'Mặt sàn cao cấp êm ái, trần cao 9.5m chuẩn thi đấu phong trào và bán chuyên.',
                 'venue_slug' => 'aura-court',
-                'zone_key' => 'cg-badminton',
                 'image_url' => '/courts/badminton-court.jpg',
                 'base_price' => 100000,
                 'sport_type' => 'badminton',
@@ -255,7 +49,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-3-tieu-chuan-cau-giay',
                 'description' => 'Hệ thống đèn trần định hướng, không gian thoáng mát và thông gió liên tục.',
                 'venue_slug' => 'aura-court',
-                'zone_key' => 'cg-badminton',
                 'image_url' => '/courts/badminton-night.jpg',
                 'base_price' => 100000,
                 'sport_type' => 'badminton',
@@ -265,7 +58,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-4-vip-cau-giay',
                 'description' => 'Sân VIP không gian rộng rãi, có khu ghế nghỉ riêng biệt và điều hòa mát mẻ.',
                 'venue_slug' => 'aura-court',
-                'zone_key' => 'cg-badminton',
                 'image_url' => '/courts/badminton-wood.jpg',
                 'base_price' => 130000,
                 'sport_type' => 'badminton',
@@ -275,7 +67,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-5-vip-tournament-cau-giay',
                 'description' => 'Sân thi đấu giải quốc gia, thảm chuyên dụng đàn hồi cao giảm tối đa chấn thương.',
                 'venue_slug' => 'aura-court',
-                'zone_key' => 'cg-badminton',
                 'image_url' => '/courts/badminton-1.jpg',
                 'base_price' => 140000,
                 'sport_type' => 'badminton',
@@ -287,7 +78,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-pickleball-1-neon-cau-giay',
                 'description' => 'Sân Pickleball hiện đại phủ Acrylic 5 lớp, viền line neon dạ quang nổi bật.',
                 'venue_slug' => 'aura-court',
-                'zone_key' => 'cg-pickleball',
                 'image_url' => '/courts/pickleball-neon.jpg',
                 'base_price' => 130000,
                 'sport_type' => 'pickleball',
@@ -297,7 +87,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-pickleball-2-dynamic-cau-giay',
                 'description' => 'Sân Pickleball cao cấp tiêu chuẩn USA Pickleball, lưới kéo cáp chống rung.',
                 'venue_slug' => 'aura-court',
-                'zone_key' => 'cg-pickleball',
                 'image_url' => '/courts/pickleball-outdoor.jpg',
                 'base_price' => 130000,
                 'sport_type' => 'pickleball',
@@ -309,7 +98,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-bong-ban-1-double-fish-cau-giay',
                 'description' => 'Bàn bóng bàn thi đấu Double Fish chuẩn quốc tế, thảm đỏ cao su chống trượt.',
                 'venue_slug' => 'aura-court',
-                'zone_key' => 'cg-table-tennis',
                 'image_url' => '/courts/table-tennis-1.jpg',
                 'base_price' => 60000,
                 'sport_type' => 'table_tennis',
@@ -321,7 +109,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-6-khan-dai-quan-ngua',
                 'description' => 'Sân trung tâm Cung Thể Thao Quần Ngựa có khán đài mini, thảm thi đấu BWF cao cấp.',
                 'venue_slug' => 'aura-arena-quan-ngua',
-                'zone_key' => 'qn-badminton',
                 'image_url' => '/courts/badminton-night.jpg',
                 'base_price' => 120000,
                 'sport_type' => 'badminton',
@@ -331,7 +118,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-7-tieu-chuan-quan-ngua',
                 'description' => 'Sân tập luyện và giao lưu câu lạc bộ tại Ba Đình, tiện nghi đầy đủ và bãi xe rộng.',
                 'venue_slug' => 'aura-arena-quan-ngua',
-                'zone_key' => 'qn-badminton',
                 'image_url' => '/courts/badminton-court.jpg',
                 'base_price' => 100000,
                 'sport_type' => 'badminton',
@@ -341,7 +127,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-8-pro-replay-quan-ngua',
                 'description' => 'Sân công nghệ cao trang bị hệ thống camera xem lại pha cầu (VAR/Replay) thông minh.',
                 'venue_slug' => 'aura-arena-quan-ngua',
-                'zone_key' => 'qn-badminton',
                 'image_url' => '/courts/badminton-0.jpg',
                 'base_price' => 140000,
                 'sport_type' => 'badminton',
@@ -353,7 +138,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-bong-da-5v5-a1-quan-ngua',
                 'description' => 'Sân bóng mini 5 người cỏ nhân tạo sợi mềm không chấn thương, đèn chiếu sáng 800 Lux.',
                 'venue_slug' => 'aura-arena-quan-ngua',
-                'zone_key' => 'qn-football-5v5',
                 'image_url' => '/courts/football-mini-turf.jpg',
                 'base_price' => 350000,
                 'sport_type' => 'football_5v5',
@@ -363,7 +147,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-bong-da-5v5-a2-quan-ngua',
                 'description' => 'Sân bóng đá mini khu vực khán đài B, mặt cỏ chất lượng cao thoát nước cực nhanh.',
                 'venue_slug' => 'aura-arena-quan-ngua',
-                'zone_key' => 'qn-football-5v5',
                 'image_url' => '/courts/football-3.jpg',
                 'base_price' => 350000,
                 'sport_type' => 'football_5v5',
@@ -375,7 +158,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-bong-da-7v7-c1-quan-ngua',
                 'description' => 'Sân 7 người tiêu chuẩn thi đấu phong trào Hà Nội, cỏ nhập khẩu đạt chuẩn FIFA 2 sao.',
                 'venue_slug' => 'aura-arena-quan-ngua',
-                'zone_key' => 'qn-football-7v7',
                 'image_url' => '/courts/football-wide.jpg',
                 'base_price' => 750000,
                 'sport_type' => 'football_7v7',
@@ -387,7 +169,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-bong-ban-2-stiga-master-quan-ngua',
                 'description' => 'Phòng tập bóng bàn máy lạnh riêng biệt, trang bị máy bắn bóng tự động tập kỹ thuật.',
                 'venue_slug' => 'aura-arena-quan-ngua',
-                'zone_key' => 'qn-table-tennis',
                 'image_url' => '/courts/table-tennis-2.jpg',
                 'base_price' => 70000,
                 'sport_type' => 'table_tennis',
@@ -399,7 +180,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-tennis-1-dat-nen-tay-ho',
                 'description' => 'Sân đất nện đỏ tiêu chuẩn Roland Garros độc đáo tại Hà Nội, trượt êm ái bảo vệ khớp gối.',
                 'venue_slug' => 'aura-complex-tay-ho',
-                'zone_key' => 'th-tennis',
                 'image_url' => '/courts/tennis-1.jpg',
                 'base_price' => 250000,
                 'sport_type' => 'tennis',
@@ -409,7 +189,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-tennis-2-hard-court-tay-ho',
                 'description' => 'Sân cứng chuyên nghiệp sơn Plexipave độ nảy chuẩn xác, view thoáng mát Hồ Tây.',
                 'venue_slug' => 'aura-complex-tay-ho',
-                'zone_key' => 'th-tennis',
                 'image_url' => '/courts/tennis-2.jpg',
                 'base_price' => 220000,
                 'sport_type' => 'tennis',
@@ -421,7 +200,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-pickleball-3-sunset-tay-ho',
                 'description' => 'Sân Pickleball ngoài trời ngắm hoàng hôn Hồ Tây cực chill, có lounge nước ép thể thao.',
                 'venue_slug' => 'aura-complex-tay-ho',
-                'zone_key' => 'th-pickleball',
                 'image_url' => '/courts/pickleball-outdoor.jpg',
                 'base_price' => 150000,
                 'sport_type' => 'pickleball',
@@ -433,7 +211,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-9-tham-victor-tay-ho',
                 'description' => 'Sân cầu lông cao cấp Victor, hệ thống cách âm và điều hòa thông gió hiện đại.',
                 'venue_slug' => 'aura-complex-tay-ho',
-                'zone_key' => 'th-badminton',
                 'image_url' => '/courts/badminton-wood.jpg',
                 'base_price' => 120000,
                 'sport_type' => 'badminton',
@@ -445,7 +222,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-bong-ro-1-streetball-tay-ho',
                 'description' => 'Sân bóng rổ 3x3 và 5x5 phong cách đường phố, vành rổ chuyên dụng dunk êm ái.',
                 'venue_slug' => 'aura-complex-tay-ho',
-                'zone_key' => 'th-basketball',
                 'image_url' => '/courts/basketball-2.jpg',
                 'base_price' => 250000,
                 'sport_type' => 'basketball',
@@ -457,7 +233,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-bong-ro-in-house-nba-landmark',
                 'description' => 'Sân bóng rổ trong nhà sàn gỗ tự nhiên tiêu chuẩn thi đấu NBA, điều hòa trung tâm 24/7.',
                 'venue_slug' => 'aura-landmark-72',
-                'zone_key' => 'lm-basketball',
                 'image_url' => '/courts/basketball-nba.jpg',
                 'base_price' => 380000,
                 'sport_type' => 'basketball',
@@ -469,7 +244,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-tennis-3-mat-cung-landmark',
                 'description' => 'Sân tennis trong nhà đỉnh cao tại Keangnam Landmark 72, ánh sáng chuẩn truyền hình.',
                 'venue_slug' => 'aura-landmark-72',
-                'zone_key' => 'lm-tennis',
                 'image_url' => '/courts/tennis-3.jpg',
                 'base_price' => 320000,
                 'sport_type' => 'tennis',
@@ -481,7 +255,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-10-yonex-pro-landmark',
                 'description' => 'Sân cầu lông phân khúc thượng lưu, thảm Yonex Super Cushion, phòng tắm nóng lạnh.',
                 'venue_slug' => 'aura-landmark-72',
-                'zone_key' => 'lm-badminton',
                 'image_url' => '/courts/badminton-0.jpg',
                 'base_price' => 160000,
                 'sport_type' => 'badminton',
@@ -493,7 +266,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-bong-chuyen-1-taraflex-landmark',
                 'description' => 'Sân bóng chuyền trong nhà thảm Taraflex Gerflor 7mm giảm tải chấn thương tối đa.',
                 'venue_slug' => 'aura-landmark-72',
-                'zone_key' => 'lm-volleyball',
                 'image_url' => '/courts/volleyball-indoor.jpg',
                 'base_price' => 280000,
                 'sport_type' => 'volleyball',
@@ -505,7 +277,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-11-sai-gon-central-bwf',
                 'description' => 'Sân cầu lông BWF tại Điện Biên Phủ Bình Thạnh, thảm mới 100%, bãi xe rộng rãi.',
                 'venue_slug' => 'aura-central-saigon',
-                'zone_key' => 'sg-badminton',
                 'image_url' => '/courts/badminton-night.jpg',
                 'base_price' => 110000,
                 'sport_type' => 'badminton',
@@ -517,7 +288,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-bong-da-5v5-sai-gon-central',
                 'description' => 'Sân bóng đá mini 5 người trung tâm Sài Gòn, dàn đèn LED không chói lóa mắt.',
                 'venue_slug' => 'aura-central-saigon',
-                'zone_key' => 'sg-football-5v5',
                 'image_url' => '/courts/football-saigon.jpg',
                 'base_price' => 380000,
                 'sport_type' => 'football_5v5',
@@ -529,7 +299,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-pickleball-4-rooftop-saigon',
                 'description' => 'Sân Pickleball tầng thượng ngắm Landmark 81 rực rỡ, gió mát tự nhiên, quầy bar cocktail thể thao.',
                 'venue_slug' => 'aura-central-saigon',
-                'zone_key' => 'sg-pickleball',
                 'image_url' => '/courts/pickleball-neon.jpg',
                 'base_price' => 160000,
                 'sport_type' => 'pickleball',
@@ -541,7 +310,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-pickleball-pmh-1',
                 'description' => 'Sân pickleball có mái che chống nắng mưa, phù hợp chơi cả ngày tại Phú Mỹ Hưng.',
                 'venue_slug' => 'hoang-gia-phu-my-hung',
-                'zone_key' => 'pmh-pickleball',
                 'image_url' => '/courts/pickleball-1.jpg',
                 'base_price' => 140000,
                 'sport_type' => 'pickleball',
@@ -551,7 +319,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-pickleball-pmh-2',
                 'description' => 'Sân pickleball tiêu chuẩn thi đấu, lưới kéo cáp và đèn LED 600 Lux.',
                 'venue_slug' => 'hoang-gia-phu-my-hung',
-                'zone_key' => 'pmh-pickleball',
                 'image_url' => '/courts/pickleball-2.jpg',
                 'base_price' => 150000,
                 'sport_type' => 'pickleball',
@@ -561,7 +328,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-tennis-pmh-ho-ban-nguyet',
                 'description' => 'Sân tennis mặt cứng view hồ Bán Nguyệt, có huấn luyện viên kèm theo yêu cầu.',
                 'venue_slug' => 'hoang-gia-phu-my-hung',
-                'zone_key' => 'pmh-tennis',
                 'image_url' => '/courts/tennis-2.jpg',
                 'base_price' => 240000,
                 'sport_type' => 'tennis',
@@ -571,7 +337,6 @@ class SportZoneCourtSeeder extends Seeder
                 'slug' => 'san-bong-da-mini-pmh',
                 'description' => 'Sân bóng đá 5 người cỏ nhân tạo thế hệ mới, có khán đài và phòng thay đồ.',
                 'venue_slug' => 'hoang-gia-phu-my-hung',
-                'zone_key' => 'pmh-football-5v5',
                 'image_url' => '/courts/football-1.jpg',
                 'base_price' => 360000,
                 'sport_type' => 'football_5v5',
@@ -590,11 +355,10 @@ class SportZoneCourtSeeder extends Seeder
         }
 
         foreach ($courtDefs as $def) {
-            if (! isset($venues[$def['venue_slug']]) || ! isset($sportZones[$def['zone_key']])) {
+            if (! isset($venues[$def['venue_slug']])) {
                 continue;
             }
             $venue = $venues[$def['venue_slug']];
-            $zone = $sportZones[$def['zone_key']];
 
             $court = Court::updateOrCreate(
                 ['slug' => $def['slug']],
@@ -603,7 +367,7 @@ class SportZoneCourtSeeder extends Seeder
                     'description' => $def['description'],
                     'image_url' => $def['image_url'],
                     'venue_id' => $venue->id,
-                    'sport_zone_id' => $zone->id,
+                    'sport_type' => $def['sport_type'],
                     'is_active' => true,
                 ]
             );
@@ -647,7 +411,6 @@ class SportZoneCourtSeeder extends Seeder
                     [
                         'organization_id' => $venue->organization_id,
                         'venue_id' => $venue->id,
-                        'sport_zone_id' => $zone->id,
                         'price' => $basePrice,
                         'version' => 1,
                         'priority' => 1,

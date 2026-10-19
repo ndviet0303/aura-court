@@ -32,7 +32,8 @@ const mockBookings = [
       name: 'Sân VIP A1 (Thảm Yonex)',
       slug: 'san-vip-a1',
       venue: { id: 1, name: 'Aura Badminton Center Tân Bình' },
-      sport_zone: { id: 1, sport_type: 'badminton', name: 'Khu Cầu Lông' },
+      sport_type: 'badminton',
+      slot_duration: 60,
     },
     slots: [
       {
@@ -53,7 +54,8 @@ const mockBookings = [
       name: 'Sân Pickleball Pro 1',
       slug: 'san-pickleball-pro-1',
       venue: { id: 1, name: 'Aura Badminton Center Tân Bình' },
-      sport_zone: { id: 2, sport_type: 'pickleball', name: 'Khu Pickleball' },
+      sport_type: 'pickleball',
+      slot_duration: 60,
     },
     slots: [
       {
@@ -73,7 +75,8 @@ const mockBookings = [
       name: 'Sân Standard 2',
       slug: 'san-standard-2',
       venue: { id: 1, name: 'Aura Badminton Center Tân Bình' },
-      sport_zone: { id: 1, sport_type: 'badminton', name: 'Khu Cầu Lông' },
+      sport_type: 'badminton',
+      slot_duration: 60,
     },
     slots: [
       {

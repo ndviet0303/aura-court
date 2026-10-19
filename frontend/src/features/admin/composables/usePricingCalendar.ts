@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
-import type { Venue, SportZone, Court } from '@/features/court/types/court'
+import type { Venue, Court } from '@/features/court/types/court'
 import type { PriceRuleItem, PriceRuleFormPayload, PriceQuoteResponse } from '../types/pricing'
 
 export function usePricingCalendar() {
@@ -23,7 +23,6 @@ export function usePricingCalendar() {
   // Data
   const rules = ref<PriceRuleItem[]>([])
   const venues = ref<Venue[]>([])
-  const sportZones = ref<SportZone[]>([])
   const courts = ref<Court[]>([])
 
   // Filters
@@ -128,11 +127,10 @@ export function usePricingCalendar() {
     loading.value = true
     error.value = ''
     try {
-      const [rulesRes, venuesRes, courtsRes, zonesRes] = await Promise.allSettled([
+      const [rulesRes, venuesRes, courtsRes] = await Promise.allSettled([
         adminApi.getPriceRules<{ rules: PriceRuleItem[] }>(),
         adminApi.getVenues(),
         adminApi.getCourts(),
-        adminApi.getSportZones(),
       ])
 
       if (rulesRes.status === 'fulfilled' && rulesRes.value?.rules) {
@@ -155,10 +153,6 @@ export function usePricingCalendar() {
 
       if (courtsRes.status === 'fulfilled' && Array.isArray(courtsRes.value)) {
         courts.value = courtsRes.value
-      }
-
-      if (zonesRes.status === 'fulfilled' && Array.isArray(zonesRes.value)) {
-        sportZones.value = zonesRes.value
       }
     } catch (e: unknown) {
       error.value = errorMessage(e, 'Không thể tải dữ liệu ma trận giá.')
@@ -367,7 +361,6 @@ export function usePricingCalendar() {
     editingRule,
     rules,
     venues,
-    sportZones,
     courts,
     searchQuery,
     selectedVenueId,

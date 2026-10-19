@@ -12,7 +12,7 @@ class EloquentVenueLifecycleRepository implements VenueLifecycleRepositoryInterf
     public function findById(int $id): ?Venue
     {
         return Venue::query()
-            ->with(['organization', 'courts', 'sportZones', 'currentPublicationRevision'])
+            ->with(['organization', 'courts', 'currentPublicationRevision'])
             ->find($id);
     }
 
@@ -20,7 +20,7 @@ class EloquentVenueLifecycleRepository implements VenueLifecycleRepositoryInterf
     {
         return Venue::query()
             ->lockForUpdate()
-            ->with(['organization', 'courts', 'sportZones', 'currentPublicationRevision'])
+            ->with(['organization', 'courts', 'currentPublicationRevision'])
             ->find($id);
     }
 
@@ -36,7 +36,7 @@ class EloquentVenueLifecycleRepository implements VenueLifecycleRepositoryInterf
 
         $venue->update($payload);
 
-        return $venue->fresh(['organization', 'courts', 'sportZones', 'currentPublicationRevision']);
+        return $venue->fresh(['organization', 'courts', 'currentPublicationRevision']);
     }
 
     public function createVenue(array $attributes): Venue
@@ -48,7 +48,7 @@ class EloquentVenueLifecycleRepository implements VenueLifecycleRepositoryInterf
     {
         $venue->update($attributes);
 
-        return $venue->fresh(['organization', 'courts', 'sportZones', 'currentPublicationRevision']);
+        return $venue->fresh(['organization', 'courts', 'currentPublicationRevision']);
     }
 
     public function createPublicationRevision(Venue $venue, array $attributes): VenuePublicationRevision

@@ -60,7 +60,7 @@ class CourtPriceRuleService
     {
         return (int) $rule->organization_id === $this->organizationId($court)
             && ($rule->venue_id === null || (int) $rule->venue_id === (int) $court->venue_id)
-            && ($rule->sport_zone_id === null || (int) $rule->sport_zone_id === (int) $court->sport_zone_id)
+            && ($rule->sport_type === null || $rule->sport_type === $court->sport_type)
             && ($rule->court_id === null || (int) $rule->court_id === (int) $court->id);
     }
 

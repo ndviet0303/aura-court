@@ -1,4 +1,4 @@
-import type { Venue, SportZone, Court } from '@/features/court/types/court'
+import type { Venue, Court, SportType } from '@/features/court/types/court'
 
 export type PriceRuleType =
   | 'base'
@@ -17,7 +17,7 @@ export interface PriceRuleItem {
   id: number
   organization_id?: number
   venue_id?: number | null
-  sport_zone_id?: number | null
+  sport_type?: SportType | null
   court_id?: number | null
   name?: string
   type: PriceRuleType
@@ -37,15 +37,13 @@ export interface PriceRuleItem {
   created_at?: string
   updated_at?: string
   venue?: Venue | null
-  sport_zone?: SportZone | null
-  sportZone?: SportZone | null
   court?: Court | null
 }
 
 export interface PriceRuleFormPayload {
   name?: string
   venue_id?: number | null
-  sport_zone_id?: number | null
+  sport_type?: SportType | null
   court_id?: number | null
   type: PriceRuleType
   weekday?: number | null

@@ -24,23 +24,19 @@ class CourtController extends Controller
         Cache::add('venues_version', 1, now()->addYears(10));
         $courtsVersion = Cache::get('courts_version', 1);
         $venuesVersion = Cache::get('venues_version', 1);
-        $cacheKey = "courts:c{$courtsVersion}:v{$venuesVersion}:".md5(json_encode($request->only(['sport_type', 'venue_id', 'sport_zone_id'])));
+        $cacheKey = "courts:c{$courtsVersion}:v{$venuesVersion}:".md5(json_encode($request->only(['sport_type', 'venue_id'])));
         $courts = Cache::remember($cacheKey, 300, function () use ($request) {
             $courtsQuery = Court::where('is_active', true)
                 ->whereHas('venue', fn ($query) => $query->where('is_active', true))
                 ->when($request->query('sport_type'), function ($q, $sportType) {
-                    $q->whereHas('sportZone', fn ($zone) => $zone->where('sport_type', $sportType)->where('is_active', true));
+                    $q->where('sport_type', $sportType);
                 })
                 ->when($request->query('venue_id'), function ($q, $venueId) {
                     $q->where('venue_id', $venueId);
                 })
-                ->when($request->query('sport_zone_id'), function ($q, $zoneId) {
-                    $q->where('sport_zone_id', $zoneId);
-                })
                 ->with([
                     'priceSlots' => fn ($q) => $q->select(['id', 'court_id', 'price', 'weekday', 'starts_at', 'ends_at'])->where('is_active', true),
                     'venue.organization',
-                    'sportZone',
                 ])
                 ->withCount(['reviews as reviews_count' => fn ($query) => $query->where('is_published', true)])
                 ->withAvg(['reviews as reviews_avg_rating' => fn ($query) => $query->where('is_published', true)], 'rating')
@@ -82,7 +78,7 @@ class CourtController extends Controller
         $result = app(VerifyEffectiveBookingEligibility::class)->execute($court);
         abort_unless($result['eligible'], 404, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
         $court = $result['court'];
-        $court->loadMissing(['priceSlots', 'venue', 'sportZone'])
+        $court->loadMissing(['priceSlots', 'venue'])
             ->loadCount(['reviews as reviews_count' => fn ($query) => $query->where('is_published', true)])
             ->loadAvg(['reviews as reviews_avg_rating' => fn ($query) => $query->where('is_published', true)], 'rating');
         $organizationId = (int) ($court->venue?->organization_id ?? 0);
@@ -115,13 +111,11 @@ class CourtController extends Controller
 
         $query = Court::with([
             'venue',
-            'sportZone',
             'blocks' => fn ($query) => $query->latest('starts_at'),
         ])
             ->withCount('priceSlots')
             ->when($scopedVenueIds !== null, fn ($q) => $q->whereIn('venue_id', $scopedVenueIds))
-            ->when($request->query('sport_zone_id'), fn ($q, $zoneId) => $q->where('sport_zone_id', $zoneId))
-            ->when($request->query('sport_type'), fn ($q, $sportType) => $q->whereHas('sportZone', fn ($z) => $z->where('sport_type', $sportType)))
+            ->when($request->query('sport_type'), fn ($q, $sportType) => $q->where('sport_type', $sportType))
             ->orderBy('id');
 
         if ($request->boolean('include_prices') || ($scopedVenueIds !== null && count($scopedVenueIds) === 1)) {
@@ -144,7 +138,8 @@ class CourtController extends Controller
             'name' => 'required|array',
             'name.*' => 'string|max:120',
             'venue_id' => ['required', 'integer', Rule::exists('venues', 'id')->where('is_active', true)],
-            'sport_zone_id' => ['nullable', 'integer', Rule::exists('sport_zones', 'id')->where('is_active', true)],
+            'sport_type' => ['required', Rule::in(Court::SPORT_TYPES)],
+            'slot_duration' => ['sometimes', 'integer', Rule::in(Court::SLOT_DURATIONS)],
             'description' => 'nullable|array',
             'description.*' => 'string',
             'image_url' => 'nullable|url',
@@ -168,7 +163,7 @@ class CourtController extends Controller
                 }
             }
 
-            $court = Court::create($data)->load(['venue', 'sportZone']);
+            $court = Court::create($data)->load(['venue']);
             Cache::increment('courts_version');
 
             return $court;
@@ -195,7 +190,8 @@ class CourtController extends Controller
             'name' => 'sometimes|required|array',
             'name.*' => 'string|max:120',
             'venue_id' => ['sometimes', 'required', 'integer', Rule::exists('venues', 'id')->where('is_active', true)],
-            'sport_zone_id' => ['sometimes', 'nullable', 'integer', Rule::exists('sport_zones', 'id')->where('is_active', true)],
+            'sport_type' => ['sometimes', 'required', Rule::in(Court::SPORT_TYPES)],
+            'slot_duration' => ['sometimes', 'integer', Rule::in(Court::SLOT_DURATIONS)],
             'description' => 'nullable|array',
             'description.*' => 'string',
             'image_url' => 'nullable|url',
@@ -226,7 +222,7 @@ class CourtController extends Controller
             Cache::increment('courts_version');
         });
 
-        return $court->fresh(['venue', 'sportZone']);
+        return $court->fresh(['venue']);
     }
 
     public function destroy(Court $court)

@@ -1,6 +1,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/core/api/client'
+import { i18n } from '@/i18n'
 import { socialApi } from '../api/socialApi'
 import { playLevelLabel } from './useMatchmaking'
 import { useAuthStore } from '@/stores/auth'
@@ -123,7 +124,7 @@ export function useCreateMatch() {
     const list: DropdownOption[] = courts.value.map((c: any) => ({
       value: c.id,
       label: `${c.name} ${c.venue ? `(${c.venue.name})` : ''}`,
-      sublabel: `${c.sport_type || c.sport?.name || 'Thể thao'} · ${c.price_per_hour ? new Intl.NumberFormat('vi-VN').format(c.price_per_hour) + '₫/h' : 'Tiêu chuẩn'}`,
+      sublabel: `${i18n.global.t(`sportTypes.${c.sport_type}`)} · ${c.price_per_hour ? new Intl.NumberFormat('vi-VN').format(c.price_per_hour) + '₫/h' : 'Tiêu chuẩn'}`,
       icon: 'stadium',
     }))
     return [defaultOpt, ...list]
