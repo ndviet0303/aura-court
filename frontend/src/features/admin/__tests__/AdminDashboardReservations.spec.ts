@@ -55,7 +55,7 @@ describe('Admin dashboard reservations list (GET /admin/reservations)', () => {
       if (path === '/admin/reservations')
         return { data: [legacyMirror, reservation], current_page: 1 }
       if (path === '/admin/payments') return []
-      return { bookings: 0, confirmed: 0, revenue: 0, pendingRefunds: 0 }
+      return { bookings: 0, confirmed: 0, revenue: 0 }
     })
   })
 
@@ -83,19 +83,22 @@ describe('Admin dashboard reservations list (GET /admin/reservations)', () => {
     expect(rows[1]!.find('.status-pill').classes()).toContain('held')
   })
 
-  it('offers the C4 statuses and filters on the server', async () => {
+  it('offers the C4 statuses without the V1 option and filters on the server', async () => {
     const wrapper = mountDashboard()
     await flushPromises()
 
-    const select = wrapper.find('select.status-select')
-    const values = select.findAll('option').map((option) => option.attributes('value'))
-    expect(values).toEqual(['', ...RESERVATION_STATUSES])
+    await wrapper.find('.status-select .custom-dropdown-trigger').trigger('click')
+    const options = wrapper.findAll('.status-select [role="option"]')
+    expect(options).toHaveLength(RESERVATION_STATUSES.length + 1)
+    expect(options.map((option) => option.text())).not.toContain(
+      i18n.global.t('admin.dashboard.statusLegacy'),
+    )
 
-    await select.setValue('legacy')
+    await options[RESERVATION_STATUSES.indexOf('disputed') + 1]!.trigger('click')
     await flushPromises()
 
     expect(api.get).toHaveBeenCalledWith('/admin/reservations', {
-      params: { status: 'legacy' },
+      params: { status: 'disputed' },
     })
   })
 

@@ -53,7 +53,7 @@ class ReportParityTest extends TestCase
         $this->assertReport($this->actingAs($this->ownerA)->getJson('/api/admin/reports?'.self::RANGE), [
             'bookings' => 3, 'confirmed' => 3, 'revenue' => 580000, 'owner_revenue' => 580000, 'booking_revenue' => 530000,
             'pos_revenue' => 50000, 'owner_refunds' => 90000, 'net_owner_revenue' => 490000, 'platform_fees' => 0,
-            'pendingRefunds' => 70000, 'occupancyRate' => 4.8,
+            'occupancyRate' => 4.8,
         ], [['hour' => '10:00', 'bookings' => 4], ['hour' => '11:00', 'bookings' => 2]], [
             ['name' => 'A1', 'bookings' => 2, 'revenue' => 380000],
             ['name' => 'A2', 'bookings' => 1, 'revenue' => 150000],
@@ -62,7 +62,7 @@ class ReportParityTest extends TestCase
         $this->assertReport($this->actingAs($this->platformAdmin)->getJson('/api/admin/reports?'.self::RANGE), [
             'bookings' => 5, 'confirmed' => 5, 'revenue' => 980000, 'owner_revenue' => 980000, 'booking_revenue' => 930000,
             'pos_revenue' => 50000, 'owner_refunds' => 140000, 'net_owner_revenue' => 840000, 'platform_fees' => 600000,
-            'pendingRefunds' => 90000, 'occupancyRate' => 5.8,
+            'occupancyRate' => 5.8,
         ], [['hour' => '10:00', 'bookings' => 6], ['hour' => '11:00', 'bookings' => 3]], [
             ['name' => 'A1', 'bookings' => 2, 'revenue' => 380000],
             ['name' => 'A2', 'bookings' => 1, 'revenue' => 150000],
@@ -72,7 +72,7 @@ class ReportParityTest extends TestCase
         $this->assertReport($this->actingAs($this->platformAdmin)->getJson('/api/admin/reports?'.self::RANGE.'&venue_id='.$this->venueB->id), [
             'bookings' => 2, 'confirmed' => 2, 'revenue' => 400000, 'owner_revenue' => 400000, 'booking_revenue' => 400000,
             'pos_revenue' => 0, 'owner_refunds' => 50000, 'net_owner_revenue' => 350000, 'platform_fees' => 0,
-            'pendingRefunds' => 20000, 'occupancyRate' => 9.7,
+            'occupancyRate' => 9.7,
         ], [['hour' => '10:00', 'bookings' => 2], ['hour' => '11:00', 'bookings' => 1]], [
             ['name' => 'B1', 'bookings' => 2, 'revenue' => 400000],
         ]);
@@ -248,7 +248,7 @@ class ReportParityTest extends TestCase
 
     private function assertReport(TestResponse $response, array $scalars, array $byHour, array $byCourt): void
     {
-        $response->assertOk();
+        $response->assertOk()->assertJsonMissingPath('pendingRefunds');
         foreach ($scalars as $key => $value) {
             $this->assertSame($value, $response->json($key), $key);
         }

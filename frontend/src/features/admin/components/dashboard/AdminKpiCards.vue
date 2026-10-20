@@ -17,7 +17,7 @@ function formatMoney(amount: number): string {
 <template>
   <div class="admin-kpi-grid">
     <template v-if="loading">
-      <div v-for="i in 4" :key="i" class="kpi-card skeleton-card">
+      <div v-for="i in 3" :key="i" class="kpi-card skeleton-card">
         <div class="kpi-top-row">
           <div class="skeleton-item skeleton-icon"></div>
           <div class="skeleton-item skeleton-title-bar"></div>
@@ -55,17 +55,6 @@ function formatMoney(amount: number): string {
         <strong class="kpi-value text-green">{{ report.occupancyRate ?? 0 }}%</strong>
         <span class="kpi-sub">{{ t('admin.dashboard.occupancyPeriod') }}</span>
       </div>
-
-      <div class="kpi-card">
-        <div class="kpi-top-row">
-          <span class="material-symbols-outlined kpi-icon text-yellow">currency_exchange</span>
-          <span class="kpi-title">{{ t('admin.dashboard.pendingRefunds') }}</span>
-        </div>
-        <strong class="kpi-value text-yellow">{{
-          report.pendingRefunds >= 1000 ? formatMoney(report.pendingRefunds) : report.pendingRefunds
-        }}</strong>
-        <span class="kpi-sub">{{ t('admin.dashboard.awaitingAccounting') }}</span>
-      </div>
     </template>
   </div>
 </template>
@@ -73,7 +62,7 @@ function formatMoney(amount: number): string {
 <style scoped>
 .admin-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
@@ -121,9 +110,6 @@ function formatMoney(amount: number): string {
 }
 .text-green {
   color: #10b981;
-}
-.text-yellow {
-  color: #f59e0b;
 }
 
 /* Skeleton Shimmer */
