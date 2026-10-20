@@ -54,7 +54,7 @@ New direct-owner checkout SHALL create a pending-payment booking with exclusive 
 - **THEN** the booking SHALL be reported with its reason, SHALL remain unchanged, and SHALL block retirement until it is resolved
 
 ### Requirement: Immutable price quotes
-The platform SHALL calculate quotes from effective-dated tenant/venue/court rules using holiday/date exception, peak, weekly then explicitly configured base precedence, with deterministic scope/priority tie-breaking. Prices and allowed coupon, membership and loyalty benefits SHALL snapshot versions and validity. A random unmatched slot price MUST NOT be a fallback. Later changes SHALL not alter an accepted booking. An expired quote SHALL be recalculated and accepted again before payment.
+The platform SHALL calculate quotes from effective-dated rules scoped to the organization, a venue, a venue and one sport, or a single court, using holiday/date exception, peak, weekly then explicitly configured base precedence. Within one precedence level, the narrower scope SHALL win (court, then venue and sport, then venue, then organization), followed by priority, version and identifier as deterministic tie-breakers. A sport-scoped rule SHALL name its venue and SHALL apply only to that venue's courts of that sport. Prices and allowed coupon, membership and loyalty benefits SHALL snapshot versions and validity. A random unmatched slot price MUST NOT be a fallback. Later changes SHALL not alter an accepted booking. An expired quote SHALL be recalculated and accepted again before payment.
 
 #### Scenario: Exception overrides a weekly price
 - **WHEN** both a holiday exception and weekly rule match
@@ -67,6 +67,18 @@ The platform SHALL calculate quotes from effective-dated tenant/venue/court rule
 #### Scenario: Price rules change after quote acceptance
 - **WHEN** a policy changes after quote acceptance
 - **THEN** the accepted snapshot SHALL remain stable; an expired unaccepted quote requires renewed consent
+
+#### Scenario: Venue and sport rule
+- **WHEN** a venue has a weekly venue-wide rule and a weekly pickleball rule for the same hour, and a customer quotes that hour on a pickleball court and on a badminton court of the venue
+- **THEN** the pickleball court SHALL be priced by the pickleball rule, the badminton court by the venue-wide rule, and a court-specific rule for that hour SHALL override both
+
+#### Scenario: Sport rule without a venue
+- **WHEN** an operator saves a sport-scoped price rule without naming a venue
+- **THEN** the request SHALL be rejected with a validation error
+
+#### Scenario: Prices survive the grouping removal
+- **WHEN** existing grouping-scoped rules are migrated to venue-and-sport scope
+- **THEN** every court SHALL be quoted the same amount for the same interval before and after, or the migration SHALL stop without changing any data
 
 ### Requirement: Active inventory exclusivity
 No overlapping active entitlement or exclusive hold SHALL exist for the same court-time across V1/V2 bookings, recurring occurrences, owner-hosted sessions and tournaments using that court. Interval duration, venue calendar, book-ahead horizon, continuity policy and final eligibility SHALL be checked atomically at allocation and replacement. Held and confirmed states SHALL both exclude competitors. The data store itself SHALL reject two held or confirmed reservation slots on the same court whose half-open time intervals overlap, independent of application-level checks. A store-level rejection SHALL surface to the client as the same availability conflict as an application-level rejection.

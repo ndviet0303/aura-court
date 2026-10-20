@@ -6,7 +6,7 @@ Provides mechanisms to store and retrieve database content in multiple languages
 ## Requirements
 
 ### Requirement: Multilingual Content Storage
-The system SHALL support storing translated text for specific entities (e.g., Venues, Courts, Sport Zones) using structured JSON rather than plain strings.
+The system SHALL support storing translated text for specific entities (e.g., Venues, Courts) using structured JSON rather than plain strings.
 
 #### Scenario: Saving translated content
 - **WHEN** an admin creates or updates an entity with multilingual fields
