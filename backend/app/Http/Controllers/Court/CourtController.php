@@ -17,6 +17,9 @@ use Illuminate\Validation\Rule;
 
 class CourtController extends Controller
 {
+    // Draft, paused and suspended venues still take court setup and fixes; only ended venues refuse it.
+    private const CLOSED_VENUE_STATUSES = ['closed', 'archived'];
+
     public function index(Request $request)
     {
         // Database cache counters must exist before mutations can increment them.
@@ -59,6 +62,8 @@ class CourtController extends Controller
 
                 if ($venueEligibilityCache[$venueId] && $court->is_active && isset($pricedCourtIds[$court->id])) {
                     $courtArray = $court->toArray();
+                    // The organization row carries tax and KYC fields that public readers must not see
+                    unset($courtArray['venue']['organization']);
                     $organizationId = (int) ($courtArray['venue']['organization_id'] ?? 0);
                     $courtArray['venue']['payment_model'] = $features->enabled('direct_owner_payments', $organizationId)
                         ? 'direct_owner_v1'
@@ -88,6 +93,7 @@ class CourtController extends Controller
                 ? 'direct_owner_v1'
                 : 'legacy_wallet_v1'
         );
+        $court->venue?->unsetRelation('organization');
 
         return response()->json($court);
     }
@@ -137,7 +143,7 @@ class CourtController extends Controller
         $data = $request->validate([
             'name' => 'required|array',
             'name.*' => 'string|max:120',
-            'venue_id' => ['required', 'integer', Rule::exists('venues', 'id')->where('is_active', true)],
+            'venue_id' => ['required', 'integer', Rule::exists('venues', 'id')->whereNotIn('status', self::CLOSED_VENUE_STATUSES)],
             'sport_type' => ['required', Rule::in(Court::SPORT_TYPES)],
             'slot_duration' => ['sometimes', 'integer', Rule::in(Court::SLOT_DURATIONS)],
             'description' => 'nullable|array',
@@ -189,7 +195,7 @@ class CourtController extends Controller
         $data = $request->validate([
             'name' => 'sometimes|required|array',
             'name.*' => 'string|max:120',
-            'venue_id' => ['sometimes', 'required', 'integer', Rule::exists('venues', 'id')->where('is_active', true)],
+            'venue_id' => ['sometimes', 'required', 'integer', Rule::exists('venues', 'id')->whereNotIn('status', self::CLOSED_VENUE_STATUSES)],
             'sport_type' => ['sometimes', 'required', Rule::in(Court::SPORT_TYPES)],
             'slot_duration' => ['sometimes', 'integer', Rule::in(Court::SLOT_DURATIONS)],
             'description' => 'nullable|array',
@@ -218,7 +224,7 @@ class CourtController extends Controller
             }
 
             $court->update($data);
-            abort_if($court->is_active && ! $court->venue()->where('is_active', true)->exists(), 422, 'Không thể mở sân tại địa điểm đang ngừng hoạt động.');
+            abort_if($court->is_active && $court->venue()->whereIn('status', self::CLOSED_VENUE_STATUSES)->exists(), 422, 'Không thể mở sân tại cơ sở đã ngừng kinh doanh.');
             Cache::increment('courts_version');
         });
 

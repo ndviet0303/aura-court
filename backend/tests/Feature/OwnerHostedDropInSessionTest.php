@@ -49,6 +49,7 @@ class OwnerHostedDropInSessionTest extends TestCase
             'name' => 'Sân Cầu Lông A',
             'slug' => 'san-cau-long-a-'.uniqid(),
             'status' => 'active',
+            'partner_status' => 'approved',
         ]);
 
         $this->orgB = Organization::create([

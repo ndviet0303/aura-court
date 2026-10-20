@@ -340,24 +340,6 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Domain/Venue/Actions/ReviewVenuePublication.php
-
-		-
-			message: '#^Parameter \#1 \$venue of method App\\Contracts\\Repositories\\VenueLifecycleRepositoryInterface\:\:updateStatus\(\) expects App\\Models\\Venue, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 3
-			path: app/Domain/Venue/Actions/ReviewVenuePublication.php
-
-		-
-			message: '#^Parameter \#1 \$venueOrId of method App\\Domain\\Venue\\Actions\\EvaluateVenueReadiness\:\:execute\(\) expects App\\Models\\Venue\|int, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Venue/Actions/ReviewVenuePublication.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
 			path: app/Domain/Venue/Actions/SubmitVenueForPublication.php
 
 		-
@@ -2746,12 +2728,6 @@ parameters:
 			message: '#^Strict comparison using \!\=\= between int\<0, max\> and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 2
 			path: app/Services/Social/MatchService.php
 
 		-

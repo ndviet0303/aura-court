@@ -160,6 +160,87 @@ class VenueLifecycleTransitionsTest extends TestCase
         $res3->assertStatus(403);
     }
 
+    public function test_owner_cannot_leave_a_platform_suspension_through_any_transition(): void
+    {
+        [$owner, $admin, $org, , $venue] = $this->createPublishedVenue();
+        $venue->update(['status' => 'suspended', 'is_active' => false]);
+
+        Sanctum::actingAs($owner);
+        foreach (['temporarily_closed', 'closed', 'archived'] as $target) {
+            $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/lifecycle", ['status' => $target])
+                ->assertForbidden();
+            $this->assertSame('suspended', $venue->fresh()->status);
+        }
+
+        // The platform admin still lifts it the existing way; publishing again rechecks readiness
+        Sanctum::actingAs($admin);
+        $this->postJson("/api/admin/venues/{$venue->id}/lifecycle", ['status' => 'published'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['readiness']);
+        $this->postJson("/api/admin/venues/{$venue->id}/lifecycle", ['status' => 'temporarily_closed'])->assertOk();
+        $this->assertSame('temporarily_closed', $venue->fresh()->status);
+    }
+
+    public function test_suspended_closed_or_archived_venue_cannot_be_submitted_for_publication(): void
+    {
+        [$owner, , $org, , $venue] = $this->createPublishedVenue();
+
+        Sanctum::actingAs($owner);
+        foreach (['suspended', 'closed', 'archived'] as $status) {
+            $venue->update(['status' => $status, 'is_active' => false]);
+            $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication")
+                ->assertStatus(422)
+                ->assertJsonValidationErrors(['status']);
+            $this->assertSame($status, $venue->fresh()->status);
+        }
+
+        $this->assertDatabaseCount('venue_publication_revisions', 0);
+    }
+
+    public function test_closed_or_archived_venue_cannot_be_reopened_by_anyone(): void
+    {
+        [$owner, $admin, $org, , $venue] = $this->createPublishedVenue();
+        $ownerUrl = "/api/partner/organizations/{$org->id}/venues/{$venue->id}/lifecycle";
+        $adminUrl = "/api/admin/venues/{$venue->id}/lifecycle";
+        $attempts = [
+            [$owner, $ownerUrl, 'published'],
+            [$owner, $ownerUrl, 'temporarily_closed'],
+            [$admin, $adminUrl, 'published'],
+            [$admin, $adminUrl, 'suspended'],
+        ];
+
+        foreach (['closed', 'archived'] as $status) {
+            $venue->update(['status' => $status, 'is_active' => false]);
+            foreach ($attempts as [$actor, $url, $target]) {
+                Sanctum::actingAs($actor);
+                $this->postJson($url, ['status' => $target])
+                    ->assertStatus(422)
+                    ->assertJsonValidationErrors(['status']);
+                $this->assertSame($status, $venue->fresh()->status);
+            }
+        }
+
+        $venue->update(['status' => 'closed']);
+        Sanctum::actingAs($owner);
+        $this->postJson($ownerUrl, ['status' => 'archived'])->assertOk();
+        $this->assertSame('archived', $venue->fresh()->status);
+    }
+
+    public function test_unreviewed_venue_cannot_reach_published_through_temporarily_closed(): void
+    {
+        [$owner, , $org, , $venue] = $this->createPublishedVenue();
+        $url = "/api/partner/organizations/{$org->id}/venues/{$venue->id}/lifecycle";
+
+        Sanctum::actingAs($owner);
+        foreach (['draft', 'pending_publication', 'revision_required'] as $status) {
+            $venue->update(['status' => $status, 'is_active' => false]);
+            $this->postJson($url, ['status' => 'temporarily_closed'])
+                ->assertStatus(422)
+                ->assertJsonValidationErrors(['status']);
+            $this->assertSame($status, $venue->fresh()->status);
+        }
+    }
+
     public function test_restoration_to_published_fails_if_subscription_expired(): void
     {
         [$owner, $admin, $org, $sub, $venue] = $this->createPublishedVenue();

@@ -2,6 +2,7 @@
 
 namespace App\Services\Booking;
 
+use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Models\Court;
 use App\Models\MonthlyInvoice;
 use App\Models\OwnerPaymentAllocation;
@@ -43,7 +44,7 @@ class RecurringSeriesService
             abort(403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/auth/email/verification-notification.');
         }
 
-        $court = Court::with(['venue'])->findOrFail((int) $data['court_id']);
+        $court = app(VerifyEffectiveBookingEligibility::class)->assertEligible((int) $data['court_id'], publicFacing: true);
         if ($court->venue?->organization_id) {
             $organizationId = (int) $court->venue->organization_id;
         }
@@ -584,7 +585,7 @@ class RecurringSeriesService
      */
     public function previewSeries(User $user, array $data): array
     {
-        $court = Court::with(['venue'])->findOrFail((int) $data['court_id']);
+        $court = app(VerifyEffectiveBookingEligibility::class)->assertEligible((int) $data['court_id'], publicFacing: true);
 
         $frequency = strtolower((string) ($data['frequency'] ?? ''));
         if (! in_array($frequency, ['weekly', 'biweekly', 'monthly'], true)) {

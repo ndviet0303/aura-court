@@ -66,19 +66,27 @@ class TransitionVenueLifecycle
                 abort(403, 'Chỉ quản trị viên nền tảng mới có quyền tạm ngưng hoạt động cơ sở thể thao.');
             }
 
-            // Lifting a platform suspension requires platform admin
-            if ($venue->status === 'suspended' && $targetStatus === 'published' && ! $isPlatformAdmin) {
+            // Any move out of a platform suspension lifts it, so only the platform admin may make one
+            if ($venue->isSuspended() && ! $isPlatformAdmin) {
                 abort(403, 'Cơ sở đang bị tạm ngưng do tuân thủ, chỉ quản trị viên nền tảng mới có thể khôi phục.');
             }
 
-            // A venue that has never been approved/published cannot skip review to published
-            if ($targetStatus === 'published') {
-                if ($venue->isDraft() || $venue->isPendingPublication() || $venue->isRevisionRequired()) {
-                    throw ValidationException::withMessages([
-                        'status' => 'Cơ sở thể thao chưa qua xét duyệt xuất bản, không thể chuyển trực tiếp sang hoạt động.',
-                    ]);
-                }
+            // Closure is final for every actor: a closed venue may only be archived
+            if (($venue->isClosed() && $targetStatus !== 'archived') || $venue->isArchived()) {
+                throw ValidationException::withMessages([
+                    'status' => 'Cơ sở đã ngừng kinh doanh, không thể hoạt động hoặc tạm ngừng trở lại.',
+                ]);
+            }
 
+            // An unreviewed venue cannot enter the pause/resume pair either, or it would reach published in two steps
+            $isUnreviewed = $venue->isDraft() || $venue->isPendingPublication() || $venue->isRevisionRequired();
+            if ($isUnreviewed && in_array($targetStatus, ['published', 'temporarily_closed'], true)) {
+                throw ValidationException::withMessages([
+                    'status' => 'Cơ sở thể thao chưa qua xét duyệt xuất bản, không thể chuyển sang hoạt động hoặc tạm ngừng.',
+                ]);
+            }
+
+            if ($targetStatus === 'published') {
                 // Real-time readiness & entitlement re-check
                 $eval = $this->readiness->execute($venue);
                 if (! $eval['is_ready']) {

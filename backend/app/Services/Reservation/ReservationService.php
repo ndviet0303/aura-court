@@ -2,6 +2,7 @@
 
 namespace App\Services\Reservation;
 
+use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Models\Court;
 use App\Models\PriceQuote;
 use App\Models\Reservation;
@@ -61,15 +62,16 @@ class ReservationService
             if ($quote->expires_at?->isPast()) {
                 abort(409, 'Price quote has expired.');
             }
-            $lockedCourt = Court::query()
-                ->whereKey($quote->court_id)
-                ->with(['venue.organization'])
-                ->lockForUpdate()
-                ->first();
+            // Step-14: re-check the quote on the locked rows; lock the subscription before the court, as quote creation does, so bookings cannot deadlock.
+            $verifier = app(VerifyEffectiveBookingEligibility::class);
+            $verifier->getEntitlement((int) $quote->organization_id);
+            $lockedCourt = Court::query()->whereKey($quote->court_id)->lockForUpdate()->first();
             abort_unless($lockedCourt && $lockedCourt->is_active, 409, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
             $lockedVenue = Venue::query()->whereKey($lockedCourt->venue_id)->lockForUpdate()->firstOrFail();
             // BR-20/21: staff book for a customer only at a venue assigned to them.
             abort_if($actor !== null && ! $actor->canOperateVenue($lockedVenue), 403, 'Bạn không được giao cơ sở này.');
+            $eligibility = $verifier->execute($lockedCourt->setRelation('venue', $lockedVenue));
+            abort_unless($eligibility['eligible'], 409, $eligibility['message'] ?? '');
             $couponUsage = $this->quoteCoupons->reserve($quote, $user, $lockedCourt);
             $directOwnerPayments = app(FeatureFlagService::class)
                 ->enabled('direct_owner_payments', (int) $lockedVenue->organization_id);
@@ -82,8 +84,6 @@ class ReservationService
                     $holdExpiresAt = Carbon::parse($data['hold_expires_at_override']);
                 }
             }
-            abort_unless($lockedCourt->venue && $lockedCourt->venue->isPublished() && $lockedCourt->venue->is_active, 409, 'Cơ sở thể thao vừa thay đổi trạng thái hoặc ngừng hoạt động.');
-            abort_unless($lockedCourt->venue->organization && $lockedCourt->venue->organization->isApprovedPartner() && $lockedCourt->venue->organization->status === 'active', 409, 'Câu lạc bộ vừa bị tạm ngừng hoạt động.');
 
             $this->slotPolicy->assertAllowed(
                 $lockedCourt,
