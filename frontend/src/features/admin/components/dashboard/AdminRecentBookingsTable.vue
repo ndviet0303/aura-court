@@ -37,8 +37,6 @@ function getStatusLabel(status?: string): string {
       return t('admin.dashboard.statusCompleted')
     case 'disputed':
       return t('admin.dashboard.statusDisputed')
-    case 'legacy':
-      return t('admin.dashboard.statusLegacy')
     case 'cancelled':
       return t('admin.dashboard.statusCancelled')
     case 'expired':

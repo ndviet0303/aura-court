@@ -90,9 +90,7 @@ describe('Admin dashboard reservations list (GET /admin/reservations)', () => {
     await wrapper.find('.status-select .custom-dropdown-trigger').trigger('click')
     const options = wrapper.findAll('.status-select [role="option"]')
     expect(options).toHaveLength(RESERVATION_STATUSES.length + 1)
-    expect(options.map((option) => option.text())).not.toContain(
-      i18n.global.t('admin.dashboard.statusLegacy'),
-    )
+    expect(RESERVATION_STATUSES).not.toContain('legacy')
 
     await options[RESERVATION_STATUSES.indexOf('disputed') + 1]!.trigger('click')
     await flushPromises()

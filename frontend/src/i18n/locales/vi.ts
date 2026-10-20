@@ -1503,7 +1503,6 @@ export default {
       statusInUse: 'Đang sử dụng',
       statusCompleted: 'Đã hoàn thành',
       statusDisputed: 'Đang khiếu nại',
-      statusLegacy: 'Đơn cũ (V1)',
       paidStatus: 'Đã thanh toán',
       pendingStatus: 'Chờ xử lý',
       noChartData: 'Chưa có dữ liệu phân bố theo giờ trong khoảng thời gian này.',
