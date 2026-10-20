@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Contracts\Payment\PaymentProviderInterface;
 use App\Contracts\Payment\PayoutStatusResponse;
 use App\Contracts\Payment\PayoutSubmissionResponse;
+use App\Models\AuditLog;
 use App\Models\Beneficiary;
 use App\Models\FinanceException;
 use App\Models\Organization;
@@ -353,5 +354,37 @@ class FinanceReportsSettlementPayoutExceptionTest extends TestCase
         $runs = $this->actingAs($this->owner)->getJson('/api/finance/reconciliation/runs', $headers);
         $runs->assertOk()
             ->assertJsonStructure(['data']);
+    }
+
+    public function test_finance_audit_logs_only_show_the_callers_organization(): void
+    {
+        $other = Organization::create(['name' => 'Other Finance Org', 'slug' => 'fin-other-'.uniqid(), 'status' => 'active']);
+        $exception = fn (Organization $org) => FinanceException::create([
+            'organization_id' => $org->id,
+            'type' => 'reconciliation_mismatch',
+            'reference' => 'audit-scope-'.$org->id,
+            'severity' => 'low',
+            'amount' => 1000,
+            'description' => 'Audit scope',
+            'status' => 'open',
+            'detected_at' => now(),
+            'due_at' => now()->addHour(),
+        ]);
+        $log = fn (FinanceException $e, string $action) => AuditLog::create([
+            'user_id' => $this->owner->id,
+            'action' => $action,
+            'auditable_type' => FinanceException::class,
+            'auditable_id' => $e->id,
+            'metadata' => ['reference' => $e->reference],
+        ]);
+        $log($exception($this->organization), 'finance_exception.resolve');
+        $log($exception($other), 'finance_exception.resolve');
+        AuditLog::create(['user_id' => $this->owner->id, 'action' => 'tournament.update', 'metadata' => []]);
+
+        $this->actingAs($this->owner)
+            ->getJson('/api/finance/audit-logs', ['X-Organization-Id' => $this->organization->id])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.metadata.reference', 'audit-scope-'.$this->organization->id);
     }
 }

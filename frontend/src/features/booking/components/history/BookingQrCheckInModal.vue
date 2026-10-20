@@ -2,6 +2,7 @@
 import type { Reservation } from '../../types/reservation'
 import { displayCode } from '../../utils/reservation'
 import { venueClockRange, venueDate } from '@/core/utils/venueTime'
+import { QrImage } from '@/shared/components'
 
 defineProps<{
   show: boolean
@@ -37,8 +38,8 @@ const emit = defineEmits<{
         </div>
 
         <div class="qr-container">
-          <img
-            :src="`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=AURA_BOOKING_${displayCode(booking)}&margin=10`"
+          <QrImage
+            :value="`AURA_BOOKING_${booking.code}`"
             :alt="`QR Check-in ${displayCode(booking)}`"
             class="qr-image"
           />

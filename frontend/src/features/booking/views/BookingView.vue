@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
+import { AuraButton } from '@/shared/components'
 import { useUserBookings } from '../composables/useUserBookings'
 
 import BookingHistoryHero from '../components/history/BookingHistoryHero.vue'
@@ -17,6 +18,8 @@ const {
   loading,
   filteredBookings,
   totalCount,
+  hasMore,
+  loadingMore,
   upcomingCount,
   completedCount,
   cancelledCount,
@@ -28,6 +31,7 @@ const {
   showQrModal,
   qrBooking,
   load,
+  loadMore,
   openQr,
   closeQr,
   openReview,
@@ -108,6 +112,9 @@ onMounted(() => {
         @qr="openQr"
         @review="openReview"
       />
+      <AuraButton v-if="hasMore" variant="outline" :loading="loadingMore" @click="loadMore">
+        {{ $t('booking.loadMore') }}
+      </AuraButton>
     </div>
 
     <!-- QR Check-in Pass Modal -->
@@ -139,29 +146,26 @@ onMounted(() => {
   color: var(--ink);
 }
 
-.alert-pill-success {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 18px;
-  border-radius: 12px;
-  background: var(--success-bg, rgba(46, 125, 50, 0.12));
-  color: var(--success-text, #2e7d32);
-  font-size: 13.5px;
-  font-weight: 600;
-  border: 1px solid rgba(46, 125, 50, 0.2);
-}
-
+.alert-pill-success,
 .alert-pill-error {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 12px 18px;
   border-radius: 12px;
-  background: var(--error-bg, rgba(198, 40, 40, 0.12));
-  color: var(--error-text, #c62828);
   font-size: 13.5px;
   font-weight: 600;
+}
+
+.alert-pill-success {
+  background: var(--success-bg, rgba(46, 125, 50, 0.12));
+  color: var(--success-text, #2e7d32);
+  border: 1px solid rgba(46, 125, 50, 0.2);
+}
+
+.alert-pill-error {
+  background: var(--error-bg, rgba(198, 40, 40, 0.12));
+  color: var(--error-text, #c62828);
   border: 1px solid rgba(198, 40, 40, 0.2);
 }
 
@@ -169,12 +173,7 @@ onMounted(() => {
   font-size: 20px;
 }
 
-.bookings-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
+.bookings-grid,
 .loading-state-container {
   display: flex;
   flex-direction: column;

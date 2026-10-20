@@ -66,8 +66,8 @@ class FinanceExceptionController extends Controller
     public function auditLogs(Request $request): AnonymousResourceCollection
     {
         $action = $request->query('action');
-        $perPage = (int) $request->query('per_page', 50);
-        $logs = $this->auditLogs->paginate($action, $perPage);
+        $perPage = min(100, max(1, (int) $request->query('per_page', 50)));
+        $logs = $this->auditLogs->paginateFinanceExceptionLogs($this->organization($request)->id, $action, $perPage);
 
         return AuditLogResource::collection($logs);
     }

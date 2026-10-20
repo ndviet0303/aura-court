@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { VenueWallet } from '../composables/useWallet'
+import { QrImage } from '@/shared/components'
 
 defineProps<{
   show: boolean
@@ -53,8 +54,9 @@ function formatMoney(amount: number): string {
 
         <!-- QR Code Container -->
         <div class="qr-card-box">
-          <img
-            :src="`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=AURA-PASS-${wallet.id}-${wallet.card_number}-${refreshKey}`"
+          <QrImage
+            :value="`AURA-PASS-${wallet.id}-${wallet.card_number}-${refreshKey}`"
+            :size="240"
             alt="Aura Member QR Pass"
             class="qr-img"
           />

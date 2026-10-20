@@ -15,6 +15,9 @@ export { default as AuraLoading } from './feedback/AuraLoading.vue'
 export { default as ErrorModal } from './feedback/ErrorModal.vue'
 export { default as DemoWarningModal } from './feedback/DemoWarningModal.vue'
 
+// Media
+export { default as QrImage } from './media/QrImage.vue'
+
 // Controls & Toggles
 export { default as LanguageSwitcher } from './controls/LanguageSwitcher.vue'
 export { default as ThemeToggle } from './controls/ThemeToggle.vue'

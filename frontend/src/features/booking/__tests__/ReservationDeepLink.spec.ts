@@ -38,7 +38,7 @@ describe('ReservationView deep link to a V1 mirror', () => {
     mockRoute.params = { code: 'LEGACY-BK-OLD7' }
     vi.mocked(bookingApi.getCourts).mockResolvedValue([])
     // Empty list: the modals must render from the detail payload alone.
-    vi.mocked(bookingApi.getMyReservations).mockResolvedValue({ data: [] })
+    vi.mocked(bookingApi.getMyReservations).mockResolvedValue({ data: [], total: 0 })
     vi.mocked(bookingApi.getReservation).mockResolvedValue({ reservation: heldMirror })
     vi.mocked(bookingApi.createReservationPayment).mockResolvedValue({
       reservation: { code: 'LEGACY-BK-OLD7', status: 'held' },

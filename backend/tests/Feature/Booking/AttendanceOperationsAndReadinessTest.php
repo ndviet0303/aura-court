@@ -536,4 +536,30 @@ class AttendanceOperationsAndReadinessTest extends TestCase
             ->assertStatus(405);
         $this->assertEquals($endsAt, $reservation->fresh()->slots->max('ends_at'));
     }
+
+    public function test_staff_cannot_look_up_a_booking_at_a_venue_they_are_not_assigned_to(): void
+    {
+        $fixture = $this->tenant();
+        $otherVenue = Venue::create([
+            'organization_id' => $fixture['organization']->id,
+            'name' => 'Venue Beta',
+            'slug' => 'venue-beta-'.uniqid(),
+            'status' => 'published',
+            'is_active' => true,
+        ]);
+        $otherCourt = $otherVenue->courts()->create(['name' => 'Court B1', 'is_active' => true]);
+        $reservation = $this->createConfirmedReservation($fixture, $otherCourt, $fixture['customer'], now()->addDay());
+        $headers = ['X-Organization-ID' => (string) $fixture['organization']->id];
+
+        // BR-88: staff assigned to Venue Alpha only must not read a Venue Beta booking.
+        $this->actingAs($fixture['staff'])->withHeaders($headers)
+            ->getJson("/api/attendance/{$reservation->code}")
+            ->assertForbidden()
+            ->assertJsonMissingPath('reservation');
+
+        $this->actingAs($fixture['owner'])->withHeaders($headers)
+            ->getJson("/api/attendance/{$reservation->code}")
+            ->assertOk()
+            ->assertJsonPath('reservation.code', $reservation->code);
+    }
 }

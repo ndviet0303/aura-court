@@ -239,4 +239,31 @@ describe('ScheduleView', () => {
     )
     expect(mockPush).toHaveBeenCalledWith({ name: 'reservations', params: { code: 'RSV-NEW-1' } })
   })
+  it('loads the local calendar day, not the UTC day, just after midnight in Vietnam', async () => {
+    const tz = process.env.TZ
+    process.env.TZ = 'Asia/Ho_Chi_Minh'
+    vi.useFakeTimers({ toFake: ['Date'] })
+    // 01:00 on 20 Oct in Vietnam is still 19 Oct in UTC.
+    vi.setSystemTime(new Date('2026-10-20T01:00:00+07:00'))
+    try {
+      const wrapper = mount(ScheduleView, { global: { plugins: [i18n] } })
+      await flushPromises()
+      expect(bookingApi.getAvailability).toHaveBeenLastCalledWith(1, '2026-10-20')
+
+      await wrapper.find('.btn-today').trigger('click')
+      expect(bookingApi.getAvailability).toHaveBeenLastCalledWith(1, '2026-10-20')
+
+      const firstDay = wrapper.find('.date-card-btn')
+      expect(firstDay.find('.day-num').text()).toBe('20')
+      expect(firstDay.classes()).toContain('active')
+      await firstDay.trigger('click')
+      expect(bookingApi.getAvailability).toHaveBeenLastCalledWith(1, '2026-10-20')
+
+      await wrapper.find('[aria-label="Ngày tiếp theo"]').trigger('click')
+      expect(bookingApi.getAvailability).toHaveBeenLastCalledWith(1, '2026-10-21')
+    } finally {
+      vi.useRealTimers()
+      process.env.TZ = tz
+    }
+  })
 })

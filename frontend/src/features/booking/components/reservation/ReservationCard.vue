@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import type { Reservation } from '../../types/reservation'
-import { displayCode, displayStatus } from '../../utils/reservation'
+import { displayCode, showsQr, statusLabel } from '../../utils/reservation'
 
-const { t, te } = useI18n()
+const { t } = useI18n()
 defineProps<{
   reservation: Reservation
   confirmingCode: string | null
@@ -39,15 +39,7 @@ const emit = defineEmits<{
           >check_circle</span
         >
         <span v-else class="material-symbols-outlined status-icon">cancel</span>
-        <span>
-          {{
-            reservation.status === 'held'
-              ? t('reservations.card.statusHeld')
-              : te(`common.status.${displayStatus(reservation)}`)
-                ? t(`common.status.${displayStatus(reservation)}`)
-                : displayStatus(reservation)
-          }}
-        </span>
+        <span>{{ statusLabel(reservation, t) }}</span>
       </div>
     </div>
 
@@ -123,7 +115,11 @@ const emit = defineEmits<{
             <span class="material-symbols-outlined">receipt</span>
             <span>{{ t('reservations.card.quoteDetailsBtn') }}</span>
           </button>
-          <button class="btn btn-qr-pass" @click="emit('qr', reservation)">
+          <button
+            v-if="showsQr(reservation)"
+            class="btn btn-qr-pass"
+            @click="emit('qr', reservation)"
+          >
             <span class="material-symbols-outlined">qr_code_2</span>
             <span>{{ t('reservations.card.qrPassBtn') }}</span>
           </button>
