@@ -114,7 +114,27 @@ describe('PricingCalendarGrid unpriced slots', () => {
     expect(firstCellPrice(hourlyCourt, [courtRule])).toBe(formatCurrency(300000))
   })
 
-  // The 'urban_peak' preset posts this rule; the quote matches weekly rules by weekday only.
+  it('lets hourly rows outrank venue and sport weekly rules, as the quote does', () => {
+    const hourlyCourt = { ...court(12, 'pickleball'), price_slots_count: 119 }
+    expect(firstCellPrice(hourlyCourt, [venueRule, sportRule])).toBe('Theo bảng giá giờ')
+  })
+
+  it('ignores hourly rows on a court whose slots are not an hour long', () => {
+    const longCourt = { ...court(12, 'pickleball'), slot_duration: 90, price_slots_count: 119 }
+    expect(firstCellPrice(longCourt, [venueRule])).toBe(formatCurrency(100000))
+  })
+
+  it('uses loaded price rows only for slots of their own length, as the quote does', () => {
+    const twoHours = { weekday: 1, starts_at: '06:00:00', ends_at: '08:00:00', price: 200000 }
+    const twoHourCourt = { ...court(12, 'pickleball'), slot_duration: 120, price_slots: [twoHours] }
+
+    expect(firstCellPrice(twoHourCourt, [venueRule])).toBe('Theo bảng giá giờ')
+    expect(firstCellPrice({ ...twoHourCourt, slot_duration: 90 }, [venueRule])).toBe(
+      formatCurrency(100000),
+    )
+  })
+
+  // Older data holds weekly rules like this; the quote matches weekly rules by weekday only.
   it('shows no price for a weekly rule without a weekday', () => {
     const anyDay = rule(5, 120000, {
       venue_id: 1,

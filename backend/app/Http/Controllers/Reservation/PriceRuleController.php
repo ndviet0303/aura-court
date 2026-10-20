@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Reservation;
 
+use App\Contracts\Repositories\CourtRepositoryInterface;
+use App\Contracts\Repositories\VenueRepositoryInterface;
 use App\Domain\Subscription\Actions\EvaluatePlatformEntitlement;
 use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
@@ -16,11 +18,17 @@ class PriceRuleController extends Controller
 {
     use ResolvesOrganization;
 
-    public function __construct(private readonly IdempotencyService $idempotency) {}
+    public function __construct(
+        private readonly IdempotencyService $idempotency,
+        private readonly VenueRepositoryInterface $venues,
+        private readonly CourtRepositoryInterface $courts,
+    ) {}
 
     public function index(Request $request)
     {
         $organization = $this->organization($request);
+        // BR-49: pricing configuration belongs to the owner; a court_id must not open another tenant's rules.
+        abort_unless($this->isOrganizationOperator($request, $organization), 403);
 
         return response()->json(['rules' => PriceRule::query()
             ->where('organization_id', $organization->id)
@@ -40,6 +48,7 @@ class PriceRuleController extends Controller
         $data = $this->validated($request);
         $this->assertEffectiveRange($data);
         $this->assertSportHasVenue($data);
+        $this->assertLocationScope($organization, $data);
 
         return $this->idempotency->run($request, function () use ($organization, $data) {
             $rule = PriceRule::create(array_merge($data, ['organization_id' => $organization->id, 'version' => 1]));
@@ -57,6 +66,7 @@ class PriceRuleController extends Controller
         $data = $this->validated($request, true);
         $this->assertEffectiveRange($data, $record);
         $this->assertSportHasVenue($data, $record);
+        $this->assertLocationScope($organization, $data, $record);
 
         return $this->idempotency->run($request, function () use ($record, $data) {
             $record->update(array_merge($data, ['version' => $record->version + 1]));
@@ -128,6 +138,28 @@ class PriceRuleController extends Controller
             throw ValidationException::withMessages([
                 'venue_id' => 'A sport price rule must name its venue.',
             ]);
+        }
+    }
+
+    /** BR-49: a rule targets only a venue or court of its own organization, and the court sits in the venue. */
+    private function assertLocationScope(Organization $organization, array $data, ?PriceRule $existing = null): void
+    {
+        $venueId = array_key_exists('venue_id', $data) ? $data['venue_id'] : $existing?->venue_id;
+        $courtId = array_key_exists('court_id', $data) ? $data['court_id'] : $existing?->court_id;
+
+        if ($venueId !== null && (int) $this->venues->findById((int) $venueId)?->organization_id !== (int) $organization->id) {
+            throw ValidationException::withMessages(['venue_id' => 'Cơ sở không thuộc tổ chức đang thao tác.']);
+        }
+        if ($courtId === null) {
+            return;
+        }
+
+        $court = $this->courts->findById((int) $courtId);
+        if (! $court || (int) $court->venue?->organization_id !== (int) $organization->id) {
+            throw ValidationException::withMessages(['court_id' => 'Sân không thuộc tổ chức đang thao tác.']);
+        }
+        if ($venueId !== null && (int) $court->venue_id !== (int) $venueId) {
+            throw ValidationException::withMessages(['court_id' => 'Sân không thuộc cơ sở đã chọn.']);
         }
     }
 

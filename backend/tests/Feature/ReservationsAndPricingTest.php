@@ -272,7 +272,7 @@ class ReservationsAndPricingTest extends TestCase
                     'weekday' => $date->dayOfWeekIso,
                     'starts_at' => $date->format('H:i'),
                     'ends_at' => $date->copy()->addHour()->format('H:i'),
-                    'price' => 100000,
+                    'price' => 120000,
                     'is_active' => true,
                 ]);
             }
@@ -312,7 +312,8 @@ class ReservationsAndPricingTest extends TestCase
         $cases = [
             ['date' => $dates[0], 'amount' => 250000],
             ['date' => $dates[1], 'amount' => 200000],
-            ['date' => $dates[2], 'amount' => 150000],
+            // The court's own hourly price is the narrower scope, so it beats the venue-wide weekly rule.
+            ['date' => $dates[2], 'amount' => 120000],
         ];
 
         foreach ($cases as $index => $case) {

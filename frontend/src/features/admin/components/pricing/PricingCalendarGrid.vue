@@ -175,9 +175,27 @@ function getSlotPricing(
     }
   }
 
-  // 3. Weekly rule for this weekday; the quote never matches one without a weekday.
+  // A court's price row prices only a slot of its own length, as in the quote; an end of 00:00 or 23:59 is midnight.
+  const rowMinutes = (row: { starts_at: string; ends_at: string }) => {
+    const minute = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5))
+    const end = minute(row.ends_at)
+    return (end === 0 || end === 1439 ? 1440 : end) - minute(row.starts_at)
+  }
+  // ponytail: without loaded rows only the court-wide count (inactive rows included) is known, so the hour-long rows the app writes are assumed; the planned price-coverage view replaces this.
+  const hasHourlyRows = court?.price_slots
+    ? court.price_slots.some(
+        (row) =>
+          row.weekday === day.weekday &&
+          overlapsSlot(row) &&
+          rowMinutes(row) === court.slot_duration,
+      )
+    : court?.slot_duration === 60 && Boolean(court.price_slots_count)
+
+  // 3. Weekly rule for this weekday; the quote never matches one without a weekday. The court's
+  // hourly rows are court-scoped, so only a court weekly rule outranks them.
   const weekdayRule = activeRules
     .filter((r) => r.type === 'weekly' && r.weekday === day.weekday && coversSlot(r))
+    .filter((r) => Boolean(r.court_id) || !hasHourlyRows)
     .sort(compareRules)[0]
 
   if (weekdayRule) {
@@ -190,10 +208,6 @@ function getSlotPricing(
   }
 
   // 4. Configured base, but hourly court price rows on this weekday and block outrank it in the quote.
-  // ponytail: without loaded rows only the court-wide count (inactive rows included) is known; the planned price-coverage view replaces this.
-  const hasHourlyRows = court?.price_slots
-    ? court.price_slots.some((row) => row.weekday === day.weekday && overlapsSlot(row))
-    : Boolean(court?.price_slots_count)
   const baseRule = activeRules.filter((r) => r.type === 'base').sort(compareRules)[0]
 
   if (baseRule && !hasHourlyRows) {

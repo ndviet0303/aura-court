@@ -143,7 +143,7 @@
   ["view-lines", "features/admin/views/AdminTournamentBracketView.vue", 463],
   ["view-lines", "features/admin/views/AdminVenuesView.vue", 423],
   ["view-lines", "features/admin/views/OrganizationOwnerView.vue", 257],
-  ["view-lines", "features/admin/views/PricingCalendarView.vue", 396],
+  ["view-lines", "features/admin/views/PricingCalendarView.vue", 379],
   ["view-lines", "features/auth/views/ForgotPasswordView.vue", 426],
   ["view-lines", "features/auth/views/LoginView.vue", 510],
   ["view-lines", "features/auth/views/OnboardingView.vue", 845],

@@ -88,21 +88,3 @@ export interface PriceQuoteResponse {
   expires_at: string
   court?: Court
 }
-
-export interface PricingPresetTemplate {
-  id: string
-  nameKey: string
-  descKey: string
-  badgeKey: string
-  icon: string
-  rules: Array<{
-    name: string
-    type: PriceRuleType
-    weekday?: number | null
-    starts_at?: string | null
-    ends_at?: string | null
-    priceMultiplier: number // multiplier relative to base court price or fixed price
-    fixedPrice?: number
-    priority: number
-  }>
-}

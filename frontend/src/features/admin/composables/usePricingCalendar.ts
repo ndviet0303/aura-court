@@ -8,7 +8,6 @@ export function usePricingCalendar() {
   const loading = ref(false)
   const saving = ref(false)
   const simulating = ref(false)
-  const applyingPreset = ref(false)
   const notice = ref('')
   const error = ref('')
 
@@ -17,7 +16,6 @@ export function usePricingCalendar() {
   // Modals
   const showSimulatorModal = ref(false)
   const showRuleModal = ref(false)
-  const showPresetsModal = ref(false)
   const editingRule = ref<PriceRuleItem | null>(null)
 
   // Data
@@ -248,116 +246,15 @@ export function usePricingCalendar() {
     }
   }
 
-  async function applyPresetRules(
-    presetId: string,
-    targetVenueId?: number | null,
-    targetCourtId?: number | null,
-  ) {
-    applyingPreset.value = true
-    error.value = ''
-    try {
-      const baseCourtPrice = 120000
-
-      const rulePresets: Record<string, PriceRuleFormPayload[]> = {
-        urban_peak: [
-          {
-            name: 'Giờ Vàng Buổi Tối (Peak 17:00 - 21:00)',
-            type: 'peak',
-            venue_id: targetVenueId || null,
-            court_id: targetCourtId || null,
-            starts_at: '17:00',
-            ends_at: '21:00',
-            price: Math.round(baseCourtPrice * 1.5),
-            priority: 3,
-            is_active: true,
-          },
-          {
-            name: 'Khung Giờ Sáng Sớm (06:00 - 11:00)',
-            type: 'weekly',
-            venue_id: targetVenueId || null,
-            court_id: targetCourtId || null,
-            starts_at: '06:00',
-            ends_at: '11:00',
-            price: baseCourtPrice,
-            priority: 2,
-            is_active: true,
-          },
-          {
-            name: 'Phụ Thu Cuối Tuần (T7 & CN)',
-            type: 'weekly',
-            weekday: 7,
-            venue_id: targetVenueId || null,
-            court_id: targetCourtId || null,
-            price: Math.round(baseCourtPrice * 1.25),
-            priority: 2,
-            is_active: true,
-          },
-        ],
-        student_discount: [
-          {
-            name: 'Ưu Đãi Giờ Trưa Học Sinh / Sinh Viên (11:00 - 14:00)',
-            type: 'surge',
-            venue_id: targetVenueId || null,
-            court_id: targetCourtId || null,
-            starts_at: '11:00',
-            ends_at: '14:00',
-            price: Math.round(baseCourtPrice * 0.75),
-            priority: 4,
-            is_active: true,
-          },
-        ],
-        holiday_surcharge: [
-          {
-            name: 'Phụ Thu Ngày Lễ & Tết Toàn Hệ Thống (+35%)',
-            type: 'holiday',
-            venue_id: targetVenueId || null,
-            court_id: targetCourtId || null,
-            price: Math.round(baseCourtPrice * 1.35),
-            priority: 5,
-            is_active: true,
-          },
-        ],
-        night_owl: [
-          {
-            name: 'Khung Giờ Đêm Tiết Kiệm (21:00 - 23:00)',
-            type: 'peak',
-            venue_id: targetVenueId || null,
-            court_id: targetCourtId || null,
-            starts_at: '21:00',
-            ends_at: '23:00',
-            price: Math.round(baseCourtPrice * 0.85),
-            priority: 2,
-            is_active: true,
-          },
-        ],
-      }
-
-      const selectedRules = rulePresets[presetId] || []
-      for (const rulePayload of selectedRules) {
-        await adminApi.createPriceRule(rulePayload)
-      }
-
-      showNotice(`Đã áp dụng thành công bộ quy tắc mẫu (${selectedRules.length} quy tắc)!`)
-      showPresetsModal.value = false
-      await loadData()
-    } catch (e: unknown) {
-      error.value = errorMessage(e, 'Không thể áp dụng bộ quy tắc giá.')
-    } finally {
-      applyingPreset.value = false
-    }
-  }
-
   return {
     loading,
     saving,
     simulating,
-    applyingPreset,
     notice,
     error,
     activeTab,
     showSimulatorModal,
     showRuleModal,
-    showPresetsModal,
     editingRule,
     rules,
     venues,
@@ -381,7 +278,6 @@ export function usePricingCalendar() {
     toggleRuleActive,
     deleteRule,
     simulateQuote,
-    applyPresetRules,
     showNotice,
   }
 }

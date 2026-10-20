@@ -10,7 +10,6 @@ import PricingRulePriorityStack from '../components/pricing/PricingRulePriorityS
 import PricingCalendarGrid from '../components/pricing/PricingCalendarGrid.vue'
 import PricingSimulatorModal from '../components/pricing/PricingSimulatorModal.vue'
 import PricingRuleModal from '../components/pricing/PricingRuleModal.vue'
-import PricingPresetsModal from '../components/pricing/PricingPresetsModal.vue'
 
 const { t } = useI18n()
 
@@ -18,13 +17,11 @@ const {
   loading,
   saving,
   simulating,
-  applyingPreset,
   notice,
   error,
   activeTab,
   showSimulatorModal,
   showRuleModal,
-  showPresetsModal,
   editingRule,
   rules,
   venues,
@@ -47,7 +44,6 @@ const {
   toggleRuleActive,
   deleteRule,
   simulateQuote,
-  applyPresetRules,
 } = usePricingCalendar()
 
 function handleStartCreate() {
@@ -117,10 +113,6 @@ onMounted(() => {
             >refresh</span
           >
           <span>{{ t('admin.pricing.refreshBtn') }}</span>
-        </AuraButton>
-        <AuraButton variant="secondary" @click="showPresetsModal = true">
-          <span class="material-symbols-outlined icon-18">dashboard_customize</span>
-          <span>{{ t('admin.pricing.presetsBtn') }}</span>
         </AuraButton>
         <AuraButton variant="outline" @click="showSimulatorModal = true">
           <span class="material-symbols-outlined icon-18">calculate</span>
@@ -233,15 +225,6 @@ onMounted(() => {
       @simulate="
         simulateQuote($event.courtId, $event.dateStr, $event.startTime, $event.durationHours)
       "
-    />
-
-    <PricingPresetsModal
-      :show="showPresetsModal"
-      :venues="venues"
-      :courts="courts"
-      :applying="applyingPreset"
-      @close="showPresetsModal = false"
-      @apply-preset="applyPresetRules($event.presetId, $event.venueId, $event.courtId)"
     />
   </div>
 </template>

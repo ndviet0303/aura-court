@@ -2058,7 +2058,6 @@ export default {
       subtitle:
         'Configure dynamic pricing rules for peak slots, holiday surcharges, low-demand discounts, and calculate instant quotes.',
       refreshBtn: 'Refresh',
-      presetsBtn: 'Pricing Presets',
       simulatorBtn: 'Price Simulator',
       addNewRuleBtn: 'Add New Rule',
       tabRulesList: 'Rules Priority Stack',
@@ -2147,24 +2146,6 @@ export default {
       friday: 'Friday',
       saturday: 'Saturday',
       sunday: 'Sunday',
-      presetsModalTitle: 'Standard Pricing Matrix Presets',
-      applyPresetTo: 'Apply Preset Pack To',
-      applyPresetBtn: 'Apply Preset Pack',
-      presetUrbanTitle: 'Urban Center Prime Matrix (Urban Peak Pack)',
-      presetUrbanDesc:
-        'Maximize evening peak revenue 17:00 - 21:00 (+50%) and weekend surcharge (+25%).',
-      presetUrbanBadge: 'Most Popular',
-      presetStudentTitle: 'Student & Off-Peak Promo (Student Pack)',
-      presetStudentDesc:
-        '25% discount for low-traffic lunch hours (11:00 - 14:00) Monday through Friday.',
-      presetStudentBadge: 'Boost Occupancy',
-      presetHolidayTitle: 'Holiday & Festivity Surcharge (+35%)',
-      presetHolidayDesc:
-        'Automatically apply a festive surcharge across all courts with top priority.',
-      presetHolidayBadge: 'Festivity',
-      presetNightTitle: 'Night Owl Low-Traffic Promo (Night Owl Pack)',
-      presetNightDesc: '15% discount on late night slots (21:00 - 23:00) to fill late capacity.',
-      presetNightBadge: 'Late Night',
       simulatorModalTitle: 'Dynamic Quote Simulator',
       simIntro: 'Calculate exact real-time reservation quotes based on current priority rules:',
       selectBookingDate: 'Booking Date:',
