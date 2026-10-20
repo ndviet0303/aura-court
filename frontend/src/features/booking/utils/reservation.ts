@@ -1,12 +1,35 @@
 import type { HoldReservationPayload, PriceQuote, Reservation } from '../types/reservation'
 
-type Displayable = Pick<Reservation, 'code' | 'status' | 'legacy_mapping'>
+type Displayable = Pick<Reservation, 'code' | 'status' | 'legacy_mapping' | 'metadata'>
 
 // A mirrored legacy booking is stored as `LEGACY-<code>`; customers only ever see the original code.
 export const displayCode = (r: Displayable): string => r.legacy_mapping?.[0]?.legacy_code ?? r.code
 
-export const displayStatus = (r: Displayable): string =>
-  r.status === 'legacy' ? (r.legacy_mapping?.[0]?.legacy_status ?? r.status) : r.status
+// Check-in, check-out and no-show are written to metadata.operational_status while status stays confirmed.
+export const displayStatus = (r: Displayable): string => {
+  if (r.status === 'legacy') return r.legacy_mapping?.[0]?.legacy_status ?? r.status
+  return r.status === 'confirmed' ? (r.metadata?.operational_status ?? r.status) : r.status
+}
+
+// Report FR-79 order status labels, as booking.* i18n keys; any other status shows as is.
+const STATUS_LABELS: Record<string, string> = {
+  held: 'statusPending',
+  confirmed: 'statusConfirmed',
+  in_use: 'statusInUse',
+  completed: 'statusCompleted',
+  no_show: 'statusNoShow',
+  cancelled: 'statusCancelled',
+  expired: 'statusExpired',
+  refunded: 'statusRefunded',
+}
+export const statusLabel = (r: Displayable, t: (key: string) => string): string => {
+  const key = STATUS_LABELS[displayStatus(r)]
+  return key ? t(`booking.${key}`) : displayStatus(r)
+}
+
+// The order QR is shown for check-in and check-out only (report FR-80).
+export const showsQr = (r: Displayable): boolean =>
+  ['confirmed', 'in_use'].includes(displayStatus(r))
 
 // Mirrors POST /reviews eligibility: reservation statuses, or the legacy booking status for a terminal mirror.
 export const canReview = (r: Displayable): boolean =>

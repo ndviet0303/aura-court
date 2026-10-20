@@ -205,12 +205,6 @@ parameters:
 			path: app/Domain/Partner/Actions/SubmitPartnerApplication.php
 
 		-
-			message: '#^Call to an undefined method App\\Services\\Reservation\\ReservationService\:\:create\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Domain/Reservation/Actions/CreateReservation.php
-
-		-
 			message: '#^Parameter \#1 \$creator of method App\\Services\\Social\\MatchService\:\:createPost\(\) expects App\\Models\\User, int given\.$#'
 			identifier: argument.type
 			count: 1

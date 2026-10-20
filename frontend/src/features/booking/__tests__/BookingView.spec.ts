@@ -21,6 +21,10 @@ vi.mock('vue-router', () => ({
   },
 }))
 
+vi.mock('qrcode', () => ({
+  default: { toDataURL: vi.fn().mockResolvedValue('data:image/png;base64,mockqr') },
+}))
+
 const mockBookings = [
   {
     id: 101,
@@ -97,6 +101,7 @@ describe('BookingView (/booking)', () => {
   it('renders booking hero header and loads booking cards list', async () => {
     vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
       data: mockBookings as any,
+      total: 3,
     })
 
     const wrapper = mount(BookingView, {
@@ -114,12 +119,13 @@ describe('BookingView (/booking)', () => {
     expect(cards.length).toBe(3)
     expect(cards[0]?.text()).toContain('#RSV-20260831-01')
     expect(cards[0]?.text()).toContain('Sân VIP A1')
-    expect(cards[0]?.text()).toContain('ĐÃ XÁC NHẬN')
+    expect(cards[0]?.text()).toContain('Đã xác nhận')
   })
 
   it('filters by status tabs (upcoming, completed, cancelled)', async () => {
     vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
       data: mockBookings as any,
+      total: 3,
     })
 
     const wrapper = mount(BookingView, {
@@ -147,6 +153,7 @@ describe('BookingView (/booking)', () => {
   it('filters bookings by search query', async () => {
     vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
       data: mockBookings as any,
+      total: 3,
     })
 
     const wrapper = mount(BookingView, {
@@ -167,6 +174,7 @@ describe('BookingView (/booking)', () => {
   it('opens and closes QR Check-in modal', async () => {
     vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
       data: mockBookings as any,
+      total: 3,
     })
 
     const wrapper = mount(BookingView, {
@@ -194,6 +202,7 @@ describe('BookingView (/booking)', () => {
   it('offers resale instead of cancel or reschedule on confirmed bookings', async () => {
     vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
       data: mockBookings as unknown as Reservation[],
+      total: 3,
     })
 
     const wrapper = mount(BookingView, {
@@ -216,12 +225,13 @@ describe('BookingView (/booking)', () => {
     // 3. Cancelled booking card offers no resale
     const cancelledCard = wrapper.findAll('.user-booking-card')[2]
     expect(cancelledCard?.find('[data-testid="booking-resale-btn"]').exists()).toBe(false)
-    expect(cancelledCard?.text()).toContain('ĐÃ HỦY')
+    expect(cancelledCard?.text()).toContain('Đã hủy thanh toán')
   })
 
   it('opens review modal and submits review', async () => {
     vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
       data: mockBookings as any,
+      total: 3,
     })
     const reviewSpy = vi.spyOn(bookingApi, 'submitReview').mockResolvedValue({} as any)
 
@@ -263,6 +273,7 @@ describe('BookingView (/booking)', () => {
     }
     vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
       data: [mockBookings[1], legacy] as unknown as Reservation[],
+      total: 2,
     })
 
     const wrapper = mount(BookingView, { global: { plugins: [i18n] } })
@@ -271,9 +282,9 @@ describe('BookingView (/booking)', () => {
     const [held, legacyCard] = wrapper.findAll('.user-booking-card')
     expect(legacyCard?.text()).toContain('#BK-OLD-1')
     expect(legacyCard?.text()).not.toContain('LEGACY-')
-    expect(legacyCard?.text()).toContain('ĐÃ HOÀN TIỀN')
+    expect(legacyCard?.text()).toContain('Đã hoàn tiền')
     expect(legacyCard?.text()).not.toContain('Đánh Giá')
-    expect(held?.text()).toContain('CHỜ THANH TOÁN')
+    expect(held?.text()).toContain('Chờ thanh toán')
     expect(JSON.parse(held?.find('.btn-card-pay').attributes('href') ?? '{}')).toEqual({
       name: 'reservations',
       params: { code: 'RSV-20260831-02' },
@@ -298,6 +309,7 @@ describe('BookingView (/booking)', () => {
     }
     vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
       data: [legacy] as unknown as Reservation[],
+      total: 1,
     })
     const reviewSpy = vi.spyOn(bookingApi, 'submitReview').mockResolvedValue({})
 
@@ -318,6 +330,7 @@ describe('BookingView (/booking)', () => {
   it('renders empty state when there are no bookings', async () => {
     vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
       data: [],
+      total: 0,
     })
 
     const wrapper = mount(BookingView, {
@@ -328,5 +341,66 @@ describe('BookingView (/booking)', () => {
 
     expect(wrapper.find('[data-testid="booking-empty-state"]').exists()).toBe(true)
     expect(wrapper.find('.empty-title').text()).toContain('Không Tìm Thấy Lịch Đặt Sân')
+  })
+
+  it('pages through older bookings with "Xem thêm" and counts from the paginator total', async () => {
+    const spy = vi
+      .spyOn(bookingApi, 'getMyReservations')
+      .mockResolvedValueOnce({ data: [mockBookings[0]] as unknown as Reservation[], total: 2 })
+      .mockResolvedValueOnce({ data: [mockBookings[2]] as unknown as Reservation[], total: 2 })
+
+    const wrapper = mount(BookingView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    expect(wrapper.findAll('.user-booking-card')).toHaveLength(1)
+    expect(wrapper.findAll('.tab-btn')[0]?.text()).toContain('2')
+    const more = wrapper.findAll('button').find((b) => b.text().includes('Xem thêm'))
+    await more?.trigger('click')
+    await flushPromises()
+
+    expect(spy).toHaveBeenLastCalledWith(2)
+    expect(wrapper.findAll('.user-booking-card').map((c) => c.text())).toEqual([
+      expect.stringContaining('#RSV-20260831-01'),
+      expect.stringContaining('#RSV-20260820-03'),
+    ])
+    expect(wrapper.text()).not.toContain('Xem thêm')
+  })
+
+  it('labels orders by the report statuses and shows the QR only while it can be used', async () => {
+    const withStatus = (id: number, status: string, operational?: string) => ({
+      ...mockBookings[0],
+      id,
+      code: `RSV-${id}`,
+      status,
+      metadata: operational ? { operational_status: operational } : null,
+    })
+    vi.spyOn(bookingApi, 'getMyReservations').mockResolvedValue({
+      data: [
+        withStatus(1, 'confirmed', 'in_use'),
+        withStatus(2, 'confirmed', 'completed'),
+        withStatus(3, 'confirmed', 'no_show'),
+        withStatus(4, 'expired'),
+      ] as unknown as Reservation[],
+      total: 4,
+    })
+
+    const wrapper = mount(BookingView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    const cards = wrapper.findAll('.user-booking-card')
+    const chips = cards.map((c) => c.find('.status-chip').text())
+    expect(chips).toEqual([
+      expect.stringContaining('Đang sử dụng'),
+      expect.stringContaining('Hoàn thành'),
+      expect.stringContaining('Không đến'),
+      expect.stringContaining('Hết hạn thanh toán'),
+    ])
+    expect(cards.map((c) => c.text().includes('Mã Check-in'))).toEqual([true, false, false, false])
+    expect(cards.map((c) => c.find('[data-testid="booking-resale-btn"]').exists())).toEqual([
+      false,
+      false,
+      false,
+      false,
+    ])
   })
 })

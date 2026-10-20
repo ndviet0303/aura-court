@@ -13,7 +13,9 @@ describe('bookingApi reservation endpoints', () => {
 
   it("lists the caller's own reservations across organizations", () => {
     bookingApi.getMyReservations()
-    expect(api.get).toHaveBeenCalledWith('/me/reservations')
+    expect(api.get).toHaveBeenCalledWith('/me/reservations?page=1')
+    bookingApi.getMyReservations(3)
+    expect(api.get).toHaveBeenLastCalledWith('/me/reservations?page=3')
   })
 
   it('submits a review by reservation code only', () => {

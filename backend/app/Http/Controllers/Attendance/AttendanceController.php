@@ -136,7 +136,7 @@ class AttendanceController extends Controller
     public function show(Request $request, string $code): JsonResponse
     {
         $organization = $this->organization($request);
-        $result = $this->attendance->getAttendance($organization->id, $code);
+        $result = $this->attendance->getAttendance($request->user(), $organization->id, $code);
 
         return response()->json($result);
     }

@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import type { Reservation } from '../../types/reservation'
 import { displayCode } from '../../utils/reservation'
+import { QrImage } from '@/shared/components'
 
 const { t } = useI18n()
 
@@ -45,8 +46,8 @@ const emit = defineEmits<{
         </div>
 
         <div class="qr-box">
-          <img
-            :src="`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=AURA_V2_RESERVATION_${reservation.code}&margin=8`"
+          <QrImage
+            :value="`AURA_BOOKING_${reservation.code}`"
             :alt="`Aura QR #${displayCode(reservation)}`"
             class="qr-image"
           />
