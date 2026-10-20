@@ -418,6 +418,11 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
 - [ ] 12.3 Khi archive:
   - Change archive sau rebase khối MODIFIED lên spec chính.
   - Sửa tay phần Purpose của `direct-owner-payments`, `reservations-and-pricing` và `wallet-payment`.
+- [x] 12.4 Ghi chú phối hợp từ `align-module-04-booking` (2026-10-21; người dùng chọn lưới 30 phút theo report Module 04):
+  - Nhóm 4 (design 10): change đó REMOVED requirement "One-hour booking slots" và thay bằng "Thirty-minute booking interval". Nhóm 4 vẫn đúng tới Pha 5 của module 04. `align-module-04-booking` phải archive sau change này.
+  - Nhóm 3 (design 7): change đó mở lại cho khách huỷ đơn còn Chờ thanh toán, không có hoàn tiền. Lệnh cấm huỷ, hoàn tiền và dời lịch vẫn áp cho đơn đã xác nhận.
+  - Nhóm 5 (design 8): màn tra cứu thanh toán bất thường (chỉ đọc) của `direct-owner-payments` hiện cả khi tắt `marketplace_payouts`. Nhóm Tài chính (Rút tiền, Đối soát, Ngoại lệ) vẫn sau cờ. Khối MODIFIED "Settlement and payout lifecycle" của change đó dựng trên text delta ở đây.
+  - Hạn thanh toán của đơn không còn theo `hold_ttl_minutes` của cơ sở. Hạn mới là mốc sớm nhất trong: lúc giữ chỗ + 10 phút, giờ bắt đầu, hạn voucher.
 
 ## 13. Cổng kiểm tra local
 
