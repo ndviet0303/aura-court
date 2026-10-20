@@ -83,10 +83,11 @@ class EloquentVenueLifecycleRepository implements VenueLifecycleRepositoryInterf
         return $venue->publicationRevisions()->latest('revision_number')->first();
     }
 
-    public function paginateByOrganization(int $organizationId, int $perPage = 15): LengthAwarePaginator
+    public function paginateByOrganization(int $organizationId, array $venueIds, int $perPage = 15): LengthAwarePaginator
     {
         return Venue::query()
             ->where('organization_id', $organizationId)
+            ->whereIn('id', $venueIds)
             ->with(['courts', 'currentPublicationRevision'])
             ->orderByDesc('id')
             ->paginate($perPage);

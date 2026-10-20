@@ -43,6 +43,13 @@ class SubmitVenueForPublication
                 abort(403, 'Bạn không có quyền gửi duyệt xuất bản cho cơ sở này.');
             }
 
+            // Approval would publish the venue, silently lifting a suspension or reopening a closure
+            if ($venue->isSuspended() || $venue->isClosed() || $venue->isArchived()) {
+                throw ValidationException::withMessages([
+                    'status' => 'Cơ sở đang bị tạm ngưng hoặc đã ngừng kinh doanh, không thể gửi duyệt xuất bản.',
+                ]);
+            }
+
             $hasPendingRevision = $venue->publicationRevisions()
                 ->where('status', 'pending')
                 ->exists();

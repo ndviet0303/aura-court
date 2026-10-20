@@ -40,9 +40,16 @@ class OrganizationController extends Controller
     public function show(Request $request, Organization $organization): JsonResponse
     {
         $user = $request->user();
-        abort_unless($user->isPlatformAdmin() || $organization->hasMember($user->id), 403);
+        if ($user->isPlatformAdmin() || $user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_ORGANIZATION_OWNER])) {
+            $organization->load(['venues.courts', 'members.user']);
 
-        $organization->load(['venues.courts', 'members.user']);
+            return response()->json(['organization' => $organization]);
+        }
+
+        // BR-20: staff see only their assigned venues and no member list; customer memberships see nothing.
+        abort_unless($user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_STAFF]), 403, 'Bạn không có quyền xem tổ chức này.');
+        $venueIds = $user->getAuthorizedVenueIds($organization->id);
+        $organization->load(['venues' => fn ($venues) => $venues->whereIn('id', $venueIds)->with('courts')]);
 
         return response()->json(['organization' => $organization]);
     }

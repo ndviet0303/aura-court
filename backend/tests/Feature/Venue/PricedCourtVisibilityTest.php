@@ -65,6 +65,26 @@ class PricedCourtVisibilityTest extends TestCase
         $this->getJson("/api/courts/{$court->slug}")->assertOk()->assertJsonPath('id', $court->id);
     }
 
+    public function test_public_court_and_venue_reads_do_not_expose_the_organization_row(): void
+    {
+        $court = $this->court('Public Court');
+        $this->sportRule();
+        $this->venue->organization->update(['tax_code' => '0312345678']);
+
+        $this->getJson('/api/courts')->assertOk()
+            ->assertJsonPath('0.venue.organization_id', $this->venue->organization_id)
+            ->assertJsonMissingPath('0.venue.organization')
+            ->assertDontSee('0312345678');
+        $this->getJson("/api/courts/{$court->slug}")->assertOk()
+            ->assertJsonPath('venue.id', $this->venue->id)
+            ->assertJsonMissingPath('venue.organization')
+            ->assertDontSee('0312345678');
+        $this->getJson("/api/venues/{$this->venue->slug}")->assertOk()
+            ->assertJsonPath('id', $this->venue->id)
+            ->assertJsonMissingPath('organization')
+            ->assertDontSee('0312345678');
+    }
+
     public function test_new_price_rule_refreshes_the_cached_public_list(): void
     {
         $court = $this->court('Late Priced Court');

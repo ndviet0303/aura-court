@@ -97,12 +97,12 @@ const weekRangeLabel = computed(() => {
 
 // Time slot blocks to render in each day
 const timeSlots = [
-  { starts_at: '06:00', ends_at: '09:00', label: '06:00 - 09:00', type: 'off_peak' },
-  { starts_at: '09:00', ends_at: '11:00', label: '09:00 - 11:00', type: 'standard' },
-  { starts_at: '11:00', ends_at: '14:00', label: '11:00 - 14:00', type: 'lunch_promo' },
-  { starts_at: '14:00', ends_at: '17:00', label: '14:00 - 17:00', type: 'afternoon' },
-  { starts_at: '17:00', ends_at: '21:00', label: '17:00 - 21:00', type: 'peak' },
-  { starts_at: '21:00', ends_at: '23:00', label: '21:00 - 23:00', type: 'night' },
+  { starts_at: '06:00', ends_at: '09:00', label: '06:00 - 09:00' },
+  { starts_at: '09:00', ends_at: '11:00', label: '09:00 - 11:00' },
+  { starts_at: '11:00', ends_at: '14:00', label: '11:00 - 14:00' },
+  { starts_at: '14:00', ends_at: '17:00', label: '14:00 - 17:00' },
+  { starts_at: '17:00', ends_at: '21:00', label: '17:00 - 21:00' },
+  { starts_at: '21:00', ends_at: '23:00', label: '21:00 - 23:00' },
 ]
 
 // Compute the price and active rule for a specific day and slot
@@ -112,16 +112,20 @@ function getSlotPricing(
 ) {
   const court = activeCourt.value
   const venueId = court?.venue_id || court?.venue?.id
+  const organizationId = court?.venue?.organization_id
   const activeRules = props.rules.filter((rule) => {
     if (!rule.is_active) return false
     if (rule.effective_from && day.isoDate < rule.effective_from.slice(0, 10)) return false
     if (rule.effective_until && day.isoDate > rule.effective_until.slice(0, 10)) return false
+    // The quote reads only the court's own organization's rules; the courts list can span several.
+    if (rule.organization_id && organizationId && rule.organization_id !== organizationId) {
+      return false
+    }
     if (rule.court_id && rule.court_id !== court?.id) return false
     if (rule.sport_type && rule.sport_type !== court?.sport_type) return false
     if (rule.venue_id && rule.venue_id !== venueId) return false
     return true
   })
-  const baseCourtPrice = 120000
   const compareRules = (a: PriceRuleItem, b: PriceRuleItem) => {
     const scopeRank = (rule: PriceRuleItem) =>
       rule.court_id ? 4 : rule.sport_type ? 3 : rule.venue_id ? 2 : 1
@@ -130,60 +134,50 @@ function getSlotPricing(
     )
   }
 
-  // 1. Check Date Exception / Holiday rules matching ISO date
+  // The API sends HH:mm:ss and the quote compares HH:mm; a rule without hours covers the whole day.
+  const coversSlot = (r: { starts_at?: string | null; ends_at?: string | null }) =>
+    !r.starts_at ||
+    !r.ends_at ||
+    (r.starts_at.slice(0, 5) <= slot.starts_at && r.ends_at.slice(0, 5) >= slot.ends_at)
+  const overlapsSlot = (r: { starts_at: string; ends_at: string }) =>
+    r.starts_at.slice(0, 5) < slot.ends_at && r.ends_at.slice(0, 5) > slot.starts_at
+
+  // 1. Date exception / holiday on this date
   const holidayRule = activeRules
     .filter(
       (r) =>
-        (r.type === 'holiday' || r.type === 'date_exception' || r.type === 'special_event') &&
-        r.exception_date === day.isoDate,
+        (r.type === 'holiday' || r.type === 'date_exception') &&
+        r.exception_date === day.isoDate &&
+        coversSlot(r),
     )
     .sort(compareRules)[0]
 
   if (holidayRule) {
     return {
-      price: holidayRule.price || Math.round(baseCourtPrice * 1.35),
+      price: holidayRule.price,
       type: 'holiday',
       ruleName: holidayRule.name || t('admin.pricing.typeHolidayOption'),
       isCustom: true,
     }
   }
 
-  // 2. Check Peak / Surge rules matching time range
+  // 2. Peak; surge and special_event rules never price a quote, so they are not shown.
   const peakRule = activeRules
-    .filter((r) => {
-      if (r.type !== 'peak' && r.type !== 'surge') return false
-      if (r.court_id && court && r.court_id !== court.id) return false
-      if (r.starts_at && r.ends_at) {
-        return r.starts_at <= slot.starts_at && r.ends_at >= slot.ends_at
-      }
-      return false
-    })
+    .filter((r) => r.type === 'peak' && coversSlot(r))
     .sort(compareRules)[0]
 
   if (peakRule) {
     return {
       price: peakRule.price,
-      type: peakRule.type === 'surge' ? 'promo' : 'peak',
-      ruleName:
-        peakRule.name ||
-        (peakRule.type === 'surge'
-          ? t('admin.pricing.typeSurgeOption')
-          : t('admin.pricing.typePeakOption')),
+      type: 'peak',
+      ruleName: peakRule.name || t('admin.pricing.typePeakOption'),
       isCustom: true,
     }
   }
 
-  // 3. Check Weekday rule
+  // 3. Weekly rule for this weekday; the quote never matches one without a weekday.
   const weekdayRule = activeRules
-    .filter((r) => {
-      if (r.type !== 'weekly') return false
-      if (r.weekday && r.weekday !== day.weekday) return false
-      if (r.court_id && court && r.court_id !== court.id) return false
-      if (r.starts_at && r.ends_at) {
-        return r.starts_at <= slot.starts_at && r.ends_at >= slot.ends_at
-      }
-      return true
-    })
+    .filter((r) => r.type === 'weekly' && r.weekday === day.weekday && coversSlot(r))
     .sort(compareRules)[0]
 
   if (weekdayRule) {
@@ -195,32 +189,29 @@ function getSlotPricing(
     }
   }
 
-  // 4. Default baseline fallback
-  let defaultPrice = baseCourtPrice
-  let slotType = 'standard'
-  let ruleName = t('admin.pricing.typeBaseOption')
+  // 4. Configured base, but hourly court price rows on this weekday and block outrank it in the quote.
+  // ponytail: without loaded rows only the court-wide count (inactive rows included) is known; the planned price-coverage view replaces this.
+  const hasHourlyRows = court?.price_slots
+    ? court.price_slots.some((row) => row.weekday === day.weekday && overlapsSlot(row))
+    : Boolean(court?.price_slots_count)
+  const baseRule = activeRules.filter((r) => r.type === 'base').sort(compareRules)[0]
 
-  if (slot.type === 'peak') {
-    defaultPrice = Math.round(baseCourtPrice * 1.5)
-    slotType = 'peak'
-    ruleName = t('admin.pricing.typePeakOption')
-  } else if (slot.type === 'lunch_promo') {
-    defaultPrice = Math.round(baseCourtPrice * 0.75)
-    slotType = 'promo'
-    ruleName = t('admin.pricing.typeSurgeOption')
-  } else if (day.isWeekend) {
-    defaultPrice = Math.round(baseCourtPrice * 1.25)
-    slotType = 'weekend'
-    ruleName = t('admin.pricing.weekendRate')
+  if (baseRule && !hasHourlyRows) {
+    return {
+      price: baseRule.price,
+      type: day.isWeekend ? 'weekend' : 'standard',
+      ruleName: baseRule.name || t('admin.pricing.typeBaseOption'),
+      isCustom: true,
+    }
   }
 
-  return {
-    price: defaultPrice,
-    type: slotType,
-    ruleName,
-    isCustom: false,
-  }
+  // Without an amount the cell names its source: the hourly table, or none, as the quote would reject it.
+  const ruleName = t(hasHourlyRows ? 'admin.pricing.hourlyPriceTable' : 'admin.pricing.noPrice')
+  return { price: null, type: 'unpriced', ruleName, isCustom: false }
 }
+
+const formatRate = ({ price, ruleName }: { price: number | null; ruleName: string }) =>
+  price === null ? ruleName : formatCurrency(price)
 
 function handleSlotClick(weekday: number, starts_at: string, ends_at: string) {
   emit('createForSlot', {
@@ -294,9 +285,6 @@ function handleSlotClick(weekday: number, starts_at: string, ends_at: string) {
           ><span class="legend-dot dot-peak"></span> {{ t('admin.pricing.typePeakOption') }}</span
         >
         <span class="legend-item"
-          ><span class="legend-dot dot-promo"></span> {{ t('admin.pricing.legendPromo') }}</span
-        >
-        <span class="legend-item"
           ><span class="legend-dot dot-weekend"></span> {{ t('admin.pricing.legendWeekend') }}</span
         >
         <span class="legend-item"
@@ -342,15 +330,10 @@ function handleSlotClick(weekday: number, starts_at: string, ends_at: string) {
                 <span v-if="getSlotPricing(day, slot).type === 'peak'" class="slot-chip chip-peak"
                   >PEAK</span
                 >
-                <span
-                  v-else-if="getSlotPricing(day, slot).type === 'promo'"
-                  class="slot-chip chip-promo"
-                  >PROMO</span
-                >
               </div>
 
               <div class="slot-rate font-mono">
-                {{ formatCurrency(getSlotPricing(day, slot).price) }}
+                {{ formatRate(getSlotPricing(day, slot)) }}
               </div>
             </div>
           </div>
@@ -505,9 +488,6 @@ function handleSlotClick(weekday: number, starts_at: string, ends_at: string) {
 .dot-peak {
   background: #db2777;
 }
-.dot-promo {
-  background: #3b82f6;
-}
 .dot-weekend {
   background: #8b5cf6;
 }
@@ -608,11 +588,6 @@ function handleSlotClick(weekday: number, starts_at: string, ends_at: string) {
   color: var(--pink-dark, #db2777);
 }
 
-.chip-promo {
-  background: rgba(59, 130, 246, 0.15);
-  color: #2563eb;
-}
-
 .slot-rate {
   font-size: 13px;
   font-weight: 800;
@@ -629,15 +604,6 @@ function handleSlotClick(weekday: number, starts_at: string, ends_at: string) {
   color: var(--pink-dark, #db2777);
 }
 
-.slot-promo {
-  border-color: rgba(59, 130, 246, 0.3);
-  background: rgba(59, 130, 246, 0.03);
-}
-
-.slot-promo .slot-rate {
-  color: #2563eb;
-}
-
 .slot-weekend {
   border-color: rgba(139, 92, 246, 0.3);
   background: rgba(139, 92, 246, 0.02);
@@ -650,6 +616,15 @@ function handleSlotClick(weekday: number, starts_at: string, ends_at: string) {
 
 .slot-holiday .slot-rate {
   color: #d97706;
+}
+
+.slot-unpriced {
+  border-style: dashed;
+}
+
+.slot-unpriced .slot-rate {
+  color: var(--muted);
+  font-weight: 600;
 }
 
 @media (max-width: 900px) {

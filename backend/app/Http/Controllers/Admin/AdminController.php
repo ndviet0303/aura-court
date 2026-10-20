@@ -146,7 +146,7 @@ class AdminController extends Controller
         abort_unless($venue, 404);
         abort_unless(app(VerifyEffectiveBookingEligibility::class)->evaluateVenue($venue)['eligible'], 404);
 
-        return $venue;
+        return $venue->unsetRelation('organization');
     }
 
     private function validatedVenue(Request $request): array

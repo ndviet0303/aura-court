@@ -58,4 +58,41 @@ class VenueChannelAuthorizationTest extends TestCase
         $customer = $this->member($org->id, OrganizationMember::ROLE_CUSTOMER);
         $this->assertFalse($this->canJoin($customer, $venue1));
     }
+
+    public function test_restricted_accounts_cannot_join_the_venue_channel(): void
+    {
+        $fixture = $this->createMultiOrgVenueFixture();
+        $venue = $fixture['org1']['venue1'];
+        $staff = $this->member($fixture['org1']['org']->id, OrganizationMember::ROLE_STAFF, ['venue_ids' => [$venue->id]]);
+        $this->assertTrue($this->canJoin($staff, $venue));
+
+        foreach (['locked', 'suspended', 'banned'] as $status) {
+            $staff->update(['status' => $status]);
+            $this->assertFalse($this->canJoin($staff->fresh(), $venue), $status);
+        }
+        $fixture['org1']['owner']->update(['status' => 'locked']);
+        $this->assertFalse($this->canJoin($fixture['org1']['owner']->fresh(), $venue));
+    }
+
+    public function test_broadcasting_auth_refuses_restricted_accounts_and_revoked_sessions(): void
+    {
+        $fixture = $this->createMultiOrgVenueFixture();
+        $venue = $fixture['org1']['venue1'];
+        $staff = $this->member($fixture['org1']['org']->id, OrganizationMember::ROLE_STAFF, ['venue_ids' => [$venue->id]]);
+        $channel = ['socket_id' => '1234.5678', 'channel_name' => 'private-venue.'.$venue->id];
+
+        // BR-23: locked then unlocked, so the session signed in before the lock stays ended.
+        $staff->forceFill(['status' => 'active', 'sessions_revoked_at' => now()])->save();
+        $this->actingAs($staff)->withSession(['auth_at' => now()->subHour()->getTimestamp()])
+            ->postJson('/broadcasting/auth', $channel)->assertUnauthorized();
+
+        $this->app['auth']->forgetGuards();
+        $this->actingAs($staff->fresh())->withSession(['auth_at' => now()->addSecond()->getTimestamp()])
+            ->postJson('/broadcasting/auth', $channel)->assertOk();
+
+        $staff->forceFill(['status' => 'locked'])->save();
+        $this->app['auth']->forgetGuards();
+        $this->actingAs($staff->fresh())->withSession(['auth_at' => now()->addSecond()->getTimestamp()])
+            ->postJson('/broadcasting/auth', $channel)->assertForbidden();
+    }
 }

@@ -61,27 +61,6 @@ function runSimulation() {
     durationHours: durationHours.value || 1,
   })
 }
-
-// Fallback dynamic local preview if API is awaiting
-const localEstimatedQuote = computed(() => {
-  if (props.quoteResult) return null
-
-  const baseRate = 120000
-  const [hStr] = selectedTime.value.split(':')
-  const hour = parseInt(hStr || '18', 10)
-
-  let hourly = baseRate
-  if (hour >= 17 && hour <= 21) {
-    hourly = Math.round(baseRate * 1.5)
-  } else if (hour >= 11 && hour <= 14) {
-    hourly = Math.round(baseRate * 0.75)
-  }
-
-  return {
-    total: hourly * durationHours.value,
-    hourly,
-  }
-})
 </script>
 
 <template>
@@ -210,22 +189,6 @@ const localEstimatedQuote = computed(() => {
             <span class="material-symbols-outlined icon-14 text-green">verified</span>
             <span class="quote-note">{{ t('admin.pricing.calculatedNote') }}</span>
           </div>
-        </div>
-
-        <!-- Local preview fallback -->
-        <div v-else-if="localEstimatedQuote" class="quote-result-card preview-card">
-          <div class="result-header">
-            <span class="quote-lbl">{{ t('admin.pricing.estimatedQuotePreview') }}</span>
-            <strong class="quote-price text-pink font-mono">
-              {{ formatCurrency(localEstimatedQuote.total) }}
-            </strong>
-          </div>
-          <span class="quote-note">{{
-            t('admin.pricing.previewFormula', {
-              duration: durationHours,
-              rate: formatCurrency(localEstimatedQuote.hourly),
-            })
-          }}</span>
         </div>
       </div>
 
@@ -387,10 +350,6 @@ const localEstimatedQuote = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-.preview-card {
-  border-style: dashed;
 }
 
 .result-header {

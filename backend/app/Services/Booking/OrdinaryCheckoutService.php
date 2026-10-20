@@ -2,6 +2,7 @@
 
 namespace App\Services\Booking;
 
+use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Models\Court;
 use App\Models\PointLedger;
 use App\Models\PriceQuote;
@@ -47,29 +48,28 @@ class OrdinaryCheckoutService
     {
         try {
             return DB::transaction(function () use ($user, $organizationId, $data, $actor): Reservation {
-                if ($user->isRestricted()) {
-                    abort(403, 'Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.');
-                }
-                if ($actor === null && ! $user->hasVerifiedEmail()) {
-                    abort(403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/auth/email/verification-notification.');
-                }
+                abort_if($user->isRestricted(), 403, 'Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.');
+                abort_if($actor === null && ! $user->hasVerifiedEmail(), 403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/auth/email/verification-notification.');
                 $quote = $this->resolveQuote($user->id, $organizationId, $data);
                 abort_if($quote->status !== 'open', 409, 'Price quote has already been accepted.');
                 abort_if((bool) $quote->expires_at?->isPast(), 409, 'Price quote has expired.');
+                // Step-14: re-check the quote on the locked rows; lock the subscription before the court, as quote creation does, so bookings cannot deadlock.
+                $verifier = app(VerifyEffectiveBookingEligibility::class);
+                $verifier->getEntitlement((int) $quote->organization_id);
                 $court = Court::query()->withoutGlobalScope('tenant_isolation')->whereKey($quote->court_id)->lockForUpdate()->firstOrFail();
                 $lockedVenue = Venue::query()->whereKey($court->venue_id)->lockForUpdate()->firstOrFail();
                 // BR-20/21: staff book for a customer only at a venue assigned to them.
                 abort_if($actor !== null && ! $actor->canOperateVenue($lockedVenue), 403, 'Bạn không được giao cơ sở này.');
+                $eligibility = $verifier->execute($court->setRelation('venue', $lockedVenue));
+                abort_unless($eligibility['eligible'], 409, $eligibility['message'] ?? '');
                 $couponUsage = $this->quoteCoupons->reserve($quote, $user, $court);
-                $directOwnerPayments = app(FeatureFlagService::class)
-                    ->enabled('direct_owner_payments', (int) $lockedVenue->organization_id);
+                $directOwnerPayments = app(FeatureFlagService::class)->enabled('direct_owner_payments', (int) $lockedVenue->organization_id);
                 $bookingPolicySnapshot = null;
                 $holdExpiresAt = null;
                 if ($directOwnerPayments) {
                     ['snapshot' => $bookingPolicySnapshot, 'expires_at' => $holdExpiresAt] = $this->captureBookingPolicy($lockedVenue);
                 }
                 $payableBeforeLoyalty = (int) $quote->total_amount;
-
                 // Lock user for point and wallet balance serialization
                 $lockedUser = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
 

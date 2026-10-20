@@ -34,12 +34,22 @@ class ReviewVenuePublication
                 abort(409, 'Yêu cầu xuất bản này đã được xử lý trước đó.');
             }
 
-            $venue = $revision->venue;
+            // Lock the venue so a concurrent suspension or closure is seen, not overwritten
+            $venue = $this->venueRepo->findByIdWithLock($revision->venue_id);
             if (! $venue) {
                 abort(404, 'Cơ sở thể thao không tồn tại.');
             }
 
+            // A stale revision may still be settled, but must never lift a suspension or reopen a closure
+            $keepStatus = $venue->isSuspended() || $venue->isClosed() || $venue->isArchived();
+
             if ($decision === 'approve') {
+                if ($keepStatus) {
+                    throw ValidationException::withMessages([
+                        'status' => 'Cơ sở đang bị tạm ngưng hoặc đã ngừng kinh doanh, không thể phê duyệt xuất bản.',
+                    ]);
+                }
+
                 // Real-time readiness recheck before approval
                 $eval = $this->readiness->execute($venue);
                 if (! $eval['is_ready']) {
@@ -79,7 +89,9 @@ class ReviewVenuePublication
                     'feedback_fields' => $feedbackFields,
                 ]);
 
-                $this->venueRepo->updateStatus($venue, 'revision_required', $reason);
+                if (! $keepStatus) {
+                    $this->venueRepo->updateStatus($venue, 'revision_required', $reason);
+                }
             } elseif ($decision === 'reject') {
                 if (empty($reason)) {
                     throw ValidationException::withMessages([
@@ -94,7 +106,9 @@ class ReviewVenuePublication
                     'decision_reason' => $reason,
                 ]);
 
-                $this->venueRepo->updateStatus($venue, 'draft', $reason);
+                if (! $keepStatus) {
+                    $this->venueRepo->updateStatus($venue, 'draft', $reason);
+                }
             } else {
                 throw ValidationException::withMessages([
                     'decision' => 'Quyết định thẩm định xuất bản không hợp lệ.',

@@ -13,17 +13,23 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Partner\TransitionVenueLifecycleRequest;
 use App\Http\Requests\Partner\UpdateDraftVenueRequest;
 use App\Http\Requests\Venue\CreateDraftVenueRequest;
+use App\Models\OrganizationMember;
+use App\Models\Venue;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PartnerVenueController extends Controller
 {
-    public function index(
-        Request $request,
-        int $organizationId,
-        VenueLifecycleRepositoryInterface $venueRepo
-    ): JsonResponse {
-        $paginator = $venueRepo->paginateByOrganization($organizationId, 20);
+    public function __construct(
+        private readonly VenueLifecycleRepositoryInterface $venueRepo,
+    ) {}
+
+    public function index(Request $request, int $organizationId): JsonResponse
+    {
+        $user = $request->user();
+        $this->authorizeOrganizationRead($request, $organizationId);
+        // BR-20: the owner lists every venue of the organization, staff only the venues assigned to them.
+        $paginator = $this->venueRepo->paginateByOrganization($organizationId, $user->getAuthorizedVenueIds($organizationId), 20);
 
         return response()->json([
             'data' => $paginator->items(),
@@ -35,19 +41,10 @@ class PartnerVenueController extends Controller
         ]);
     }
 
-    public function show(
-        Request $request,
-        int $organizationId,
-        int $venueId,
-        VenueLifecycleRepositoryInterface $venueRepo
-    ): JsonResponse {
-        $venue = $venueRepo->findById($venueId);
-        if (! $venue || (int) $venue->organization_id !== $organizationId) {
-            return response()->json(['message' => 'Cơ sở thể thao không tồn tại.'], 404);
-        }
-
+    public function show(Request $request, int $organizationId, int $venueId): JsonResponse
+    {
         return response()->json([
-            'data' => $venue,
+            'data' => $this->authorizeVenueRead($request, $organizationId, $venueId),
         ]);
     }
 
@@ -57,11 +54,32 @@ class PartnerVenueController extends Controller
         int $venueId,
         EvaluateVenueReadiness $action
     ): JsonResponse {
+        $this->authorizeVenueRead($request, $organizationId, $venueId);
         $result = $action->execute($venueId);
 
         return response()->json([
             'data' => $result,
         ]);
+    }
+
+    /** BR-25: a venue is read only through its own organization, by the owner or by staff assigned to it. */
+    private function authorizeVenueRead(Request $request, int $organizationId, int $venueId): Venue
+    {
+        // Membership first, so an outsider cannot tell from 403 vs 404 which organization a venue id belongs to
+        $this->authorizeOrganizationRead($request, $organizationId);
+        $venue = $this->venueRepo->findById($venueId);
+        abort_if($venue === null || (int) $venue->organization_id !== $organizationId, 404, 'Cơ sở thể thao không tồn tại.');
+        abort_unless($request->user()->canOperateVenue($venue), 403, 'Bạn không có quyền xem cơ sở này.');
+
+        return $venue;
+    }
+
+    private function authorizeOrganizationRead(Request $request, int $organizationId): void
+    {
+        abort_unless($request->user()->hasRoleInOrganization($organizationId, [
+            OrganizationMember::ROLE_ORGANIZATION_OWNER,
+            OrganizationMember::ROLE_STAFF,
+        ]), 403, 'Bạn không có quyền xem cơ sở của tổ chức này.');
     }
 
     public function store(

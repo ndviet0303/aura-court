@@ -28,7 +28,8 @@ interface VenueLifecycleRepositoryInterface
 
     public function getLatestRevision(Venue $venue): ?VenuePublicationRevision;
 
-    public function paginateByOrganization(int $organizationId, int $perPage = 15): LengthAwarePaginator;
+    /** @param  list<int>  $venueIds  the venues the reader may see */
+    public function paginateByOrganization(int $organizationId, array $venueIds, int $perPage = 15): LengthAwarePaginator;
 
     public function paginatePendingPublication(int $perPage = 15): LengthAwarePaginator;
 }

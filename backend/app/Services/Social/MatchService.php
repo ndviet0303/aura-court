@@ -2,6 +2,7 @@
 
 namespace App\Services\Social;
 
+use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Models\Court;
 use App\Models\CourtBlock;
 use App\Models\CourtPriceSlot;
@@ -48,13 +49,9 @@ class MatchService
         abort_unless($startsAt->gt(now()->utc()), 422, 'Thời gian bắt đầu phải ở tương lai.');
 
         $regDeadline = ! empty($data['registration_deadline']) ? Carbon::parse($data['registration_deadline'])->utc() : null;
-        if ($regDeadline) {
-            abort_unless($regDeadline->lte($startsAt), 422, 'Hạn đăng ký phải trước hoặc bằng thời gian bắt đầu.');
-        }
+        abort_if($regDeadline && $regDeadline->gt($startsAt), 422, 'Hạn đăng ký phải trước hoặc bằng thời gian bắt đầu.');
 
-        if (isset($data['min_skill']) && isset($data['max_skill']) && $data['min_skill'] !== null && $data['max_skill'] !== null) {
-            abort_unless((int) $data['min_skill'] <= (int) $data['max_skill'], 422, 'Trình độ tối thiểu phải nhỏ hơn hoặc bằng trình độ tối đa.');
-        }
+        abort_if(isset($data['min_skill'], $data['max_skill']) && (int) $data['min_skill'] > (int) $data['max_skill'], 422, 'Trình độ tối thiểu phải nhỏ hơn hoặc bằng trình độ tối đa.');
 
         $isOwnerHosted = (! empty($data['is_owner_hosted']) || ! empty($data['court_id']))
             && empty($data['reservation_id'])
@@ -81,6 +78,7 @@ class MatchService
             $diff = array_diff($skillLevels, MatchPost::VALID_SKILL_LABELS);
             abort_unless(empty($diff), 422, 'Nhãn trình độ không hợp lệ.');
 
+            $this->assertCourtCanHostSession($court);
             $this->checkCourtAvailability($court, $startsAt, $endsAt);
 
             $requiredParticipants = (int) $data['required_participants'];
@@ -704,25 +702,20 @@ class MatchService
         $this->assertCanManageSession($post, $user);
 
         if ($post->isOwnerHosted()) {
-            $courtId = $data['court_id'] ?? $post->court_id;
-            $court = Court::with('venue')->findOrFail($courtId);
-            abort_unless(
-                $court->venue && $user->hasRoleInOrganization($court->venue->organization_id, OrganizationMember::ROLE_ORGANIZATION_OWNER),
-                403,
-                'Bạn không phải chủ cơ sở của sân này.'
-            );
+            $court = Court::with('venue')->findOrFail($data['court_id'] ?? $post->court_id);
+            abort_unless($court->venue && $user->hasRoleInOrganization($court->venue->organization_id, OrganizationMember::ROLE_ORGANIZATION_OWNER), 403, 'Bạn không phải chủ cơ sở của sân này.');
 
             $startsAt = isset($data['starts_at']) ? Carbon::parse($data['starts_at'])->utc() : $post->starts_at?->copy()->utc();
             $endsAt = isset($data['ends_at']) ? Carbon::parse($data['ends_at'])->utc() : $post->ends_at?->copy()->utc();
             abort_unless($startsAt && $endsAt && $startsAt->lt($endsAt), 422, 'Thời gian bắt đầu phải trước thời gian kết thúc.');
 
+            // Moving a session onto another court is new business there; edits on its current court stay allowed.
+            if ((int) $court->id !== (int) $post->court_id) {
+                $this->assertCourtCanHostSession($court);
+            }
             $this->checkCourtAvailability($court, $startsAt, $endsAt, $post->id);
 
-            $updates = [
-                'court_id' => $court->id,
-                'starts_at' => $startsAt,
-                'ends_at' => $endsAt,
-            ];
+            $updates = ['court_id' => $court->id, 'starts_at' => $startsAt, 'ends_at' => $endsAt];
 
             if (isset($data['title'])) {
                 $updates['title'] = $data['title'];
@@ -1021,6 +1014,13 @@ class MatchService
             ->where('ends_at', '>', $startsAtUtc)
             ->exists();
         abort_if($sessionExists, 409, 'Sân đã có buổi giao lưu khác trong khoảng thời gian đã chọn.');
+    }
+
+    private function assertCourtCanHostSession(Court $court): void
+    {
+        // BR-37: no new session on a paused, closed or suspended venue; a session sets its own price, so an unpriced court may host one.
+        $eligibility = app(VerifyEffectiveBookingEligibility::class)->execute($court);
+        abort_unless($eligibility['eligible'] || $eligibility['reason'] === 'COURT_UNPRICED', 409, $eligibility['message'] ?? '');
     }
 
     public function assertCanManageSession(MatchPost $post, User $user): void

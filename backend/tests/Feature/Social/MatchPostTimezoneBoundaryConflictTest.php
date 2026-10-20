@@ -52,6 +52,7 @@ class MatchPostTimezoneBoundaryConflictTest extends TestCase
             'name' => 'Badminton Hub',
             'slug' => 'badminton-hub-'.uniqid(),
             'status' => 'active',
+            'partner_status' => 'approved',
         ]);
 
         config(['features.pilot_organizations' => [(string) $this->org->id]]);
