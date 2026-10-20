@@ -228,4 +228,9 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
 
 ## Open Questions
 
-- Tên sự kiện "giá mới có hiệu lực", chữ ký engine tính tiền và chữ ký service voucher do module 3 chốt khi tạo change của họ. Các tên này không đổi spec hay cách chia task ở đây; task 5.x dùng đúng tên module 3 đưa ra.
+- Tên và chữ ký phía module 3 chốt trong design của change module 3. Module 3 đưa tên dự kiến ngày 2026-10-21:
+  - Sự kiện `CourtPricesTookEffect(courtIds, effectiveAt)`. Phát khi công bố giá có hiệu lực ngay, khi tới `effective_at`, và khi gán hay thay bảng giá của sân. D11 kiểm lại các đơn `held` trên các sân đó có giờ kết thúc sau `effectiveAt`.
+  - `RentalPriceCalculator::quote(Court, startsAt, endsAt, ?voucherCode, ?customer)` trả `{rental, discount, total}` kèm snapshot phiên bản giá và voucher. D14 và D5 dùng hàm này.
+  - Service voucher: `hold(reservation, code)` trả hạn voucher, `release(reservation)`, `consume(reservation)`. D2 và D12 dùng service này.
+  - Đã nhờ module 3 cho snapshot của `quote` có hạn voucher. Lý do: D3 phải tính hạn thanh toán trước khi chèn đơn, còn `hold` chỉ chạy được sau khi có reservation. Giá trị `hold` trả về được dùng để kiểm lại trong cùng transaction.
+  - Các tên này không đổi spec hay cách chia task. Task 5.x dùng đúng tên cuối cùng của module 3.
