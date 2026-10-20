@@ -1504,7 +1504,6 @@ export default {
       statusInUse: 'In Use',
       statusCompleted: 'Completed',
       statusDisputed: 'Disputed',
-      statusLegacy: 'Legacy (V1)',
       paidStatus: 'Paid',
       pendingStatus: 'Pending',
       noChartData: 'No hourly distribution data available for this date range.',
