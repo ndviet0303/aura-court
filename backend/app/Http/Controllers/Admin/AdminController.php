@@ -22,7 +22,6 @@ use App\Models\OwnerRefundObligation;
 use App\Models\Payment;
 use App\Models\PlatformPaymentAttempt;
 use App\Models\PosOrder;
-use App\Models\Refund;
 use App\Models\Reservation;
 use App\Models\ReservationSlot;
 use App\Models\Venue;
@@ -407,21 +406,6 @@ class AdminController extends Controller
                 ->values();
         }
 
-        $pendingRefunds = (int) Refund::where('status', 'pending')
-            ->whereBetween('created_at', [$from, $to])
-            ->when($scopedVenueIds !== null, fn ($q) => $q->whereHas('booking.court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds)))
-            ->sum('amount');
-        $pendingRefunds += (int) OwnerRefundObligation::where('status', 'requested')
-            ->whereBetween('created_at', [$from, $to])
-            ->when($scopedVenueIds !== null, function ($q) use ($scopedVenueIds) {
-                $q->where(function ($sub) use ($scopedVenueIds) {
-                    $sub->whereIn('venue_id', $scopedVenueIds)
-                        ->orWhereHas('reservation.court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds))
-                        ->orWhereHas('booking.court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds));
-                });
-            })
-            ->sum('amount');
-
         $canonicalCount = $canonicalBookings->count();
 
         return [
@@ -436,7 +420,6 @@ class AdminController extends Controller
             'owner_refunds' => $data['owner_refunds'],
             'net_owner_revenue' => $data['net_owner_revenue'],
             'platform_fees' => $data['platform_fees'],
-            'pendingRefunds' => $pendingRefunds,
             'occupancyRate' => $capacity > 0 ? round($allConfirmedSlots->count() / $capacity * 100, 1) : 0,
             'byHour' => $byHour,
             'byCourt' => $byCourt,

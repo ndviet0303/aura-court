@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import SelectDropdown from '@/shared/components/forms/SelectDropdown.vue'
 import { resolveLocalizedText, formatSlotRange, formatCurrency } from '@/i18n'
 import {
   RESERVATION_STATUSES,
@@ -51,6 +53,11 @@ function getStatusLabel(status?: string): string {
       return status || t('admin.dashboard.statusPending')
   }
 }
+
+const statusOptions = computed(() => [
+  { value: '', label: t('admin.dashboard.allStatuses') },
+  ...RESERVATION_STATUSES.map((s) => ({ value: s, label: getStatusLabel(s) })),
+])
 </script>
 
 <template>
@@ -73,16 +80,15 @@ function getStatusLabel(status?: string): string {
           @input="emit('update:search', ($event.target as HTMLInputElement).value)"
         />
 
-        <select
-          :value="status"
+        <SelectDropdown
+          :model-value="status"
+          :options="statusOptions"
+          variant="bordered"
+          align="right"
           class="status-select"
-          @change="emit('update:status', ($event.target as HTMLSelectElement).value)"
-        >
-          <option value="">{{ t('admin.dashboard.allStatuses') }}</option>
-          <option v-for="s in RESERVATION_STATUSES" :key="s" :value="s">
-            {{ getStatusLabel(s) }}
-          </option>
-        </select>
+          :aria-label="t('admin.dashboard.status')"
+          @update:model-value="(v) => emit('update:status', String(v))"
+        />
       </div>
     </div>
 
@@ -203,12 +209,7 @@ function getStatusLabel(status?: string): string {
 }
 
 .status-select {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 13px;
+  flex: 0 0 180px;
 }
 
 .table-responsive {

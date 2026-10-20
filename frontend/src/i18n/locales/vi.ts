@@ -1480,8 +1480,6 @@ export default {
       confirmedBookings: '{count} đơn thành công',
       occupancyRate: 'Tỷ Lệ Lấp Đầy Sân',
       occupancyPeriod: 'Trong khoảng thời gian đã chọn',
-      pendingRefunds: 'Yêu Cầu Hoàn Tiền',
-      awaitingAccounting: 'Chờ kế toán xác nhận',
       today: 'Hôm nay',
       last7Days: '7 ngày qua',
       thisMonth: 'Tháng này',

@@ -9,7 +9,6 @@ export interface AdminReport {
   bookings: number
   confirmed: number
   revenue: number
-  pendingRefunds: number
   occupancyRate?: number
   byHour?: { hour: string; bookings: number }[]
   byCourt?: {
@@ -41,7 +40,6 @@ export const RESERVATION_STATUSES = [
   'cancelled',
   'expired',
   'disputed',
-  'legacy',
 ] as const
 
 // A V1 mirror shows its original booking code and status, never its LEGACY-* code.
@@ -71,7 +69,6 @@ export function useAdminDashboard() {
     bookings: 0,
     confirmed: 0,
     revenue: 0,
-    pendingRefunds: 0,
     occupancyRate: 0,
     byHour: [],
     byCourt: [],

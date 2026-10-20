@@ -1480,8 +1480,6 @@ export default {
       confirmedBookings: '{count} confirmed bookings',
       occupancyRate: 'Court Occupancy Rate',
       occupancyPeriod: 'Over the selected date range',
-      pendingRefunds: 'Refund Requests',
-      awaitingAccounting: 'Awaiting accounting review',
       today: 'Today',
       last7Days: 'Last 7 Days',
       thisMonth: 'This Month',
