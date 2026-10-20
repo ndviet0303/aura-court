@@ -112,7 +112,8 @@
 ## 9. Spec của change khác (design D9)
 
 - [x] 9.1 Sửa câu chữ delta "One-hour booking slots" trong `openspec/changes/direct-owner-cutover/specs/reservations-and-pricing/spec.md` từ zone sang sân, giữ nguyên ý nghĩa.
-- [ ] 9.2 `openspec validate remove-sport-zones --strict` và `openspec validate direct-owner-cutover --strict` đều qua.
+- [x] 9.2 `openspec validate remove-sport-zones --strict` và `openspec validate direct-owner-cutover --strict` đều qua.
+  - Lỗi `direct-owner-cutover` có từ trước (delta organization-access thiếu scenario "Staff requests payout administration") đã được sửa trên `main` ở 27f96244. 2026-10-20: cả hai lệnh đều qua.
 
 ## 10. Cổng kiểm tra local (memory `local-test-gates`, không bao giờ chạy vào prod)
 
@@ -120,12 +121,20 @@
 - [x] 10.2 `php vendor/bin/phpunit tests/Unit/Architecture`, `vendor/bin/pint --test`, và PHPStan level 0 và level 5 với `.env` tạm.
 - [x] 10.3 `npm run type-check`, rồi `vitest --maxWorkers=1`. Không chạy cùng lúc với PHPUnit.
 - [ ] 10.4 Mở form "Thêm sân mới" trên dev server local và chụp ảnh ô "Môn thể thao".
+  - Không làm: không có backend local an toàn để chạy dev server (`backend/.env` của checkout chính trỏ vào prod). Spec vitest của form sân ở 8.2 phủ thay.
 
 ## 11. Rollout prod (chỉ làm khi người dùng đồng ý rõ ràng và chốt thời điểm)
 
-- [ ] 11.1 Merge `--no-ff` vào `main` local theo memory `git-finish-flow`. Chưa push.
-- [ ] 11.2 `pg_dump` DB `booking` trên bt-server vào `backend/storage/app/backups/`.
-- [ ] 11.3 Chạy kiểm tra chỉ đọc (số rule chỉ theo zone, guard (a)), rồi chạy SQL M1 và thêm dòng `migrations`.
-- [ ] 11.4 Chờ ít nhất 5 phút sau M1 (cache `/courts` 300 giây), rồi push `main` và chạy ngay `glab ci run -b main`. Đợi backend mới live.
-- [ ] 11.5 Chạy guard M2. Nếu tất cả rỗng, chạy SQL drop M2 và thêm dòng `migrations`. Nếu có hàng nào, dừng lại và báo người dùng.
+- [x] 11.1 Merge `--no-ff` vào `main` local theo memory `git-finish-flow`. Chưa push.
+  - 2026-10-19: merge f614f632 (`Merge branch 'feat/remove-sport-zones'`), đã xoá nhánh.
+- [x] 11.2 `pg_dump` DB `booking` trên bt-server vào `backend/storage/app/backups/`.
+  - 2026-10-19 23:38: `booking-bt-server-20261019-2338-before-remove-sport-zones.dump`.
+- [x] 11.3 Chạy kiểm tra chỉ đọc (số rule chỉ theo zone, guard (a)), rồi chạy SQL M1 và thêm dòng `migrations`.
+  - M1 commit trên prod lúc 2026-10-19 23:42 (batch 2). SQL lấy từ `migrate --pretend`, đã chạy thử trên bản restore local của dump và khớp với `artisan migrate` thật.
+- [x] 11.4 Chờ ít nhất 5 phút sau M1 (cache `/courts` 300 giây), rồi push `main` và chạy ngay `glab ci run -b main`. Đợi backend mới live.
+  - Push lúc 2026-10-19 23:48, frontend tự deploy. Pipeline 2964236729 lỗi `runner_system_failure` vì VM OrbStack bị treo. Người dùng đồng ý restart OrbStack, rồi retry đúng pipeline đó. Backend mới live lúc 2026-10-20 10:07:12.
+- [x] 11.5 Chạy guard M2. Nếu tất cả rỗng, chạy SQL drop M2 và thêm dòng `migrations`. Nếu có hàng nào, dừng lại và báo người dùng.
+  - 2026-10-20 10:07:51 (batch 3): cả 4 guard rỗng, đã xoá bảng và cột zone. Từ lúc push tới M2 không có lượt ghi sân, rule giá hay zone nào.
 - [ ] 11.6 Smoke test: lọc theo môn, chi tiết sân, báo giá, form "Thêm sân mới".
+  - 2026-10-20, đã qua: `/api/sport-zones` trả 404; danh sách sân và lọc theo môn đúng; chi tiết sân có môn và khung giờ, không còn key zone; lịch trống trả 17 khung một giờ kèm giá.
+  - Chưa kiểm: báo giá có đăng nhập và form admin "Thêm sân mới", vì cả hai cần đăng nhập trên prod.

@@ -30,6 +30,7 @@ Không có.
   - Hợp đồng catalog công khai không còn danh sách và chi tiết sport-zone.
   - Thêm yêu cầu: mỗi sân tự mang môn và độ dài khung giờ, và lọc theo môn dựa vào sân.
 - `reservations-and-pricing`: phạm vi rule giá đổi từ tổ chức/cơ sở/zone/sân sang tổ chức/cơ sở/cơ sở+môn/sân, kèm thứ tự ưu tiên.
+- `localization/database-i18n`: bỏ Sport Zones khỏi ví dụ thực thể có nội dung đa ngôn ngữ.
 
 ## Impact
 
