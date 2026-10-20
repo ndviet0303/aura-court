@@ -14,6 +14,14 @@ import {
 import { venueClock } from '@/core/utils/venueTime'
 
 const t = (key: string, params?: Record<string, unknown>) => i18n.global.t(key, params || {})
+
+// Display statuses per list tab; a used order (checked in, finished, no-show) stays under confirmed.
+const TAB_STATUSES = {
+  held: ['held'],
+  confirmed: ['confirmed', 'in_use', 'completed', 'no_show'],
+  cancelled: ['cancelled', 'expired'],
+}
+
 export function useReservations() {
   const route = useRoute()
   const courts = ref<Court[]>([])
@@ -232,9 +240,8 @@ export function useReservations() {
   const filteredReservations = computed(() => {
     let list = reservations.value
 
-    if (activeTab.value !== 'all') {
-      list = list.filter((r) => displayStatus(r) === activeTab.value)
-    }
+    const tab = activeTab.value
+    if (tab !== 'all') list = list.filter((r) => TAB_STATUSES[tab].includes(displayStatus(r)))
 
     if (searchQuery.value.trim()) {
       const q = searchQuery.value.toLowerCase().trim()
@@ -252,9 +259,9 @@ export function useReservations() {
   const totalCount = computed(() => reservations.value.length)
   const countBy = (...statuses: string[]) =>
     reservations.value.filter((r) => statuses.includes(displayStatus(r))).length
-  const heldCount = computed(() => countBy('held'))
-  const confirmedCount = computed(() => countBy('confirmed'))
-  const cancelledCount = computed(() => countBy('cancelled', 'expired'))
+  const heldCount = computed(() => countBy(...TAB_STATUSES.held))
+  const confirmedCount = computed(() => countBy(...TAB_STATUSES.confirmed))
+  const cancelledCount = computed(() => countBy(...TAB_STATUSES.cancelled))
 
   const activeHeldReservation = computed(() => reservations.value.find((r) => r.status === 'held'))
 

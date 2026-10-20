@@ -57,8 +57,10 @@ export const bookingApi = {
 
   // Reservations & Quotes
   // The caller's own reservations across every organization (Laravel paginator).
-  getMyReservations: () =>
-    api.get<{ data: import('../types/reservation').Reservation[] }>('/me/reservations'),
+  getMyReservations: (page = 1) =>
+    api.get<{ data: import('../types/reservation').Reservation[]; total: number }>(
+      `/me/reservations?page=${page}`,
+    ),
 
   getReservation: <T = { reservation: import('../types/reservation').Reservation }>(code: string) =>
     api.get<T>(`/reservations/${code}`),

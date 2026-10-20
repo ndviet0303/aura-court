@@ -8,6 +8,9 @@ export type BookingTab = 'all' | 'upcoming' | 'completed' | 'cancelled'
 
 export function useUserBookings() {
   const bookings = ref<Reservation[]>([])
+  const total = ref(0)
+  const page = ref(1)
+  const loadingMore = ref(false)
   const activeTab = ref<BookingTab>('all')
   const searchQuery = ref('')
   const error = ref('')
@@ -31,6 +34,8 @@ export function useUserBookings() {
     try {
       const result = await bookingApi.getMyReservations()
       bookings.value = result.data || []
+      total.value = result.total
+      page.value = 1
     } catch (cause: unknown) {
       error.value = errorMessage(cause, 'Không thể tải danh sách đặt sân.')
     } finally {
@@ -38,10 +43,24 @@ export function useUserBookings() {
     }
   }
 
+  async function loadMore() {
+    loadingMore.value = true
+    try {
+      const result = await bookingApi.getMyReservations(page.value + 1)
+      bookings.value = [...bookings.value, ...(result.data || [])]
+      total.value = result.total
+      page.value += 1
+    } catch (cause: unknown) {
+      error.value = errorMessage(cause, 'Không thể tải danh sách đặt sân.')
+    } finally {
+      loadingMore.value = false
+    }
+  }
+
   // Statuses are read through the display rule, so a legacy mirror buckets by its booking status.
   function isCompleted(b: Reservation): boolean {
     const status = displayStatus(b)
-    if (status === 'completed') return true
+    if (status === 'completed' || status === 'no_show') return true
     if (status === 'confirmed' && b.slots && b.slots.length > 0) {
       return b.slots.every(
         (slot) => new Date(slot.ends_at ?? slot.starts_at).getTime() < Date.now(),
@@ -88,7 +107,9 @@ export function useUserBookings() {
   const upcomingCount = computed(() => bookings.value.filter(isUpcoming).length)
   const completedCount = computed(() => bookings.value.filter(isCompleted).length)
   const cancelledCount = computed(() => bookings.value.filter(isCancelled).length)
-  const totalCount = computed(() => bookings.value.length)
+  // Tab counts cover the pages loaded so far; the overall count is the paginator's total.
+  const totalCount = computed(() => total.value)
+  const hasMore = computed(() => bookings.value.length < total.value)
 
   function showNotice(msg: string) {
     notice.value = msg
@@ -148,6 +169,8 @@ export function useUserBookings() {
     loading,
     filteredBookings,
     totalCount,
+    hasMore,
+    loadingMore,
     upcomingCount,
     completedCount,
     cancelledCount,
@@ -159,6 +182,7 @@ export function useUserBookings() {
     showQrModal,
     qrBooking,
     load,
+    loadMore,
     showNotice,
     openQr,
     closeQr,

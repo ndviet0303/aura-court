@@ -47,7 +47,7 @@ describe('useReservations', () => {
     vi.clearAllMocks()
     mockRoute.params = {}
     vi.mocked(bookingApi.getCourts).mockResolvedValue([])
-    vi.mocked(bookingApi.getMyReservations).mockResolvedValue({ data: [] })
+    vi.mocked(bookingApi.getMyReservations).mockResolvedValue({ data: [], total: 0 })
   })
 
   it('shows slot times in venue time', () => {
@@ -61,13 +61,33 @@ describe('useReservations', () => {
 
   it('loads the list from the caller-wide reservations endpoint', async () => {
     const legacy = reservation({ code: 'LEGACY-BK-1', status: 'legacy' })
-    vi.mocked(bookingApi.getMyReservations).mockResolvedValue({ data: [legacy] })
+    vi.mocked(bookingApi.getMyReservations).mockResolvedValue({ data: [legacy], total: 1 })
 
     const state = mountComposable()
     await flushPromises()
 
     expect(state.reservations.value).toEqual([legacy])
     expect(bookingApi.getReservation).not.toHaveBeenCalled()
+  })
+
+  it('keeps used orders under the confirmed tab and expired ones under cancelled', async () => {
+    const used = reservation({
+      code: 'RSV-USED',
+      status: 'confirmed',
+      metadata: { operational_status: 'completed' },
+    })
+    const expired = reservation({ code: 'RSV-EXP', status: 'expired' })
+    vi.mocked(bookingApi.getMyReservations).mockResolvedValue({ data: [used, expired], total: 2 })
+
+    const state = mountComposable()
+    await flushPromises()
+
+    state.activeTab.value = 'confirmed'
+    expect(state.filteredReservations.value).toEqual([used])
+    expect(state.confirmedCount.value).toBe(1)
+    state.activeTab.value = 'cancelled'
+    expect(state.filteredReservations.value).toEqual([expired])
+    expect(state.cancelledCount.value).toBe(1)
   })
 
   it('opens details and the payment modal for a held direct-owner deep link', async () => {

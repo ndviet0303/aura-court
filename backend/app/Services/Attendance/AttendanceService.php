@@ -495,9 +495,10 @@ class AttendanceService
         abort_unless($venueId !== null && $staff->canOperateVenue((int) $venueId), 403, $message);
     }
 
-    public function getAttendance(int $organizationId, string|int $codeOrId): array
+    public function getAttendance(User $staff, int $organizationId, string|int $codeOrId): array
     {
         $reservation = $this->resolveReservation($codeOrId, $organizationId);
+        $this->assertCanOperate($staff, $reservation, 'Unauthorized to view bookings at this venue.');
         $attendance = BookingAttendance::query()
             ->where('organization_id', $organizationId)
             ->where('reservation_id', $reservation->id)

@@ -85,6 +85,7 @@ export type Reservation = {
   payment_model?: 'direct_owner_v1' | 'legacy_wallet_v1' | string | null
   legacy_mapping?: LegacyMapping[]
   review?: ReservationReview | null
+  metadata?: { operational_status?: 'in_use' | 'completed' | 'no_show' } | null
 }
 
 export type PriceQuotePayload = {

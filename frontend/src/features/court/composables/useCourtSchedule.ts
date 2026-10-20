@@ -16,15 +16,16 @@ export function useCourtSchedule() {
   const store = useBookingStore()
   const auth = useAuthStore()
 
-  // Local Date helper
-  const getLocalDateString = (offsetDays = 0): string => {
-    const d = new Date()
-    d.setDate(d.getDate() + offsetDays)
-    const year = d.getFullYear()
-    const month = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
+  // Calendar days in the browser's own day: toISOString() gives the UTC day, which is still
+  // yesterday before 07:00 in Vietnam.
+  const isoDay = (d: Date): string =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const shiftDay = (iso: string, days: number): string => {
+    const d = new Date(`${iso}T00:00`)
+    d.setDate(d.getDate() + days)
+    return isoDay(d)
   }
+  const getLocalDateString = (offsetDays = 0): string => shiftDay(isoDay(new Date()), offsetDays)
 
   const date = ref(getLocalDateString(0))
   const slugOrId = computed(() => String(route.params.slug || route.params.id || ''))
@@ -62,12 +63,10 @@ export function useCourtSchedule() {
 
   const carouselDays = computed(() => {
     const days = []
-    const todayStr = new Date().toISOString().slice(0, 10)
-    const base = new Date()
+    const todayStr = getLocalDateString(0)
     for (let i = 0; i < 14; i++) {
-      const d = new Date(base)
-      d.setDate(base.getDate() + i)
-      const iso = d.toISOString().slice(0, 10)
+      const iso = shiftDay(todayStr, i)
+      const d = new Date(`${iso}T00:00`)
       const dayNum = d.getDate()
       const dayName = d.toLocaleDateString('vi-VN', { weekday: 'short' })
       const monthName = `Thg ${d.getMonth() + 1}`
@@ -80,7 +79,7 @@ export function useCourtSchedule() {
 
   const activeDateLabel = computed(() => {
     try {
-      const d = new Date(date.value)
+      const d = new Date(`${date.value}T00:00`)
       return d.toLocaleDateString('vi-VN', {
         weekday: 'long',
         day: '2-digit',
@@ -170,20 +169,15 @@ export function useCourtSchedule() {
   }
 
   function goToToday() {
-    const todayIso = new Date().toISOString().slice(0, 10)
-    selectDate(todayIso)
+    selectDate(getLocalDateString(0))
   }
 
   function goToPrevDay() {
-    const d = new Date(date.value)
-    d.setDate(d.getDate() - 1)
-    selectDate(d.toISOString().slice(0, 10))
+    selectDate(shiftDay(date.value, -1))
   }
 
   function goToNextDay() {
-    const d = new Date(date.value)
-    d.setDate(d.getDate() + 1)
-    selectDate(d.toISOString().slice(0, 10))
+    selectDate(shiftDay(date.value, 1))
   }
 
   function selectCourt(courtId: number) {

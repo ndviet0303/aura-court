@@ -5,13 +5,17 @@ import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
 import { VENUE_TIME_ZONE, venueClockRange } from '@/core/utils/venueTime'
 import type { Reservation } from '../../types/reservation'
-import { canReview, displayCode, displayStatus } from '../../utils/reservation'
+import {
+  canReview,
+  displayCode,
+  displayStatus,
+  showsQr,
+  statusLabel,
+} from '../../utils/reservation'
 
 const { t, locale } = useI18n()
 
-const props = defineProps<{
-  booking: Reservation
-}>()
+const props = defineProps<{ booking: Reservation }>()
 
 const emit = defineEmits<{
   (e: 'review', booking: Reservation): void
@@ -38,21 +42,16 @@ const status = computed(() => displayStatus(props.booking))
 const isConfirmed = computed(() => status.value === 'confirmed')
 const isPendingPayment = computed(() => status.value === 'held')
 
+const STATUS_STYLE: Record<string, [icon: string, chipClass: string]> = {
+  held: ['schedule', 'status-pending'],
+  confirmed: ['verified', 'status-confirmed'],
+  in_use: ['sports_tennis', 'status-confirmed'],
+  completed: ['task_alt', 'status-confirmed'],
+  refunded: ['currency_exchange', 'status-refunded'],
+}
 const statusMeta = computed(() => {
-  if (isConfirmed.value) {
-    return { label: t('booking.statusConfirmed'), icon: 'verified', class: 'status-confirmed' }
-  }
-  if (isPendingPayment.value) {
-    return { label: t('booking.statusPending'), icon: 'schedule', class: 'status-pending' }
-  }
-  if (status.value === 'refunded') {
-    return {
-      label: t('booking.statusRefunded'),
-      icon: 'currency_exchange',
-      class: 'status-refunded',
-    }
-  }
-  return { label: t('booking.statusCancelled'), icon: 'cancel', class: 'status-cancelled' }
+  const [icon, cls] = STATUS_STYLE[status.value] ?? ['cancel', 'status-cancelled']
+  return { label: statusLabel(props.booking, t), icon, class: cls }
 })
 
 const sportLabel = computed(() => t(`sportTypes.${props.booking.court?.sport_type ?? 'badminton'}`))
@@ -150,7 +149,7 @@ const sportLabel = computed(() => t(`sportTypes.${props.booking.court?.sport_typ
 
         <!-- QR Check-in Pass -->
         <button
-          v-if="isConfirmed"
+          v-if="showsQr(booking)"
           type="button"
           class="btn-card-secondary"
           @click="emit('qr', booking)"
@@ -299,6 +298,7 @@ const sportLabel = computed(() => t(`sportTypes.${props.booking.court?.sport_typ
   padding: 4px 10px;
   border-radius: 8px;
   white-space: nowrap;
+  text-transform: uppercase;
 }
 
 .status-icon {

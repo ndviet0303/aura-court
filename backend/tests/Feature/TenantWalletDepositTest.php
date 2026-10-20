@@ -215,6 +215,24 @@ class TenantWalletDepositTest extends TestCase
         $this->assertDatabaseMissing('payments', ['external_transaction_id' => 'tx-invalid-sig']);
     }
 
+    public function test_signature_made_with_an_empty_secret_is_rejected_when_no_secret_is_configured(): void
+    {
+        config(['services.sepay.hmac_secret' => '', 'services.sepay.api_key' => null]);
+        $user = User::factory()->create();
+
+        $payload = ['id' => 'tx-empty-secret', 'code' => "ORD NAP {$user->id}", 'transferAmount' => 500000, 'transferType' => 'in'];
+        $raw = json_encode($payload, JSON_THROW_ON_ERROR);
+
+        // Anyone can compute an HMAC keyed with the empty string.
+        $this->call('POST', '/api/v1/webhooks/sepay', [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_SEPAY_SIGNATURE' => hash_hmac('sha256', $raw, ''),
+        ], $raw)->assertStatus(401);
+
+        $this->assertDatabaseMissing('payments', ['external_transaction_id' => 'tx-empty-secret']);
+        $this->assertSame(0, WalletTransaction::count());
+    }
+
     public function test_out_of_order_failed_event_does_not_reverse_succeeded_deposit(): void
     {
         $org = Organization::create(['name' => 'Order Org', 'slug' => 'order-org-'.uniqid()]);
