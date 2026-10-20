@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\AppTimezoneDateTime;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,8 +32,8 @@ class Coupon extends Model
             'max_discount' => 'integer',
             'min_spend' => 'integer',
             'usage_count' => 'integer',
-            'starts_at' => 'datetime',
-            'ends_at' => 'datetime',
+            'starts_at' => AppTimezoneDateTime::class,
+            'ends_at' => AppTimezoneDateTime::class,
             'is_active' => 'boolean',
             'can_combine_with_membership' => 'boolean',
             'metadata' => 'array',

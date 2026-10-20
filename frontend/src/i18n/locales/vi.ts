@@ -2062,7 +2062,6 @@ export default {
       subtitle:
         'Cài đặt quy tắc định giá theo giờ cao điểm, phụ thu ngày lễ, giảm giá giờ thấp điểm và tự động tính báo giá.',
       refreshBtn: 'Làm Mới',
-      presetsBtn: 'Bộ Quy Tắc Mẫu',
       simulatorBtn: 'Mô Phỏng Báo Giá',
       addNewRuleBtn: 'Thêm Quy Tắc Mới',
       tabRulesList: 'Danh Sách Quy Tắc Giá',
@@ -2151,24 +2150,6 @@ export default {
       friday: 'Thứ 6',
       saturday: 'Thứ 7',
       sunday: 'Chủ Nhật',
-      presetsModalTitle: 'Mẫu Cấu Hình Ma Trận Giá Tiêu Chuẩn',
-      applyPresetTo: 'Áp dụng bộ quy tắc cho',
-      applyPresetBtn: 'Áp Dụng Bộ Mẫu',
-      presetUrbanTitle: 'Sân Trung Tâm Đô Thị (Urban Peak Pack)',
-      presetUrbanDesc:
-        'Tối ưu hóa doanh thu giờ cao điểm tối 17:00 - 21:00 (+50%) và phụ thu cuối tuần (+25%).',
-      presetUrbanBadge: 'Phổ biến nhất',
-      presetStudentTitle: 'Ưu Đãi Học Sinh / Sinh Viên (Student Promo)',
-      presetStudentDesc:
-        'Giảm 25% các khung giờ trưa vắng khách (11:00 - 14:00) từ Thứ 2 đến Thứ 6.',
-      presetStudentBadge: 'Tăng lấp đầy',
-      presetHolidayTitle: 'Phụ Thu Lễ Tết Toàn Hệ Thống (+35%)',
-      presetHolidayDesc:
-        'Tự động áp dụng mức giá phụ thu ngày lễ toàn hệ thống với độ ưu tiên cao.',
-      presetHolidayBadge: 'Lễ Tết',
-      presetNightTitle: 'Khung Giờ Đêm Tiết Kiệm (Night Owl Pack)',
-      presetNightDesc: 'Ưu đãi giảm 15% cho các khung giờ muộn 21:00 - 23:00.',
-      presetNightBadge: 'Đêm muộn',
       simulatorModalTitle: 'Trình Mô Phỏng & Báo Giá Tự Động',
       simIntro:
         'Kiểm tra đơn giá chính xác sẽ tính cho khách hàng theo thời gian thực dựa trên toàn bộ quy tắc:',

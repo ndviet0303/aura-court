@@ -4,7 +4,7 @@
   ["class-lines", "Http/Controllers/Admin/AdminController.php", 687],
   ["class-lines", "Http/Controllers/Admin/AdminDisputeController.php", 410],
   ["class-lines", "Http/Controllers/POS/PosController.php", 696],
-  ["class-lines", "Http/Controllers/Promotion/PromotionController.php", 746],
+  ["class-lines", "Http/Controllers/Promotion/PromotionController.php", 740],
   ["class-lines", "Http/Controllers/Social/CommunityFeedController.php", 433],
   ["class-lines", "Http/Controllers/Tournament/TournamentController.php", 310],
   ["class-lines", "Services/Attendance/AttendanceService.php", 513],

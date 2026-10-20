@@ -46,19 +46,28 @@ class VenueOperatingCalendar
             $intervals = $day['intervals'] ?? [];
         }
 
-        $minute = fn (Carbon $time): int => ((int) $time->format('H')) * 60 + (int) $time->format('i');
-        $startMinute = $minute($start);
-        $endMinute = $minute($end);
+        // Counted from the start, so a slot ending at midnight ends at minute 1440 rather than 0.
+        $startMinute = $start->hour * 60 + $start->minute;
+        $endMinute = $startMinute + (int) round($start->diffInMinutes($end));
 
         foreach ($intervals as $interval) {
-            $open = Carbon::createFromFormat('H:i', $interval['start'], $timezone);
-            $close = Carbon::createFromFormat('H:i', $interval['end'], $timezone);
-            if ($startMinute >= $minute($open) && $endMinute <= $minute($close)) {
+            if ($startMinute >= self::minuteOfDay($interval['start']) && $endMinute <= self::minuteOfDay($interval['end'], true)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * Minutes since midnight of an "H:i" time. As an end bound, 00:00 and 23:59 mean the end of the
+     * day, because H:i cannot express 24:00 and the owner screens offer 23:59 for "until midnight".
+     */
+    public static function minuteOfDay(string $time, bool $isEnd = false): int
+    {
+        $minute = (int) substr($time, 0, 2) * 60 + (int) substr($time, 3, 2);
+
+        return $isEnd && in_array($minute, [0, 1439], true) ? 1440 : $minute;
     }
 
     public function scheduleFor(Court $court): ?VenueOperatingSchedule

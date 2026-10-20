@@ -5,9 +5,7 @@ namespace App\Services\Reservation;
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Models\Court;
 use App\Models\CourtBlock;
-use App\Models\CourtPriceSlot;
 use App\Models\PriceQuote;
-use App\Models\PriceRule;
 use App\Models\ReservationSlot;
 use App\Models\User;
 use App\Services\Booking\DiscountService;
@@ -22,15 +20,8 @@ class PriceQuoteService
         private readonly VenueOperatingCalendar $operatingCalendar,
         private readonly DiscountService $discounts,
         private readonly CourtPriceRuleService $priceRules,
+        private readonly PriceTierResolver $tiers,
     ) {}
-
-    private const PRECEDENCE = [
-        'date_exception' => 4,
-        'holiday' => 4,
-        'peak' => 3,
-        'weekly' => 2,
-        'base' => 1,
-    ];
 
     public function create(int $userId, int $organizationId, int $courtId, array $slots, ?string $couponCode = null): PriceQuote
     {
@@ -149,7 +140,7 @@ class PriceQuoteService
                 ? Carbon::instance($value)->setTimezone($timezone)
                 : Carbon::parse((string) $value, $timezone);
             try {
-                [$price, $rule] = $this->priceFor($time, $court, $rules, $legacyRules, $duration);
+                [$price, $rule] = $this->tiers->priceFor($time, $court, $rules, $legacyRules, $duration);
             } catch (ValidationException $exception) {
                 if ($skipUnpriced) {
                     return null;
@@ -166,88 +157,6 @@ class PriceQuoteService
                 'rule' => $rule,
             ];
         })->values()->all();
-    }
-
-    /** @return array{0:int,1:array<string,mixed>} */
-    private function priceFor(Carbon $time, Court $court, Collection $rules, Collection $legacyRules, int $duration = 60): array
-    {
-        foreach (array_keys(self::PRECEDENCE) as $type) {
-            $matching = $rules
-                ->filter(fn (PriceRule $rule): bool => $rule->type === $type && $this->matches($rule, $time, $duration))
-                ->sortByDesc(fn (PriceRule $rule): array => [$this->scopeRank($rule, $court), (int) $rule->priority, (int) $rule->version, (int) $rule->id]);
-            $rule = $matching->first();
-            if ($rule) {
-                return [(int) $rule->price, [
-                    'id' => $rule->id,
-                    'type' => $rule->type,
-                    'version' => $rule->version,
-                    'priority' => $rule->priority,
-                    'effective_from' => $rule->effective_from?->toDateString(),
-                    'effective_until' => $rule->effective_until?->toDateString(),
-                    'price' => (int) $rule->price,
-                ]];
-            }
-
-            if ($type === 'weekly') {
-                $legacy = $legacyRules->first(fn (CourtPriceSlot $slot): bool => (int) $slot->weekday === $time->dayOfWeekIso
-                    && substr((string) $slot->starts_at, 0, 5) === $time->format('H:i')
-                    && substr((string) $slot->ends_at, 0, 5) === $time->copy()->addMinutes($duration)->format('H:i'));
-                if ($legacy) {
-                    return [(int) $legacy->price, [
-                        'id' => 'legacy:'.$legacy->id,
-                        'type' => 'weekly',
-                        'version' => 1,
-                        'priority' => 0,
-                        'effective_from' => null,
-                        'effective_until' => null,
-                        'price' => (int) $legacy->price,
-                    ]];
-                }
-            }
-        }
-        throw ValidationException::withMessages(['slots' => "Khung giờ {$time->format('d/m H:i')} chưa mở bán."]);
-    }
-
-    private function matches(PriceRule $rule, Carbon $time, int $duration = 60): bool
-    {
-        $date = $time->toDateString();
-        if (($rule->effective_from && $date < $rule->effective_from->toDateString())
-            || ($rule->effective_until && $date > $rule->effective_until->toDateString())) {
-            return false;
-        }
-        if (in_array($rule->type, ['date_exception', 'holiday'], true)
-            && $rule->exception_date?->toDateString() !== $time->toDateString()) {
-            return false;
-        }
-        if ($rule->type === 'weekly' && (int) $rule->weekday !== $time->dayOfWeekIso) {
-            return false;
-        }
-        if (in_array($rule->type, ['weekly', 'peak', 'date_exception', 'holiday'], true)
-            && $rule->starts_at !== null
-            && $rule->ends_at !== null) {
-            $start = substr((string) $rule->starts_at, 0, 5);
-            $end = substr((string) $rule->ends_at, 0, 5);
-            if ($time->format('H:i') < $start || $time->copy()->addMinutes($duration)->format('H:i') > $end) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private function scopeRank(PriceRule $rule, Court $court): int
-    {
-        if ($rule->court_id === $court->id) {
-            return 4;
-        }
-        if ($rule->sport_type !== null && $rule->sport_type === $court->sport_type) {
-            return 3;
-        }
-        if ($rule->venue_id === $court->venue_id) {
-            return 2;
-        }
-
-        return 1;
     }
 
     /** @return Collection<int,Carbon> */

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\AppTimezoneDateTime;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,8 +28,8 @@ class PromotionCampaign extends Model
     protected function casts(): array
     {
         return [
-            'starts_at' => 'datetime',
-            'ends_at' => 'datetime',
+            'starts_at' => AppTimezoneDateTime::class,
+            'ends_at' => AppTimezoneDateTime::class,
             'usage_limit' => 'integer',
             'usage_count' => 'integer',
             'min_spend' => 'integer',

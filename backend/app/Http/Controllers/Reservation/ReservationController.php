@@ -221,6 +221,8 @@ class ReservationController extends Controller
     public function pricingCalendar(Request $request)
     {
         $organization = $this->organization($request);
+        // BR-49: pricing configuration belongs to the owner; a court_id must not open another tenant's rules.
+        abort_unless($this->isOrganizationOperator($request, $organization), 403);
         $query = PriceRule::query()->where('organization_id', $organization->id)->where('is_active', true)->with(['venue', 'court']);
         if ($request->filled('court_id')) {
             $query->where(function ($rules) use ($request) {

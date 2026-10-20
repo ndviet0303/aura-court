@@ -152,7 +152,7 @@ class RecurringSeriesService
         foreach ($occurrences as $index => $occurrence) {
             $start = $occurrence['starts_at'];
             $end = $occurrence['ends_at'];
-            $snapshot = $this->quotes->priceSnapshots($court, $this->sessionSlotStarts($court, $start, $sessionMinutes), $slotMinutes, true);
+            $snapshot = $this->quotes->priceSnapshots($court, $this->sessionSlotStarts($court, $start, $sessionMinutes), $slotMinutes);
             $reason = $this->overlapReason($court, $start, $end);
             $priced[] = [
                 'index' => $index + 1,
@@ -623,7 +623,7 @@ class RecurringSeriesService
             $start = $occurrence['starts_at'];
             $end = $occurrence['ends_at'];
             // Price every sub-interval of the session and sum, mirroring the persisted quote.
-            $snapshot = $this->quotes->priceSnapshots($court, $this->sessionSlotStarts($court, $start, $sessionMinutes), $slotMinutes, true);
+            $snapshot = $this->quotes->priceSnapshots($court, $this->sessionSlotStarts($court, $start, $sessionMinutes), $slotMinutes);
             $price = (int) collect($snapshot)->sum('unit_price');
             $total += $price;
             $reason = $this->overlapReason($court, $start, $end);

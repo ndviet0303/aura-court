@@ -95,7 +95,8 @@ describe('PricingCalendarView', () => {
     expect(wrapper.text()).toContain('Trình Mô Phỏng & Báo Giá Tự Động')
   })
 
-  it('opens preset templates modal', async () => {
+  // The preset packs wrote invented fixed prices over the owner's real ones; they are gone.
+  it('offers no preset rule packs', async () => {
     const wrapper = mount(PricingCalendarView, {
       global: {
         plugins: [i18n],
@@ -103,10 +104,6 @@ describe('PricingCalendarView', () => {
     })
     await flushPromises()
 
-    const presetBtn = wrapper.findAll('button').find((b) => b.text().includes('Bộ Quy Tắc Mẫu'))
-    expect(presetBtn).toBeDefined()
-    await presetBtn?.trigger('click')
-
-    expect(wrapper.text()).toContain('Mẫu Cấu Hình Ma Trận Giá Tiêu Chuẩn')
+    expect(wrapper.text()).not.toContain('Bộ Quy Tắc Mẫu')
   })
 })

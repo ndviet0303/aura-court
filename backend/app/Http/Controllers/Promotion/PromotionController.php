@@ -147,7 +147,6 @@ class PromotionController extends Controller
         $organization = $this->selectedOrganization($request);
         $this->authorizePromotionManager($request, $organization, requireEntitlement: true);
         $data = $this->validatedCoupon($request);
-        $data['code'] = strtoupper(trim($data['code']));
         if ($data['discount_type'] === 'percent' && $data['discount_value'] > 100) {
             abort(422, 'Giảm theo phần trăm không được vượt quá 100%.');
         }
@@ -463,9 +462,6 @@ class PromotionController extends Controller
                 $this->assertLocationScope($organization, $newCouponVenueId, $newCouponCourtId);
             }
 
-            if (array_key_exists('code', $couponFields)) {
-                $couponFields['code'] = strtoupper(trim((string) $couponFields['code']));
-            }
             if (array_key_exists('min_spend', $couponFields) && $couponFields['min_spend'] === null) {
                 $couponFields['min_spend'] = 0;
             }
@@ -609,16 +605,14 @@ class PromotionController extends Controller
     private function validatedCoupon(Request $request, bool $partial = false, ?Coupon $existing = null): array
     {
         $prefix = $partial ? 'sometimes|' : '';
-        $codeRule = $prefix.'required|string|max:40';
-        if ($partial && $existing) {
-            $codeRule .= '|unique:coupons,code,'.$existing->id;
-        } else {
-            $codeRule .= '|unique:coupons,code';
-        }
+        // Normalized before validation so the unique check sees the stored form.
+        $request->whenHas('code', fn (mixed $code) => $request->merge(['code' => is_string($code) ? strtoupper(trim($code)) : $code]));
+        // D14: once activated or redeemed, customers already hold this code and discount type.
+        $issued = $existing && ($existing->status !== Coupon::STATUS_DRAFT || (int) $existing->usage_count > 0);
 
         return $request->validate([
-            'code' => $codeRule,
-            'discount_type' => [$prefix.'required', Rule::in(['fixed', 'percent'])],
+            'code' => [...explode('|', $prefix.'required|string|max:40'), Rule::unique('coupons', 'code')->ignore($existing?->id), ...($issued ? [Rule::in([$existing->code])] : [])],
+            'discount_type' => $prefix.'required|in:'.($issued ? $existing->discount_type : 'fixed,percent'),
             'discount_value' => $prefix.'required|integer|min:1',
             'max_discount' => $prefix.'nullable|integer|min:1',
             'min_spend' => $prefix.'nullable|integer|min:0',
@@ -634,13 +628,13 @@ class PromotionController extends Controller
             'campaign_court_id' => $prefix.'nullable|integer',
             'campaign_name' => $prefix.'nullable|string|max:120',
             'campaign_description' => $prefix.'nullable|string|max:4000',
-            'eligibility_group' => [$prefix.'nullable', Rule::in([Coupon::GROUP_ALL, Coupon::GROUP_FIRST_TIME, Coupon::GROUP_RETURNING])],
+            'eligibility_group' => $prefix.'nullable|in:'.implode(',', [Coupon::GROUP_ALL, Coupon::GROUP_FIRST_TIME, Coupon::GROUP_RETURNING]),
             'campaign_starts_at' => $prefix.'nullable|date',
             'campaign_ends_at' => $prefix.'nullable|date',
             'campaign_usage_limit' => $prefix.'nullable|integer|min:1',
             'campaign_min_spend' => $prefix.'nullable|integer|min:0',
             'campaign_can_combine_with_membership' => $prefix.'nullable|boolean',
-        ]);
+        ], $issued ? ['code.in' => 'Không thể đổi mã của voucher đã phát hành.', 'discount_type.in' => 'Không thể đổi hình thức giảm của voucher đã phát hành.'] : []);
     }
 
     private function validatedCampaign(Request $request, bool $partial = false): array
@@ -650,7 +644,7 @@ class PromotionController extends Controller
         return $request->validate([
             'name' => $prefix.'required|string|max:120',
             'description' => $prefix.'nullable|string|max:4000',
-            'eligibility_group' => [$prefix.'nullable', Rule::in([Coupon::GROUP_ALL, Coupon::GROUP_FIRST_TIME, Coupon::GROUP_RETURNING])],
+            'eligibility_group' => $prefix.'nullable|in:'.implode(',', [Coupon::GROUP_ALL, Coupon::GROUP_FIRST_TIME, Coupon::GROUP_RETURNING]),
             'starts_at' => $prefix.'nullable|date',
             'ends_at' => $prefix.'nullable|date',
             'venue_id' => $prefix.'nullable|integer',
@@ -739,8 +733,8 @@ class PromotionController extends Controller
 
     private function assertRange(?string $startsAt, ?string $endsAt, string $field): void
     {
-        if ($startsAt && $endsAt && Carbon::parse($endsAt)->lt(Carbon::parse($startsAt))) {
-            throw ValidationException::withMessages([$field => 'The end date must be on or after the start date.']);
+        if ($startsAt && $endsAt && Carbon::parse($endsAt)->lte(Carbon::parse($startsAt))) {
+            throw ValidationException::withMessages([$field => 'Thời điểm kết thúc phải sau thời điểm bắt đầu.']);
         }
     }
 }
