@@ -287,7 +287,7 @@
 - [ ] 3.5 Độ phủ kín là điều kiện nhận đặt (design Q1, BR-41, BR-47):
   - `VerifyEffectiveBookingEligibility` thêm điều kiện: lịch phục vụ hiệu lực của sân được phủ giá kín, gọi cùng service độ phủ. Áp cho public list, chi tiết, availability và mọi đường đặt mới.
   - Pha 2 của module 3 đã đổi `CourtPriceRuleService::isPriced` (trong `VerifyEffectiveBookingEligibility`) và `pricedCourtIds` (danh sách công khai trong `CourtController::index`) thành "sân có liên kết thường đang hiệu lực". Thêm kiểm độ phủ trên cả hai, vì danh sách công khai không đi qua `execute` cho từng sân.
-  - Trong `pricedCourtIds`, kiểm độ phủ một lần theo lô cho cả danh sách, không gọi theo từng sân. Cần một entry point nhiều sân của `PriceCoverageService` (đã nhờ module 3 thêm ở task 2.4 của họ).
+  - Trong `pricedCourtIds`, kiểm độ phủ một lần theo lô cho cả danh sách, không gọi theo từng sân: gọi `PriceCoverageService::uncoveredCourtIds($courtIds, $from)` của module 3 (D3 và task 2.4 của họ), bỏ các id nó trả về.
   - Test: giữ xanh `PricedCourtVisibilityTest::test_public_list_query_count_does_not_grow_with_courts`.
   - Bỏ ghi chú `ponytail:` ở 1.10.
   - Trước khi bật trên prod: pre-check đếm sân `active` có lịch phục vụ hở giá (Migration Plan bước 2).
@@ -358,7 +358,11 @@
     - Scenario: "Owner moves an affected booking to another court", "Move to a court of another sport", "Concurrent moves into the same court-time".
     - Scenario "Checked-in booking during an incident stop": chuyển đơn đang sử dụng.
     - Scenario "Move a booking in use mid-slot": slot đang diễn ra và ngắn hơn mức tối thiểu vẫn chuyển được; slot đã kết thúc ở lại sân gốc.
-  - Đơn `held` đang giữ lượt voucher → 409, không đổi gì (design D8); 4.9 dùng cùng kiểm tra. Làm khi task 5.1–5.3 của module 3 đã có trên main; trước đó ghi `ponytail:` ở lệnh. Test scenario "Held booking with a voucher".
+  - Đơn `held` đang giữ lượt voucher (`VoucherUsageService::holdsVoucher($reservation)`, task 5.2 của module 3) → 409, không đổi gì (design D8); 4.9 dùng cùng kiểm tra.
+    - Làm khi task 5.1–5.3 của module 3 đã có trên main; trước đó ghi `ponytail:` ở lệnh. Khi task 5.4 của module 3 đã có trên main thì không merge 4.8–4.9 còn `ponytail:` này.
+    - Nếu task 5.4 của module 3 merge lúc `ponytail:` còn đó, họ thay nó bằng kiểm này và viết test scenario trong `HeldVoucherMoveBlockedTest`; khi đó chỉ giữ test đó xanh.
+    - Test scenario "Held booking with a voucher" (`AffectedBookingCommandsTest`, hoặc `HeldVoucherMoveBlockedTest` nếu module 3 đã viết).
+  - Nếu task 6.1 của module 3 đã có trên main trước 4.8–4.9: test thêm ca đơn đã xác nhận có voucher chuyển sân hoặc đổi giờ vẫn giữ lượt `used` và không thêm lượt (BR-70 của module 3; 6.1 của họ khi đó chỉ test ca huỷ).
 - [ ] 4.9 Lệnh `change-time`: giữ sân và tổng thời lượng. Khác thời lượng trả 422.
   - Thêm lại tham số loại trừ slot của chính đơn cho `SlotSelectionPolicy::assertAllowed`.
   - Test: `AffectedBookingCommandsTest`. Scenario: "Time change on the same court", "Time change with a different duration".
@@ -378,6 +382,7 @@
 - [ ] 4.12 Xoá `attendance/reassign-court`; gọi route cũ trả 404.
   - Đổi sân do sự cố đi qua stop `maintenance` rồi `move-court`.
   - Sửa `AttendanceOperationsAndReadinessTest` và `OnSiteAttendanceAndTabJourneyTest`.
+  - Nếu task 5.4 của module 3 đã thêm 409 cho đơn `held` giữ lượt vào route này, xoá kiểm đó và ca `reassign-court` trong `HeldVoucherMoveBlockedTest` cùng route.
   - Test:
     - Scenario: "Retired on-site reassignment", "Incident reassignment" (lịch sử ghi nguồn case làm lý do).
     - Giữ xanh scenario "Extension overlaps next booking" và "Extra hour on a free court".

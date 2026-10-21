@@ -142,10 +142,10 @@
 - Lệnh đóng mọi case mở của đơn với cùng kết quả. Lịch sử đơn ghi nguồn case làm lý do.
 - Không mở case mới sau khi chuyển hay đổi giờ: kiểm dưới lock đã loại khung trùng stop, đình chỉ hoặc ngoài giờ phục vụ. Phương án mở lại case cho khung mới bị loại vì không có khung đích nào lọt qua kiểm tra mà vẫn bị ảnh hưởng.
 - `move-court`: giữ giờ, cùng tổ chức, cùng môn; khác môn → 422. `change-time`: giữ sân và tổng thời lượng; khác thời lượng → 422.
-- Đơn `held` đang giữ lượt voucher: `move-court` và `change-time` trả 409, đơn, lượt và case giữ nguyên; operator huỷ đơn thay thế.
+- Đơn `held` đang giữ lượt voucher (`VoucherUsageService::holdsVoucher`, task 5.2 của module 3): `move-court` và `change-time` trả 409, đơn, lượt và case giữ nguyên; operator huỷ đơn thay thế.
   - Lý do: `consume` của module 3 (D11 của họ) kiểm lại voucher theo sân và giờ của đơn lúc xác nhận. Đơn chuyển sang sân ngoài tập sân của chương trình, hoặc sang giờ có mức giảm khác, sẽ hết hạn với lý do `voucher_changed` và chuyển khoản thành ngoại lệ, dù khách đã đồng ý.
   - Phương án khác: kiểm lại voucher cho khung đích bằng engine của module 3 dưới lock. Loại: thêm khoá chương trình và phụ thuộc engine vào lệnh D8 cho một trường hợp hiếm (đơn chờ chỉ sống vài phút).
-  - Trước task 5.1–5.3 của module 3 chưa đơn nào giữ lượt, nên quy tắc chưa có hiệu lực.
+  - Trước task 5.1–5.3 của module 3 chưa đơn nào giữ lượt, nên quy tắc chưa có hiệu lực. Ai làm trước thì viết kiểm: module 2 ở task 4.8–4.9, hoặc task 5.4 của module 3 nếu lúc đó lệnh còn `ponytail:`; task 5.4 cũng chặn `attendance/reassign-court` nếu route còn, và task 4.12 xoá chặn đó cùng route.
 - Đổi giờ cần loại trừ slot của chính đơn khỏi kiểm chồng. Thêm lại tham số loại trừ cho `SlotSelectionPolicy::assertAllowed`, mà cutover Decision 7 đã bỏ. Lệnh D8 truyền chính sách đã ghi của đơn thay cho chính sách đang hiệu lực, và áp các ngoại lệ ở trên.
 - `cancel` giải phóng slot chưa kết thúc một lần; đơn chờ thanh toán thì kết thúc nghĩa vụ thanh toán và nhả lượt voucher đang giữ đúng một lần.
   - Đơn `held`: gọi `releaseHeld($locked, 'cancelled', 'operator_affected_booking')` của module 4 (D2 của họ, đã có trên main), trong thứ tự lock ở mục "Kiểm eligibility dưới lock". Hàm này nhả slot, attempt chờ và lượt giữ, ghi lý do vào `metadata.release_reason`. Lệnh D8 không gọi `release` của voucher riêng: từ task 5.5 của module 4, `releaseHeld` gọi `VoucherUsageService::release` của module 3 (D11 của họ).
@@ -225,7 +225,7 @@
   - Phương án khác: module 3 làm cả wiring và delta `venue-court-operations` riêng. Loại: mở và resume sân là action của module 2; hai delta cùng ý trên một capability sẽ trùng header khi archive.
   - Module 3 đã nhận (D3 và task 1.4 của họ): bỏ delta "độ phủ giá là điều kiện mở sân" và task `OpenCourt`/resume, chỉ cung cấp `PriceCoverageService`, dạng kết quả (mỗi mục: sân, thứ hoặc ngày, giờ bắt đầu, giờ kết thúc) và mã `PRICE_COVERAGE_INCOMPLETE` cho công bố giá và đổi liên kết.
   - Mở và resume sân đưa khoảng thiếu vào `missing_items` của 422 gộp cùng các điều kiện khác, không trả `PRICE_COVERAGE_INCOMPLETE` riêng.
-  - Pha 2 của module 3 giữ tên `CourtPriceRuleService` và đổi `isPriced` (trong `VerifyEffectiveBookingEligibility`) và `pricedCourtIds` (danh sách công khai trong `CourtController::index`) thành "sân có liên kết thường đang hiệu lực" (D28 của module 3). Task 3.5 thêm kiểm độ phủ trên cả hai.
+  - Pha 2 của module 3 giữ tên `CourtPriceRuleService` và đổi `isPriced` (trong `VerifyEffectiveBookingEligibility`) và `pricedCourtIds` (danh sách công khai trong `CourtController::index`) thành "sân có liên kết thường đang hiệu lực" (D28 của module 3). Task 3.5 thêm kiểm độ phủ trên cả hai; danh sách công khai gọi `PriceCoverageService::uncoveredCourtIds` một lần cho mọi sân.
   - Màn sân gọi cùng action áp liên kết của module 3 (task 2.5 của họ), nên đổi liên kết làm hở giá một sân `active` hoặc `paused` nhận 422 `PRICE_COVERAGE_INCOMPLETE` của họ.
 - Ngày lễ (thoả thuận với module 3): MODIFIED "Catalog and operational calendar" ghi holidays là ngày nghỉ của lịch phục vụ, không đặt giá. Bảng giá ngày lễ (BR-51) thuộc delta `reservations-and-pricing` của module 3.
 - Độ phủ kín là điều kiện nhận đặt (BR-41, BR-47, FR-43):
