@@ -150,10 +150,14 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
 ### D11. Kiểm lại đơn chờ khi giá mới có hiệu lực
 - Chọn: một listener nghe `CourtPricesTookEffect(courtIds, effectiveAt)` của module 3.
   - Module 3 phát sự kiện sau commit, lúc công bố phiên bản (`effectiveAt = max(effective_at, now)`) và lúc áp, thay hay kết thúc liên kết sân – bảng giá. Không phát khi tới `effective_at` (module 3 D16): theo D6 của họ, giá một đơn xác nhận phải trả chỉ đổi ở hai thời điểm đó.
-  - Listener tìm các đơn `held` trên `courtIds` có giờ kết thúc sau `effectiveAt`, rồi tính lại bằng `RentalPriceCalculator::quote` với voucher đơn đang giữ và `$heldBy` là chính đơn đó. Thiếu `$heldBy` thì lượt cuối hoặc mã riêng mà đơn đang giữ bị coi là hết, và đơn bị nhả oan.
-  - Tiền khác → `releaseHeld(…, 'expired', 'price_changed')` và gửi thông báo qua `DurableNotificationService`.
+  - Listener tìm các đơn `held` trên `courtIds` có giờ kết thúc sau `effectiveAt`. Mỗi đơn chạy trong một transaction riêng:
+    - khoá qua `HeldReservationRelease::lock` (attempt → reservation);
+    - đơn không còn `held` thì bỏ qua;
+    - tính lại bằng `RentalPriceCalculator::quote` với voucher đơn đang giữ và `$heldBy` là chính đơn đó. Thiếu `$heldBy` thì lượt cuối hoặc mã riêng mà đơn đang giữ bị coi là hết, và đơn bị nhả oan.
+  - Tiền khác → `releaseHeld(…, 'expired', 'price_changed')`. Chỉ khi hàm này trả `true` mới gửi thông báo qua `DurableNotificationService`, để đơn vừa bị đường khác nhả không bị báo hai lần.
   - Tiền bằng → không làm gì.
   - Đơn đã xác nhận không nằm trong truy vấn.
+  - Một transaction cho mỗi đơn, không gom cả lô: một đơn lỗi không rollback các đơn khác, và listener không giữ khoá của nhiều đơn cùng lúc (D12, mục khoá). Module 3 D19 (cập nhật hoặc dừng chương trình) làm theo cùng cách.
 - Phương án khác:
   - Hook vào controller `PriceRule` hiện tại. Loại: module 3 sẽ thay mô hình giá, hook vào đó là phí công.
   - Định giá lại đơn tại chỗ và cấp mã mới. Loại: BR-87 đòi yêu cầu cũ hết hiệu lực và khách gửi lại.
@@ -171,11 +175,12 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
   - `consume` và `release` không làm gì khi đơn không giữ voucher, nên nối được trước khi module 3 bật `hold`.
 - `consume` ném `VoucherNoLongerApplies` khi voucher không còn áp được hoặc tiền giảm đổi. Mọi đường đều nhả đơn bằng `releaseHeld(…, 'expired', 'voucher_changed')` và báo khách. Lỗi không được lan ra khỏi transaction ngoài sau khi đã nhả.
   - `processReceipt`: gọi sau khi `applyAttemptChecks` ra ALLOCATED và đơn đã khoá qua kiểm `held`, trước khi lưu receipt và tạo `OwnerPaymentAllocation`. Hỏng → receipt thành EXCEPTION mã `voucher_changed`, nhả đơn, `recordReceiptException` ghi như các ngoại lệ khác. Không ném lại, để job không chạy lại.
-  - `confirmPaidAttempt`: khi nhóm đủ tiền, khoá đơn trước bằng `HeldReservationRelease::lock` (hiện đơn chỉ bị khoá sau khi nhóm thành `confirmed`), gọi `consume`, rồi mới đánh dấu nhóm `confirmed`. Hỏng → làm như `expire`: nhóm và phần chia còn chờ sang `expired`, attempt `split_share` còn chờ hết hạn, mọi phần đã trả (kể cả phần vừa nhận) được ghi qua `SplitExpiredShareExceptions::record` đúng một lần. Khác `expire` ở chỗ đơn được nhả bằng `releaseHeld` trên bản đã khoá. Không ném lại.
+  - `confirmPaidAttempt`: khi nhóm đủ tiền, khoá đơn trước bằng `HeldReservationRelease::lock` (hiện đơn chỉ bị khoá sau khi nhóm thành `confirmed`), gọi `consume`, rồi mới đánh dấu nhóm `confirmed`. Hỏng → làm như `expire`: nhóm và phần chia còn chờ sang `expired`, mọi phần đã trả (kể cả phần vừa nhận) được ghi qua `SplitExpiredShareExceptions::record` đúng một lần, và các attempt `split_share` còn chờ của nhóm hết hạn sau commit (mục khoá bên dưới). Khác `expire` ở chỗ đơn được nhả bằng `releaseHeld` trên bản đã khoá. Không ném lại.
   - `ReservationService::confirm`: gọi trước khi trừ ví. Hỏng → nhả đơn, không trừ ví, không ghi ngoại lệ thanh toán, rồi ném sau khi transaction của service xong. `ReservationController::confirm` bắt lỗi trong closure của `IdempotencyService::run` và trả 422 `VOUCHER_INVALID` kèm lý do, để việc nhả được commit.
   - Nhánh hold quá hạn hiện có của `confirm` gọi `release` rồi `abort(409)` nên bị rollback; lượt của đơn đó do `releaseHeld` nhả sau.
 - Khoá:
-  - Thứ tự chung: attempt → reservation → chương trình. `consume` khoá dòng chương trình `FOR SHARE`. `release` không khoá chương trình hay mã, nên các transaction nhả nhiều đơn liền nhau không tạo vòng khoá.
+  - Thứ tự chung: attempt → reservation → chương trình. `consume` khoá dòng chương trình `FOR SHARE`. `release` không khoá chương trình hay mã, nên các transaction nhả nhiều đơn liền nhau (`releaseOverdueHolds`, `RecurringReleaseService`) không tạo vòng khoá. Listener giá (D11) không thuộc nhóm này vì mỗi đơn một transaction.
+  - Chia tiền: `processReceipt` của một phần khoá attempt của phần đó (`OwnerPaymentAttemptService.php:270-274`) rồi mới chờ khoá nhóm (`SplitPaymentService.php:315`). Vì vậy không transaction nào đang giữ nhóm được UPDATE attempt `split_share`, nếu không sẽ thành vòng nhóm → attempt ngược với attempt → nhóm. Nhánh hỏng của `confirmPaidAttempt` và `SplitPaymentService::expire` cùng đưa việc hết hạn attempt `split_share` còn chờ vào `DB::afterCommit`, chạy trong một transaction riêng không khoá gì khác. Nếu callback bị mất, attempt còn chờ vẫn không xác nhận được: nhóm đã `expired` nên `hasConfirmableShare` trả `false`, và khoản nhận thành ngoại lệ `split_share_unavailable`.
   - `processReceipt` khoá dòng cơ sở `FOR KEY SHARE` trước `consume`, vì insert allocation sau đó khoá ngầm cơ sở. Chọn khoá ngay trước khi khoá attempt (đọc `venue_id` của attempt trước, cột này không đổi), không phải ngay sau khi khoá đơn như module 3 đề xuất. Lý do: checkout khoá cơ sở `FOR UPDATE` rồi mới khoá attempt của hold quá hạn (D7). Khoá cơ sở sau attempt vẫn để lại vòng khoá hiện có (xem Risks), còn khoá trước attempt thì cùng chiều với checkout và `initiate`.
   - `ReservationService::confirm` không khoá cơ sở.
 - Phương án khác:
@@ -183,6 +188,7 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
   - Change này gọi `consume` cho đơn 0đ (bản trước). Loại: đơn đó xác nhận trong transaction checkout mà module 3 viết lại; hai module cùng sửa một transaction dễ gọi thiếu hoặc gọi hai lần.
   - Để `VoucherNoLongerApplies` lan ra. Loại: transaction ngoài rollback luôn việc nhả, đơn giữ lượt tới lần quét kế tiếp.
   - Khoá cơ sở ngay sau khi khoá đơn (đề xuất của module 3). Loại: vẫn còn vòng attempt → cơ sở ngược với checkout.
+  - Chỉ đưa nhánh hỏng của `confirmPaidAttempt` ra sau commit, để `expire` như cũ. Loại: `expire` hiện UPDATE attempt trong lúc giữ nhóm (`SplitPaymentService.php:407-410`), nên cũng có vòng đó, dù cửa sổ hẹp hơn (`processReceipt` phải qua `hasConfirmableShare` ngay trước `expires_at`). Hai đường cùng một bước thì nên cùng một cách.
 - Lý do: BR-83, FR-74; BR-71 của module 3 (không xác nhận bằng voucher của chương trình đã dừng). FR-75 và BR-82 (đơn 0đ) chuyển sang task 5.4 của module 3.
 
 ### D13. Không đổi trong change này
@@ -312,6 +318,8 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
   → Pha 2–4 không phụ thuộc. Pha 5 chờ Pha 3 và task 5.1–5.3 của module 3 (cổng ở mục "Phối hợp và thứ tự archive"). Tới lúc đó lưới vẫn theo `slot_duration` như cũ.
 - **[Vòng khoá webhook và nhả hold quá hạn]** Có trên main từ Pha 2. Checkout khoá cơ sở `FOR UPDATE` rồi khoá attempt của hold quá hạn (D7). Webhook khoá attempt và đơn rồi insert allocation, khoá ngầm cơ sở `FOR KEY SHARE`. Hai bên chờ nhau khi một khoản chuyển tới trước hạn nhưng được xử lý sau hạn, đúng lúc một khách khác đặt khoảng chồng lấn trên cùng sân. PostgreSQL huỷ một bên: job chạy lại, còn checkout trả lỗi.
   → Hiếm và tự hồi phục. Task 5.5 khoá cơ sở `FOR KEY SHARE` trước khi khoá attempt trong `processReceipt` (D12), nên vòng này đóng cùng lúc với việc nối `consume`.
+- **[Vòng khoá hết hạn chia tiền]** Có trên main. `SplitPaymentService::expire` khoá nhóm rồi UPDATE attempt `split_share` còn chờ (`SplitPaymentService.php:407-410`). `processReceipt` của một phần khoá attempt rồi chờ khoá nhóm (`SplitPaymentService.php:315`). Hai bên chỉ chờ nhau khi khoản nhận qua `hasConfirmableShare` ngay trước `expires_at` của nhóm, còn `expireDue` chạy ngay sau mốc đó.
+  → Hiếm và tự hồi phục: PostgreSQL huỷ một bên, job hoặc lần quét sau chạy lại. Task 5.5 đưa việc hết hạn attempt ra sau commit cho cả `expire` lẫn nhánh hỏng mới của `confirmPaidAttempt` (D12). Nhánh hỏng mới gặp vòng này thường hơn nhiều, vì hai phần trả gần nhau là chuyện bình thường.
 - **[Khoá khi nhả hold quá hạn]** D7 khoá thêm các đơn khác trong request giữ chỗ.
   → Chỉ khoá đơn `held` đã quá hạn chồng lấn trên đúng sân đó, theo thứ tự id. Webhook khoá attempt trước rồi mới tới reservation và không bao giờ khoá hai reservation, nên không có vòng khoá.
 - **[Đặt định kỳ vẫn đọc `hold_ttl_minutes`]** `RecurringSeriesService.php:147` đọc key này, mặc định 30. Khi form không ghi key này nữa, giá trị cũ vẫn nằm trong settings và cơ sở mới dùng mặc định.
