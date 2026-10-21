@@ -23,6 +23,9 @@
   - Bỏ khối MODIFIED "Immutable price quotes"; bỏ vế voucher khỏi scenario "No payment window left"; thêm lý do nhả `voucher_changed` vào spec.
   - Design D2, D3, D5, D10, D11, D12, D14, D15, mục phối hợp, Risks và Open Questions theo D11, D16, D17, D19, D20, D29 của module 3.
   - Lệch với đề xuất của module 3: `processReceipt` khoá cơ sở trước attempt, không phải ngay sau khi khoá đơn (design D12, Risks). Đã báo lại session module 3.
+- [x] 1.7 Nhận phản hồi thứ hai của module 3 (task 1.6 của họ, 2026-10-21) và sửa tài liệu:
+  - D12, task 5.5: nhánh hỏng của `confirmPaidAttempt` hết hạn attempt `split_share` còn chờ bằng `DB::afterCommit`. Thêm so với đề xuất của module 3: `SplitPaymentService::expire` cũng chuyển như vậy, vì hiện nó UPDATE attempt trong lúc giữ nhóm (design D12, Risks).
+  - D11, task 5.6: listener giá chạy mỗi đơn một transaction và chỉ báo khách khi `releaseHeld` trả `true`.
 
 ## 2. Pha 2 – Tạo yêu cầu đặt sân (D2, D3, D4, D5, D6, D7)
 
@@ -124,9 +127,11 @@
   - `release`: `releaseHeld` và `ReservationService::release`.
   - `VoucherNoLongerApplies` xử lý theo từng đường như D12, nhả bằng `releaseHeld(…, 'expired', 'voucher_changed')` và báo khách. `ReservationController::confirm` trả 422 `VOUCHER_INVALID` kèm lý do.
   - `processReceipt` khoá cơ sở `FOR KEY SHARE` trước khi khoá attempt. `confirmPaidAttempt` khoá đơn bằng `HeldReservationRelease::lock` trước khi đánh dấu nhóm `confirmed`.
+  - Nhánh hỏng của `confirmPaidAttempt` và `SplitPaymentService::expire` hết hạn attempt `split_share` còn chờ bằng `DB::afterCommit`, trong một transaction riêng, không làm trong transaction đang giữ nhóm. Phải xong trước khi module 3 merge task 5.4 của họ.
 - [ ] 5.6 D11: listener `CourtPricesTookEffect(courtIds, effectiveAt)`.
-  - Tìm đơn `held` trên `courtIds` có giờ kết thúc sau `effectiveAt`, tính lại bằng `RentalPriceCalculator::quote` với voucher đơn đang giữ và `$heldBy` là chính đơn đó.
-  - Tiền khác → `releaseHeld(…, 'expired', 'price_changed')` và thông báo qua `DurableNotificationService`. Tiền bằng → giữ nguyên.
+  - Tìm đơn `held` trên `courtIds` có giờ kết thúc sau `effectiveAt`.
+  - Mỗi đơn một transaction: khoá qua `HeldReservationRelease::lock`, đơn không còn `held` thì bỏ qua, tính lại bằng `RentalPriceCalculator::quote` với voucher đơn đang giữ và `$heldBy` là chính đơn đó.
+  - Tiền khác → `releaseHeld(…, 'expired', 'price_changed')`; chỉ thông báo qua `DurableNotificationService` khi hàm này trả `true`. Tiền bằng → giữ nguyên.
 - [ ] 5.7 Frontend:
   - Form chọn giờ bắt đầu và kết thúc trên lưới 30 phút, từ availability mới.
   - Hiện khoảng giờ và thời lượng ("1 giờ 30 phút") thay cho danh sách slot.
@@ -138,12 +143,12 @@
   - Scenario "Half-hour boundaries" (15:30–17:00 theo ví dụ report), "Thirty-minute minimum", "Off-grid time", "Gapped selection", "Past start", "Court interval length does not apply", "Resale of a new booking".
   - Scenario "Unsupported interval length", "Interval length does not shape customer bookings", "Existing 45-minute courts".
   - Scenario "Amount payable changes", "Amount payable unchanged", "Confirmed booking", "Transfer for an invalidated request".
-  - Scenario "Price rules change after quote acceptance" (nay thuộc "Court quotes from price tables" của module 3). Listener truyền `$heldBy`: đơn giữ lượt cuối mà tiền không đổi thì giữ nguyên.
+  - Scenario "Price rules change after quote acceptance" (nay thuộc "Court quotes from price tables" của module 3). Listener truyền `$heldBy`: đơn giữ lượt cuối mà tiền không đổi thì giữ nguyên. Đơn đã bị đường khác nhả trước khi listener khoá thì không bị báo lần nữa.
   - `VoucherConsumeOnConfirmTest`:
     - `consume` chạy đúng một lần khi webhook tới hai lần; xác nhận thất bại thì không tiêu lượt.
     - Khoản nhận tới sau khi chương trình dừng → receipt EXCEPTION `voucher_changed`, đơn `expired`, lượt nhả một lần, job không chạy lại.
     - Khoản nhận có `event_at` trước lúc chương trình kết thúc mà job chạy sau → đơn xác nhận.
-    - Chia tiền, phần cuối tới sau khi chương trình dừng → nhóm `expired`, mỗi phần đã trả một ngoại lệ, `expireDue` sau đó không ghi thêm.
+    - Chia tiền, phần cuối tới sau khi chương trình dừng → nhóm `expired`, mỗi phần đã trả một ngoại lệ, `expireDue` sau đó không ghi thêm. Attempt của phần còn chờ thành `expired` sau commit; query log không có UPDATE `owner_payment_attempts` nào giữa lúc khoá `split_groups` và lúc commit. `expire` cũng vậy.
     - Hết hạn chia tiền (`SplitPaymentService::expire`) nhả lượt đúng một lần; gọi lại không đổi bộ đếm.
     - Ví legacy qua HTTP có `Idempotency-Key` → 422 `VOUCHER_INVALID`, ví không đổi, đơn `expired`, lượt nhả một lần.
     - Query log của `processReceipt` khoá `venues` trước `owner_payment_attempts` và trước `promotion_programs`.
