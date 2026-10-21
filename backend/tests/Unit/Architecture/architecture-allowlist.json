@@ -16,7 +16,7 @@
   ["class-lines", "Services/Loyalty/LoyaltyPolicyService.php", 336],
   ["class-lines", "Services/POS/PosService.php", 1181],
   ["class-lines", "Services/POS/ServiceTabService.php", 439],
-  ["class-lines", "Services/Payment/OwnerPaymentAttemptService.php", 537],
+  ["class-lines", "Services/Payment/OwnerPaymentAttemptService.php", 502],
   ["class-lines", "Services/Payment/SePayReceivingConnectionService.php", 340],
   ["class-lines", "Services/Payment/SplitPaymentService.php", 415],
   ["class-lines", "Services/Reservation/LegacyBookingBackfillService.php", 326],

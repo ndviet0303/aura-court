@@ -22,6 +22,7 @@ use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Finance\FinanceController;
 use App\Http\Controllers\Finance\FinanceExceptionController;
 use App\Http\Controllers\Finance\FinancialReconciliationController;
+use App\Http\Controllers\Finance\OwnerPaymentExceptionController;
 use App\Http\Controllers\Loyalty\LoyaltyController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Organization\InvitationResponseController;
@@ -544,6 +545,10 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::post('wallet/credit', [PosController::class, 'creditWallet'])->middleware(RequireOrganizationRole::class.':organization_owner');
             Route::post('wallet/spend', [PosController::class, 'spendWallet']);
         });
+
+        // A direct-owner payment interface, so it follows direct_owner_payments rather than the payouts group below.
+        Route::get('owner-payment-exceptions', [OwnerPaymentExceptionController::class, 'index'])
+            ->middleware([RequireOrganizationRole::class.':organization_owner', 'feature:direct_owner_payments']);
 
         Route::middleware([RequireOrganizationRole::class.':organization_owner', 'feature:marketplace_payouts'])->group(function () {
             Route::get('finance/beneficiaries', [FinanceController::class, 'beneficiaries']);

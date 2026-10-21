@@ -310,6 +310,26 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
   - Khung "quote snapshot" (mã báo giá, giờ hết hạn báo giá) được thay bằng `ReservationDetailFacts`. Giờ hết hạn báo giá dễ bị đọc nhầm thành hạn thanh toán.
   - `ReservationView.vue` đang ở đúng trần 382 dòng. Bỏ 5 comment HTML chia mục để thêm phần nối sự kiện mà không phải nâng trần.
 
+### Ghi chú khi apply Pha 4
+- **Bước ghi exception tách thành class riêng.**
+  - `recordReceiptException` chuyển thành `App\Services\Payment\OwnerPaymentExceptionRecorder::record`. `OwnerPaymentAttemptService` đã chạm trần số dòng, nên tách ra thay vì nới. Trần của file này hạ từ 537 xuống 502.
+  - Phương án khác: thêm trường ngay trong method cũ và nâng allowlist. Loại vì allowlist chỉ được hạ.
+- **Trường chép vào exception.**
+  - Ngoài bốn trường của D8, exception chép thêm `bank_code` và `account_last_four` của kết nối nhận tiền, vì spec đòi hiện kết nối. Như D8, màn tra cứu chỉ đọc một bảng.
+  - `purpose` và `purpose_id` lấy từ receipt. Receipt chỉ có hai trường này khi mã khớp attempt, nên mã lạ để `null`, không có nhánh nào gán theo số tiền.
+- **Mã đơn trên API.**
+  - API trả `booking_code` chỉ khi `purpose = booking`. Với mục đích khác, `purpose_id` là khoá của chuỗi định kỳ, nhóm chia tiền hay đơn POS, không phải mã đơn. API trả `purpose` để màn hình hiện loại yêu cầu.
+  - Phương án khác: trả nguyên `purpose_id`. Loại vì chủ cơ sở sẽ đọc `rec_series:…` hay `split_group:…` như một mã đơn.
+- **Exception cũ.**
+  - Migration `2026_10_21_000002_backfill_owner_payment_exception_lookup` chép các trường trên từ receipt và kết nối vào những exception `owner_payment_*` chưa có `payment_code`. Màn tra cứu không cần nhánh dự phòng cho dòng cũ.
+  - `event_at` của receipt dùng cast `datetime`, nên cột lưu giờ đồng hồ theo múi giờ của app, không phải UTC. Migration đọc giá trị bằng Carbon như cast đọc, rồi ghi ISO 8601 có offset giống bước ghi mới. Bản SQL đầu tiên gắn `+00:00` và lệch 7 giờ; test backfill bắt được lỗi này.
+  - Phương án khác: lúc đọc, nếu dòng cũ thiếu trường thì join sang receipt. Loại: đó là shim, và màn tra cứu sẽ phải join qua nhiều bảng như D8 đã tránh.
+- **Endpoint.** `OwnerPaymentExceptionController@index` đọc qua `FinanceExceptionRepositoryInterface::paginateOwnerPaymentExceptions`, xếp theo `detected_at` rồi `id` giảm dần, 30 dòng mỗi trang (`per_page` tối đa 100). Route nằm ngoài nhóm `marketplace_payouts`, sau `RequireOrganizationRole:organization_owner` và `feature:direct_owner_payments`.
+- **Điều hướng.**
+  - Kiểu và dữ liệu điều hướng tách từ `AdminLayout.vue` sang `shared/layouts/admin/adminNav.ts`, vì layout đã ở đúng trần dòng. Trần hạ từ 1353 xuống 1195.
+  - Mỗi mục có thể khai báo `capability`. Ba mục payout, đối soát và ngoại lệ cũ khai báo `marketplace_payouts`; mục "Thanh toán bất thường" khai báo `direct_owner_payments` và chỉ chủ cơ sở thấy. Nhánh riêng ẩn cả nhóm tài chính khi tắt payouts được bỏ: nhóm tự ẩn khi không còn mục nào.
+- **Màn hình.** `OwnerPaymentExceptionsView` chỉ đọc và có phân trang. Màn hình ghi rõ việc hoàn tiền do chủ cơ sở tự xử lý ngoài nền tảng. Chưa có liên kết sang chi tiết đơn, vì chủ cơ sở chưa có màn chi tiết đơn theo mã.
+
 ## Risks / Trade-offs
 
 - **[Cửa sổ deploy]** Push lên main thì frontend tự deploy, còn backend chờ người dùng chạy `glab ci run -b main`. Với D15, giữa hai lần deploy, form đặt sân mới gọi vào backend cũ (hoặc ngược lại) sẽ hỏng.
@@ -336,6 +356,8 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
    - Chưa đổi schema.
    - `expected_total` bắt buộc cũng là một lần cắt hợp đồng, nên frontend và backend vào cùng một merge. Deploy backend ngay sau push, theo giờ đã hẹn với người dùng (giống rủi ro "Cửa sổ deploy").
 2. **Pha 3, Pha 4:** chỉ thêm endpoint và trường. Deploy theo thứ tự nào cũng được.
+   - Pha 4 có thêm migration backfill metadata cho các exception cũ. Migration chạy một lần và không đổi schema.
+   - Nếu frontend lên trước backend, màn "Thanh toán bất thường" báo lỗi tải cho tới khi backend deploy. Không có dữ liệu nào bị đổi.
 3. **Pha 5:**
    - Migration đổi `courts.slot_duration` 45 → 60. Prod sau reseed không có dòng nào; migration in ra số dòng đã đổi.
    - Validation bỏ 45.

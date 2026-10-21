@@ -102,7 +102,7 @@
   ["component-lines", "shared/components/controls/LanguageSwitcher.vue", 487],
   ["component-lines", "shared/components/feedback/ErrorModal.vue", 561],
   ["component-lines", "shared/components/feedback/SkeletonLoader.vue", 444],
-  ["component-lines", "shared/layouts/admin/AdminLayout.vue", 1353],
+  ["component-lines", "shared/layouts/admin/AdminLayout.vue", 1195],
   ["component-lines", "shared/layouts/footer/SiteFooter.vue", 571],
   ["component-lines", "shared/layouts/header/components/NavbarDesktopNav.vue", 406],
   ["component-lines", "shared/layouts/header/components/NavbarDrawerNavList.vue", 438],
