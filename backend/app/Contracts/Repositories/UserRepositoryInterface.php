@@ -15,4 +15,11 @@ interface UserRepositoryInterface
 
     /** @return LengthAwarePaginator<int, User> */
     public function paginateForAdmin(?string $search, ?string $status, int $perPage): LengthAwarePaginator;
+
+    /**
+     * Active users holding an active organization_owner membership, each once.
+     *
+     * @return list<int>
+     */
+    public function activeOwnerIds(): array;
 }

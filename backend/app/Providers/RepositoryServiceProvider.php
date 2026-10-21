@@ -12,6 +12,7 @@ use App\Contracts\Repositories\FinanceExceptionRepositoryInterface;
 use App\Contracts\Repositories\HostKycRepositoryInterface;
 use App\Contracts\Repositories\LoyaltyRuleRepositoryInterface;
 use App\Contracts\Repositories\OrganizationLockRepositoryInterface;
+use App\Contracts\Repositories\PackagePriceRepositoryInterface;
 use App\Contracts\Repositories\PaymentRepositoryInterface;
 use App\Contracts\Repositories\PlatformPlanRepositoryInterface;
 use App\Contracts\Repositories\PlatformSubscriptionRepositoryInterface;
@@ -21,6 +22,7 @@ use App\Contracts\Repositories\ReservationRepositoryInterface;
 use App\Contracts\Repositories\TenantMembershipPlanRepositoryInterface;
 use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
+use App\Contracts\Repositories\VenuePackageRepositoryInterface;
 use App\Contracts\Repositories\VenueRepositoryInterface;
 use App\Contracts\Storage\FileStorageServiceInterface;
 use App\Contracts\Storage\PartnerDocumentStorageInterface;
@@ -33,6 +35,7 @@ use App\Infrastructure\Repositories\Eloquent\EloquentFinanceExceptionRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentHostKycRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentLoyaltyRuleRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentOrganizationLockRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentPackagePriceRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPaymentRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPlatformPlanRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPlatformSubscriptionRepository;
@@ -42,6 +45,7 @@ use App\Infrastructure\Repositories\Eloquent\EloquentReservationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentTenantMembershipPlanRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentUserRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueLifecycleRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentVenuePackageRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueRepository;
 use App\Infrastructure\Services\DurableNotificationService;
 use App\Infrastructure\Storage\FileStorageService;
@@ -76,6 +80,8 @@ class RepositoryServiceProvider extends ServiceProvider
         PartnerDocumentStorageInterface::class => PrivatePartnerDocumentStorage::class,
         DurableNotificationServiceInterface::class => DurableNotificationService::class,
         UserRepositoryInterface::class => EloquentUserRepository::class,
+        VenuePackageRepositoryInterface::class => EloquentVenuePackageRepository::class,
+        PackagePriceRepositoryInterface::class => EloquentPackagePriceRepository::class,
     ];
 
     public function register(): void

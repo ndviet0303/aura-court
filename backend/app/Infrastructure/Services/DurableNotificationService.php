@@ -28,7 +28,8 @@ class DurableNotificationService implements DurableNotificationServiceInterface
         int $userId,
         string $eventType,
         array $payload,
-        ?int $orgId = null
+        ?int $orgId = null,
+        array $channels = ['database']
     ): OutboxMessage {
         return $this->outbox->enqueue([
             'message_key' => $key,
@@ -37,7 +38,7 @@ class DurableNotificationService implements DurableNotificationServiceInterface
             'organization_id' => $orgId,
             'aggregate_type' => $payload['aggregate_type'] ?? null,
             'aggregate_id' => isset($payload['aggregate_id']) ? (int) $payload['aggregate_id'] : null,
-        ], array_merge($payload, ['user_id' => $userId]));
+        ], array_merge($payload, ['user_id' => $userId, 'channels' => $channels]));
     }
 
     public function recordAudit(
@@ -209,13 +210,13 @@ class DurableNotificationService implements DurableNotificationServiceInterface
                     'title' => $title,
                     'body' => $body,
                     'action_url' => $actionUrl,
-                    'channels' => ['database', 'mail'],
                     'delivered_channels' => [],
                     'mail_view' => 'emails.booking-notification',
                     'aggregate_type' => Booking::class,
                     'aggregate_id' => $booking->id,
                 ],
-                orgId: $orgId
+                orgId: $orgId,
+                channels: ['database', 'mail']
             );
         } catch (\Throwable $secondaryException) {
             Log::warning("Secondary booking notification delivery failed immediately for booking {$booking->code}: {$secondaryException->getMessage()}", [

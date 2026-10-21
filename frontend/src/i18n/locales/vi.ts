@@ -3907,6 +3907,35 @@ export default {
       nextPage: 'Trang sau',
       pageOf: 'Trang {page}/{last}',
     },
+    platformFees: {
+      title: 'Phí nền tảng',
+      subtitle: 'Giá gói theo cơ sở cho bốn kỳ hạn. Giờ hiển thị theo giờ Việt Nam.',
+      tabs: {
+        prices: 'Giá gói',
+      },
+      prices: {
+        termLabel: '{days} ngày',
+        loadError: 'Không tải được bảng giá gói.',
+        saveError: 'Không đặt được giá gói.',
+        saved: 'Đã đặt giá gói. Chủ sân đang hoạt động sẽ nhận thông báo.',
+        columns: {
+          term: 'Kỳ hạn',
+          current: 'Giá đang áp dụng',
+          currentSince: 'Áp dụng từ',
+          next: 'Giá đã lên lịch',
+          nextAt: 'Có hiệu lực lúc',
+        },
+        form: {
+          title: 'Đặt giá gói',
+          term: 'Kỳ hạn',
+          amount: 'Giá (VND)',
+          effectiveAt: 'Thời điểm áp dụng (giờ Việt Nam)',
+          effectiveAtHint:
+            'Để trống hoặc chọn thời điểm đã qua thì giá áp dụng ngay. Giá mới thay giá đã lên lịch của cùng kỳ hạn.',
+          submit: 'Đặt giá',
+        },
+      },
+    },
     nav: {
       overviewSection: 'TỔNG QUAN',
       dashboard: 'Tổng quan & Báo cáo',
@@ -3926,6 +3955,7 @@ export default {
       reconciliationAlerts: 'Đối soát giao dịch & Cảnh báo',
       financialExceptions: 'Ngoại lệ & Sổ cái Kiểm toán',
       paymentExceptions: 'Thanh toán bất thường',
+      platformFees: 'Phí nền tảng',
       tournamentGroup: 'Giải đấu & Sự kiện',
       tournaments: 'Giải đấu & Bracket',
       orgGroup: 'Tổ chức & Vận hành',
@@ -4127,6 +4157,7 @@ export default {
     adminReconciliationTitle: 'Đối soát Giao dịch & Cảnh báo · Aura Control',
     adminKycTitle: 'Xác minh KYC & Chủ sân · Aura Control',
     adminUsersTitle: 'Tài khoản người dùng | Quản trị',
+    adminPlatformFeesTitle: 'Phí nền tảng | Quản trị',
     adminDisputesTitle: 'Trung tâm Xử lý Tranh chấp · Aura Control',
     adminVenuePublicationTitle: 'Duyệt Xuất Bản Cơ Sở · Aura Control',
     partnerRegistrationTitle: 'Đăng Ký Đối Tác Chủ Sân · Aura Court',

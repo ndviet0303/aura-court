@@ -512,6 +512,12 @@ const router = createRouter({
           meta: { platformAdmin: true, titleKey: 'seo.adminUsersTitle', indexable: false },
         },
         {
+          path: 'platform-fees',
+          name: 'admin-platform-fees',
+          component: () => import('@/features/platform-fees/views/PlatformFeesView.vue'),
+          meta: { platformAdmin: true, titleKey: 'seo.adminPlatformFeesTitle', indexable: false },
+        },
+        {
           path: 'disputes',
           name: 'admin-disputes',
           component: () => import('@/features/admin/views/AdminDisputeResolutionView.vue'),

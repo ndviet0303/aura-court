@@ -43,34 +43,40 @@ Nhánh riêng, merge và deploy độc lập với các pha sau.
 
 Pha 2–6 làm trên nhánh `feat/module05-packages-finance` và chỉ vào main ở Pha 7 (design, Migration Plan).
 
-- [ ] 2.1 Migration tạo `package_prices`, `venue_packages`, `package_payment_requests` và `package_payment_receipts` theo D1:
+- [x] 2.1 Migration tạo `package_prices`, `venue_packages`, `package_payment_requests` và `package_payment_receipts` theo D1: (test: chưa làm)
   - Check `term_days IN (30, 90, 180, 360)`, `amount > 0`, `ends_at > starts_at` và tập giá trị của `kind`, `status`, `outcome`.
   - Unique `request_code`, `payment_code`, `provider_transaction_id`. Unique một phần `(venue_id) WHERE status = 'pending'`.
   - FK `restrict` về `venues`, `organizations` và `users`, như `2026_10_11_000002_restrict_deletes_into_financial_tables.php`.
   - Cập nhật `SchemaConformanceTest`.
-- [ ] 2.2 Enum `PackageTerm`, model, factory và repository (interface + Eloquent, binding ở `RepositoryServiceProvider`):
+- [x] 2.2 Enum `PackageTerm`, model, factory và repository (interface + Eloquent, binding ở `RepositoryServiceProvider`): (test: chưa làm)
   - Repository trả tình trạng gói của một cơ sở tại `t`: `none|active|expired|terminated` (D1).
   - Test: `VenuePackageStatusTest`.
     - Đúng `starts_at` → `active`. Đúng `ends_at` → `expired`.
     - `terminated_at` khác null → `terminated` ở mọi thời điểm.
     - Cơ sở chưa có dòng nào → `none`.
     - Kỳ 30 ngày có `ends_at = starts_at + 720 giờ`.
-- [ ] 2.3 Giá gói (D3):
+- [x] 2.3 Giá gói (D3):
   - `PlatformFeePriceController` (`index`, `store`) trong nhóm `admin`. FormRequest, DTO, action `SchedulePackagePrice`.
   - `effective_at` rỗng hoặc ≤ now → now. Các giá cùng kỳ đã lên lịch nhận `replaced_at = now`.
   - Một service đọc giá áp dụng tại `t` và giá đã lên lịch tiếp theo của từng kỳ. Task 3.1 và 3.6 dùng chung service này.
-- [ ] 2.4 `DurableNotificationService::recordOutboxNotification` nhận thêm `array $channels = ['database']` và ghi vào `payload.channels`.
+- [x] 2.4 `DurableNotificationService::recordOutboxNotification` nhận thêm `array $channels = ['database']` và ghi vào `payload.channels`. (test: chưa làm)
   - Test: thêm vào `DurableNotificationServiceTest`. Có `mail` thì dispatcher gửi cả mail; mặc định chỉ in-app.
-- [ ] 2.5 Báo giá mới (D3): sau commit, ghi outbox `package.price.{price_id}.{user_id}` cho mọi owner đang hoạt động, kênh `database` + `mail`. Nội dung có kỳ hạn, giá và thời điểm áp dụng theo giờ VN.
+- [x] 2.5 Báo giá mới (D3): sau commit, ghi outbox `package.price.{price_id}.{user_id}` cho mọi owner đang hoạt động, kênh `database` + `mail`. Nội dung có kỳ hạn, giá và thời điểm áp dụng theo giờ VN. (test: chưa làm)
   - Test: `PackagePriceScheduleTest`.
     - Scenario "Price scheduled for a later date", "Scheduled price replaced before it takes effect", "Effective time in the past", "Price set by someone other than a platform administrator".
     - Mỗi owner nhận đúng một outbox cho mỗi giá. Chạy lại dispatcher không gửi lặp.
-- [ ] 2.6 Frontend `/admin/platform-fees` cho platform admin, tab đầu "Giá gói":
+- [x] 2.6 Frontend `/admin/platform-fees` cho platform admin, tab đầu "Giá gói": (test: chưa làm)
   - Bảng bốn kỳ: số ngày, giá đang áp dụng, giá đã lên lịch tiếp theo.
   - Form đặt giá: chọn thời điểm áp dụng theo giờ VN, gửi UTC.
   - Feature mới `frontend/src/features/platform-fees/` (api, types, views). Route và menu chỉ cho platform admin.
   - i18n vi/en, Vitest đi kèm.
-- [ ] 2.7 `VenueFactory` mặc định tạo gói `active` 360 ngày, có state `withoutPackage()` (D9).
+- [x] 2.7 `VenueFactory` mặc định tạo gói `active` 360 ngày, có state `withoutPackage()` (D9).
+- Ghi chú Pha 2 (2026-10-22, chỉ implement, chưa chạy test hay migrate):
+  - Bốn bảng gói không dùng `BelongsToTenant`; giá trị lưu là hằng trên model. Service giá dùng chung cho 3.1 và 3.6 là `App\Services\Package\PackagePriceCatalog`.
+  - Ghi giá khoá theo kỳ bằng `pg_advisory_xact_lock(5003, term_days)` để hai admin đặt cùng lúc vẫn chỉ còn một giá đã lên lịch (D3).
+  - Báo giá chạy sau commit; mỗi owner bọc try/catch như `notifyBooking`, nên một lần gửi mail lỗi không làm admin nhận 500 hay bỏ sót owner sau. Dòng outbox lỗi còn `pending` để recovery gửi lại.
+  - Danh sách kỳ ở form frontend là hằng `PACKAGE_TERMS`, để dropdown vẫn hiện khi tải bảng giá lỗi.
+  - Còn hở cho Pha 4: khoảng 169 test tạo cơ sở bằng `Venue::create` (kể cả `tests/TestCase.php` và `tests/Concerns/BooksDirectOwnerCourt.php`) nên không có gói mặc định. Phải xử lý trước khi bật cổng (4.1).
 
 ## 3. Pha 3 – Yêu cầu thanh toán, kích hoạt và chấm dứt (D4, D5, D6, D7, D8)
 

@@ -15,13 +15,16 @@ interface DurableNotificationServiceInterface
 {
     /**
      * Enqueue a durable, deduplicated outbox notification intent.
+     *
+     * @param  list<string>  $channels  delivery channels the dispatcher sends: database (in-app) and/or mail
      */
     public function recordOutboxNotification(
         string $key,
         int $userId,
         string $eventType,
         array $payload,
-        ?int $orgId = null
+        ?int $orgId = null,
+        array $channels = ['database']
     ): OutboxMessage;
 
     /**

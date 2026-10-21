@@ -129,6 +129,13 @@ export const navGroups: NavGroup[] = [
         icon: 'report',
         capability: 'direct_owner_payments',
       },
+      // No capability: AdminLayout shows unlisted paths to platform admins only.
+      {
+        id: 'finance-platform-fees',
+        path: '/admin/platform-fees',
+        labelKey: 'admin.nav.platformFees',
+        icon: 'sell',
+      },
     ],
   },
   {

@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Database\Factories\VenueFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,7 +14,8 @@ use Spatie\Translatable\HasTranslations;
 #[Fillable(['organization_id', 'name', 'slug', 'address', 'city', 'district', 'ward', 'phone', 'email', 'description', 'images', 'google_maps_url', 'latitude', 'longitude', 'amenities', 'is_active', 'status', 'status_reason', 'published_at', 'approved_public_snapshot', 'current_publication_revision_id', 'current_receiving_connection_id'])]
 class Venue extends Model
 {
-    use HasTranslations;
+    /** @use HasFactory<VenueFactory> */
+    use HasFactory, HasTranslations;
 
     public array $translatable = ['name'];
 
@@ -105,6 +108,12 @@ class Venue extends Model
     public function currentReceivingConnection(): BelongsTo
     {
         return $this->belongsTo(ReceivingConnection::class, 'current_receiving_connection_id');
+    }
+
+    /** @return HasOne<VenuePackage, $this> */
+    public function currentPackage(): HasOne
+    {
+        return $this->hasOne(VenuePackage::class)->latestOfMany();
     }
 
     public function isPublished(): bool

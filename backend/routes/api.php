@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminVenuePublicationController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\PartnerReviewController;
+use App\Http\Controllers\Admin\PlatformFeePriceController;
 use App\Http\Controllers\Attendance\AttendanceController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\SocialEmailController;
@@ -312,6 +313,8 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             Route::patch('platform-plans/{id}', [PlatformPlanController::class, 'update']);
             Route::post('platform-plans/{id}/publish', [PlatformPlanController::class, 'publish']);
             Route::post('platform-plans/{id}/retire', [PlatformPlanController::class, 'retire']);
+            Route::get('platform-fees/prices', [PlatformFeePriceController::class, 'index']);
+            Route::post('platform-fees/prices', [PlatformFeePriceController::class, 'store']);
             Route::prefix('venues')->group(function () {
                 Route::get('publication-queue', [AdminVenuePublicationController::class, 'queue']);
                 Route::get('revisions/{revisionId}', [AdminVenuePublicationController::class, 'show']);

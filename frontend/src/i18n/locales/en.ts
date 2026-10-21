@@ -3913,6 +3913,35 @@ export default {
       nextPage: 'Next',
       pageOf: 'Page {page}/{last}',
     },
+    platformFees: {
+      title: 'Platform fees',
+      subtitle: 'Per-venue package prices for the four terms. Times are shown in Vietnam time.',
+      tabs: {
+        prices: 'Package prices',
+      },
+      prices: {
+        termLabel: '{days} days',
+        loadError: 'Could not load package prices.',
+        saveError: 'Could not set the package price.',
+        saved: 'Package price set. Active venue owners will be notified.',
+        columns: {
+          term: 'Term',
+          current: 'Current price',
+          currentSince: 'Effective since',
+          next: 'Next scheduled price',
+          nextAt: 'Takes effect at',
+        },
+        form: {
+          title: 'Set a package price',
+          term: 'Term',
+          amount: 'Price (VND)',
+          effectiveAt: 'Effective at (Vietnam time)',
+          effectiveAtHint:
+            'Leave empty or pick a past time to apply the price now. A new price replaces the scheduled price of the same term.',
+          submit: 'Set price',
+        },
+      },
+    },
     nav: {
       overviewSection: 'OVERVIEW',
       dashboard: 'Dashboard & Reports',
@@ -3932,6 +3961,7 @@ export default {
       reconciliationAlerts: 'Reconciliation & Alerts',
       financialExceptions: 'Financial Exceptions & Audit',
       paymentExceptions: 'Payment Exceptions',
+      platformFees: 'Platform Fees',
       tournamentGroup: 'Tournaments & Events',
       tournaments: 'Tournaments & Brackets',
       orgGroup: 'Organization & Operations',
@@ -4132,6 +4162,7 @@ export default {
     adminReconciliationTitle: 'Transaction Reconciliation & Alerts · Aura Control',
     adminKycTitle: 'KYC & Owner Verification · Aura Control',
     adminUsersTitle: 'User accounts | Admin',
+    adminPlatformFeesTitle: 'Platform fees | Admin',
     adminDisputesTitle: 'Dispute Resolution Center · Aura Control',
     adminVenuePublicationTitle: 'Venue Publication Queue · Aura Control',
     partnerRegistrationTitle: 'Partner Registration · Aura Court',
