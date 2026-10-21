@@ -3,7 +3,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useBookingStore } from '@/stores/booking'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '@/features/auth/api/authApi'
-import type { LoyaltySelection } from '@/features/booking/utils/reservation'
+import { bookingErrorMessage, type LoyaltySelection } from '@/features/booking/utils/reservation'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type { Court, AvailabilitySlot, Venue } from '../types/court'
 import { courtApi } from '../api/courtApi'
@@ -226,7 +226,14 @@ export function useCourtSchedule() {
     }
   }
 
-  async function proceedToBooking(loyaltyPayload?: LoyaltySelection, couponCode?: string | null) {
+  // expectedTotal is the amount payable shown; confirmedPrice marks a resubmission at a new price the
+  // customer confirmed after a PRICE_CHANGED.
+  async function proceedToBooking(
+    loyaltyPayload: LoyaltySelection | undefined,
+    couponCode: string | null | undefined,
+    expectedTotal: number,
+    confirmedPrice = false,
+  ) {
     if (
       loading.value ||
       !court.value ||
@@ -242,10 +249,21 @@ export function useCourtSchedule() {
     checkoutLoading.value = true
     error.value = ''
     try {
-      const reservation = await store.checkoutReservation(loyaltyPayload, couponCode)
+      const reservation = await store.checkoutReservation(
+        loyaltyPayload,
+        couponCode,
+        expectedTotal,
+        confirmedPrice,
+      )
       router.push({ name: 'reservations', params: { code: reservation.code } })
     } catch (cause) {
-      error.value = errorMessage(cause, 'Không thể khởi tạo đơn đặt sân. Vui lòng thử lại.')
+      const again = (total: number) => proceedToBooking(loyaltyPayload, couponCode, total, true)
+      if (!store.catchPriceChange(cause, again)) {
+        error.value = bookingErrorMessage(
+          cause,
+          'Không thể khởi tạo đơn đặt sân. Vui lòng thử lại.',
+        )
+      }
     } finally {
       checkoutLoading.value = false
     }

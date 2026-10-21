@@ -5,6 +5,7 @@ import { errorMessage } from '@/core/utils/errorMessage'
 import { bookingApi, type ReservationPaymentAttempt } from '../../api/bookingApi'
 import type { Reservation } from '../../types/reservation'
 import { displayCode } from '../../utils/reservation'
+import { useDeadlineCountdown } from '../../composables/useDeadlineCountdown'
 
 const props = defineProps<{
   show: boolean
@@ -23,6 +24,7 @@ const error = ref('')
 const reservationStatus = ref('held')
 const paymentAttempt = ref<ReservationPaymentAttempt | null>(null)
 let pollInterval: ReturnType<typeof setInterval> | undefined
+const countdown = useDeadlineCountdown(() => props.reservation?.hold_expires_at)
 
 function stopPolling() {
   if (pollInterval) clearInterval(pollInterval)
@@ -182,6 +184,13 @@ onUnmounted(stopPolling)
             </dl>
           </div>
 
+          <p
+            v-if="countdown && paymentAttempt.status === 'pending'"
+            class="payment-expiry"
+            data-testid="payment-countdown"
+          >
+            {{ t('reservations.payment.countdown', { time: countdown }) }}
+          </p>
           <p
             v-if="paymentAttempt.expires_at && paymentAttempt.status === 'pending'"
             class="payment-expiry"

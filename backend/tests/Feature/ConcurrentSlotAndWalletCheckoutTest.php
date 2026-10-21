@@ -56,6 +56,7 @@ class ConcurrentSlotAndWalletCheckoutTest extends TestCase
         $res1 = $this->actingAs($user)->withHeader('Idempotency-Key', 'wallet-overdraft-1')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$date1->toIso8601String()],
+            'expected_total' => 200000,
         ]);
         $res1->assertCreated();
 
@@ -63,6 +64,7 @@ class ConcurrentSlotAndWalletCheckoutTest extends TestCase
         $res2 = $this->actingAs($user)->withHeader('Idempotency-Key', 'wallet-overdraft-2')->postJson('/api/reservations/checkout', [
             'court_id' => $court2->id,
             'slots' => [$date2->toIso8601String()],
+            'expected_total' => 200000,
         ]);
         $res2->assertStatus(422);
         $res2->assertJsonPath('message', 'Số dư ví không đủ để thanh toán lịch đặt. Vui lòng nạp thêm tiền vào ví.');

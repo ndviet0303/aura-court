@@ -111,6 +111,7 @@ class VenueOperatingCalendarTest extends TestCase
         $this->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slotStart],
+            'expected_total' => 100000,
         ], ['Idempotency-Key' => 'calendar-outside-hours-checkout'])
             ->assertUnprocessable();
         $this->assertDatabaseMissing('reservations', ['court_id' => $court->id]);

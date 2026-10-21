@@ -101,7 +101,7 @@ describe('HomeView i18n & rendering', () => {
     expect(text).toContain('International Standard Sports Experience')
   })
 
-  it('checks out the selected slots and opens the reservation', async () => {
+  describe('floating checkout', () => {
     const court = { id: 7, name: 'Sân 7', slug: 'san-7' } as Court
     const slot = {
       startsAt: '2099-09-22T17:00:00+07:00',
@@ -109,25 +109,102 @@ describe('HomeView i18n & rendering', () => {
       price: 120000,
       available: true,
     }
-    vi.spyOn(bookingApi, 'getCourts').mockResolvedValue([court])
-    vi.spyOn(bookingApi, 'getAvailability').mockResolvedValue([slot])
-    const checkout = vi.spyOn(bookingApi, 'checkoutReservation').mockResolvedValue({
-      reservation: { code: 'RSV-HOME-1', status: 'confirmed' } as Reservation,
-    })
-    useAuthStore().user = { id: 1, name: 'Player', email: 'p@example.com', role: 'customer' }
 
-    const wrapper = mount(HomeView, {
-      global: { plugins: [i18n], stubs: { LoyaltyPointSelector: true } },
+    beforeEach(() => {
+      vi.restoreAllMocks()
+      mockPush.mockClear()
     })
-    await flushPromises()
-    useBookingStore().toggle(slot)
-    await flushPromises()
-    await wrapper.find('.btn-floating-proceed').trigger('click')
-    await flushPromises()
 
-    // No loyalty selection: no key, so the client generates its own Idempotency-Key.
-    expect(checkout).toHaveBeenCalledWith({ court_id: 7, slots: [slot.startsAt] }, undefined)
-    expect(mockPush).toHaveBeenCalledWith({ name: 'reservations', params: { code: 'RSV-HOME-1' } })
+    async function mountWithSelection(phone?: string) {
+      vi.spyOn(bookingApi, 'getCourts').mockResolvedValue([court])
+      vi.spyOn(bookingApi, 'getAvailability').mockResolvedValue([slot])
+      useAuthStore().user = {
+        id: 1,
+        name: 'Player',
+        email: 'p@example.com',
+        role: 'customer',
+        phone,
+      }
+      const wrapper = mount(HomeView, {
+        global: { plugins: [i18n], stubs: { LoyaltyPointSelector: true } },
+      })
+      await flushPromises()
+      useBookingStore().toggle(slot)
+      await flushPromises()
+      return wrapper
+    }
+
+    it('checks out the selected slots at the amount shown and opens the reservation', async () => {
+      const checkout = vi.spyOn(bookingApi, 'checkoutReservation').mockResolvedValue({
+        reservation: { code: 'RSV-HOME-1', status: 'confirmed' } as Reservation,
+      })
+      const wrapper = await mountWithSelection('0912345678')
+
+      expect(wrapper.get('[data-testid="booker-name"]').text()).toBe('Player')
+      expect(wrapper.get('[data-testid="booker-contact"]').text()).toContain('0912345678')
+      expect(wrapper.get('[data-testid="agreement-payable"]').text()).toContain('120.000')
+      await wrapper.find('.btn-floating-proceed').trigger('click')
+      await flushPromises()
+
+      // No loyalty selection: no key, so the client generates its own Idempotency-Key.
+      expect(checkout).toHaveBeenCalledWith(
+        { court_id: 7, slots: [slot.startsAt], expected_total: 120000 },
+        undefined,
+      )
+      expect(mockPush).toHaveBeenCalledWith({
+        name: 'reservations',
+        params: { code: 'RSV-HOME-1' },
+      })
+    })
+
+    it('blocks checkout and links to the profile while the account has no valid phone', async () => {
+      const checkout = vi.spyOn(bookingApi, 'checkoutReservation')
+      const wrapper = await mountWithSelection('12345')
+
+      expect(wrapper.find('[data-testid="update-phone-link"]').text()).toBe(
+        'Cập nhật số điện thoại',
+      )
+      expect(wrapper.get('.btn-floating-proceed').attributes('disabled')).toBeDefined()
+      await wrapper.find('.btn-floating-proceed').trigger('click')
+      expect(checkout).not.toHaveBeenCalled()
+    })
+
+    it('shows a changed price and books at it only after the customer confirms', async () => {
+      const checkout = vi
+        .spyOn(bookingApi, 'checkoutReservation')
+        .mockRejectedValueOnce({
+          status: 409,
+          code: 'PRICE_CHANGED',
+          message: 'Giá đã thay đổi.',
+          rental: 150000,
+          discount: 0,
+          total: 150000,
+        })
+        .mockResolvedValueOnce({
+          reservation: { code: 'RSV-HOME-2', status: 'held' } as Reservation,
+        })
+      const wrapper = await mountWithSelection('0912345678')
+
+      await wrapper.find('.btn-floating-proceed').trigger('click')
+      await flushPromises()
+
+      expect(wrapper.get('[data-testid="price-changed-total"]').text()).toContain('150.000')
+      expect(wrapper.get('.btn-floating-proceed').attributes('disabled')).toBeDefined()
+      expect(mockPush).not.toHaveBeenCalled()
+
+      await wrapper.get('[data-testid="confirm-new-price"]').trigger('click')
+      await flushPromises()
+
+      expect(checkout).toHaveBeenLastCalledWith(
+        { court_id: 7, slots: [slot.startsAt], expected_total: 150000 },
+        undefined,
+      )
+      expect(wrapper.find('[data-testid="price-changed"]').exists()).toBe(false)
+      expect(mockPush).toHaveBeenCalledWith({
+        name: 'reservations',
+        params: { code: 'RSV-HOME-2' },
+      })
+    })
   })
 
   describe('area filter and near me', () => {

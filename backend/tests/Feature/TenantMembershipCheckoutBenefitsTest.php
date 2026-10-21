@@ -128,7 +128,7 @@ class TenantMembershipCheckoutBenefitsTest extends TestCase
             ->assertJsonPath('quote.benefit_snapshot.membership_discount_amount', 10000);
 
         $this->actingAs($tenant['customer'])->withHeaders($headers + ['Idempotency-Key' => 'member-v2-hold'])
-            ->postJson('/api/reservations', ['quote_token' => $quote->json('quote.quote_token')])
+            ->postJson('/api/reservations', ['quote_token' => $quote->json('quote.quote_token'), 'expected_total' => $quote->json('quote.total_amount')])
             ->assertCreated()
             ->assertJsonPath('reservation.total_amount', 90000)
             ->assertJsonPath('reservation.metadata.benefit_snapshot.membership_discount_amount', 10000);

@@ -5,6 +5,7 @@ import SelectDropdown from '@/shared/components/forms/SelectDropdown.vue'
 import { resolveLocalizedText, formatSlotRange, formatCurrency } from '@/i18n'
 import {
   RESERVATION_STATUSES,
+  bookerContact,
   reservationCode,
   reservationStatus,
   type AdminReservation,
@@ -122,8 +123,8 @@ const statusOptions = computed(() => [
           <div v-for="b in bookings" :key="b.id" class="booking-row">
             <strong class="font-mono text-pink">{{ reservationCode(b) }}</strong>
             <div class="user-col">
-              <strong>{{ b.user?.name || t('admin.dashboard.walkInCustomer') }}</strong>
-              <span class="email-sub">{{ b.user?.email }}</span>
+              <strong>{{ b.booker?.name || '—' }}</strong>
+              <span class="email-sub">{{ bookerContact(b) }}</span>
             </div>
             <div class="court-col">
               <strong>{{ resolveLocalizedText(b.court?.name) }}</strong>

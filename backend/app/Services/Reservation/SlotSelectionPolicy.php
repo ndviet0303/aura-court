@@ -16,13 +16,14 @@ use Illuminate\Validation\ValidationException;
  *
  * This is the single source of truth for "Active inventory exclusivity"
  * (reservations-and-pricing spec): interval duration, venue calendar,
- * book-ahead horizon, continuity policy and true-interval overlap are checked
+ * book-ahead horizon, continuity and true-interval overlap are checked
  * atomically at allocation, so every booking path rejects the same selections
  * consistently.
  *
- * Overlap/calendar/past always apply. Horizon/duration/continuity apply only
+ * Overlap/calendar/past/continuity always apply. Horizon and duration apply only
  * when the venue's live booking policy defines them; venues without a policy
- * are uncapped for those three while still excluded from overlaps.
+ * are uncapped for those two while still excluded from overlaps. A hold past
+ * its payment deadline does not count as an overlap.
  *
  * Slot-start alignment is intentionally NOT enforced here: each caller keeps its
  * own per-version alignment rule.
@@ -102,8 +103,8 @@ class SlotSelectionPolicy
             }
         }
 
-        // 6. Policy-driven continuity (contiguous, no gaps).
-        if ($booking !== null && ! empty($booking['require_continuity']) && $slots->count() > 1) {
+        // 6. Continuity (contiguous, no gaps); BR-73 leaves venues no setting to turn it off.
+        if ($slots->count() > 1) {
             for ($i = 1; $i < $slots->count(); $i++) {
                 if (! $slots[$i]['start']->equalTo($slots[$i - 1]['end'])) {
                     throw ValidationException::withMessages(['slots' => 'Các giờ đặt phải liền nhau trên cùng sân.']);
@@ -121,7 +122,7 @@ class SlotSelectionPolicy
                 ->where('starts_at', '<', $endUtc)
                 ->where('ends_at', '>', $startUtc)
                 ->whereIn('status', ['held', 'confirmed'])
-                ->whereHas('reservation', fn ($reservation) => $reservation->whereIn('status', ['held', 'confirmed']))
+                ->whereHas('reservation', fn ($reservation) => $reservation->blocksInventory())
                 ->exists();
             if ($reservationConflict) {
                 abort(409, 'The selected court-time is no longer available.');

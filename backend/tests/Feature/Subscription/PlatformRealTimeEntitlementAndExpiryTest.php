@@ -97,6 +97,7 @@ class PlatformRealTimeEntitlementAndExpiryTest extends TestCase
         $bookingRes = $this->withHeader('Idempotency-Key', 'expired-subscription-booking')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$targetSlot->toIso8601String()],
+            'expected_total' => 100000,
         ]);
         // Must be rejected in real time!
         $bookingRes->assertStatus(422)

@@ -53,11 +53,11 @@ class ReservationSlotOverlapExclusionTest extends TestCase
         $this->mock(SlotSelectionPolicy::class)->shouldReceive('assertAllowed')->twice();
 
         $lateQuote = $this->quote($fixture, $fixture['other'], $this->at(3, 11), '13:00', 300000, 'late');
-        $this->checkout($fixture, $fixture['payer'], $this->quote($fixture, $fixture['payer'], $this->at(3, 10), '12:00', 200000, 'early')['id'], 'early')
+        $this->checkout($fixture, $fixture['payer'], $this->quote($fixture, $fixture['payer'], $this->at(3, 10), '12:00', 200000, 'early'), 'early')
             ->assertCreated();
         $attemptsBefore = OwnerPaymentAttempt::count();
 
-        $this->checkout($fixture, $fixture['other'], $lateQuote['id'], 'late')
+        $this->checkout($fixture, $fixture['other'], $lateQuote, 'late')
             ->assertStatus(409)
             ->assertJsonPath('message', 'The selected court-time is no longer available.');
 
@@ -71,9 +71,9 @@ class ReservationSlotOverlapExclusionTest extends TestCase
         $fixture = $this->tenant(60);
 
         $first = $this->quote($fixture, $fixture['payer'], $this->at(3, 10), '11:00', 100000, 'first');
-        $this->checkout($fixture, $fixture['payer'], $first['id'], 'first')->assertCreated();
+        $this->checkout($fixture, $fixture['payer'], $first, 'first')->assertCreated();
         $second = $this->quote($fixture, $fixture['other'], $this->at(3, 11), '12:00', 100000, 'second');
-        $this->checkout($fixture, $fixture['other'], $second['id'], 'second')->assertCreated();
+        $this->checkout($fixture, $fixture['other'], $second, 'second')->assertCreated();
 
         $this->assertSame(2, ReservationSlot::where('court_id', $fixture['court']->id)->whereIn('status', ['held', 'confirmed'])->count());
     }
@@ -82,13 +82,13 @@ class ReservationSlotOverlapExclusionTest extends TestCase
     {
         $fixture = $this->tenant(120);
         $expired = $this->quote($fixture, $fixture['payer'], $this->at(3, 10), '12:00', 200000, 'expiring');
-        $this->checkout($fixture, $fixture['payer'], $expired['id'], 'expiring')->assertCreated();
+        $this->checkout($fixture, $fixture['payer'], $expired, 'expiring')->assertCreated();
         $this->travel(31)->minutes();
         app(ExpirePendingBookings::class)->execute();
         $this->assertSame('expired', ReservationSlot::where('court_id', $fixture['court']->id)->value('status'));
 
         $next = $this->quote($fixture, $fixture['other'], $this->at(3, 11), '13:00', 300000, 'next');
-        $this->checkout($fixture, $fixture['other'], $next['id'], 'next')->assertCreated();
+        $this->checkout($fixture, $fixture['other'], $next, 'next')->assertCreated();
 
         // A cancelled slot does not block a direct write either.
         $slot = Reservation::where('price_quote_id', $next['id'])->firstOrFail()->slots()->firstOrFail();
@@ -152,16 +152,16 @@ class ReservationSlotOverlapExclusionTest extends TestCase
             ->assertCreated()->json('quote');
     }
 
-    private function checkout(array $fixture, User $user, int $quoteId, string $tag)
+    private function checkout(array $fixture, User $user, array $quote, string $tag)
     {
         return $this->actingAs($user)->withHeaders($this->headers($fixture, 'c-'.$tag))
-            ->postJson('/api/reservations/checkout', ['quote_id' => $quoteId]);
+            ->postJson('/api/reservations/checkout', ['quote_id' => $quote['id'], 'expected_total' => $quote['total_amount']]);
     }
 
     private function bookAndConfirm(array $fixture, CarbonInterface $start, string $endTime, int $price, string $tag): Reservation
     {
         $quote = $this->quote($fixture, $fixture['payer'], $start, $endTime, $price, $tag);
-        $code = $this->checkout($fixture, $fixture['payer'], $quote['id'], $tag)->assertCreated()->json('reservation.code');
+        $code = $this->checkout($fixture, $fixture['payer'], $quote, $tag)->assertCreated()->json('reservation.code');
         $attempt = OwnerPaymentAttempt::where('purpose', 'booking')->where('purpose_id', $code)->firstOrFail();
         $this->sendOwnerPayment($fixture, $attempt->reference, $price, 'confirm-'.$tag);
 

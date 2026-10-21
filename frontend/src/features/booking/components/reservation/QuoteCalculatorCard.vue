@@ -2,12 +2,15 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { DatePicker, SelectDropdown, type DropdownOption } from '@/shared/components'
+import { useAuthStore } from '@/features/auth/stores/authStore'
 import LoyaltyPointSelector from '../LoyaltyPointSelector.vue'
+import BookingAgreement from '../BookingAgreement.vue'
 
 const { t } = useI18n()
+const auth = useAuthStore()
 import type { Court } from '@/features/court/types/court'
-import type { PriceQuote } from '../../types/reservation'
-import { quoteDiscounts, type LoyaltySelection } from '../../utils/reservation'
+import type { PriceChange, PriceQuote } from '../../types/reservation'
+import { amountPayable, validBookerPhone, type LoyaltySelection } from '../../utils/reservation'
 
 const props = defineProps<{
   courts: Court[]
@@ -18,9 +21,7 @@ const props = defineProps<{
   formattedRemaining: string
   calculating: boolean
   holding: boolean
-  money: (value: number) => string
-  formatDate: (value: string) => string
-  formatTimeSlot: (startsAt: string, endsAt?: string) => string
+  priceChange?: PriceChange | null
 }>()
 
 const emit = defineEmits<{
@@ -31,6 +32,7 @@ const emit = defineEmits<{
   (e: 'hold'): void
   (e: 'checkout', loyaltyPayload?: LoyaltySelection): void
   (e: 'loyaltyChange', payload: LoyaltySelection): void
+  (e: 'confirmPrice'): void
 }>()
 
 const currentLoyaltyPayload = ref<LoyaltySelection>(null)
@@ -78,6 +80,10 @@ const courtOptions = computed<DropdownOption[]>(() =>
 )
 
 const selectedCourtObj = computed(() => props.courts.find((c) => c.id === props.selectedCourtId))
+// No submission without a booker phone or while a changed price awaits confirmation.
+const blocked = computed(
+  () => props.holding || !validBookerPhone(auth.user?.phone) || !!props.priceChange,
+)
 
 function setDatePreset(date: string) {
   emit('update:selectedDate', date)
@@ -230,23 +236,19 @@ function setDatePreset(date: string) {
               >#{{ activeQuote.quote_token.slice(0, 16) }}...</span
             >
           </div>
-          <div class="quote-divider"></div>
-          <div
-            v-for="line in quoteDiscounts(activeQuote.benefit_snapshot)"
-            :key="line.label"
-            class="quote-row discount"
-          >
-            <span class="row-label">{{ t(line.label) }}</span>
-            <span class="row-value font-mono">-{{ money(line.amount) }}</span>
-          </div>
-          <div class="quote-row total">
-            <span class="total-label">{{ t('reservations.calculator.totalCost') }}</span>
-            <span class="total-value font-mono">{{ money(activeQuote.total_amount) }}</span>
-          </div>
         </div>
 
         <!-- Customer Loyalty Point Selector -->
         <LoyaltyPointSelector :quote-token="activeQuote.quote_token" @change="onLoyaltyChange" />
+
+        <BookingAgreement
+          :rental="activeQuote.subtotal ?? activeQuote.total_amount"
+          :coupon-code="activeQuote.benefit_snapshot?.coupon_code"
+          :payable="amountPayable(activeQuote.total_amount, currentLoyaltyPayload)"
+          :price-change="priceChange"
+          :busy="holding"
+          @confirm-price="emit('confirmPrice')"
+        />
 
         <div class="quote-actions-row">
           <p class="quote-note">
@@ -255,7 +257,7 @@ function setDatePreset(date: string) {
           <div class="quote-action-buttons">
             <button
               class="btn btn-checkout-slot"
-              :disabled="holding"
+              :disabled="blocked"
               @click="emit('checkout', currentLoyaltyPayload)"
             >
               <span class="material-symbols-outlined" :class="{ spinning: holding }">
@@ -267,7 +269,7 @@ function setDatePreset(date: string) {
                   : t('reservations.calculator.payAndBookNow')
               }}</span>
             </button>
-            <button class="btn btn-hold-slot" :disabled="holding" @click="emit('hold')">
+            <button class="btn btn-hold-slot" :disabled="blocked" @click="emit('hold')">
               <span class="material-symbols-outlined" :class="{ spinning: holding }">
                 {{ holding ? 'hourglass_top' : 'bookmark_add' }}
               </span>
@@ -563,27 +565,6 @@ function setDatePreset(date: string) {
 .token-text {
   font-size: 11.5px;
   color: var(--muted);
-}
-
-.quote-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 4px 0;
-}
-
-.quote-row.total {
-  font-size: 16px;
-}
-
-.total-label {
-  font-weight: 800;
-  color: var(--ink);
-}
-
-.total-value {
-  font-size: 19px;
-  font-weight: 900;
-  color: var(--primary, #6b2d3f);
 }
 
 .quote-actions-row {

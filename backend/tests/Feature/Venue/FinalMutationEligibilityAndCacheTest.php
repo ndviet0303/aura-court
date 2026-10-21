@@ -136,6 +136,7 @@ class FinalMutationEligibilityAndCacheTest extends TestCase
         $bookRes = $this->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slotTime],
+            'expected_total' => 100000,
         ]);
 
         $this->assertNotEquals(201, $bookRes->status());

@@ -62,7 +62,7 @@
   ["inline-validation", "Http/Controllers/Wallet/WalletDepositController.php", 1],
   ["model-query", "Domain/Admin/Actions/CreateVenue.php", 4],
   ["model-query", "Domain/Admin/Actions/ManageCourtBlocks.php", 2],
-  ["model-query", "Domain/Booking/Actions/ExpirePendingBookings.php", 7],
+  ["model-query", "Domain/Booking/Actions/ExpirePendingBookings.php", 1],
   ["model-query", "Domain/Finance/Actions/AutoResolveReconciliation.php", 5],
   ["model-query", "Domain/Finance/Actions/ResolveFinanceException.php", 3],
   ["model-query", "Domain/Membership/Actions/GetAdminMembershipStats.php", 3],

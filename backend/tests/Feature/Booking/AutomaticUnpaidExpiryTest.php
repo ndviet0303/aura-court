@@ -85,6 +85,7 @@ class AutomaticUnpaidExpiryTest extends TestCase
             'court_id' => $court->id,
             'slots' => [$date1->toIso8601String()],
             'coupon_code' => 'COUPONEXP',
+            'expected_total' => 80000,
         ])->assertCreated()->assertJsonPath('reservation.total_amount', 80000)->json('reservation.code');
         $held = Reservation::where('code', $heldCode)->firstOrFail();
         $this->assertSame(1, (int) $coupon->fresh()->usage_count);
@@ -93,6 +94,7 @@ class AutomaticUnpaidExpiryTest extends TestCase
         $paidCode = $this->actingAs($paidUser)->withHeader('Idempotency-Key', 'paid-checkout')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$date2->toIso8601String()],
+            'expected_total' => 100000,
         ])->assertCreated()->assertJsonPath('reservation.status', 'confirmed')->json('reservation.code');
         $paid = Reservation::where('code', $paidCode)->firstOrFail();
 

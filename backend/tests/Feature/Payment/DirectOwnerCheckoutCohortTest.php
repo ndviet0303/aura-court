@@ -44,6 +44,7 @@ class DirectOwnerCheckoutCohortTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $fixture['court']->id,
                 'slots' => [$start->toIso8601String()],
+                'expected_total' => 120000,
             ]);
 
         $response->assertCreated()
@@ -53,7 +54,7 @@ class DirectOwnerCheckoutCohortTest extends TestCase
         $reservation = Reservation::where('code', $response->json('reservation.code'))->firstOrFail();
 
         $this->assertSame(1, data_get($reservation->metadata, 'booking_policy_snapshot.version'));
-        $this->assertTrue($reservation->hold_expires_at->between(now()->addMinutes(29), now()->addMinutes(31)));
+        $this->assertTrue($reservation->hold_expires_at->between(now()->addMinutes(9), now()->addMinutes(11)));
         $this->assertDatabaseHas('reservation_slots', ['reservation_id' => $reservation->id, 'status' => 'held']);
         $this->assertDatabaseHas('reservation_entitlements', ['reservation_id' => $reservation->id, 'status' => 'held']);
         $this->assertDatabaseCount('wallet_accounts', 0);
@@ -86,7 +87,7 @@ class DirectOwnerCheckoutCohortTest extends TestCase
         $this->assertDatabaseCount('wallet_transactions', 0);
     }
 
-    public function test_v2_direct_checkout_creates_receiver_bound_hold_with_policy_ttl_without_wallet_debit(): void
+    public function test_v2_direct_checkout_creates_receiver_bound_hold_with_ten_minute_deadline_without_wallet_debit(): void
     {
         $fixture = $this->tenant();
         $start = now()->addDays(4)->setTime(14, 0, 0);
@@ -109,14 +110,14 @@ class DirectOwnerCheckoutCohortTest extends TestCase
         $response = $this->actingAs($fixture['payer'])->withHeaders([
             'X-Organization-ID' => (string) $fixture['organization']->id,
             'Idempotency-Key' => 'direct-v2-checkout-1',
-        ])->postJson('/api/reservations/checkout', ['quote_id' => $quote['id']]);
+        ])->postJson('/api/reservations/checkout', ['quote_id' => $quote['id'], 'expected_total' => $quote['total_amount']]);
 
         $response->assertCreated()
             ->assertJsonPath('reservation.status', 'held')
             ->assertJsonPath('reservation.payment_model', 'direct_owner_v1')
             ->assertJsonPath('reservation.total_amount', 200000);
         $reservation = Reservation::where('code', $response->json('reservation.code'))->firstOrFail();
-        $this->assertTrue($reservation->hold_expires_at->between(now()->addMinutes(29), now()->addMinutes(31)));
+        $this->assertTrue($reservation->hold_expires_at->between(now()->addMinutes(9), now()->addMinutes(11)));
         $this->assertSame(1, data_get($reservation->metadata, 'booking_policy_snapshot.version'));
         $attempt = OwnerPaymentAttempt::where('purpose_id', $reservation->code)->firstOrFail();
         $this->assertSame($fixture['connection']->id, (int) $attempt->receiving_connection_id);
@@ -177,6 +178,7 @@ class DirectOwnerCheckoutCohortTest extends TestCase
             'Idempotency-Key' => 'direct-v2-zero-checkout',
         ])->postJson('/api/reservations/checkout', [
             'quote_id' => $quote['id'],
+            'expected_total' => 0,
             'loyalty_points' => 100,
             'loyalty_policy_version' => 1,
         ]);
@@ -214,6 +216,7 @@ class DirectOwnerCheckoutCohortTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $fixture['court']->id,
                 'slots' => [$slotStart->toIso8601String()],
+                'expected_total' => 120000,
             ])->assertCreated()->json('reservation');
         $slotAttempt = OwnerPaymentAttempt::where('purpose_id', $slotReservation['code'])->firstOrFail();
 
@@ -234,7 +237,7 @@ class DirectOwnerCheckoutCohortTest extends TestCase
         $quoteReservation = $this->actingAs($fixture['payer'])->withHeaders([
             'X-Organization-ID' => (string) $fixture['organization']->id,
             'Idempotency-Key' => 'direct-expiry-quote-checkout',
-        ])->postJson('/api/reservations/checkout', ['quote_id' => $quote['id']])
+        ])->postJson('/api/reservations/checkout', ['quote_id' => $quote['id'], 'expected_total' => $quote['total_amount']])
             ->assertCreated()->json('reservation');
         $quoteAttempt = OwnerPaymentAttempt::where('purpose_id', $quoteReservation['code'])->firstOrFail();
 

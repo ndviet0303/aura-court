@@ -83,6 +83,7 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
         $bookRes = $this->withHeader('Idempotency-Key', 'policy-snapshot-checkout')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slotTime],
+            'expected_total' => 100000,
         ]);
         $bookRes->assertStatus(201);
 
@@ -183,6 +184,7 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
         $bookRes = $this->withHeader('Idempotency-Key', 'suspension-checkout-1')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slotTime],
+            'expected_total' => 100000,
         ]);
         $bookRes->assertStatus(201);
         $booking = Reservation::findOrFail($bookRes->json('reservation.id'));
@@ -194,6 +196,7 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
         $this->withHeader('Idempotency-Key', 'suspension-checkout-2')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [now()->addDays(2)->setTime(11, 0, 0)->toIso8601String()],
+            'expected_total' => 100000,
         ])->assertNotFound()->assertJsonPath('message', 'Sân không tồn tại hoặc đã ngừng hoạt động.');
         $this->assertSame(1, Reservation::count());
 

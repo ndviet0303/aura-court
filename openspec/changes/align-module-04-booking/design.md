@@ -60,14 +60,14 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
 - Chọn: tách phần nhả trong `ExpirePendingBookings` thành `releaseHeld(Reservation $locked, string $status, string $reason)`. Hàm làm các việc sau:
   - đổi trạng thái slot và entitlement;
   - nhả lượt voucher (service `release` của module 3, trước khi có thì dùng đường hiện tại);
-  - hoàn điểm;
+  - hoàn điểm nếu đơn có giữ điểm. Checkout thường không còn trừ điểm (module 3, Q2 = A), nhưng đơn tạo trước đó vẫn phải được hoàn;
   - cho attempt đang chờ hết hạn;
   - ghi `metadata.release_reason`.
 - Hàm không làm gì khi đơn không còn `held`. Bốn chỗ dùng: job hết hạn, D1, D7, D11.
 - Phương án khác:
   - Dùng `ReservationService::release`. Loại: hàm này không hoàn điểm và không cho attempt hết hạn.
   - Mỗi trường hợp tự nhả. Loại: các bản sẽ lệch nhau theo thời gian.
-- Lý do: BR-84 đòi giải phóng chỗ và voucher đúng một lần. Spec ghi rõ bốn trường hợp cho cùng một trạng thái sau khi nhả.
+- Lý do: BR-84 đòi giải phóng chỗ và voucher đúng một lần. Spec ghi rõ bốn trường hợp cho cùng một trạng thái sau khi nhả. Spec không nhắc tới điểm vì checkout thường không còn giữ điểm.
 
 ### D3. Hạn thanh toán
 - Chọn: helper tính `hold_expires_at = min(now + 10 phút, starts_at, voucher_ends_at)` trước khi chèn.
@@ -195,6 +195,40 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
   - Trước khi archive, dựng lại các khối này từ text đang có ở spec chính, chỉ giữ phần sửa của change này (task 6.5).
 - REMOVED "One-hour booking slots" chỉ archive được sau cutover, vì requirement đó do cutover thêm.
 - Module 3 viết lại "Immutable price quotes" thì phải giữ câu về đơn chờ thanh toán (task 1.2).
+
+### Ghi chú khi apply Pha 2
+- **Tính lại giá lúc gửi.**
+  - Chọn: chỉ tính lại khi request có `expected_total`. Request HTTP luôn phải có. `PriceQuoteService::reprice` ghi lại tiền và voucher vào báo giá trong transaction, sau khi khoá. Checkout so với số phải trả cuối cùng, tức số khách thấy.
+  - Phương án khác: luôn tính lại, kể cả đặt định kỳ. Loại: đặt định kỳ tạo báo giá ngay trong cùng transaction nên không có số nào để so.
+- **SĐT và người đặt áp cho mọi đường tạo đơn.**
+  - Gồm cả đặt hộ ở quầy (kiểm SĐT của khách được đặt hộ) và đặt định kỳ.
+  - Phương án khác: chỉ kiểm khi khách tự đặt. Loại: BR-74 cần người đặt trên mọi đơn. Màn chủ sân chỉ đọc một nguồn là `metadata.booker`.
+- **Hạn thanh toán.**
+  - Đặt định kỳ vẫn dùng `hold_expires_at_override` (Non-Goal).
+  - Đơn ví cũ (`legacy_wallet_v1`) giữ hạn của báo giá.
+  - `initiate` cho attempt hết hạn đúng lúc hết hạn đơn, nên mở lại màn thanh toán không gia hạn.
+- **Nhả hold quá hạn (D7).**
+  - Thứ tự khoá: sân → cơ sở → attempt của đơn quá hạn → reservation. Webhook khoá attempt → reservation. `initiate` khoá cơ sở → kết nối → attempt → reservation. Không có vòng khoá.
+  - Sau commit, khách của đơn bị nhả nhận thông báo hết hạn. Không báo waitlist, vì chỗ đó vừa được đặt ngay.
+- **Truy vấn chồng lấn.**
+  - Scope `Reservation::blocksInventory()` dùng chung cho `SlotSelectionPolicy` và kiểm chồng lấn của báo giá.
+  - `AvailabilityController` để module 3 viết lại (đã báo module 3).
+- **Người đặt trên JSON.** Accessor `booker` đọc `metadata.booker` và được append vào JSON của reservation. Danh sách đơn của chủ sân và tra mã ở quầy dùng nó mà không cần thêm query.
+- **Điểm (module 3, Q2 = A).**
+  - Pha 2 không gỡ phần điểm khỏi checkout; module 3 làm việc đó.
+  - `releaseHeld` vẫn hoàn điểm cho đơn có giữ điểm.
+- **Bước nhả nằm ở `app/Services/Reservation/HeldReservationRelease`.**
+  - Luật kiến trúc không cho model query trong `Domain/*/Actions`. Đây là bước dùng chung, không phải một use case.
+  - Phương án khác: để trong Actions và nâng allowlist. Loại vì allowlist chỉ được hạ.
+- **Múi giờ của hạn thanh toán.** Cột `hold_expires_at` dùng cast `datetime`, lưu nguyên giờ đồng hồ, còn giờ bắt đầu đọc từ `slot_snapshot` là UTC. Vì vậy hạn được đổi về múi giờ của app trước khi lưu. `PaymentDeadlineTest` bắt được lỗi lệch 7 giờ này.
+- **Màn tạo đơn ở frontend.**
+  - `BookingView.vue` chỉ hiện lịch sử, không tạo đơn.
+  - Khối người đặt và số tiền (`BookingAgreement`) được đặt ở cả ba chỗ tạo đơn: `QuoteCalculatorCard`, `ScheduleBookingSummary` và dock ở trang chủ.
+  - Dock ở trang chủ được tách thành `HomeBookingDock` vì `HomeView` đã chạm giới hạn số dòng.
+  - Khi khách xác nhận giá mới sau `PRICE_CHANGED`, form gửi lại với Idempotency-Key mới, vì body đã khác.
+- **Tra mã ở quầy.**
+  - Frontend chưa có màn nào gọi `GET /attendance/{code}`. API đã trả `reservation.booker`; `BookerSnapshotTest` kiểm tra điều này.
+  - POS đọc tên và SĐT từ `booker`. Đơn không có `booker` hiện "Khách vãng lai".
 
 ## Risks / Trade-offs
 

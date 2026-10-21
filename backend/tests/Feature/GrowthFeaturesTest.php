@@ -109,7 +109,7 @@ class GrowthFeaturesTest extends TestCase
 
         // An unpaid hold occupies the slot
         $this->actingAs($owner)->withHeader('Idempotency-Key', 'waitlist-hold')
-            ->postJson('/api/reservations', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]])
+            ->postJson('/api/reservations', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()], 'expected_total' => 100000])
             ->assertCreated();
 
         $this->actingAs($waiting)->postJson('/api/waitlist', ['court_id' => $court->id, 'starts_at' => $date->toIso8601String()])->assertCreated();

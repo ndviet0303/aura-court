@@ -554,6 +554,7 @@ class AdditiveMigrationAndRollbackRehearsalTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
                 'slots' => [$tomorrow->toIso8601String()],
+                'expected_total' => 150000,
             ]);
         $blockedBookingResponse->assertStatus(404)
             ->assertJsonPath('message', 'Sân không tồn tại hoặc đã ngừng hoạt động.');

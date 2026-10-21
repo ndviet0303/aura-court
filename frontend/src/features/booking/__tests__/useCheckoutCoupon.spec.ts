@@ -17,6 +17,7 @@ const second = slot('2026-10-14T12:00:00Z')
 const couponQuote = {
   id: 7,
   quote_token: 'qt-coupon',
+  subtotal: 200000,
   total_amount: 180000,
   benefit_snapshot: { coupon_id: 5, coupon_code: 'SUMMER10', coupon_discount_amount: 20000 },
   expires_at: '2026-10-14T10:15:00Z',
@@ -129,7 +130,7 @@ describe('useCheckoutCoupon', () => {
     expect(coupon.loading.value).toBe(false)
   })
 
-  it('sends the applied code with the checkout', async () => {
+  it('sends the applied code and the amount payable shown with the checkout', async () => {
     vi.mocked(bookingApi.getPriceQuote).mockResolvedValue({ quote: couponQuote })
     vi.mocked(bookingApi.checkoutReservation).mockResolvedValue({
       reservation: { code: 'RSV-1' } as Reservation,
@@ -137,10 +138,18 @@ describe('useCheckoutCoupon', () => {
     const { store, coupon } = await setup()
 
     await coupon.apply()
-    await store.checkoutReservation(null, coupon.appliedCode.value)
+    // The rental is the price before the voucher; the total is what the customer pays.
+    expect(coupon.rental.value).toBe(200000)
+    expect(coupon.total.value).toBe(180000)
+    await store.checkoutReservation(null, coupon.appliedCode.value, coupon.total.value)
 
     expect(bookingApi.checkoutReservation).toHaveBeenCalledWith(
-      { court_id: 3, slots: [first.startsAt, second.startsAt], coupon_code: 'SUMMER10' },
+      {
+        court_id: 3,
+        slots: [first.startsAt, second.startsAt],
+        coupon_code: 'SUMMER10',
+        expected_total: 180000,
+      },
       undefined,
     )
   })

@@ -124,6 +124,7 @@ class ReservationController extends Controller
             'slots.*' => 'required',
             'customer_id' => 'nullable|integer',
             'coupon_code' => 'nullable|string|max:40',
+            'expected_total' => 'required|integer|min:0',
         ]);
 
         return $this->idempotency->run($request, function () use ($request, $organization, $data) {
@@ -171,6 +172,7 @@ class ReservationController extends Controller
             'slots.*' => 'required',
             'customer_id' => 'nullable|integer',
             'coupon_code' => 'nullable|string|max:40',
+            'expected_total' => 'required|integer|min:0',
             'loyalty_points' => 'nullable|integer|min:1',
             'loyalty_policy_version' => 'nullable|integer',
         ]);

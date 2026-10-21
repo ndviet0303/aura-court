@@ -124,6 +124,7 @@ class SuspendedPartnerObligationsAndAuthorizationTest extends TestCase
         $newBookingRes = $this->withHeader('Idempotency-Key', 'suspended-new-booking')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$targetSlot->toIso8601String()],
+            'expected_total' => 100000,
         ]);
         $newBookingRes->assertStatus(422)
             ->assertJsonValidationErrors(['partner']);

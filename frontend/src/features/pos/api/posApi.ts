@@ -179,10 +179,6 @@ export const posApi = {
         if (typeof courtName === 'object' && courtName !== null) {
           courtName = courtName.vi || courtName.en || Object.values(courtName)[0]
         }
-        let customerName = r.user?.name || r.customer_name
-        if (typeof customerName === 'object' && customerName !== null) {
-          customerName = customerName.vi || customerName.en || Object.values(customerName)[0]
-        }
         const timeSlot = r.slots?.[0]
           ? venueClockRange(r.slots[0].starts_at, r.slots[r.slots.length - 1]?.ends_at)
           : r.time_slot || '18:00 - 20:00'
@@ -191,8 +187,9 @@ export const posApi = {
           id: r.id,
           court_name: (courtName as string) || `Sân #${r.court_id || 1}`,
           court_number: r.court?.id || r.court_id || 1,
-          customer_name: (customerName as string) || 'Khách vãng lai',
-          phone: r.user?.phone || r.phone || '',
+          // The contact recorded when the booking was made, never the account's current profile.
+          customer_name: r.booker?.name || 'Khách vãng lai',
+          phone: r.booker?.phone || '',
           status: r.status === 'confirmed' ? 'playing' : 'waiting',
           time_slot: timeSlot,
           deposit_paid: r.deposit_paid ?? r.total_amount ?? 0,

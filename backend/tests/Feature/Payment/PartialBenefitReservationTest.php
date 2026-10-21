@@ -42,6 +42,7 @@ class PartialBenefitReservationTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $fixture['court']->id,
                 'slots' => [$start->toIso8601String()],
+                'expected_total' => 80000,
                 'coupon_code' => 'SAVE20K',
                 'loyalty_points' => 10,
                 'loyalty_policy_version' => 1,
@@ -87,6 +88,7 @@ class PartialBenefitReservationTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $fixture['court']->id,
                 'slots' => [$start->toIso8601String()],
+                'expected_total' => 80000,
                 'coupon_code' => 'SAVE20K',
                 'loyalty_points' => 10,
                 'loyalty_policy_version' => 1,
@@ -126,6 +128,7 @@ class PartialBenefitReservationTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $fixture['court']->id,
                 'slots' => [$first->toIso8601String()],
+                'expected_total' => 100000,
                 'loyalty_points' => 10,
                 'loyalty_policy_version' => 1,
             ])->assertCreated();
@@ -138,6 +141,7 @@ class PartialBenefitReservationTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $fixture['court']->id,
                 'slots' => [$second->toIso8601String()],
+                'expected_total' => 100000,
                 'loyalty_points' => 10,
                 'loyalty_policy_version' => 1,
             ])->assertStatus(422)->assertJsonPath('message', 'Số dư điểm không đủ để thực hiện quy đổi.');
@@ -156,6 +160,7 @@ class PartialBenefitReservationTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $fixture['court']->id,
                 'slots' => [$start->toIso8601String()],
+                'expected_total' => 100000,
                 'loyalty_points' => 10,
                 'loyalty_policy_version' => 99,
             ])->assertStatus(422)->assertJsonPath('message', 'Chính sách đổi điểm đã thay đổi. Vui lòng tải lại xem trước.');
@@ -175,6 +180,7 @@ class PartialBenefitReservationTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $fixture['court']->id,
                 'slots' => [$start->toIso8601String()],
+                'expected_total' => 80000,
                 'coupon_code' => 'SAVE20K',
                 'loyalty_points' => 10,
                 'loyalty_policy_version' => 1,

@@ -51,7 +51,7 @@ class PricedCourtVisibilityTest extends TestCase
         $this->getJson("/api/availability?court_id={$unpriced->id}&date=".now()->addDay()->toDateString())->assertNotFound();
         $this->actingAs(User::factory()->create())
             ->withHeader('Idempotency-Key', uniqid('unpriced-'))
-            ->postJson('/api/reservations', ['court_id' => $unpriced->id, 'slots' => [now()->addDay()->setTime(10, 0)->toIso8601String()]])
+            ->postJson('/api/reservations', ['court_id' => $unpriced->id, 'slots' => [now()->addDay()->setTime(10, 0)->toIso8601String()], 'expected_total' => 100000])
             ->assertNotFound();
         $this->assertDatabaseCount('reservations', 0);
     }

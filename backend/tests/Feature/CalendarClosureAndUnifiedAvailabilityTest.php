@@ -222,6 +222,7 @@ class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $env['court']->id,
                 'slots' => [$blockStart->toIso8601String()],
+                'expected_total' => 150000,
             ]);
         $bookingRes->assertStatus(409);
 

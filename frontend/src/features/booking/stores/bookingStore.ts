@@ -1,9 +1,10 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { i18n } from '@/i18n'
 import { bookingApi } from '../api/bookingApi'
 import type { Court, AvailabilitySlot } from '@/features/court/types/court'
 import { loyaltyFields, type LoyaltySelection } from '../utils/reservation'
+import { usePriceChange } from '../composables/usePriceChange'
 
 export const useBookingStore = defineStore('booking', () => {
   const courts = ref<Court[]>([])
@@ -102,16 +103,27 @@ export const useBookingStore = defineStore('booking', () => {
     return inFlightWalletBalance
   }
 
-  // Checks out the selected slots; the server prices them in the same transaction.
-  async function checkoutReservation(loyalty?: LoyaltySelection, couponCode?: string | null) {
+  // A PRICE_CHANGED awaiting the customer's confirmation; another court or selection drops it.
+  const price = usePriceChange()
+  watch([selectedCourt, () => selectedSlots.value.map((slot) => slot.startsAt).join()], price.clear)
+
+  // Checks out the selected slots at the amount payable the customer was shown; the server prices them
+  // in the same transaction. A resubmission at a confirmed new price has another body, so another key.
+  async function checkoutReservation(
+    loyalty: LoyaltySelection | undefined,
+    couponCode: string | null | undefined,
+    expectedTotal: number,
+    confirmedPrice = false,
+  ) {
     const { reservation } = await bookingApi.checkoutReservation(
       {
         court_id: selectedCourt.value ?? undefined,
         slots: selectedSlots.value.map((slot) => slot.startsAt),
         ...(couponCode ? { coupon_code: couponCode } : {}),
+        expected_total: expectedTotal,
         ...loyaltyFields(loyalty),
       },
-      loyalty?.idempotency_key,
+      confirmedPrice ? undefined : loyalty?.idempotency_key,
     )
     return reservation
   }
@@ -130,6 +142,9 @@ export const useBookingStore = defineStore('booking', () => {
     loadAvailability,
     toggle,
     checkoutReservation,
+    priceChange: price.priceChange,
+    catchPriceChange: price.caught,
+    confirmPrice: price.confirm,
     fetchWalletBalance,
   }
 })

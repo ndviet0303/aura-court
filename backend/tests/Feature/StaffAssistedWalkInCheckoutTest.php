@@ -140,6 +140,7 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $this->courtA->id,
                 'slots' => [$slotTime->toIso8601String()],
+                'expected_total' => 150000,
                 'customer_id' => $this->customerCharlie->id,
             ]);
 
@@ -183,6 +184,7 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $this->courtA->id,
                 'slots' => [$slotTime->toIso8601String()],
+                'expected_total' => 150000,
             ]);
         $initialRes->assertCreated();
 
@@ -201,6 +203,7 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $this->courtA->id,
                 'slots' => [$slotTime->toIso8601String()],
+                'expected_total' => 150000,
                 'customer_id' => $this->customerCharlie->id,
             ]);
 
@@ -236,6 +239,7 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $this->courtA->id,
                 'slots' => [$slotTime->toIso8601String()],
+                'expected_total' => 150000,
                 'customer_id' => $otherUser->id,
             ]);
 
@@ -255,6 +259,7 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $this->courtA->id,
                 'slots' => [$slotTime->toIso8601String()],
+                'expected_total' => 150000,
                 'customer_id' => $this->customerOtherTenant->id,
             ]);
 
@@ -276,6 +281,7 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $this->courtA->id,
                 'slots' => [$slotTime->toIso8601String()],
+                'expected_total' => 150000,
                 'customer_id' => $this->customerCharlie->id,
             ]);
 

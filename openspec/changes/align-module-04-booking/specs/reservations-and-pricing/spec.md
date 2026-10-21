@@ -59,7 +59,7 @@ When a booking with a positive amount payable is created, its payment deadline S
 - **THEN** the request SHALL be rejected with 422 `PAYMENT_WINDOW_CLOSED` without creating any record
 
 ### Requirement: Booker contact snapshot
-Creating a booking SHALL record the booker's full name, phone number and email, as held on the account at that moment, as the booking's booker contact. Before submitting, the customer SHALL be shown this contact. A customer whose account has no valid Vietnamese phone number SHALL be refused with 422 `PHONE_REQUIRED` before any hold, voucher hold, point reservation or payment request is created, and the interface SHALL direct them to add a phone number. Later profile changes SHALL NOT change a booking's recorded contact. The customer's booking detail and the operators' booking views SHALL show the recorded contact.
+Creating a booking SHALL record the booker's full name, phone number and email, as held on the account at that moment, as the booking's booker contact. Before submitting, the customer SHALL be shown this contact. A customer whose account has no valid Vietnamese phone number SHALL be refused with 422 `PHONE_REQUIRED` before any hold, voucher hold or payment request is created, and the interface SHALL direct them to add a phone number. Later profile changes SHALL NOT change a booking's recorded contact. The customer's booking detail and the operators' booking views SHALL show the recorded contact.
 
 #### Scenario: Missing phone number
 - **WHEN** a customer whose account has no phone number submits a booking
@@ -70,11 +70,11 @@ Creating a booking SHALL record the booker's full name, phone number and email, 
 - **THEN** the booking detail and the owner's booking view SHALL still show the name and phone number recorded when it was created
 
 ### Requirement: Customer-agreed amount
-Before submitting a booking, the customer SHALL be shown the venue, court code, play interval, booker contact, rental amount, applied voucher, discount and amount payable. The checkout request SHALL carry the amount payable the customer was shown, and a request without it SHALL be rejected with 422. At submission the server SHALL recalculate rental, voucher and discount. If the recalculated amount payable is higher than the amount the customer was shown, the request SHALL be rejected with 409 `PRICE_CHANGED`, returning the new amounts, without creating a booking, hold, voucher hold, point reservation or payment request. If it is equal or lower, the booking SHALL be created with the recalculated amount.
+Before submitting a booking, the customer SHALL be shown the venue, court code, play interval, booker contact, rental amount, applied voucher, discount and amount payable. The checkout request SHALL carry the amount payable the customer was shown, and a request without it SHALL be rejected with 422. At submission the server SHALL recalculate rental, voucher and discount. If the recalculated amount payable is higher than the amount the customer was shown, the request SHALL be rejected with 409 `PRICE_CHANGED`, returning the new amounts, without creating a booking, hold, voucher hold or payment request. If it is equal or lower, the booking SHALL be created with the recalculated amount.
 
 #### Scenario: Price rose before submission
 - **WHEN** a customer was shown 200,000 VND payable and the recalculated amount at submission is 220,000 VND
-- **THEN** the request SHALL be rejected with 409 `PRICE_CHANGED` carrying 220,000 VND, and no booking, hold, voucher hold, point reservation or payment request SHALL exist for it
+- **THEN** the request SHALL be rejected with 409 `PRICE_CHANGED` carrying 220,000 VND, and no booking, hold, voucher hold or payment request SHALL exist for it
 
 #### Scenario: Price fell before submission
 - **WHEN** a customer was shown 200,000 VND payable and the recalculated amount at submission is 180,000 VND
@@ -85,15 +85,15 @@ Before submitting a booking, the customer SHALL be shown the venue, court code, 
 - **THEN** the request SHALL be rejected with 422 without creating any record
 
 ### Requirement: Customer cancels a pending-payment booking
-A customer SHALL be able to cancel their own booking while it is pending payment. The cancellation SHALL re-check the booking under the same locks as payment confirmation. A pending booking SHALL become cancelled, recorded as a customer payment cancellation; its court-time SHALL be released, its voucher hold and reserved points SHALL be released without being recorded as used, and its payment request SHALL expire, each exactly once. Releasing a voucher SHALL NOT extend its validity. Repeating the cancellation on a booking that is already cancelled or expired SHALL succeed without releasing anything again. A confirmed booking SHALL NOT be cancelled this way: the request SHALL be rejected with 409 without changing anything. A request from anyone other than the booking's customer SHALL be refused without changing anything. When a cancellation and a payment race, only the first to commit SHALL take effect: after a confirmation the cancellation SHALL be rejected, and after a cancellation the transfer SHALL be recorded as a payment exception and SHALL NOT restore the booking. Expiry, this cancellation, the release of an overdue hold and a price-change release SHALL leave the same released state. The interface SHALL ask for confirmation before cancelling, and the booking SHALL then show as "Đã hủy thanh toán". To book again the customer SHALL submit a new request, which is re-checked for availability, price and voucher.
+A customer SHALL be able to cancel their own booking while it is pending payment. The cancellation SHALL re-check the booking under the same locks as payment confirmation. A pending booking SHALL become cancelled, recorded as a customer payment cancellation; its court-time SHALL be released, its voucher hold SHALL be released without being recorded as used, and its payment request SHALL expire, each exactly once. Releasing a voucher SHALL NOT extend its validity. Repeating the cancellation on a booking that is already cancelled or expired SHALL succeed without releasing anything again. A confirmed booking SHALL NOT be cancelled this way: the request SHALL be rejected with 409 without changing anything. A request from anyone other than the booking's customer SHALL be refused without changing anything. When a cancellation and a payment race, only the first to commit SHALL take effect: after a confirmation the cancellation SHALL be rejected, and after a cancellation the transfer SHALL be recorded as a payment exception and SHALL NOT restore the booking. Expiry, this cancellation, the release of an overdue hold and a price-change release SHALL leave the same released state. The interface SHALL ask for confirmation before cancelling, and the booking SHALL then show as "Đã hủy thanh toán". To book again the customer SHALL submit a new request, which is re-checked for availability, price and voucher.
 
 #### Scenario: Cancel a pending booking
-- **WHEN** a customer confirms cancelling their pending booking that holds a voucher use and reserved points
-- **THEN** the booking SHALL become cancelled, its court-time SHALL become available, and the voucher use and points SHALL be released once and not recorded as used
+- **WHEN** a customer confirms cancelling their pending booking that holds a voucher use
+- **THEN** the booking SHALL become cancelled, its court-time SHALL become available, and the voucher use SHALL be released once and not recorded as used
 
 #### Scenario: Repeated cancellation
 - **WHEN** the customer repeats the cancellation, or cancels a booking that has already expired
-- **THEN** the request SHALL succeed and no court-time, voucher use or points SHALL be released a second time
+- **THEN** the request SHALL succeed and no court-time or voucher use SHALL be released a second time
 
 #### Scenario: Confirmed booking
 - **WHEN** a customer tries to cancel a booking whose payment has already confirmed it
@@ -108,7 +108,7 @@ A customer SHALL be able to cancel their own booking while it is pending payment
 - **THEN** the booking SHALL stay cancelled, and the transfer SHALL be recorded as a payment exception that the owner can look up
 
 ### Requirement: Pending bookings at a price change
-When a new price takes effect for a court-time, every booking pending payment whose interval it covers SHALL be re-checked. If the recalculated amount payable differs from the booking's amount payable, the booking SHALL expire, recorded as a price change: its payment request SHALL stop being valid, its court-time, voucher hold and reserved points SHALL be released once, and the customer SHALL be notified to review the new price and submit a new request. If the amount payable is unchanged, the booking and its payment deadline SHALL stay as they were. Confirmed bookings SHALL NOT be repriced. A transfer for an invalidated payment request SHALL be recorded as a payment exception.
+When a new price takes effect for a court-time, every booking pending payment whose interval it covers SHALL be re-checked. If the recalculated amount payable differs from the booking's amount payable, the booking SHALL expire, recorded as a price change: its payment request SHALL stop being valid, its court-time and voucher hold SHALL be released once, and the customer SHALL be notified to review the new price and submit a new request. If the amount payable is unchanged, the booking and its payment deadline SHALL stay as they were. Confirmed bookings SHALL NOT be repriced. A transfer for an invalidated payment request SHALL be recorded as a payment exception.
 
 #### Scenario: Amount payable changes
 - **WHEN** a new price takes effect while a booking covered by it is pending payment, and its amount payable would change
@@ -180,7 +180,7 @@ No overlapping active entitlement or exclusive hold SHALL exist for the same cou
 
 #### Scenario: Overdue hold does not block
 - **WHEN** a held 15:00–16:00 booking has passed its payment deadline, the expiry job has not run yet, and another customer requests 15:00–16:00 on that court
-- **THEN** availability SHALL show the interval as free, the new hold SHALL succeed, and the overdue booking SHALL become expired with its voucher use and points released once
+- **THEN** availability SHALL show the interval as free, the new hold SHALL succeed, and the overdue booking SHALL become expired with its voucher use released once
 
 #### Scenario: Live hold blocks
 - **WHEN** a held booking's payment deadline has not passed and another customer requests an overlapping interval

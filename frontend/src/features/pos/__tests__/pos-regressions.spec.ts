@@ -226,7 +226,7 @@ describe('Task 1.2 Regression: POS false success, receipt mismatch, and wrong re
             {
               id: 77, // Canonical reservation ID
               court: { name: 'Canonical Court' },
-              customer_name: 'Canonical Customer',
+              booker: { name: 'Canonical Customer', phone: '0912345678', email: 'c@example.test' },
               status: 'confirmed',
             },
           ],

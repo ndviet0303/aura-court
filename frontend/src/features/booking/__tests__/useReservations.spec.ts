@@ -14,6 +14,7 @@ vi.mock('../api/bookingApi', () => ({
     getMyReservations: vi.fn(),
     getReservation: vi.fn(),
     checkoutReservation: vi.fn(),
+    holdReservation: vi.fn(),
   },
 }))
 
@@ -121,24 +122,121 @@ describe('useReservations', () => {
     })
     const state = mountComposable()
     await flushPromises()
-    const quote = { quote_token: 'qt-1', expires_at: '2099-01-01T00:00:00Z' } as PriceQuote
+    const quote = {
+      quote_token: 'qt-1',
+      total_amount: 200000,
+      expires_at: '2099-01-01T00:00:00Z',
+    } as PriceQuote
 
     state.selectedCourtId.value = 3
     state.activeQuote.value = quote
-    await state.checkoutReservation({ loyalty_points: 0, loyalty_policy_version: 2 })
+    await state.checkoutReservation({
+      loyalty_points: 0,
+      loyalty_policy_version: 2,
+      discount_vnd: 0,
+    })
     state.activeQuote.value = quote
     await state.checkoutReservation({
       loyalty_points: 50,
       loyalty_policy_version: 2,
       idempotency_key: 'loy-key-1',
+      discount_vnd: 50000,
     })
 
+    // expected_total is the amount payable shown: the quote total less the points discount.
     expect(vi.mocked(bookingApi.checkoutReservation).mock.calls).toEqual([
-      [{ quote_token: 'qt-1', court_id: 3 }, undefined],
+      [{ quote_token: 'qt-1', court_id: 3, expected_total: 200000 }, undefined],
       [
-        { quote_token: 'qt-1', court_id: 3, loyalty_points: 50, loyalty_policy_version: 2 },
+        {
+          quote_token: 'qt-1',
+          court_id: 3,
+          expected_total: 150000,
+          loyalty_points: 50,
+          loyalty_policy_version: 2,
+        },
         'loy-key-1',
       ],
     ])
+  })
+
+  it('holds the quote at its total, the amount the customer was shown', async () => {
+    vi.mocked(bookingApi.holdReservation).mockResolvedValue({
+      reservation: reservation({ status: 'held' }),
+    })
+    const state = mountComposable()
+    await flushPromises()
+    state.activeQuote.value = {
+      quote_token: 'qt-2',
+      total_amount: 180000,
+      expires_at: '2099-01-01T00:00:00Z',
+    } as PriceQuote
+
+    await state.holdReservation()
+
+    expect(bookingApi.holdReservation).toHaveBeenCalledWith({
+      quote_token: 'qt-2',
+      expected_total: 180000,
+    })
+  })
+
+  it('shows a changed price and resubmits only after the customer confirms it', async () => {
+    vi.mocked(bookingApi.checkoutReservation)
+      .mockRejectedValueOnce({
+        status: 409,
+        code: 'PRICE_CHANGED',
+        message: 'Giá đã thay đổi.',
+        rental: 240000,
+        discount: 20000,
+        total: 220000,
+      })
+      .mockResolvedValueOnce({ reservation: reservation({ status: 'confirmed' }) })
+    const state = mountComposable()
+    await flushPromises()
+    state.selectedCourtId.value = 3
+    state.activeQuote.value = {
+      quote_token: 'qt-3',
+      total_amount: 200000,
+      expires_at: '2099-01-01T00:00:00Z',
+    } as PriceQuote
+    const loyalty = { loyalty_points: 0, loyalty_policy_version: 2, idempotency_key: 'loy-key-3' }
+
+    await state.checkoutReservation(loyalty)
+
+    expect(state.priceChange.value).toEqual({ rental: 240000, discount: 20000, total: 220000 })
+    expect(state.error.value).toBe('')
+    expect(vi.mocked(bookingApi.checkoutReservation).mock.calls).toEqual([
+      [{ quote_token: 'qt-3', court_id: 3, expected_total: 200000 }, 'loy-key-3'],
+    ])
+
+    await state.confirmPriceChange()
+
+    expect(state.priceChange.value).toBeNull()
+    // The resubmission has another body, so it does not reuse the first Idempotency-Key.
+    expect(vi.mocked(bookingApi.checkoutReservation).mock.calls[1]).toEqual([
+      { quote_token: 'qt-3', court_id: 3, expected_total: 220000 },
+      undefined,
+    ])
+  })
+
+  it.each([
+    ['PHONE_REQUIRED', 'Vui lòng cập nhật số điện thoại trong hồ sơ trước khi đặt sân.'],
+    [
+      'PAYMENT_WINDOW_CLOSED',
+      'Đã hết thời gian thanh toán cho khung giờ này. Vui lòng chọn giờ khác.',
+    ],
+  ])('explains a %s refusal of the hold', async (code, message) => {
+    vi.mocked(bookingApi.holdReservation).mockRejectedValueOnce({ status: 422, code, message: 'x' })
+    const state = mountComposable()
+    await flushPromises()
+    state.activeQuote.value = {
+      quote_token: 'qt-4',
+      total_amount: 100000,
+      expires_at: '2099-01-01T00:00:00Z',
+    } as PriceQuote
+
+    await state.holdReservation()
+
+    expect(state.error.value).toBe(message)
+    expect(state.priceChange.value).toBeNull()
   })
 })

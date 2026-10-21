@@ -501,7 +501,6 @@ class E2ESeedFixturesCommand extends Command
                     'max_days_ahead' => 30,
                     'min_duration_minutes' => 60,
                     'max_duration_minutes' => 240,
-                    'require_continuity' => true,
                 ],
                 'arrival' => [
                     'early_minutes' => 15,

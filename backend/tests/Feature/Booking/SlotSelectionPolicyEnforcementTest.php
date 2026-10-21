@@ -75,14 +75,14 @@ class SlotSelectionPolicyEnforcementTest extends TestCase
     {
         return $this->actingAs($user)
             ->withHeaders(['X-Organization-ID' => (string) $org->id, 'Idempotency-Key' => uniqid('hold-')])
-            ->postJson('/api/reservations', ['court_id' => $court->id, 'slots' => $starts]);
+            ->postJson('/api/reservations', ['court_id' => $court->id, 'slots' => $starts, 'expected_total' => 150000 * count($starts)]);
     }
 
     private function checkout(User $user, Organization $org, Court $court, array $starts)
     {
         return $this->actingAs($user)
             ->withHeaders(['X-Organization-ID' => (string) $org->id, 'Idempotency-Key' => uniqid('checkout-')])
-            ->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => $starts]);
+            ->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => $starts, 'expected_total' => 150000 * count($starts)]);
     }
 
     private function quote(User $user, Organization $org, Court $court, array $starts)
@@ -92,11 +92,11 @@ class SlotSelectionPolicyEnforcementTest extends TestCase
             ->postJson('/api/price-quotes', ['court_id' => $court->id, 'slots' => $starts]);
     }
 
-    private function holdQuote(User $user, Organization $org, int $quoteId)
+    private function holdQuote(User $user, Organization $org, array $quote)
     {
         return $this->actingAs($user)
             ->withHeaders(['X-Organization-ID' => (string) $org->id, 'Idempotency-Key' => uniqid('hold-quote-')])
-            ->postJson('/api/reservations', ['quote_id' => $quoteId]);
+            ->postJson('/api/reservations', ['quote_id' => $quote['id'], 'expected_total' => $quote['total_amount']]);
     }
 
     private function recurring(User $user, Organization $org, Court $court, Carbon $start)
@@ -187,8 +187,8 @@ class SlotSelectionPolicyEnforcementTest extends TestCase
         $this->hold($user, $org, $court, [$far])->assertStatus(422);
         $this->checkout($user, $org, $court, [$far])->assertStatus(422);
         // A quote only prices the slot; the horizon is enforced when it is accepted.
-        $quoteId = $this->quote($user, $org, $court, [$far])->assertCreated()->json('quote.id');
-        $this->holdQuote($user, $org, $quoteId)->assertStatus(422);
+        $quote = $this->quote($user, $org, $court, [$far])->assertCreated()->json('quote');
+        $this->holdQuote($user, $org, $quote)->assertStatus(422);
         $this->recurring($user, $org, $court, $farStart)->assertStatus(422);
 
         $this->assertDatabaseCount('reservations', 0);
@@ -210,8 +210,9 @@ class SlotSelectionPolicyEnforcementTest extends TestCase
         $this->checkout($user, $org, $court, $gapped)->assertStatus(422);
     }
 
-    public function test_gapped_selection_is_allowed_when_continuity_is_not_required(): void
+    public function test_gapped_selection_is_rejected_even_when_the_venue_turns_continuity_off(): void
     {
+        // Continuity always applies; a venue's require_continuity setting no longer turns it off.
         $policy = ['hold_ttl_minutes' => 30, 'max_days_ahead' => 60, 'min_duration_minutes' => 60, 'max_duration_minutes' => 240, 'require_continuity' => false];
         ['org' => $org, 'user' => $user, 'court' => $court] = $this->tenant(60, $policy);
         $this->fundWallet($user, $org->id);
@@ -221,8 +222,9 @@ class SlotSelectionPolicyEnforcementTest extends TestCase
             $base->copy()->setTime(12, 0)->toIso8601String(),
         ];
 
-        $this->checkout($user, $org, $court, $gapped)->assertCreated();
-        $this->assertDatabaseCount('reservation_slots', 2);
+        $this->hold($user, $org, $court, $gapped)->assertStatus(422)->assertJsonValidationErrors(['slots']);
+        $this->checkout($user, $org, $court, $gapped)->assertStatus(422)->assertJsonValidationErrors(['slots']);
+        $this->assertDatabaseCount('reservations', 0);
     }
 
     public function test_total_session_duration_below_minimum_is_rejected(): void
