@@ -3,7 +3,8 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Reservation } from '../../types/reservation'
 
-// Report FR-79 detail facts: booker, voucher, payment deadline and result, check-in and check-out.
+// Report FR-79 detail facts: booker, voucher, payment deadline and result, check-in and check-out,
+// incident handling.
 const props = defineProps<{ reservation: Reservation }>()
 const { t, d } = useI18n()
 
@@ -24,6 +25,14 @@ const paymentText = computed(() => {
   )
 })
 
+// How the venue handled a venue or court change that hit this booking, with when it closed.
+const incidentText = computed(() => {
+  const incident = props.reservation.latest_affected_case
+  if (!incident) return ''
+  const status = t(`reservations.detail.incidentStatus.${incident.status}`)
+  return incident.handled_at ? `${status} · ${time(incident.handled_at)}` : status
+})
+
 const facts = computed(() => {
   const r = props.reservation
   const booker = r.booker ? [r.booker.name, r.booker.phone, r.booker.email] : []
@@ -34,6 +43,7 @@ const facts = computed(() => {
     ['payment', paymentText.value],
     ['checkIn', time(r.attendance?.checked_in_at)],
     ['checkOut', time(r.attendance?.checked_out_at)],
+    ['incident', incidentText.value],
   ]
   return rows.filter(([, value]) => value)
 })

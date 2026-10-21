@@ -91,9 +91,15 @@
   - Scenario "Customer cancels a booking still pending payment" (không có refund quote hay refund obligation).
   - Đua: xác nhận commit trước → huỷ trả 409; huỷ commit trước → tiền thành ngoại lệ.
   - Scenario "Pending booking detail", "Completed and expired bookings".
-- [ ] 3.6 Xử lý sự cố trong chi tiết đơn (D10). Chờ module 2 merge bảng `affected_reservation_cases` (task 4.2 của `align-module-02-venue-court`).
+- [x] 3.6 Xử lý sự cố trong chi tiết đơn (D10). Chờ module 2 merge bảng `affected_reservation_cases` (task 4.2 của `align-module-02-venue-court`). (test: chưa làm)
   - API chi tiết đơn của khách trả case đơn bị ảnh hưởng mới nhất: trạng thái và cách đã xử lý (dời, đổi giờ, huỷ, giữ nguyên).
   - `ReservationDetailModal.vue` hiện dòng xử lý sự cố khi có case. Vitest và test backend đi kèm.
+  - Ghi chú khi apply:
+    - Nguồn: merge local nhánh `feat/module02-venue-court-alignment` (task 4.2, commit `4fac6dc7`) vào nhánh này.
+    - Chọn: `Reservation::latestAffectedCase` (`hasOne ... latestOfMany`, case có id lớn nhất). `ReservationController::show` trả `latest_affected_case` với `status`, `source_type`, `source_starts_at`, `source_ends_at`, `handled_at`. Không trả kênh liên hệ, ghi chú, ghi chú hoàn tiền, người xử lý: đó là dữ liệu vận hành của cơ sở; ghi chú hoàn tiền không phải bằng chứng khách nhận tiền.
+    - Phương án khác: trả mọi case của đơn. Loại: spec chỉ yêu cầu xử lý sự cố của đơn; lệnh D8 của module 2 đóng mọi case mở cùng một kết quả, nên case mới nhất đủ.
+    - Dòng "Xử lý sự cố" nằm trong `ReservationDetailFacts` (con của modal, cùng chỗ check-in, check-out): nhãn theo trạng thái, kèm giờ xử lý khi đã đóng.
+    - Nhãn "cơ sở huỷ do thay đổi vận hành" ở trạng thái đơn (`statusLabel`) vẫn thuộc module 2 (D8 của họ).
 
 ## 4. Pha 4 – Chủ cơ sở tra cứu thanh toán bất thường (D8)
 

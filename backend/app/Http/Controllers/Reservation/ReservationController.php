@@ -60,7 +60,9 @@ class ReservationController extends Controller
         $legacyMapping = fn ($q) => $q->withoutGlobalScope('tenant_isolation')->select('id', 'reservation_id', 'legacy_code', 'legacy_status');
         // Check-in and check-out times only; staff notes stay with the venue.
         $attendance = fn ($q) => $q->select('id', 'reservation_id', 'status', 'checked_in_at', 'checked_out_at');
-        $record->load(['court.venue', 'quote', 'slots', 'entitlements', 'legacyMapping' => $legacyMapping, 'attendance' => $attendance]);
+        // Incident handling: status and source window only; contact channel and notes stay with the venue.
+        $affectedCase = fn ($q) => $q->select(array_map(fn (string $column): string => 'affected_reservation_cases.'.$column, ['id', 'reservation_id', 'source_type', 'source_starts_at', 'source_ends_at', 'status', 'handled_at']));
+        $record->load(['court.venue', 'quote', 'slots', 'entitlements', 'legacyMapping' => $legacyMapping, 'attendance' => $attendance, 'latestAffectedCase' => $affectedCase]);
 
         return response()->json(['reservation' => [...$record->toArray(), 'payment' => $payments->result($record)]]);
     }
