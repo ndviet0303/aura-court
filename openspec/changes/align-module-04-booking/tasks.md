@@ -139,7 +139,7 @@
   - Tìm đơn `held` trên `courtIds` có giờ kết thúc sau `effectiveAt`.
   - Mỗi đơn một transaction: khoá qua `HeldReservationRelease::lock`, đơn không còn `held` thì bỏ qua, tính lại bằng `RentalPriceCalculator::quote` với voucher đơn đang giữ và `$heldBy` là chính đơn đó.
   - Tiền khác → `releaseHeld(…, 'expired', 'price_changed')`; chỉ thông báo qua `DurableNotificationService` khi hàm này trả `true`. Tiền bằng → giữ nguyên.
-- [ ] 5.7 Frontend:
+- [x] 5.7 Frontend: (test: chưa làm)
   - Form chọn giờ bắt đầu và kết thúc trên lưới 30 phút, từ availability mới.
   - Hiện khoảng giờ và thời lượng ("1 giờ 30 phút") thay cho danh sách slot.
   - Panel availability ở trang chủ hiện các mốc 30 phút.
@@ -147,6 +147,12 @@
   - Rà chữ "slot" trong `vi.ts` cho đặt sân, lỗi, thông báo chờ và bán lại.
   - Vitest đi kèm.
   - Quyết định (2026-10-22): chưa làm phần nào trước khi merge Pha 2 của module 3. Task 2.8 và 2.10 của họ (đang làm, chưa commit) đã sửa chính các file của task này: `ScheduleBookingSummary`, `useCourtSchedule`, `bookingStore`, `BookingAgreement`, `HomeBookingDock`, `HomeView`, `vi.ts`; họ cũng xoá `LoyaltyPointSelector` và `CouponCodeField`, và đổi `useCheckoutCoupon` thành `useSelectionQuote`. Việc bỏ `coupon_code` và `loyalty_points` vì thế thuộc task 2.10 của họ. Các phương án đã cân nhắc: (a) làm form 30 phút ngay trên file cũ, loại vì chắc chắn xung đột khi merge và form vẫn phải gửi `slots` tới khi xong task 5.1; (b) viết sẵn helper chưa có chỗ dùng, loại vì là code để dành. Chọn (c): làm cả task sau khi merge `feat/module03-price-tables`, cùng với task 5.1.
+  - Ghi chú khi làm (2026-10-22):
+    - Chọn giờ ngay trên lưới 30 phút: bấm ô đầu là giờ bắt đầu, bấm ô sau là giờ kết thúc; các ô ở giữa phải trống và liền nhau, không thì lần bấm đó thành giờ bắt đầu mới. Logic nằm ở `bookingStore.toggle`/`freeRun`, nên lưới lịch sân và panel trang chủ dùng chung. `bookingStore.selection` là khoảng gửi đi (`starts_at`, `ends_at`). Phương án khác: hai ô chọn giờ bắt đầu và giờ kết thúc. Loại vì phải dựng lại cả hai màn, còn lưới đã có giá và trạng thái trống của từng mốc.
+    - "Chọn 1h/2h" lấy khoảng trống liền đầu tiên dài 1 hoặc 2 giờ. Nút bỏ ở tóm tắt bỏ cả khoảng.
+    - Bộ tính giá ở trang đơn đặt thêm chọn thời lượng (30, 60, 90, 120 phút) cạnh giờ bắt đầu theo giờ chẵn, và hiện khoảng giờ lấy từ `slot_snapshot` của báo giá. Giờ gửi đi tính theo giờ cơ sở (`venueInstant`), không theo múi giờ trình duyệt.
+    - Thời lượng hiện bằng chữ qua `formatDuration` ("1 giờ 30 phút"); bỏ các chuỗi đếm số ô (`slotsBadge`, `schedule.hours`, `home.floating.slotsCount`).
+    - `ScheduleBookingSummary` và `QuoteCalculatorCard` đang ở đúng trần số dòng: bỏ hai comment HTML chia mục, hàm bọc `setDatePreset` và viết gọn mảng giờ bắt đầu thay vì nâng trần.
 - [ ] 5.8 Test backend (`ThirtyMinuteBookingIntervalTest`, `PendingPriceChangeTest`, `VoucherConsumeOnConfirmTest`):
   - Scenario "Half-hour boundaries" (15:30–17:00 theo ví dụ report), "Thirty-minute minimum", "Off-grid time", "Gapped selection", "Past start", "Court interval length does not apply", "Resale of a new booking".
   - Scenario "Unsupported interval length", "Interval length does not shape customer bookings", "Existing 45-minute courts".
