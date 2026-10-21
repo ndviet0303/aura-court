@@ -97,13 +97,13 @@
 
 ## 4. Pha 4 – Chủ cơ sở tra cứu thanh toán bất thường (D8)
 
-- [ ] 4.1 `recordReceiptException` chép thêm `purpose`, `purpose_id`, `payment_code` (như khi nhận) và `event_at` từ receipt và attempt khớp mã. Không khớp attempt thì `purpose_id = null`.
-- [ ] 4.2 `GET owner-payment-exceptions`:
+- [x] 4.1 `recordReceiptException` chép thêm `purpose`, `purpose_id`, `payment_code` (như khi nhận) và `event_at` từ receipt và attempt khớp mã. Không khớp attempt thì `purpose_id = null`.
+- [x] 4.2 `GET owner-payment-exceptions`:
   - Chỉ `organization_owner`, scope theo tổ chức, chỉ loại `owner_payment_*`, phân trang, chỉ đọc.
   - Gắn với capability `direct_owner_payments`, không đi sau `marketplace_payouts`.
   - Trả loại, số tiền, mã thanh toán, thời điểm giao dịch, kết nối, trạng thái, mã đơn và mục đích (khi có).
-- [ ] 4.3 Frontend: màn "Thanh toán bất thường" cho owner, route `orgRoles: ['organization_owner']`, hiện trên điều hướng khi bật `direct_owner_payments`; màn ngoại lệ tài chính cũ vẫn sau cờ payouts. Bản dịch vi/en. Vitest đi kèm.
-- [ ] 4.4 Test backend `OwnerPaymentExceptionLookupTest`:
+- [x] 4.3 Frontend: màn "Thanh toán bất thường" cho owner, route `orgRoles: ['organization_owner']`, hiện trên điều hướng khi bật `direct_owner_payments`; màn ngoại lệ tài chính cũ vẫn sau cờ payouts. Bản dịch vi/en. Vitest đi kèm.
+- [x] 4.4 Test backend `OwnerPaymentExceptionLookupTest`:
   - Scenario "Transfer after cancellation", "Unknown payment code" (không gán theo số tiền), "Payouts disabled", "Unauthorized reader".
   - Hai tổ chức: owner A chỉ thấy dòng của A.
   - Thiếu tiền, thừa tiền, chuyển muộn có mã đơn; mã lạ không có mã đơn.

@@ -13,6 +13,7 @@ const mockRoute = {
   meta: {} as Record<string, unknown>,
 }
 let payoutsEnabled = true
+let directOwnerEnabled = false
 
 vi.mock('@/core/api/client', () => ({ api: { get: vi.fn() } }))
 
@@ -40,9 +41,13 @@ describe('AdminLayout', () => {
     vi.clearAllMocks()
     useTenantCapabilities().resetCapabilities()
     payoutsEnabled = true
+    directOwnerEnabled = false
     vi.mocked(api.get).mockImplementation(async () => ({
       organization_id: 1,
-      capabilities: { marketplace_payouts: payoutsEnabled },
+      capabilities: {
+        marketplace_payouts: payoutsEnabled,
+        direct_owner_payments: directOwnerEnabled,
+      },
       role: null,
       is_platform_admin: true,
     }))
@@ -230,5 +235,40 @@ describe('AdminLayout', () => {
     expect(wrapper.find('.router-view-stub').exists()).toBe(true)
     expect(wrapper.find('[data-testid="capability-unavailable"]').exists()).toBe(false)
     expect(wrapper.find('a[href="/admin/payouts"]').exists()).toBe(true)
+  })
+
+  function signInAs(role: 'organization_owner' | 'staff') {
+    useAuthStore().user = {
+      id: 7,
+      name: 'Club Member',
+      email: 'member@club.test',
+      role: 'customer',
+      email_verified_at: '2026-01-01',
+      organizations: [{ organization_id: 1, role, status: 'active' }],
+    } as unknown as User
+  }
+
+  it('shows an owner the payment exceptions lookup while payouts are off (FR-81)', async () => {
+    payoutsEnabled = false
+    directOwnerEnabled = true
+    signInAs('organization_owner')
+    const wrapper = await createLoadedWrapper()
+
+    expect(wrapper.find('a[href="/admin/payment-exceptions"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/admin/payouts"]').exists()).toBe(false)
+    expect(wrapper.find('a[href="/admin/financial-exceptions"]').exists()).toBe(false)
+  })
+
+  it('hides the payment exceptions lookup from staff and when direct-owner payments are off', async () => {
+    directOwnerEnabled = true
+    signInAs('staff')
+    const staff = await createLoadedWrapper()
+    expect(staff.find('a[href="/admin/payment-exceptions"]').exists()).toBe(false)
+
+    useTenantCapabilities().resetCapabilities()
+    directOwnerEnabled = false
+    signInAs('organization_owner')
+    const owner = await createLoadedWrapper()
+    expect(owner.find('a[href="/admin/payment-exceptions"]').exists()).toBe(false)
   })
 })
