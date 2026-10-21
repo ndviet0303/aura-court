@@ -36,9 +36,6 @@ export const bookingApi = {
 
   getWalletBalance: () => api.get<{ balance: number; currency?: string }>('/wallet/balance'),
 
-  previewLoyalty: (payload: import('../types/loyalty').LoyaltyPreviewPayload) =>
-    api.post<import('../types/loyalty').LoyaltyPreviewResponse>('/loyalty/preview', payload),
-
   submitReview: (reservationCode: string, payload: { rating: number; body?: string }) =>
     api.post('/reviews', { reservation_code: reservationCode, ...payload }),
 
@@ -75,8 +72,7 @@ export const bookingApi = {
 
   checkoutReservation: <T = { reservation: import('../types/reservation').Reservation }>(
     payload: import('../types/reservation').HoldReservationPayload,
-    key?: string,
-  ) => api.post<T>('/reservations/checkout', payload, key ? { idempotencyKey: key } : undefined),
+  ) => api.post<T>('/reservations/checkout', payload),
 
   confirmReservation: <T = { reservation: import('../types/reservation').Reservation }>(
     code: string,

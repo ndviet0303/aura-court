@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\EntitlementTransfer;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Venue;
@@ -16,10 +15,12 @@ use App\Services\Social\PeerToPeerResaleService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class GatedMarketplaceAndSplitRegressionTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private function setupTenantAndReservation(bool $enablePilot = false): array
@@ -43,7 +44,7 @@ class GatedMarketplaceAndSplitRegressionTest extends TestCase
             'is_active' => true,
         ]);
         $court = $venue->courts()->create(['name' => 'Court Gated', 'is_active' => true]);
-        PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 200000]);
+        $this->priceCourt($court, 200000);
 
         $walletService = app(WalletPaymentService::class);
         $wallet = $walletService->getOrCreateWallet($customer->id, $organization->id);

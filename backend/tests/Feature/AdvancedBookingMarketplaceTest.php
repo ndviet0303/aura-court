@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Court;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
 use App\Models\User;
@@ -17,10 +16,12 @@ use App\Services\Social\MarketplaceService;
 use App\Services\Social\PeerToPeerResaleService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class AdvancedBookingMarketplaceTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     public function test_split_shares_must_sum_exactly_to_the_reservation_amount(): void
@@ -88,7 +89,7 @@ class AdvancedBookingMarketplaceTest extends TestCase
             'is_active' => true,
         ]);
         $court = $venue->courts()->create(['name' => 'Advanced Court', 'is_active' => true]);
-        PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 200000]);
+        $this->priceCourt($court, 200000);
         config(['features.pilot_organizations' => [(string) $organization->id], 'features.flags.marketplace_split_payments' => true, 'features.flags.marketplace_slot_resale' => true]);
         $walletService = app(WalletPaymentService::class);
         $wallet = $walletService->getOrCreateWallet($user->id, $organization->id);

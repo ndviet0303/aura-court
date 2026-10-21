@@ -3,7 +3,6 @@
 namespace Tests\Feature\Subscription;
 
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
@@ -14,10 +13,12 @@ use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class PlatformRealTimeEntitlementAndExpiryTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     public function test_booking_request_after_expiry_before_batch_job_is_rejected_and_transitions_subscription(): void
@@ -55,14 +56,7 @@ class PlatformRealTimeEntitlementAndExpiryTest extends TestCase
         ]);
 
         $targetSlot = Carbon::tomorrow()->setHour(10)->setMinute(0)->setSecond(0);
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => $targetSlot->dayOfWeekIso,
-            'starts_at' => '10:00',
-            'ends_at' => '11:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourtWith($court, [['10:00', '11:00', 100000, [$targetSlot->dayOfWeekIso]]]);
 
         $plan = PlatformPlan::create([
             'code' => 'EXPIRED_PLAN',

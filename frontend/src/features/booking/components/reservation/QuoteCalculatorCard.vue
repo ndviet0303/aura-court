@@ -1,16 +1,15 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { DatePicker, SelectDropdown, type DropdownOption } from '@/shared/components'
 import { useAuthStore } from '@/features/auth/stores/authStore'
-import LoyaltyPointSelector from '../LoyaltyPointSelector.vue'
 import BookingAgreement from '../BookingAgreement.vue'
 
 const { t } = useI18n()
 const auth = useAuthStore()
 import type { Court } from '@/features/court/types/court'
 import type { PriceChange, PriceQuote } from '../../types/reservation'
-import { amountPayable, validBookerPhone, type LoyaltySelection } from '../../utils/reservation'
+import { validBookerPhone } from '../../utils/reservation'
 
 const props = defineProps<{
   courts: Court[]
@@ -30,16 +29,10 @@ const emit = defineEmits<{
   (e: 'update:selectedTimeSlot', value: string): void
   (e: 'calculate'): void
   (e: 'hold'): void
-  (e: 'checkout', loyaltyPayload?: LoyaltySelection): void
-  (e: 'loyaltyChange', payload: LoyaltySelection): void
+  (e: 'checkout'): void
   (e: 'confirmPrice'): void
 }>()
 
-const currentLoyaltyPayload = ref<LoyaltySelection>(null)
-function onLoyaltyChange(data: LoyaltySelection) {
-  currentLoyaltyPayload.value = data
-  emit('loyaltyChange', data)
-}
 const getLocalDateString = (offsetDays = 0): string => {
   const d = new Date()
   d.setDate(d.getDate() + offsetDays)
@@ -238,13 +231,9 @@ function setDatePreset(date: string) {
           </div>
         </div>
 
-        <!-- Customer Loyalty Point Selector -->
-        <LoyaltyPointSelector :quote-token="activeQuote.quote_token" @change="onLoyaltyChange" />
-
         <BookingAgreement
           :rental="activeQuote.subtotal ?? activeQuote.total_amount"
-          :coupon-code="activeQuote.benefit_snapshot?.coupon_code"
-          :payable="amountPayable(activeQuote.total_amount, currentLoyaltyPayload)"
+          :payable="activeQuote.total_amount"
           :price-change="priceChange"
           :busy="holding"
           @confirm-price="emit('confirmPrice')"
@@ -255,11 +244,7 @@ function setDatePreset(date: string) {
             {{ t('reservations.calculator.instantNote') }}
           </p>
           <div class="quote-action-buttons">
-            <button
-              class="btn btn-checkout-slot"
-              :disabled="blocked"
-              @click="emit('checkout', currentLoyaltyPayload)"
-            >
+            <button class="btn btn-checkout-slot" :disabled="blocked" @click="emit('checkout')">
               <span class="material-symbols-outlined" :class="{ spinning: holding }">
                 {{ holding ? 'hourglass_top' : 'account_balance_wallet' }}
               </span>

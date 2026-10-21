@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import CourtsView from '../views/CourtsView.vue'
-import { courtMatchesSport } from '../composables/useCourtsList'
+import { courtMatchesPriceRange, courtMatchesSport } from '../composables/useCourtsList'
 import type { Court, SportType } from '../types/court'
 import { i18n } from '@/i18n'
 import { useBookingStore } from '@/stores/booking'
@@ -72,9 +72,7 @@ describe('CourtsView', () => {
           share_url: '',
         },
         image_url: '/court1.jpg',
-        price_slots: [
-          { id: 1, court_id: 1, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 150000 },
-        ],
+        from_price: 150000,
       },
       {
         id: 2,
@@ -92,9 +90,7 @@ describe('CourtsView', () => {
           share_url: '',
         },
         image_url: '/court2.jpg',
-        price_slots: [
-          { id: 2, court_id: 2, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 200000 },
-        ],
+        from_price: 200000,
       },
     ]
 
@@ -275,9 +271,7 @@ describe('CourtsView', () => {
           is_active: true,
           share_url: '',
         },
-        price_slots: [
-          { id: 1, court_id: 1, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 80000 },
-        ],
+        from_price: 80000,
       },
       {
         id: 2,
@@ -294,9 +288,7 @@ describe('CourtsView', () => {
           is_active: true,
           share_url: '',
         },
-        price_slots: [
-          { id: 2, court_id: 2, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 250000 },
-        ],
+        from_price: 250000,
       },
     ]
 
@@ -349,9 +341,7 @@ describe('CourtsView', () => {
           is_active: true,
           share_url: '',
         },
-        price_slots: [
-          { id: 1, court_id: 1, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 200000 },
-        ],
+        from_price: 200000,
       },
       {
         id: 2,
@@ -368,9 +358,7 @@ describe('CourtsView', () => {
           is_active: true,
           share_url: '',
         },
-        price_slots: [
-          { id: 2, court_id: 2, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 90000 },
-        ],
+        from_price: 90000,
       },
     ]
 
@@ -433,6 +421,62 @@ describe('CourtsView', () => {
     await emptyResetBtn.trigger('click')
 
     expect(wrapper.findAll('.court-card-item').length).toBe(1)
+  })
+
+  it('shows each court from price, none for a court without a price, which sorts last', async () => {
+    const store = useBookingStore()
+    store.courtsLoading = false
+    const venue = {
+      id: 1,
+      name: 'Aura Club',
+      slug: 'aura',
+      address: null,
+      google_maps_url: null,
+      is_active: true,
+      share_url: '',
+    }
+    store.courts = [
+      {
+        id: 1,
+        name: 'Sân Chưa Có Giá',
+        slug: 'san-0',
+        sport_type: 'badminton',
+        slot_duration: 60,
+        venue,
+        from_price: null,
+      },
+      {
+        id: 2,
+        name: 'Sân Giá 90k',
+        slug: 'san-90k',
+        sport_type: 'badminton',
+        slot_duration: 60,
+        venue,
+        from_price: 90000,
+      },
+    ]
+
+    const wrapper = mount(CourtsView, { global: { plugins: [i18n] } })
+    await wrapper
+      .find('[data-testid="sort-dropdown-wrap"] .custom-dropdown-trigger')
+      .trigger('click')
+    await wrapper
+      .findAll('.dropdown-item')
+      .find((it) => it.text().includes('Thấp đến Cao'))
+      ?.trigger('click')
+
+    const cards = wrapper.findAll('.court-card-item')
+    expect(cards[0]?.text()).toContain('Sân Giá 90k')
+    expect(cards[0]?.find('.pricing-box').text()).toContain('90.000')
+    expect(cards[1]?.text()).toContain('Sân Chưa Có Giá')
+    expect(cards[1]?.find('.pricing-box').exists()).toBe(false)
+  })
+
+  it('matches no price range for a court without a price', () => {
+    const court = (from_price: number | null) => ({ from_price }) as Court
+    expect(courtMatchesPriceRange(court(null), 'under_100k')).toBe(false)
+    expect(courtMatchesPriceRange(court(null), 'all')).toBe(true)
+    expect(courtMatchesPriceRange(court(90000), 'under_100k')).toBe(true)
   })
 
   it('matches the sport filter on the court sport, football covering both pitch sizes', () => {

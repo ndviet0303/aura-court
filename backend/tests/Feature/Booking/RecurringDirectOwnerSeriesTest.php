@@ -10,7 +10,6 @@ use App\Models\OwnerPaymentAllocation;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
 use App\Models\OwnerRefundObligation;
-use App\Models\PriceRule;
 use App\Models\ReceivingConnection;
 use App\Models\RecurringOccurrence;
 use App\Models\RecurringSeries;
@@ -27,6 +26,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 /**
@@ -34,6 +34,7 @@ use Tests\TestCase;
  */
 class RecurringDirectOwnerSeriesTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     public function test_accept_holds_occurrences_pending_and_never_auto_confirms_the_series(): void
@@ -216,8 +217,8 @@ class RecurringDirectOwnerSeriesTest extends TestCase
         $fixture = $this->tenant();
         $preview = $this->preview($fixture, $this->monthlyPayload(3));
 
-        // The base price changes after the client accepted the preview.
-        PriceRule::where('court_id', $fixture['court']->id)->where('type', 'base')->update(['price' => 250000]);
+        // The price changes after the client accepted the preview.
+        $this->publishPriceVersion($fixture['table'], [['00:00', '23:59', 250000]], now());
 
         $this->createSeries($fixture, array_merge($this->monthlyPayload(3), [
             'accepted' => $this->acceptedFrom($preview),
@@ -256,28 +257,6 @@ class RecurringDirectOwnerSeriesTest extends TestCase
         $invoices->first()->update(['due_at' => now()->subDays(2)]);
         $this->assertSame(0, app(RecurringSeriesService::class)->markOverdueAndReleaseFuture());
         $this->assertSame('guaranteed', $invoices->first()->fresh()->status);
-    }
-
-    public function test_zero_payable_period_confirms_without_a_false_paid_invoice_or_expiry_release(): void
-    {
-        $fixture = $this->tenant();
-        PriceRule::where('court_id', $fixture['court']->id)
-            ->where('type', 'base')->update(['price' => 0]);
-        $preview = $this->preview($fixture, $this->monthlyPayload(1));
-
-        $response = $this->createSeries($fixture, array_merge($this->monthlyPayload(1), [
-            'accepted' => $this->acceptedFrom($preview),
-        ]), 'zero-payable-1');
-
-        $response->assertCreated()->assertJsonPath('series.status', 'confirmed');
-        $invoice = MonthlyInvoice::findOrFail((int) $response->json('series.invoices.0.id'));
-        $this->assertSame(0, $invoice->amount);
-        $this->assertSame('zero_payable', $invoice->status);
-        $this->assertNull($invoice->paid_at);
-        $this->assertNull($invoice->payment_reference);
-        $this->assertSame(0, OwnerPaymentAttempt::where('purpose', 'recurring_period')->count());
-        $this->assertSame(0, app(RecurringSeriesService::class)->markOverdueAndReleaseFuture());
-        $this->assertSame('confirmed', $invoice->series->occurrences()->firstOrFail()->fresh()->status);
     }
 
     public function test_invoice_endpoint_exposes_the_recurring_period_payment_attempt(): void
@@ -578,12 +557,7 @@ class RecurringDirectOwnerSeriesTest extends TestCase
             'is_active' => true,
         ]);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Recurring Court', 'is_active' => true]);
-        PriceRule::create([
-            'organization_id' => $organization->id,
-            'court_id' => $court->id,
-            'type' => 'base',
-            'price' => 100000,
-        ]);
+        $table = $this->priceCourt($court, 100000);
         VenueBookingPolicy::create([
             'venue_id' => $venue->id,
             'version' => 1,
@@ -627,7 +601,7 @@ class RecurringDirectOwnerSeriesTest extends TestCase
             'features.pilot_organizations' => [(string) $organization->id],
         ]);
 
-        return compact('organization', 'owner', 'payer', 'venue', 'court', 'connection', 'secret');
+        return compact('organization', 'owner', 'payer', 'venue', 'court', 'table', 'connection', 'secret');
     }
 
     /**

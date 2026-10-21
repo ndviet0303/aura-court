@@ -2,16 +2,13 @@
 
 namespace App\Services\Reservation;
 
-use App\Models\Coupon;
 use App\Models\Court;
 use App\Models\PriceQuote;
-use App\Models\PromotionCampaign;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Venue;
 use App\Models\VenueBookingPolicy;
 use Carbon\Carbon;
-use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -96,18 +93,16 @@ class ReservationIntake
     }
 
     /**
-     * Earliest of the hold time plus ten minutes, the booking start and the voucher end (design D3); 422
-     * PAYMENT_WINDOW_CLOSED when that leaves no time to pay.
+     * Earlier of the hold time plus ten minutes and the booking start (design D3); 422 PAYMENT_WINDOW_CLOSED when
+     * that leaves no time to pay.
      */
     public function paymentDeadline(PriceQuote $quote): Carbon
     {
         $deadline = now()->addMinutes(self::PAYMENT_WINDOW_MINUTES);
         $startsAt = collect((array) $quote->slot_snapshot)->map(fn (array $slot): Carbon => Carbon::parse($slot['starts_at']))->min();
-        foreach ([$startsAt, $this->voucherEndsAt($quote)] as $cap) {
-            if ($cap !== null && $cap->lessThan($deadline)) {
-                // The datetime cast stores the clock as-is, so keep the app timezone (slot times come back in UTC).
-                $deadline = Carbon::instance($cap)->setTimezone($deadline->getTimezone());
-            }
+        if ($startsAt !== null && $startsAt->lessThan($deadline)) {
+            // The datetime cast stores the clock as-is, so keep the app timezone (slot times come back in UTC).
+            $deadline = Carbon::instance($startsAt)->setTimezone($deadline->getTimezone());
         }
         if ($deadline->lessThanOrEqualTo(now())) {
             abort(response()->json([
@@ -130,15 +125,5 @@ class ReservationIntake
             'captured_at' => now()->toIso8601String(),
             'settings' => (array) $policy->settings,
         ];
-    }
-
-    /** End of validity of the quote's voucher: its own end or its campaign's, whichever comes first. */
-    private function voucherEndsAt(PriceQuote $quote): ?CarbonInterface
-    {
-        $couponId = data_get($quote->benefit_snapshot, 'coupon_id');
-        $coupon = $couponId ? Coupon::query()->with('campaign')->find((int) $couponId) : null;
-        $campaign = $coupon?->campaign;
-
-        return collect([$coupon?->ends_at, $campaign instanceof PromotionCampaign ? $campaign->ends_at : null])->filter()->min();
     }
 }

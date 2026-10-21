@@ -5,16 +5,9 @@ import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { useBookingStore } from '@/features/booking/stores/bookingStore'
-import LoyaltyPointSelector from '@/features/booking/components/LoyaltyPointSelector.vue'
-import CouponCodeField from '@/features/booking/components/CouponCodeField.vue'
 import BookingAgreement from '@/features/booking/components/BookingAgreement.vue'
-import { useCheckoutCoupon } from '@/features/booking/composables/useCheckoutCoupon'
-import {
-  amountPayable,
-  bookingErrorMessage,
-  validBookerPhone,
-  type LoyaltySelection,
-} from '@/features/booking/utils/reservation'
+import { useSelectionQuote } from '@/features/booking/composables/useSelectionQuote'
+import { bookingErrorMessage, validBookerPhone } from '@/features/booking/utils/reservation'
 
 // Floating checkout dock for the court times picked on the home page.
 const props = defineProps<{ courtId: number | null }>()
@@ -23,30 +16,28 @@ const { t } = useI18n()
 const store = useBookingStore()
 const auth = useAuthStore()
 const router = useRouter()
-const coupon = reactive(useCheckoutCoupon())
-const loyaltyPayload = ref<LoyaltySelection>(null)
+// The server quote total shown here is the expected_total the checkout sends.
+const quote = reactive(useSelectionQuote())
 const loading = ref(false)
 const error = ref('')
 
-// The amount payable shown here is the expected_total the checkout sends.
-const payable = computed(() => amountPayable(coupon.total, loyaltyPayload.value))
+const totalText = computed(() => (quote.total === null ? '—' : formatCurrency(quote.total)))
+// A signed-in customer books only at a quoted total; a guest is sent to sign in.
 const blocked = computed(
-  () => !!auth.user && (!validBookerPhone(auth.user.phone) || !!store.priceChange),
+  () =>
+    !!auth.user &&
+    (!validBookerPhone(auth.user.phone) || !!store.priceChange || quote.total === null),
 )
 
 // agreedTotal is set only when resubmitting at a new price the customer confirmed.
 async function submit(agreedTotal?: number) {
   if (!auth.user) return router.push({ name: 'login', query: { redirect: '/booking' } })
-  if (!store.selectedSlots.length) return
+  const expectedTotal = agreedTotal ?? quote.total
+  if (!store.selectedSlots.length || expectedTotal === null) return
   loading.value = true
   error.value = ''
   try {
-    const reservation = await store.checkoutReservation(
-      loyaltyPayload.value,
-      coupon.appliedCode,
-      agreedTotal ?? payable.value,
-      agreedTotal !== undefined,
-    )
+    const reservation = await store.checkoutReservation(expectedTotal)
     router.push({ name: 'reservations', params: { code: reservation.code } })
   } catch (cause: unknown) {
     if (!store.catchPriceChange(cause, submit)) {
@@ -67,7 +58,7 @@ async function submit(agreedTotal?: number) {
       :aria-label="
         t('home.floating.summary', {
           count: store.selectedSlots.length,
-          total: formatCurrency(payable),
+          total: totalText,
         })
       "
     >
@@ -93,32 +84,20 @@ async function submit(agreedTotal?: number) {
         </div>
         <div class="dock-total-box">
           <span class="dock-total-lbl">{{ t('home.floating.totalLabel') }}</span>
-          <strong class="dock-total-val">{{ formatCurrency(payable) }}</strong>
+          <strong class="dock-total-val">{{ totalText }}</strong>
         </div>
       </div>
 
-      <!-- Dock Loyalty Point Selector -->
+      <!-- Dock Booking Agreement -->
       <div v-if="auth.user && props.courtId" class="dock-loyalty-container">
-        <CouponCodeField
-          v-model="coupon.code"
-          :loading="coupon.loading"
-          :error="coupon.error"
-          :discount="coupon.discount"
-          @apply="coupon.apply"
-        />
-        <LoyaltyPointSelector
-          :court-id="props.courtId"
-          :slots="store.selectedSlots.map((s) => s.startsAt)"
-          :coupon-code="coupon.appliedCode ?? undefined"
-          @change="loyaltyPayload = $event"
-        />
         <BookingAgreement
-          :rental="coupon.rental"
-          :coupon-code="coupon.appliedCode"
-          :payable="payable"
+          :rental="quote.rental"
+          :payable="quote.total"
+          :quote-error="quote.error"
           :price-change="store.priceChange"
           :busy="loading"
           @confirm-price="store.confirmPrice"
+          @retry-quote="quote.retry"
         />
       </div>
       <!-- Dock Actions Right -->
@@ -132,11 +111,7 @@ async function submit(agreedTotal?: number) {
         >
           <span class="material-symbols-outlined icon-18">close</span>
         </button>
-        <button
-          class="btn btn-floating-proceed"
-          :disabled="loading || coupon.loading || blocked"
-          @click="submit()"
-        >
+        <button class="btn btn-floating-proceed" :disabled="loading || blocked" @click="submit()">
           <span v-if="loading" class="material-symbols-outlined spin-icon icon-18"
             >progress_activity</span
           >

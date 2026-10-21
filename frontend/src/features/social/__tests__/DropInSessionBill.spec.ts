@@ -98,6 +98,9 @@ describe('DropInSessionBillModal', () => {
       if (url.includes('/social/matches/103/bill')) {
         return { bill: null }
       }
+      if (url.includes('/social/matches/103/rates')) {
+        return { rates: { court_hourly_rate: 140000, shuttlecock_unit_price: null } }
+      }
       return {}
     })
   })
@@ -220,5 +223,51 @@ describe('DropInSessionBillModal', () => {
     expect(wrapper.text()).toContain('403 Forbidden: Bạn không có quyền truy cập')
     // Ensure no demo numbers leak
     expect(wrapper.text()).not.toContain('Demo Bill')
+  })
+  const mountEndedNoBill = async (rate: number | null) => {
+    vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url.includes('/social/matches/103/bill')) return { bill: null }
+      if (url.includes('/social/matches/103/rates')) {
+        return { rates: { court_hourly_rate: rate, shuttlecock_unit_price: null } }
+      }
+      return {}
+    })
+    const wrapper = mount(DropInSessionBillModal, {
+      props: { show: true, match: { ...mockMatchEnded, id: 103 }, isHost: true },
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    return wrapper
+  }
+  const rateInput = (wrapper: Awaited<ReturnType<typeof mountEndedNoBill>>) =>
+    wrapper.findAll('input[type="number"]')[2]!.element as HTMLInputElement
+
+  it("fills the court rate from the court's price table when no bill is saved", async () => {
+    const wrapper = await mountEndedNoBill(140000)
+
+    expect(api.get).toHaveBeenCalledWith('/social/matches/103/rates')
+    expect(rateInput(wrapper).value).toBe('140000')
+  })
+
+  it('leaves the court rate empty and refuses to finalize when the court has no price', async () => {
+    const wrapper = await mountEndedNoBill(null)
+
+    expect(rateInput(wrapper).value).toBe('')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(api.post).not.toHaveBeenCalledWith(
+      '/social/matches/103/bill/finalize',
+      expect.anything(),
+    )
+    expect(wrapper.text()).toContain('Nhập giá sân mỗi giờ trước khi chốt bảng chi phí.')
+  })
+
+  it('drops the fraction of the court amount like the server (1 min × 100.000 → 1.666)', async () => {
+    const wrapper = await mountEndedNoBill(100000)
+    const inputs = wrapper.findAll('input[type="number"]')
+    await inputs[1]!.setValue(1)
+
+    expect(wrapper.findAll('.preview-row')[0]!.text()).toMatch(/1\.666\s*₫/)
   })
 })

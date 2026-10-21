@@ -21,13 +21,14 @@ export function useDropInSessionBill() {
   // Form Inputs
   const actualHeadcount = ref(4)
   const courtDurationMinutes = ref(120)
-  const courtHourlyRate = ref(150000)
+  // Null (an empty field) until the host or the court's price table gives a rate.
+  const courtHourlyRate = ref<number | null>(null)
   const shuttlecockCount = ref(8)
   const shuttlecockUnitPrice = ref(25000)
 
-  // Client-side realtime calculation
+  // Client-side realtime calculation; the court amount drops the fraction like the server's.
   const courtSubtotal = computed(() => {
-    return Math.round((courtDurationMinutes.value * courtHourlyRate.value) / 60)
+    return Math.floor((courtDurationMinutes.value * (courtHourlyRate.value || 0)) / 60)
   })
 
   const shuttlecockSubtotal = computed(() => {
@@ -99,12 +100,15 @@ export function useDropInSessionBill() {
         actualHeadcount.value = billRes.bill.actual_headcount || actualHeadcount.value
         courtDurationMinutes.value =
           billRes.bill.court_duration_minutes || courtDurationMinutes.value
-        courtHourlyRate.value = billRes.bill.court_hourly_rate || courtHourlyRate.value
+        courtHourlyRate.value = billRes.bill.court_hourly_rate ?? courtHourlyRate.value
         shuttlecockCount.value = billRes.bill.shuttlecock_count ?? shuttlecockCount.value
         shuttlecockUnitPrice.value =
           billRes.bill.shuttlecock_unit_price ?? shuttlecockUnitPrice.value
       } else {
         currentBill.value = null
+        // The court's price at the session start; none leaves the field for the host to fill.
+        const defaults = await socialApi.getDefaultRates(matchId).catch(() => null)
+        courtHourlyRate.value = defaults?.rates?.court_hourly_rate ?? null
         if (currentMatch.value) {
           actualHeadcount.value = Math.max(1, currentMatch.value.joined_count || 4)
         }
@@ -143,7 +147,7 @@ export function useDropInSessionBill() {
         court_duration_minutes: courtDurationMinutes.value,
         court_hourly_rate: courtHourlyRate.value,
         shuttlecock_count: Math.floor(shuttlecockCount.value),
-        shuttlecock_unit_price: courtHourlyRate.value >= 0 ? shuttlecockUnitPrice.value : 0,
+        shuttlecock_unit_price: (courtHourlyRate.value ?? 0) >= 0 ? shuttlecockUnitPrice.value : 0,
         version: currentBill.value?.version,
       }
 
@@ -158,9 +162,14 @@ export function useDropInSessionBill() {
   }
 
   async function finalizeBill(matchId: number | string) {
-    submitting.value = true
     error.value = ''
     conflict.value = ''
+    // v-model.number leaves '' in an emptied field, so only a number is a rate.
+    if (typeof courtHourlyRate.value !== 'number') {
+      error.value = 'Nhập giá sân mỗi giờ trước khi chốt bảng chi phí.'
+      return
+    }
+    submitting.value = true
     try {
       const payload = {
         actual_headcount: actualHeadcount.value,

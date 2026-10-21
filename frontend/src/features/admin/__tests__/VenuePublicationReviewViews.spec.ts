@@ -330,7 +330,7 @@ describe('AdminPublicationQueueView', () => {
           status: 'pending',
           configuration_snapshot: {
             venue: { id: 10, name: 'Sân Sao Mai', address: '123 Kim Ma' },
-            courts: [{ id: 1, name: 'Sân 1', price_slots: [] }],
+            courts: [{ id: 1, name: 'Sân 1', price_table: { id: 3, name: 'Giờ thường 2026' } }],
           },
           submitted_by: 5,
           submitted_at: '2026-09-10T10:00:00Z',
@@ -350,6 +350,7 @@ describe('AdminPublicationQueueView', () => {
 
     expect(wrapper.text()).toContain('Sân Sao Mai')
     expect(wrapper.text()).toContain('Rev 1')
+    expect(wrapper.text()).toContain('Giờ thường 2026')
 
     const approveBtn = wrapper
       .findAll('button')

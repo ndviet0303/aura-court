@@ -5,7 +5,6 @@ namespace Tests\Feature\Venue;
 use App\Models\Booking;
 use App\Models\BookingSlot;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
@@ -20,10 +19,12 @@ use App\Services\Reservation\LegacyBookingBackfillService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class VenueOperatingCalendarTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     public function test_calendar_persists_timezone_exceptions_and_blocks_out_of_hours_booking_apis(): void
@@ -77,14 +78,7 @@ class VenueOperatingCalendarTest extends TestCase
         ]);
         $date = Carbon::now('Asia/Ho_Chi_Minh')->addDays(2)->toDateString();
         $dayId = Carbon::parse($date, 'Asia/Ho_Chi_Minh')->dayOfWeekIso;
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => $dayId,
-            'starts_at' => '09:00',
-            'ends_at' => '10:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourtWith($court, [['09:00', '10:00', 100000, [$dayId]]]);
         $slotStart = Carbon::parse("{$date} 09:00", 'Asia/Ho_Chi_Minh')->toIso8601String();
         $base = "/api/partner/organizations/{$organization->id}/venues/{$venue->id}";
         $weeklyHours = [];
@@ -105,8 +99,7 @@ class VenueOperatingCalendarTest extends TestCase
             ->assertJsonPath("data.weekly_hours.{$dayId}.intervals.0.start", '06:00');
 
         $availabilityUrl = "/api/availability?court_id={$court->id}&date={$date}";
-        $availability = $this->getJson($availabilityUrl)->assertOk();
-        $this->assertFalse($availability->json('0.available'));
+        $this->getJson($availabilityUrl)->assertOk()->assertJsonCount(0);
 
         $this->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
@@ -128,7 +121,10 @@ class VenueOperatingCalendarTest extends TestCase
             'timezone' => 'Asia/Ho_Chi_Minh',
             'intervals' => [['start' => '08:00', 'end' => '10:00']],
         ])->assertCreated();
-        $this->getJson($availabilityUrl)->assertOk()->assertJsonPath('0.available', true);
+        $this->getJson($availabilityUrl)->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.startsAt', $slotStart)
+            ->assertJsonPath('0.available', true);
         $this->postJson('/api/price-quotes', [
             'court_id' => $court->id,
             'slots' => [$slotStart],
@@ -141,7 +137,7 @@ class VenueOperatingCalendarTest extends TestCase
             'type' => 'closed',
             'timezone' => 'Asia/Ho_Chi_Minh',
         ])->assertCreated();
-        $this->getJson($availabilityUrl)->assertOk()->assertJsonPath('0.available', false);
+        $this->getJson($availabilityUrl)->assertOk()->assertJsonCount(0);
         $this->postJson('/api/price-quotes', [
             'court_id' => $court->id,
             'slots' => [$slotStart],
@@ -254,14 +250,7 @@ class VenueOperatingCalendarTest extends TestCase
             'weekly_hours' => $hours,
             'created_by' => $owner->id,
         ]);
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => $weekday,
-            'starts_at' => '09:00',
-            'ends_at' => '10:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourt($court);
 
         $booking = Booking::create([
             'code' => 'BK-CALENDAR-PROTECTED',

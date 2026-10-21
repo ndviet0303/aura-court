@@ -4,14 +4,11 @@ namespace Tests\Feature\Payment;
 
 use App\Domain\Booking\Actions\ExpirePendingBookings;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
-use App\Models\LoyaltyRule;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
 use App\Models\PointLedger;
-use App\Models\PriceRule;
 use App\Models\ReceivingConnection;
 use App\Models\Reservation;
 use App\Models\User;
@@ -21,24 +18,19 @@ use App\Services\Payment\OwnerPaymentAttemptService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class DirectOwnerCheckoutCohortTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     public function test_direct_checkout_creates_a_policy_bound_hold_and_confirms_from_owner_receipt(): void
     {
         $fixture = $this->tenant();
         $start = now()->addDays(3)->setTime(10, 0, 0);
-        CourtPriceSlot::create([
-            'court_id' => $fixture['court']->id,
-            'weekday' => $start->dayOfWeekIso,
-            'starts_at' => '10:00',
-            'ends_at' => '11:00',
-            'price' => 120000,
-            'is_active' => true,
-        ]);
+        $this->priceCourt($fixture['court'], 120000);
 
         $response = $this->actingAs($fixture['payer'])->withHeader('Idempotency-Key', 'direct-checkout-1')
             ->postJson('/api/reservations/checkout', [
@@ -91,12 +83,7 @@ class DirectOwnerCheckoutCohortTest extends TestCase
     {
         $fixture = $this->tenant();
         $start = now()->addDays(4)->setTime(14, 0, 0);
-        PriceRule::create([
-            'organization_id' => $fixture['organization']->id,
-            'court_id' => $fixture['court']->id,
-            'type' => 'base',
-            'price' => 200000,
-        ]);
+        $this->priceCourt($fixture['court'], 200000);
         $headers = [
             'X-Organization-ID' => (string) $fixture['organization']->id,
             'Idempotency-Key' => 'direct-v2-quote-1',
@@ -136,26 +123,11 @@ class DirectOwnerCheckoutCohortTest extends TestCase
         $this->assertSame('pending', $attempt->fresh()->status);
     }
 
-    public function test_v2_zero_payable_direct_reservation_confirms_without_wallet_or_bank_receipt(): void
+    public function test_v2_points_checkout_is_refused_without_hold_attempt_or_point_debit(): void
     {
         $fixture = $this->tenant();
         $start = now()->addDays(5)->setTime(16, 0, 0);
-        PriceRule::create([
-            'organization_id' => $fixture['organization']->id,
-            'court_id' => $fixture['court']->id,
-            'type' => 'base',
-            'price' => 200000,
-        ]);
-        LoyaltyRule::create([
-            'organization_id' => $fixture['organization']->id,
-            'name' => 'Full zero-payable redemption',
-            'version' => 1,
-            'earn_points_per_100_vnd' => 0,
-            'redeem_points_per_100_vnd' => 0,
-            'status' => 'published',
-            'metadata' => ['points_redeemed' => 100, 'reward_value_vnd' => 200000],
-            'published_at' => now(),
-        ]);
+        $this->priceCourt($fixture['court'], 200000);
         PointLedger::create([
             'organization_id' => $fixture['organization']->id,
             'user_id' => $fixture['payer']->id,
@@ -173,7 +145,8 @@ class DirectOwnerCheckoutCohortTest extends TestCase
             'slots' => [$start->toIso8601String()],
         ])->assertCreated()->json('quote');
 
-        $response = $this->actingAs($fixture['payer'])->withHeaders([
+        // Points no longer pay for a court, so a 0 đ points-only booking is refused instead of confirmed.
+        $this->actingAs($fixture['payer'])->withHeaders([
             'X-Organization-ID' => (string) $fixture['organization']->id,
             'Idempotency-Key' => 'direct-v2-zero-checkout',
         ])->postJson('/api/reservations/checkout', [
@@ -181,37 +154,19 @@ class DirectOwnerCheckoutCohortTest extends TestCase
             'expected_total' => 0,
             'loyalty_points' => 100,
             'loyalty_policy_version' => 1,
-        ]);
+        ])->assertUnprocessable()->assertJsonValidationErrors('loyalty_points');
 
-        $response->assertCreated()
-            ->assertJsonPath('reservation.status', 'confirmed')
-            ->assertJsonPath('reservation.payment_model', 'direct_owner_v1')
-            ->assertJsonPath('reservation.total_amount', 0);
-        $reservation = Reservation::where('code', $response->json('reservation.code'))->firstOrFail();
-        $this->assertTrue((bool) data_get($reservation->metadata, 'zero_payable'));
+        $this->assertDatabaseCount('reservations', 0);
         $this->assertDatabaseCount('owner_payment_attempts', 0);
         $this->assertDatabaseCount('wallet_transactions', 0);
-        $this->assertDatabaseHas('point_ledgers', [
-            'organization_id' => $fixture['organization']->id,
-            'user_id' => $fixture['payer']->id,
-            'source_type' => 'reservation',
-            'source_id' => $reservation->id,
-            'delta' => -100,
-        ]);
+        $this->assertSame(1, PointLedger::where('user_id', $fixture['payer']->id)->count());
     }
 
     public function test_expiry_sweep_releases_direct_holds_and_expires_their_attempts(): void
     {
         $fixture = $this->tenant();
         $slotStart = now()->addDays(3)->setTime(10, 0, 0);
-        CourtPriceSlot::create([
-            'court_id' => $fixture['court']->id,
-            'weekday' => $slotStart->dayOfWeekIso,
-            'starts_at' => '10:00',
-            'ends_at' => '11:00',
-            'price' => 120000,
-            'is_active' => true,
-        ]);
+        $this->priceCourt($fixture['court'], 120000);
         $slotReservation = $this->actingAs($fixture['payer'])->withHeader('Idempotency-Key', 'direct-expiry-slot-checkout')
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $fixture['court']->id,
@@ -221,12 +176,6 @@ class DirectOwnerCheckoutCohortTest extends TestCase
         $slotAttempt = OwnerPaymentAttempt::where('purpose_id', $slotReservation['code'])->firstOrFail();
 
         $quoteStart = now()->addDays(4)->setTime(14, 0, 0);
-        PriceRule::create([
-            'organization_id' => $fixture['organization']->id,
-            'court_id' => $fixture['court']->id,
-            'type' => 'base',
-            'price' => 200000,
-        ]);
         $quote = $this->actingAs($fixture['payer'])->withHeaders([
             'X-Organization-ID' => (string) $fixture['organization']->id,
             'Idempotency-Key' => 'direct-expiry-quote',

@@ -7,7 +7,7 @@ import {
   TimePicker,
   type DropdownOption,
 } from '@/shared/components'
-
+import { formatCurrency } from '@/i18n'
 import type { Court } from '@/features/court/types/court'
 import type { RecurringFrequency, WeekdayOption } from '../../types/recurring'
 
@@ -23,7 +23,7 @@ const props = defineProps<{
   endDate: string
   weekdayButtons: WeekdayOption[]
   sessionDurationHours: number
-  hourlyRate: number
+  hourlyRate: number | null
   previewSessions: Array<{
     date: string
     weekdayName: string
@@ -32,7 +32,7 @@ const props = defineProps<{
     conflictReason: string | null
   }>
   estimatedSessionsCount: number
-  estimatedTotalAmount: number
+  estimatedTotalAmount: number | null
   submitting?: boolean
   submitDisabled?: boolean
 }>()
@@ -57,8 +57,8 @@ const courtOptions = computed<DropdownOption[]>(() =>
   })),
 )
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
+function formatMoney(amount: number | null): string {
+  return amount === null ? '—' : formatCurrency(amount)
 }
 </script>
 
@@ -106,7 +106,7 @@ function formatMoney(amount: number): string {
               {{ selectedCourt.venue.name }}
             </span>
           </div>
-          <div class="court-rate font-mono">{{ formatMoney(hourlyRate) }}/h</div>
+          <div v-if="hourlyRate" class="court-rate font-mono">{{ formatMoney(hourlyRate) }}/h</div>
         </div>
       </div>
 
@@ -247,7 +247,7 @@ function formatMoney(amount: number): string {
           </div>
 
           <div class="estimate-item">
-            <span class="est-label">Đơn giá tham khảo</span>
+            <span class="est-label">Giá thuê từ</span>
             <span class="est-value font-mono">{{ formatMoney(hourlyRate) }}</span>
           </div>
 

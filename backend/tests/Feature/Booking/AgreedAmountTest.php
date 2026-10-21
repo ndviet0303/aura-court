@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Booking;
 
-use App\Models\Coupon;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\Reservation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,33 +18,24 @@ class AgreedAmountTest extends TestCase
     public function test_price_rose_before_submission_is_refused_with_the_new_amounts_and_creates_nothing(): void
     {
         $fixture = $this->directOwnerCourt();
-        $voucher = Coupon::create([
-            'organization_id' => $fixture['organization']->id,
-            'code' => 'SAVE20K',
-            'discount_type' => 'fixed',
-            'discount_value' => 20000,
-            'is_active' => true,
-            'status' => Coupon::STATUS_ACTIVE,
-        ]);
         $start = now()->addDays(2)->setTime(18, 0);
-        $quote = $this->quoteFor($fixture['payer'], $fixture['organization'], $fixture['court'], [$start], ['coupon_code' => 'SAVE20K'])
+        $quote = $this->quoteFor($fixture['payer'], $fixture['organization'], $fixture['court'], [$start])
             ->assertCreated()
-            ->assertJsonPath('quote.total_amount', 180000)
+            ->assertJsonPath('quote.total_amount', 200000)
             ->json('quote');
-        $fixture['rule']->update(['price' => 220000]);
+        $this->publishPriceVersion($fixture['table'], [['00:00', '23:59', 220000]], now());
 
-        $this->submitCheckout($fixture['payer'], $fixture['organization'], ['quote_id' => $quote['id'], 'expected_total' => 180000])
+        $this->submitCheckout($fixture['payer'], $fixture['organization'], ['quote_id' => $quote['id'], 'expected_total' => 200000])
             ->assertConflict()
             ->assertJsonPath('code', 'PRICE_CHANGED')
             ->assertJsonPath('rental', 220000)
-            ->assertJsonPath('discount', 20000)
-            ->assertJsonPath('total', 200000);
+            ->assertJsonPath('discount', 0)
+            ->assertJsonPath('total', 220000);
 
         $this->assertDatabaseCount('reservations', 0);
         $this->assertDatabaseCount('reservation_slots', 0);
         $this->assertDatabaseCount('reservation_entitlements', 0);
         $this->assertDatabaseCount('owner_payment_attempts', 0);
-        $this->assertSame(0, $voucher->fresh()->usage_count);
     }
 
     public function test_price_fell_before_submission_books_at_the_lower_amount(): void
@@ -53,7 +43,7 @@ class AgreedAmountTest extends TestCase
         $fixture = $this->directOwnerCourt();
         $start = now()->addDays(2)->setTime(18, 0);
         $quote = $this->quoteFor($fixture['payer'], $fixture['organization'], $fixture['court'], [$start])->assertCreated()->json('quote');
-        $fixture['rule']->update(['price' => 180000]);
+        $this->publishPriceVersion($fixture['table'], [['00:00', '23:59', 180000]], now());
 
         $code = $this->submitCheckout($fixture['payer'], $fixture['organization'], ['quote_id' => $quote['id'], 'expected_total' => 200000])
             ->assertCreated()

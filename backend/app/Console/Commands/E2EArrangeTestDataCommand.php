@@ -2,14 +2,14 @@
 
 namespace App\Console\Commands;
 
+use App\Contracts\Repositories\PriceTableRepositoryInterface;
 use App\Models\Coupon;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\LoyaltyRule;
 use App\Models\Organization;
 use App\Models\PointLedger;
 use App\Models\PosProduct;
-use App\Models\PriceRule;
+use App\Models\PriceTable;
 use App\Models\User;
 use App\Models\Venue;
 use Illuminate\Console\Command;
@@ -124,33 +124,13 @@ class E2EArrangeTestDataCommand extends Command
             'is_active' => true,
         ]);
 
-        PriceRule::create([
-            'organization_id' => $venue->organization_id,
-            'venue_id' => $venue->id,
-            'court_id' => $court->id,
-            'type' => 'regular',
-            'price' => $basePrice,
-            'version' => 1,
-            'priority' => 10,
-            'is_active' => true,
+        // A whole-day normal table of its own, linked from a day ago so it prices any booking a test makes.
+        $tables = app(PriceTableRepositoryInterface::class);
+        $table = $tables->create(['venue_id' => $venue->id, 'name' => "Bảng giá {$testKey} {$runId}", 'kind' => PriceTable::KIND_NORMAL]);
+        $tables->publishVersion($table, now()->subDay(), now()->subDay(), [
+            ['weekdays' => [1, 2, 3, 4, 5, 6, 7], 'dates' => null, 'start_minute' => 0, 'end_minute' => 1440, 'price_per_hour' => $basePrice],
         ]);
-
-        $slots = [];
-        for ($weekday = 1; $weekday <= 7; $weekday++) {
-            for ($hour = 6; $hour <= 22; $hour++) {
-                $slots[] = [
-                    'court_id' => $court->id,
-                    'weekday' => $weekday,
-                    'starts_at' => sprintf('%02d:00', $hour),
-                    'ends_at' => sprintf('%02d:00', $hour + 1),
-                    'price' => $basePrice,
-                    'is_active' => true,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-            }
-        }
-        CourtPriceSlot::insert($slots);
+        $tables->createLinks($table, [$court->id], now()->subDay());
         Cache::increment('courts_version');
 
         $out = [

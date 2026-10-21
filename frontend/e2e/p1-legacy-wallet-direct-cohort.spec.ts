@@ -1,6 +1,6 @@
 import { getCanonicalBackendEnv } from './runner/test-data.ts'
 import { test, expect, type Page } from '@playwright/test'
-import { arrangeCourt, getTestManifest } from './runner/test-data.ts'
+import { arrangeCourt, getTestManifest, priceCourtPhp } from './runner/test-data.ts'
 import { getActorCredentials } from './runner/auth.ts'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
@@ -263,7 +263,6 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
       use App\\Models\\Court;
-      use App\\Models\\PriceRule;
       use App\\Models\\User;
       use App\\Models\\WalletAccount;
       use App\\Services\\Booking\\OrdinaryCheckoutService;
@@ -286,16 +285,7 @@ test.describe('P1: Bảo toàn ví cũ, Chặn nạp ví cho nhóm thanh toán t
         'is_active' => true,
       ]);
 
-      PriceRule::create([
-        'organization_id' => ${org1Id},
-        'venue_id' => ${venue1Id},
-        'court_id' => $court->id,
-        'type' => 'base',
-        'price' => 150000,
-        'priority' => 1,
-        'is_active' => true,
-        'version' => 1,
-      ]);
+      ${priceCourtPhp(150000)}
 
       $futureTime = Carbon::now(config('app.timezone'))->addDays(5)->setTime(14, 0, 0);
 

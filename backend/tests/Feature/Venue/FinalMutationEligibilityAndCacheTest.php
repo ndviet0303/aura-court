@@ -6,7 +6,6 @@ use App\Domain\Partner\Actions\RestorePartner;
 use App\Domain\Partner\Actions\SuspendPartner;
 use App\Domain\Venue\Actions\TransitionVenueLifecycle;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
@@ -17,10 +16,12 @@ use App\Services\Payment\WalletPaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class FinalMutationEligibilityAndCacheTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private function createCustomerWithWallet(int $orgId, int $balance = 500000): User
@@ -119,14 +120,7 @@ class FinalMutationEligibilityAndCacheTest extends TestCase
         ]);
 
         $court = Court::create(['venue_id' => $venue->id, 'sport_type' => 'badminton', 'name' => 'Court R', 'slug' => 'court-r', 'is_active' => true]);
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => now()->addDay()->dayOfWeekIso,
-            'starts_at' => '08:00',
-            'ends_at' => '09:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourt($court, 100000);
 
         // Venue is closed right before transaction
         $venue->update(['status' => 'temporarily_closed', 'is_active' => false]);

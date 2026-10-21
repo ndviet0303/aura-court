@@ -3,7 +3,6 @@ import { defineStore } from 'pinia'
 import { i18n } from '@/i18n'
 import { bookingApi } from '../api/bookingApi'
 import type { Court, AvailabilitySlot } from '@/features/court/types/court'
-import { loyaltyFields, type LoyaltySelection } from '../utils/reservation'
 import { usePriceChange } from '../composables/usePriceChange'
 
 export const useBookingStore = defineStore('booking', () => {
@@ -108,23 +107,13 @@ export const useBookingStore = defineStore('booking', () => {
   watch([selectedCourt, () => selectedSlots.value.map((slot) => slot.startsAt).join()], price.clear)
 
   // Checks out the selected slots at the amount payable the customer was shown; the server prices them
-  // in the same transaction. A resubmission at a confirmed new price has another body, so another key.
-  async function checkoutReservation(
-    loyalty: LoyaltySelection | undefined,
-    couponCode: string | null | undefined,
-    expectedTotal: number,
-    confirmedPrice = false,
-  ) {
-    const { reservation } = await bookingApi.checkoutReservation(
-      {
-        court_id: selectedCourt.value ?? undefined,
-        slots: selectedSlots.value.map((slot) => slot.startsAt),
-        ...(couponCode ? { coupon_code: couponCode } : {}),
-        expected_total: expectedTotal,
-        ...loyaltyFields(loyalty),
-      },
-      confirmedPrice ? undefined : loyalty?.idempotency_key,
-    )
+  // in the same transaction.
+  async function checkoutReservation(expectedTotal: number) {
+    const { reservation } = await bookingApi.checkoutReservation({
+      court_id: selectedCourt.value ?? undefined,
+      slots: selectedSlots.value.map((slot) => slot.startsAt),
+      expected_total: expectedTotal,
+    })
     return reservation
   }
 

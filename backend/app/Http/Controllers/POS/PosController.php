@@ -670,14 +670,6 @@ class PosController extends Controller
         return $this->pos->benefits($organization->id, $request->user()->id);
     }
 
-    public function redeemPoints(Request $request)
-    {
-        $organization = $this->organization($request);
-        $data = $request->validate(['points' => 'required|integer|min:1', 'source_type' => 'required|string|max:120', 'source_id' => 'required|integer']);
-
-        return $this->idempotency->run($request, fn () => response()->json(['points' => $this->pos->redeemPoints($organization->id, $request->user()->id, $data['points'], $data['source_type'], $data['source_id'])], 201));
-    }
-
     public function creditWallet(Request $request)
     {
         $organization = $this->organization($request);

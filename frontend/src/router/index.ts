@@ -367,7 +367,7 @@ const router = createRouter({
         {
           path: 'pricing',
           name: 'admin-pricing',
-          component: () => import('@/features/admin/views/PricingCalendarView.vue'),
+          component: () => import('@/features/admin/views/AdminPriceTablesView.vue'),
           meta: {
             orgRoles: ['organization_owner'],
             titleKey: 'seo.adminPricingTitle',

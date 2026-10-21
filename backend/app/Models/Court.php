@@ -86,9 +86,10 @@ class Court extends Model
             ?? 'Asia/Ho_Chi_Minh';
     }
 
-    public function priceSlots(): HasMany
+    /** @return HasMany<CourtPriceTableLink, $this> */
+    public function priceTableLinks(): HasMany
     {
-        return $this->hasMany(CourtPriceSlot::class);
+        return $this->hasMany(CourtPriceTableLink::class);
     }
 
     /** @return BelongsTo<Venue, $this> */

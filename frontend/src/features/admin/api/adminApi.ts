@@ -1,7 +1,7 @@
 import { api } from '@/core/api/client'
-import type { Court, Venue, PriceSlot, CourtBlock } from '@/features/court/types/court'
+import type { Court, Venue, CourtBlock } from '@/features/court/types/court'
 import type { Coupon } from '@/features/booking/types/booking'
-import type { CourtForm, PriceForm, BlockForm, VenueForm } from '../types/admin'
+import type { CourtForm, BlockForm, VenueForm } from '../types/admin'
 import type { VenueBookingPolicySettings, VenueBookingPolicyVersion } from '../types/admin'
 
 export const adminApi = {
@@ -60,20 +60,6 @@ export const adminApi = {
   // Upload
   uploadImage: (formData: FormData) =>
     api.post<{ url: string; filename: string }>('/admin/upload', formData),
-
-  // Price slots
-  getCourtPrices: (courtId: number) => api.get<PriceSlot[]>(`/admin/courts/${courtId}/prices`),
-  createPrice: (courtId: number, payload: PriceForm) =>
-    api.post(`/admin/courts/${courtId}/prices`, payload),
-  bulkCreatePrices: <T = { message: string; slots?: PriceSlot[] }>(courtId: number, payload: any) =>
-    api.post<T>(`/admin/courts/${courtId}/prices/bulk`, payload),
-  updatePrice: (
-    courtId: number,
-    priceId: number,
-    payload: Partial<PriceForm> | { price: number },
-  ) => api.patch(`/admin/courts/${courtId}/prices/${priceId}`, payload),
-  deletePrice: (courtId: number, priceId: number) =>
-    api.delete(`/admin/courts/${courtId}/prices/${priceId}`),
 
   // Blocks
   createBlock: (courtId: number, payload: BlockForm) =>
@@ -148,15 +134,6 @@ export const adminApi = {
   revokeOrgInvitation: <T = any>(orgId: number | string, invitationId: number | string) =>
     api.post<T>(`/organizations/${orgId}/invitations/${invitationId}/revoke`),
 
-  // Pricing Rules Calendar
-  getPriceRules: <T = { rules: any[] }>(params?: Record<string, any>) =>
-    api.get<T>('/price-rules', { params }),
-  getPricingCalendar: <T = { rules: any[] }>(params?: Record<string, any>) =>
-    api.get<T>('/pricing/calendar', { params }),
-  createPriceRule: <T = { rule: any }>(payload: any) => api.post<T>('/price-rules', payload),
-  updatePriceRule: <T = { rule: any }>(id: number | string, payload: any) =>
-    api.patch<T>(`/price-rules/${id}`, payload),
-  deletePriceRule: (id: number | string) => api.delete(`/price-rules/${id}`),
   quotePrice: <T = { quote: any }>(payload: { court_id: number; slots: string[] }) =>
     api.post<T>('/price-quotes', payload),
 }

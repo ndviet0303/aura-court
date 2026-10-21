@@ -44,9 +44,7 @@ describe('RecurringBookingView', () => {
               is_active: true,
               share_url: '',
             },
-            price_slots: [
-              { id: 1, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 120000 },
-            ],
+            from_price: 120000,
           },
         ]
       }

@@ -3,12 +3,9 @@
 namespace Tests\Feature\Readiness;
 
 use App\Domain\Subscription\Actions\ConfirmSubscriptionPayment;
-use App\Models\Coupon;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\EntitlementTransfer;
 use App\Models\FinanceException;
-use App\Models\LoyaltyRule;
 use App\Models\MonthlyInvoice;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
@@ -22,7 +19,6 @@ use App\Models\PlatformSubscription;
 use App\Models\PointLedger;
 use App\Models\PosOrder;
 use App\Models\PosProduct;
-use App\Models\PriceRule;
 use App\Models\ProviderEvent;
 use App\Models\ReceivingConnection;
 use App\Models\Reservation;
@@ -46,6 +42,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 /**
@@ -53,7 +50,7 @@ use Tests\TestCase;
  *
  * Verifies zero double effects across 8 concurrency and idempotent retry scenarios:
  * 1. Court overlap: Contending attempts on the exact same court and slot.
- * 2. Points & Coupon use: Concurrent usage of the same coupon or user point balance.
+ * 2. Points & Coupon use: court bookings refuse both, so neither can be applied twice.
  * 3. Final stock in POS: 1 unit remaining in inventory under concurrent purchases.
  * 4. Split bill confirmation: Replay or concurrent payment confirmation.
  * 5. Marketplace transfer: Concurrent purchases for the same secondary listing.
@@ -63,6 +60,7 @@ use Tests\TestCase;
  */
 class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private array $eventDates = [];
@@ -90,20 +88,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Center Court', 'is_active' => true]);
 
         $targetDate = now(config('app.timezone'))->addDays(5)->setTime(18, 0)->startOfHour();
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => $targetDate->dayOfWeekIso,
-            'starts_at' => '18:00',
-            'ends_at' => '19:00',
-            'price' => 200000,
-            'is_active' => true,
-        ]);
-        PriceRule::create([
-            'organization_id' => $org->id,
-            'court_id' => $court->id,
-            'type' => 'base',
-            'price' => 200000,
-        ]);
+        $this->priceCourt($court, 200000);
 
         $isoSlot = $targetDate->toIso8601String();
         $walletService = app(WalletPaymentService::class);
@@ -184,21 +169,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
         $fixture = $this->setupTenantWithReceivingConnection();
         $payer = $fixture['payer'];
         $org = $fixture['organization'];
-        $court = $fixture['court'];
 
-        // Loyalty Rule: 100 points = 200,000 VND (10 points = 20,000 VND)
-        LoyaltyRule::create([
-            'organization_id' => $org->id,
-            'name' => 'Base redemption',
-            'version' => 1,
-            'earn_points_per_100_vnd' => 0,
-            'redeem_points_per_100_vnd' => 0,
-            'status' => 'published',
-            'metadata' => ['points_redeemed' => 100, 'reward_value_vnd' => 200000],
-            'published_at' => now(),
-        ]);
-
-        // Payer has exactly 10 points
         PointLedger::create([
             'organization_id' => $org->id,
             'user_id' => $payer->id,
@@ -209,82 +180,24 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
             'source_id' => 1,
         ]);
 
-        // Single-use coupon for 20,000 VND off
-        $coupon = Coupon::create([
-            'organization_id' => $org->id,
-            'code' => 'DISC20K',
-            'discount_type' => 'fixed',
-            'discount_value' => 20000,
-            'starts_at' => now()->subDay(),
-            'ends_at' => now()->addDays(30),
-            'is_active' => true,
-            'usage_limit' => 1,
-            'usage_count' => 0,
-        ]);
+        // Court bookings take no coupon and no points (design D21, D28), so there is nothing to apply twice.
+        foreach (['coupon-1' => ['coupon_code' => 'DISC20K'], 'points-2' => ['loyalty_points' => 10]] as $key => $benefit) {
+            $this->actingAs($payer)
+                ->withHeader('Idempotency-Key', "benefit-{$key}")
+                ->postJson('/api/reservations/checkout', [
+                    'court_id' => $fixture['court']->id,
+                    'slots' => [now()->addDays(3)->setTime(10, 0, 0)->toIso8601String()],
+                    'expected_total' => 200000,
+                    ...$benefit,
+                ])
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors(array_keys($benefit));
+        }
 
-        $slot1 = now()->addDays(3)->setTime(10, 0, 0);
-        $slot2 = now()->addDays(3)->setTime(12, 0, 0);
-        $slot3 = now()->addDays(3)->setTime(14, 0, 0);
-
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $slot1->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 120000, 'is_active' => true]);
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $slot2->dayOfWeekIso, 'starts_at' => '12:00', 'ends_at' => '13:00', 'price' => 120000, 'is_active' => true]);
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $slot3->dayOfWeekIso, 'starts_at' => '14:00', 'ends_at' => '15:00', 'price' => 120000, 'is_active' => true]);
-
-        // 1. Initial valid booking uses both the coupon AND the 10 loyalty points
-        // Subtotal 120,000 - coupon 20,000 - points 20,000 = 80,000 payable
-        $res1 = $this->actingAs($payer)
-            ->withHeader('Idempotency-Key', 'partial-benefit-book-1')
-            ->postJson('/api/reservations/checkout', [
-                'court_id' => $court->id,
-                'slots' => [$slot1->toIso8601String()],
-                'expected_total' => 80000,
-                'coupon_code' => 'DISC20K',
-                'loyalty_points' => 10,
-                'loyalty_policy_version' => 1,
-            ]);
-        $res1->assertCreated();
-        $this->assertSame(80000, $res1->json('reservation.total_amount'));
-
-        // Point balance is now 0 and coupon usage is 1
-        $this->assertSame(1, (int) $coupon->fresh()->usage_count);
-        $pointBalance = (int) PointLedger::where('organization_id', $org->id)->where('user_id', $payer->id)->sum('delta');
-        $this->assertSame(0, $pointBalance);
-
-        // 2. Concurrent / second booking attempt tries to reuse the single-use coupon on Slot 2 -> REJECTED
-        $res2 = $this->actingAs($payer)
-            ->withHeader('Idempotency-Key', 'concurrent-coupon-reuse-2')
-            ->postJson('/api/reservations/checkout', [
-                'court_id' => $court->id,
-                'slots' => [$slot2->toIso8601String()],
-                'expected_total' => 100000,
-                'coupon_code' => 'DISC20K',
-            ]);
-        $res2->assertStatus(422);
-        $res2->assertJsonValidationErrors(['coupon_code']);
-
-        // 3. Concurrent / third booking attempt tries to reuse the 10 loyalty points on Slot 3 -> REJECTED
-        $res3 = $this->actingAs($payer)
-            ->withHeader('Idempotency-Key', 'concurrent-points-reuse-3')
-            ->postJson('/api/reservations/checkout', [
-                'court_id' => $court->id,
-                'slots' => [$slot3->toIso8601String()],
-                'expected_total' => 100000,
-                'loyalty_points' => 10,
-                'loyalty_policy_version' => 1,
-            ]);
-        $res3->assertStatus(422);
-        $res3->assertJsonPath('message', 'Số dư điểm không đủ để thực hiện quy đổi.');
-
-        // Invariants:
-        // - Points not decremented below zero
-        $finalPoints = (int) PointLedger::where('organization_id', $org->id)->where('user_id', $payer->id)->sum('delta');
-        $this->assertSame(0, $finalPoints, 'Points balance must be exactly 0, never negative.');
-
-        // - Coupon usage is exactly 1 (no double discount)
-        $this->assertSame(1, (int) $coupon->fresh()->usage_count, 'Coupon usage count must be exactly 1.');
-
-        // - Only 1 reservation created
-        $this->assertSame(1, Reservation::where('user_id', $payer->id)->count(), 'Only 1 reservation can be created with benefits.');
+        $this->assertSame(0, Reservation::where('user_id', $payer->id)->count());
+        $this->assertSame(0, OwnerPaymentAttempt::count());
+        $this->assertSame(10, (int) PointLedger::where('organization_id', $org->id)->where('user_id', $payer->id)->sum('delta'));
+        $this->assertSame(1, PointLedger::where('user_id', $payer->id)->count());
     }
 
     // =========================================================================
@@ -759,7 +672,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
             'is_active' => true,
         ]);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Court 1', 'is_active' => true]);
-        PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 200000]);
+        $this->priceCourt($court, 200000);
 
         VenueBookingPolicy::create([
             'venue_id' => $venue->id,

@@ -10,7 +10,6 @@ use App\Models\Booking;
 use App\Models\BookingSlot;
 use App\Models\CashShift;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\Journal;
 use App\Models\JournalEntry;
 use App\Models\Organization;
@@ -21,7 +20,6 @@ use App\Models\PosOrder;
 use App\Models\PosOrderItem;
 use App\Models\PosPayment;
 use App\Models\PosProduct;
-use App\Models\PriceRule;
 use App\Models\ProviderEvent;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
@@ -43,6 +41,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Tests\Concerns\PaysOwnerByQr;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 /**
@@ -60,6 +59,7 @@ use Tests\TestCase;
 class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
 {
     use PaysOwnerByQr;
+    use PricesCourts;
     use RefreshDatabase;
 
     private function createTenantFixture(string $prefix = 'rel'): array
@@ -130,12 +130,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
             'is_active' => true,
         ]);
 
-        PriceRule::create([
-            'organization_id' => $org->id,
-            'court_id' => $court->id,
-            'type' => 'base',
-            'price' => 150000,
-        ]);
+        $this->priceCourt($court, 150000);
 
         VenueBookingPolicy::create([
             'venue_id' => $venue->id,
@@ -355,16 +350,7 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
         $tz = 'Asia/Ho_Chi_Minh';
         $targetDate = now($tz)->addDays(4)->setTime(14, 0)->startOfHour();
 
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => $targetDate->dayOfWeekIso,
-            'starts_at' => '14:00',
-            'ends_at' => '15:00',
-            'price' => 150000,
-            'is_active' => true,
-        ]);
-
-        // 1. Create held reservation older than 15 minutes (20 minutes ago)
+        // 1. Create a live hold that expires in 10 minutes
         $heldReservation = Reservation::create([
             'organization_id' => $org->id,
             'user_id' => $customer->id,
@@ -373,8 +359,8 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
             'status' => 'held',
             'currency' => 'VND',
             'total_amount' => 150000,
-            'hold_expires_at' => now()->subMinutes(5),
-            'created_at' => now()->subMinutes(20),
+            'hold_expires_at' => now()->addMinutes(10),
+            'created_at' => now()->subMinutes(5),
         ]);
 
         $heldSlot = $heldReservation->slots()->create([
@@ -406,7 +392,8 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
         $this->assertNotNull($slotBefore, 'Target slot must be present in availability grid.');
         $this->assertFalse($slotBefore['available'], 'Held slot must NOT be available prior to sweep.');
 
-        // 3. Run the host scheduler sweep (the scheduled 'booking:expire-pending' callback)
+        // 3. Once the hold has expired, run the host scheduler sweep (the scheduled 'booking:expire-pending' callback)
+        $this->travel(11)->minutes();
         $expiredCount = app(ExpirePendingBookings::class)->execute();
         $this->assertGreaterThanOrEqual(1, $expiredCount, 'Host scheduler sweep must release the expired hold.');
 
@@ -957,22 +944,8 @@ class ReliabilityRealtimeAndSchedulerReadinessTest extends TestCase
         $court = $fixture['court'];
 
         $tz = 'Asia/Ho_Chi_Minh';
+        // The fixture's price table prices every hourly slot of the day
         $targetDate = now($tz)->addDays(3)->setTime(8, 0)->startOfHour();
-
-        // Seed 14 hourly slots across operating day (08:00 - 22:00)
-        for ($hour = 8; $hour < 22; $hour++) {
-            $startStr = sprintf('%02d:00', $hour);
-            $endStr = sprintf('%02d:00', $hour + 1);
-
-            CourtPriceSlot::create([
-                'court_id' => $court->id,
-                'weekday' => $targetDate->dayOfWeekIso,
-                'starts_at' => $startStr,
-                'ends_at' => $endStr,
-                'price' => 150000,
-                'is_active' => true,
-            ]);
-        }
 
         $url = "/api/availability?court_id={$court->id}&date={$targetDate->toDateString()}";
 
