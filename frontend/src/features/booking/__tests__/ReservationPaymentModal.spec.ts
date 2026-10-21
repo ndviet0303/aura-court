@@ -9,6 +9,7 @@ vi.mock('../api/bookingApi', () => ({
   bookingApi: {
     createReservationPayment: vi.fn(),
     getReservationPayment: vi.fn(),
+    cancelReservationPayment: vi.fn(),
   },
 }))
 
@@ -158,6 +159,26 @@ describe('ReservationPaymentModal', () => {
 
     expect(wrapper.find('[data-testid="reservation-payment-qr"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="payment-error"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('lets the customer cancel the pending booking from the payment screen', async () => {
+    vi.mocked(bookingApi.cancelReservationPayment).mockResolvedValue({
+      reservation: { code: 'RSV-PAY-45', status: 'cancelled' } as Reservation,
+    })
+    const held = { id: 45, code: 'RSV-PAY-45', status: 'held' } as Reservation
+    const wrapper = mount(ReservationPaymentModal, {
+      props: { show: true, reservation: held },
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    await wrapper.get('[data-testid="cancel-payment"]').trigger('click')
+    await wrapper.get('[data-testid="confirm-cancel-payment"]').trigger('click')
+    await flushPromises()
+
+    expect(bookingApi.cancelReservationPayment).toHaveBeenCalledWith('RSV-PAY-45')
+    expect(wrapper.emitted('cancelled')?.[0]).toEqual([held])
     wrapper.unmount()
   })
 })

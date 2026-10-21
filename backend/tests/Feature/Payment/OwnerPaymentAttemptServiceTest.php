@@ -390,8 +390,8 @@ class OwnerPaymentAttemptServiceTest extends TestCase
         ])->assertOk();
 
         $receiptA = OwnerPaymentReceipt::where('provider_event_id', 'receipt-race-a')->firstOrFail();
-        $this->assertSame('attempt_not_pending', $receiptA->exception_code);
-        $this->assertSame('exception', $receiptA->status);
+        $this->assertSame('transfer_after_expiry', $receiptA->exception_code);
+        $this->assertSame('late', $receiptA->status);
         $this->assertSame('expired', $reservationA->fresh()->status); // Never flips back to confirmed.
         $this->assertSame(OwnerPaymentAttempt::STATUS_EXPIRED, $attemptA->fresh()->status);
         $this->assertDatabaseMissing('owner_payment_allocations', ['payment_attempt_id' => $attemptA->id]);

@@ -2,7 +2,9 @@
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { Reservation } from '../../types/reservation'
-import { displayCode, displayStatus, quoteDiscounts } from '../../utils/reservation'
+import { displayCode, quoteDiscounts, statusLabel } from '../../utils/reservation'
+import CancelPaymentButton from './CancelPaymentButton.vue'
+import ReservationDetailFacts from './ReservationDetailFacts.vue'
 
 const { t } = useI18n()
 defineProps<{
@@ -15,6 +17,8 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
+  (e: 'pay', reservation: Reservation): void
+  (e: 'cancelled', reservation: Reservation): void
 }>()
 </script>
 
@@ -50,32 +54,12 @@ const emit = defineEmits<{
           <div class="info-group">
             <span class="info-label">{{ t('reservations.modal.statusLabel') }}</span>
             <span class="status-badge" :class="reservation.status">
-              {{ displayStatus(reservation) }}
+              {{ statusLabel(reservation, t) }}
             </span>
           </div>
         </div>
 
-        <!-- Quote Snapshot Details -->
-        <div v-if="reservation.quote" class="quote-snapshot-box">
-          <div class="snapshot-header">
-            <span class="material-symbols-outlined snap-icon">lock</span>
-            <span>{{ t('reservations.modal.quoteSnapshotTitle') }}</span>
-          </div>
-          <div class="snapshot-details">
-            <div class="detail-line">
-              <span class="detail-k">{{ t('reservations.modal.quoteToken') }}</span>
-              <span class="detail-v font-mono">#{{ reservation.quote.quote_token }}</span>
-            </div>
-            <div class="detail-line">
-              <span class="detail-k">{{ t('reservations.modal.createdAt') }}</span>
-              <span class="detail-v font-mono">{{ formatDate(reservation.created_at || '') }}</span>
-            </div>
-            <div class="detail-line">
-              <span class="detail-k">{{ t('reservations.modal.expiresAt') }}</span>
-              <span class="detail-v font-mono">{{ formatDate(reservation.quote.expires_at) }}</span>
-            </div>
-          </div>
-        </div>
+        <ReservationDetailFacts :reservation="reservation" />
 
         <!-- Slots Table -->
         <div class="slots-table-section">
@@ -136,6 +120,21 @@ const emit = defineEmits<{
       </div>
 
       <div class="modal-footer">
+        <template v-if="reservation.status === 'held'">
+          <CancelPaymentButton
+            :code="reservation.code"
+            @cancelled="emit('cancelled', reservation)"
+          />
+          <button
+            v-if="reservation.payment_model === 'direct_owner_v1'"
+            class="btn btn-ghost"
+            type="button"
+            data-testid="reservation-detail-pay"
+            @click="emit('pay', reservation)"
+          >
+            {{ t('reservations.detail.reopenPayment') }}
+          </button>
+        </template>
         <RouterLink
           v-if="reservation && reservation.status === 'confirmed'"
           :to="{ name: 'resale-marketplace' }"
@@ -278,48 +277,6 @@ const emit = defineEmits<{
 .status-badge.confirmed {
   background: var(--success-bg, rgba(46, 125, 50, 0.15));
   color: var(--success-text, #2e7d32);
-}
-
-.quote-snapshot-box {
-  background: linear-gradient(135deg, rgba(201, 161, 90, 0.08) 0%, rgba(107, 45, 63, 0.05) 100%);
-  border: 1px solid var(--accent, #c9a15a);
-  border-radius: 12px;
-  padding: 12px 16px;
-}
-
-.snapshot-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--on-accent-container, #684f17);
-  margin-bottom: 8px;
-}
-
-.snap-icon {
-  font-size: 15px;
-}
-
-.snapshot-details {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 11.5px;
-}
-
-.detail-line {
-  display: flex;
-  justify-content: space-between;
-}
-
-.detail-k {
-  color: var(--muted);
-}
-
-.detail-v {
-  font-weight: 700;
-  color: var(--ink);
 }
 
 .section-heading {

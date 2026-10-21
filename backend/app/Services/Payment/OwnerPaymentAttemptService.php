@@ -454,7 +454,7 @@ class OwnerPaymentAttemptService
         if ($eventAt->lt($attempt->created_at)) {
             $status = 'exception';
             $exceptionCode = 'transfer_before_attempt';
-        } elseif ($eventAt->gt($attempt->expires_at)) {
+        } elseif ($eventAt->gt($attempt->expires_at) || $attempt->status === OwnerPaymentAttempt::STATUS_EXPIRED) {
             $status = 'late';
             $exceptionCode = 'transfer_after_expiry';
         } elseif (! in_array($attempt->purpose, self::PURPOSES, true)) {

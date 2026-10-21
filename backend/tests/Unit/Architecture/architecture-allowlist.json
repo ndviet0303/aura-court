@@ -90,7 +90,7 @@
   ["model-query", "Http/Controllers/Partner/ReceivingConnectionController.php", 7],
   ["model-query", "Http/Controllers/Promotion/PromotionController.php", 26],
   ["model-query", "Http/Controllers/Reservation/PriceRuleController.php", 4],
-  ["model-query", "Http/Controllers/Reservation/ReservationController.php", 7],
+  ["model-query", "Http/Controllers/Reservation/ReservationController.php", 6],
   ["model-query", "Http/Controllers/Social/CommunityFeedController.php", 3],
   ["model-query", "Http/Controllers/Social/SocialController.php", 2],
   ["model-query", "Http/Controllers/Subscription/PlatformSubscriptionController.php", 1],

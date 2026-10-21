@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import type { Reservation } from '../../types/reservation'
 import { displayCode } from '../../utils/reservation'
+import CancelPaymentButton from './CancelPaymentButton.vue'
 
 const { t } = useI18n()
 defineProps<{
@@ -16,6 +17,7 @@ const emit = defineEmits<{
   (e: 'confirm', reservation: Reservation): void
   (e: 'pay', reservation: Reservation): void
   (e: 'details', reservation: Reservation): void
+  (e: 'cancelled', reservation: Reservation): void
 }>()
 </script>
 
@@ -84,6 +86,7 @@ const emit = defineEmits<{
             : t('reservations.heldBanner.confirmBtn')
         }}</span>
       </button>
+      <CancelPaymentButton :code="reservation.code" @cancelled="emit('cancelled', reservation)" />
     </div>
   </div>
 </template>
@@ -190,27 +193,6 @@ const emit = defineEmits<{
 .btn-confirm-held {
   padding: 9px 20px;
   font-size: 13.5px;
-}
-
-.btn-cancel-held {
-  padding: 9px 14px;
-  border-radius: 9999px;
-  border: 1px solid var(--outline);
-  background: transparent;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.2s ease;
-}
-
-.btn-cancel-held:hover:not(:disabled) {
-  background: var(--error-bg, rgba(198, 40, 40, 0.1));
-  color: var(--error-text, #c62828);
-  border-color: rgba(198, 40, 40, 0.3);
 }
 
 @media (max-width: 768px) {
