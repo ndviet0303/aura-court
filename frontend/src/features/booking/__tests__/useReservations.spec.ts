@@ -116,7 +116,7 @@ describe('useReservations', () => {
     expect(state.selectedReservationForPayment.value).toBeNull()
   })
 
-  it('checks out the quote with its court and sends loyalty only for a positive redemption', async () => {
+  it('checks out the quote with its court at the quote total', async () => {
     vi.mocked(bookingApi.checkoutReservation).mockResolvedValue({
       reservation: reservation({ status: 'confirmed' }),
     })
@@ -130,32 +130,11 @@ describe('useReservations', () => {
 
     state.selectedCourtId.value = 3
     state.activeQuote.value = quote
-    await state.checkoutReservation({
-      loyalty_points: 0,
-      loyalty_policy_version: 2,
-      discount_vnd: 0,
-    })
-    state.activeQuote.value = quote
-    await state.checkoutReservation({
-      loyalty_points: 50,
-      loyalty_policy_version: 2,
-      idempotency_key: 'loy-key-1',
-      discount_vnd: 50000,
-    })
+    await state.checkoutReservation()
 
-    // expected_total is the amount payable shown: the quote total less the points discount.
+    // expected_total is the amount payable shown: the quote total.
     expect(vi.mocked(bookingApi.checkoutReservation).mock.calls).toEqual([
-      [{ quote_token: 'qt-1', court_id: 3, expected_total: 200000 }, undefined],
-      [
-        {
-          quote_token: 'qt-1',
-          court_id: 3,
-          expected_total: 150000,
-          loyalty_points: 50,
-          loyalty_policy_version: 2,
-        },
-        'loy-key-1',
-      ],
+      [{ quote_token: 'qt-1', court_id: 3, expected_total: 200000 }],
     ])
   })
 
@@ -198,23 +177,20 @@ describe('useReservations', () => {
       total_amount: 200000,
       expires_at: '2099-01-01T00:00:00Z',
     } as PriceQuote
-    const loyalty = { loyalty_points: 0, loyalty_policy_version: 2, idempotency_key: 'loy-key-3' }
 
-    await state.checkoutReservation(loyalty)
+    await state.checkoutReservation()
 
     expect(state.priceChange.value).toEqual({ rental: 240000, discount: 20000, total: 220000 })
     expect(state.error.value).toBe('')
     expect(vi.mocked(bookingApi.checkoutReservation).mock.calls).toEqual([
-      [{ quote_token: 'qt-3', court_id: 3, expected_total: 200000 }, 'loy-key-3'],
+      [{ quote_token: 'qt-3', court_id: 3, expected_total: 200000 }],
     ])
 
     await state.confirmPriceChange()
 
     expect(state.priceChange.value).toBeNull()
-    // The resubmission has another body, so it does not reuse the first Idempotency-Key.
     expect(vi.mocked(bookingApi.checkoutReservation).mock.calls[1]).toEqual([
       { quote_token: 'qt-3', court_id: 3, expected_total: 220000 },
-      undefined,
     ])
   })
 

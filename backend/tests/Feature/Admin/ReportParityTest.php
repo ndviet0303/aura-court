@@ -4,7 +4,6 @@ namespace Tests\Feature\Admin;
 
 use App\Models\Booking;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\LegacyBookingMapping;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
@@ -15,6 +14,7 @@ use App\Models\Refund;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Venue;
+use App\Models\VenueOperatingSchedule;
 use App\Services\Payment\WalletPaymentService;
 use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
@@ -22,6 +22,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 /**
@@ -30,6 +31,7 @@ use Tests\TestCase;
  */
 class ReportParityTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private const RANGE = 'from=2026-03-01&to=2026-03-31';
@@ -45,6 +47,9 @@ class ReportParityTest extends TestCase
     private Venue $venueA;
 
     private Venue $venueB;
+
+    /** @var array<int, int> court id => price per hour */
+    private array $hourly = [];
 
     public function test_report_and_csv_numbers_on_the_fixed_dataset(): void
     {
@@ -156,6 +161,7 @@ class ReportParityTest extends TestCase
     }
 
     /** @return array<int, mixed> */
+    /** Courts priced all day and open daily for the given hours, the capacity the report counts. */
     private function tenant(string $orgName, string $venueName, array $courtNames, array $prices, array $hours): array
     {
         $org = Organization::create(['name' => $orgName, 'slug' => str($orgName)->slug().'-'.uniqid(), 'status' => 'active', 'partner_status' => 'approved']);
@@ -163,17 +169,14 @@ class ReportParityTest extends TestCase
         $wallets = app(WalletPaymentService::class);
         $wallets->credit($wallets->getOrCreateWallet($this->customer->id, $org->id), 2000000, 'test_topup', 1, 'Parity fixture');
 
+        $day = ['closed' => false, 'intervals' => [['start' => $hours[0], 'end' => Carbon::parse(end($hours))->addHour()->format('H:i')]]];
+        VenueOperatingSchedule::create(['venue_id' => $venue->id, 'scope_key' => 'venue', 'timezone' => 'Asia/Ho_Chi_Minh', 'version' => 1, 'weekly_hours' => array_fill_keys(range(1, 7), $day)]);
+
         $courts = [];
         foreach ($courtNames as $index => $name) {
             $court = Court::create(['venue_id' => $venue->id, 'name' => $name, 'is_active' => true]);
-            foreach (range(1, 7) as $weekday) {
-                foreach ($hours as $hour) {
-                    CourtPriceSlot::create([
-                        'court_id' => $court->id, 'weekday' => $weekday, 'starts_at' => $hour,
-                        'ends_at' => Carbon::parse($hour)->addHour()->format('H:i'), 'price' => $prices[$index], 'is_active' => true,
-                    ]);
-                }
-            }
+            $this->priceCourt($court, $prices[$index]);
+            $this->hourly[$court->id] = $prices[$index];
             $courts[] = $court;
         }
 
@@ -183,7 +186,7 @@ class ReportParityTest extends TestCase
     /** A confirmed legacy-wallet V1 booking as checkoutV1 wrote it, mirrored to its reservation. */
     private function checkoutV1(Court $court, array $localStarts): Booking
     {
-        $price = (int) CourtPriceSlot::where('court_id', $court->id)->value('price');
+        $price = $this->hourly[$court->id];
         $booking = Booking::create([
             'court_id' => $court->id, 'user_id' => $this->customer->id, 'code' => 'BK'.strtoupper(Str::random(12)),
             'status' => 'confirmed', 'total_amount' => $price * count($localStarts), 'payment_model' => 'legacy_wallet_v1',

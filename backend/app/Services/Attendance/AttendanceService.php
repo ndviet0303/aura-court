@@ -156,7 +156,7 @@ class AttendanceService
         // 6. Court operational readiness (Task 8.2 / D49)
         $court = $reservation->court;
         if ($court) {
-            if (! $court->is_active) {
+            if ($court->status !== Court::STATUS_ACTIVE) {
                 abort(422, 'Court is currently under maintenance.');
             }
 
@@ -426,7 +426,7 @@ class AttendanceService
 
         $newCourt = Court::query()->whereKey($newCourtId)->firstOrFail();
         abort_unless((int) $newCourt->venue_id === (int) $reservation->court?->venue_id, 422, 'Target court must belong to the same venue.');
-        abort_unless($newCourt->is_active, 422, 'Target court is currently under maintenance.');
+        abort_unless($newCourt->status === Court::STATUS_ACTIVE, 422, 'Target court is currently under maintenance.');
 
         // Check if new court has overlapping slots during remaining booking time
         foreach ($reservation->slots as $slot) {

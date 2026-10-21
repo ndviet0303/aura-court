@@ -3,7 +3,6 @@
 namespace Tests\Feature\Account;
 
 use App\Models\OrganizationMember;
-use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\TenantCustomer;
 use App\Models\User;
@@ -15,10 +14,12 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class EmailVerificationBookingEnforcementTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     public function test_unverified_customer_calling_booking_is_denied(): void
@@ -238,13 +239,7 @@ class EmailVerificationBookingEnforcementTest extends TestCase
         $org = $fixture['org1']['org'];
         $org->update(['partner_status' => 'approved']);
 
-        PriceRule::create([
-            'organization_id' => $org->id,
-            'court_id' => $court->id,
-            'type' => 'base',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourt($court);
 
         $staff = User::factory()->create([
             'status' => 'active',

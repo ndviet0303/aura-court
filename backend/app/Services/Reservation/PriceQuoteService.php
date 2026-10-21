@@ -7,9 +7,9 @@ use App\Models\Court;
 use App\Models\CourtBlock;
 use App\Models\PriceQuote;
 use App\Models\ReservationSlot;
-use App\Models\User;
-use App\Services\Booking\DiscountService;
+use App\Services\Pricing\RentalPriceCalculator;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -18,22 +18,35 @@ class PriceQuoteService
 {
     public function __construct(
         private readonly VenueOperatingCalendar $operatingCalendar,
-        private readonly DiscountService $discounts,
-        private readonly CourtPriceRuleService $priceRules,
-        private readonly PriceTierResolver $tiers,
+        private readonly RentalPriceCalculator $rentals,
+        private readonly ReservationIntake $intake,
     ) {}
 
-    public function create(int $userId, int $organizationId, int $courtId, array $slots, ?string $couponCode = null): PriceQuote
+    /** A customer's quote: one interval on the 30-minute grid, priced and later stored as one slot (design D14, D15). */
+    public function create(int $userId, int $organizationId, int $courtId, mixed $startsAt, mixed $endsAt): PriceQuote
     {
-        $eligibility = app(VerifyEffectiveBookingEligibility::class);
-        $court = $eligibility->assertEligible($courtId, publicFacing: true);
+        $court = app(VerifyEffectiveBookingEligibility::class)->assertEligible($courtId, publicFacing: true);
+        [$start, $end] = $this->intake->bookingInterval($court, $startsAt, $endsAt);
+
+        return $this->open($userId, $organizationId, $court, collect([Carbon::instance($start)]), intdiv($end->getTimestamp() - $start->getTimestamp(), 60));
+    }
+
+    /** A recurring session's quote: slot starts of the court's own interval length. */
+    public function createForSlots(int $userId, int $organizationId, int $courtId, array $slots): PriceQuote
+    {
+        $court = app(VerifyEffectiveBookingEligibility::class)->assertEligible($courtId, publicFacing: true);
+        $duration = (int) $court->slot_duration;
+
+        return $this->open($userId, $organizationId, $court, $this->resolveSlots($slots, $duration, $court->venue?->timezone ?: config('app.timezone')), $duration);
+    }
+
+    /** @param  Collection<int, Carbon>  $resolvedSlots */
+    private function open(int $userId, int $organizationId, Court $court, Collection $resolvedSlots, int $duration): PriceQuote
+    {
         if ($court->venue?->organization_id) {
             $organizationId = (int) $court->venue->organization_id;
         }
 
-        $duration = (int) $court->slot_duration;
-        $timezone = $court->venue?->timezone ?: config('app.timezone');
-        $resolvedSlots = $this->resolveSlots($slots, $duration, $timezone);
         foreach ($resolvedSlots as $time) {
             if (! $this->operatingCalendar->isOpen($court, $time, $time->copy()->addMinutes($duration))) {
                 throw ValidationException::withMessages(['slots' => 'Khung giờ đã chọn nằm ngoài lịch hoạt động của sân.']);
@@ -74,111 +87,84 @@ class PriceQuoteService
             'quote_token' => (string) Str::uuid(),
             'status' => 'open',
             'currency' => 'VND',
-            ...$this->priceAttributes($court, $resolvedSlots->all(), $duration, User::findOrFail($userId), $organizationId, $couponCode),
+            ...$this->priceAttributes($court, $resolvedSlots->all(), $duration),
             'expires_at' => now()->addMinutes(15),
         ])->load(['court.venue']);
     }
 
     /**
-     * Price an open quote's selection again at submission with its coupon (design D5), so the booking is created
-     * from today's amounts and the caller can compare them with what the customer was shown.
+     * Price an open quote's selection again at submission (design D5, D6), so the booking is created from today's
+     * amounts and the caller can compare them with what the customer was shown.
      */
-    public function reprice(PriceQuote $quote, Court $court, User $user): void
+    public function reprice(PriceQuote $quote, Court $court): void
     {
-        $times = collect((array) $quote->slot_snapshot)->map(fn (array $slot): Carbon => Carbon::parse($slot['starts_at']))->all();
-        $couponCode = data_get($quote->benefit_snapshot, 'coupon_code');
+        $slots = collect((array) $quote->slot_snapshot);
+        $times = $slots->map(fn (array $slot): Carbon => Carbon::parse($slot['starts_at']))->all();
+        // A quote's slots share one length: the whole interval of a booking, or the court's interval in a recurring session.
+        $duration = intdiv(Carbon::parse($slots->first()['ends_at'])->getTimestamp() - $times[0]->getTimestamp(), 60);
 
-        $quote->forceFill($this->priceAttributes($court, $times, (int) $court->slot_duration, $user, (int) $quote->organization_id, $couponCode))->save();
+        $quote->forceFill($this->priceAttributes($court, $times, $duration))->save();
     }
 
     /**
      * @param  array<int, Carbon>  $times
-     * @return array{subtotal: int, total_amount: int, benefit_snapshot: ?array, rule_version: int, slot_snapshot: array, applied_rule_ids: array}
+     * @return array{subtotal: int, total_amount: int, benefit_snapshot: null, slot_snapshot: array}
      */
-    private function priceAttributes(Court $court, array $times, int $duration, User $user, int $organizationId, ?string $couponCode): array
+    private function priceAttributes(Court $court, array $times, int $duration): array
     {
-        $snapshot = $this->priceSnapshots($court, $times, $duration);
-        $subtotal = (int) collect($snapshot)->sum('unit_price');
-        $appliedRuleIds = collect($snapshot)->pluck('rule.id')->filter()->values()->all();
-        $ruleVersion = max([1, ...collect($snapshot)->map(fn (array $slot) => (int) ($slot['rule']['version'] ?? 1))->all()]);
-        // preview() lets a code below its minimum spend through with no discount; a quote must refuse it.
-        $this->discounts->resolveEligibleCoupon($couponCode, $organizationId, $subtotal, $user, (int) $court->venue_id, (int) $court->id);
-        $benefit = $this->discounts->preview($user, $subtotal, $couponCode, $organizationId, (int) $court->venue_id, (int) $court->id);
-        $benefitSnapshot = $benefit['membership_snapshot'] ? [
-            ...$benefit['membership_snapshot'],
-            'membership_discount_amount' => (int) $benefit['membership_discount'],
-        ] : [];
-        if ($benefit['coupon']) {
-            $benefitSnapshot += ['coupon_id' => (int) $benefit['coupon']->id, 'coupon_code' => $benefit['coupon']->code, 'coupon_discount_amount' => (int) $benefit['coupon_discount']];
-        }
+        $total = (int) collect($snapshot = $this->priceSnapshots($court, $times, $duration))->sum('unit_price');
 
-        return [
-            'subtotal' => $subtotal,
-            'total_amount' => (int) $benefit['total'],
-            'benefit_snapshot' => $benefitSnapshot ?: null,
-            'rule_version' => $ruleVersion,
-            'slot_snapshot' => $snapshot,
-            'applied_rule_ids' => array_values(array_unique($appliedRuleIds)),
-        ];
+        // No coupon or membership discount on court bookings until vouchers (design D28).
+        return ['subtotal' => $total, 'total_amount' => $total, 'benefit_snapshot' => null, 'slot_snapshot' => $snapshot];
     }
 
     /**
-     * Authoritatively calculates exact slot subtotal for a court without creating any quote, reservation, or hold.
+     * Each slot [start, start + duration) priced by the engine. A run of adjacent slots within one local day is
+     * priced once, so its fraction is dropped once (design D5, D29), and its last slot takes what the others leave.
      *
-     * @param  array<int, mixed>  $slots
+     * @param  array<int, mixed>  $times
+     * @return list<array{court_id: int, starts_at: string, ends_at: string, unit_price: int, parts: list<array<string, mixed>>}>
      */
-    public function calculateSubtotal(Court $court, array $slots): int
-    {
-        $court->loadMissing(['venue']);
-        $duration = (int) $court->slot_duration;
-        $timezone = $court->venue?->timezone ?: config('app.timezone');
-
-        if (empty($slots)) {
-            throw ValidationException::withMessages(['slots' => 'Danh sách giờ chọn không được để trống.']);
-        }
-
-        $resolvedSlots = $this->resolveSlots($slots, $duration, $timezone);
-        foreach ($resolvedSlots as $time) {
-            if (! $this->operatingCalendar->isOpen($court, $time, $time->copy()->addMinutes($duration))) {
-                throw ValidationException::withMessages(['slots' => 'Khung giờ đã chọn nằm ngoài lịch hoạt động của sân.']);
-            }
-        }
-
-        return (int) collect($this->priceSnapshots($court, $resolvedSlots->all(), $duration))->sum('unit_price');
-    }
-
-    /** @param array<int, mixed> $times
-     * @return array<int, array{court_id:int, starts_at:string, ends_at:string, unit_price:int, rule:array<string,mixed>}|null>
-     */
-    public function priceSnapshots(Court $court, array $times, ?int $duration = null, bool $skipUnpriced = false): array
+    public function priceSnapshots(Court $court, array $times, ?int $duration = null): array
     {
         $court->loadMissing(['venue']);
         $duration ??= (int) $court->slot_duration;
         $timezone = $court->venue?->timezone ?: config('app.timezone');
-        ['rules' => $rules, 'slots' => $legacyRules] = $this->priceRules->forCourt($court);
-
-        return collect($times)->map(function ($value) use ($court, $rules, $legacyRules, $duration, $timezone, $skipUnpriced): ?array {
-            $time = $value instanceof \DateTimeInterface
-                ? Carbon::instance($value)->setTimezone($timezone)
-                : Carbon::parse((string) $value, $timezone);
-            try {
-                [$price, $rule] = $this->tiers->priceFor($time, $court, $rules, $legacyRules, $duration);
-            } catch (ValidationException $exception) {
-                if ($skipUnpriced) {
-                    return null;
-                }
-
-                throw $exception;
+        $runs = [];
+        foreach (collect($times)->map(fn ($value): CarbonImmutable => $value instanceof \DateTimeInterface
+            ? CarbonImmutable::instance($value)->setTimezone($timezone)
+            : CarbonImmutable::parse((string) $value, $timezone))->sort() as $start) {
+            $run = array_key_last($runs);
+            $previous = $run === null ? null : $runs[$run][array_key_last($runs[$run])];
+            if ($previous && $previous->addMinutes($duration)->eq($start) && $start->isSameDay($runs[$run][0])) {
+                $runs[$run][] = $start;
+            } else {
+                $runs[] = [$start];
             }
+        }
 
-            return [
-                'court_id' => (int) $court->id,
-                'starts_at' => $time->copy()->utc()->toIso8601String(),
-                'ends_at' => $time->copy()->addMinutes($duration)->utc()->toIso8601String(),
-                'unit_price' => $price,
-                'rule' => $rule,
-            ];
-        })->values()->all();
+        $snapshot = [];
+        foreach ($runs as $run) {
+            $slots = array_map(fn (CarbonImmutable $start): array => [$start, $start->addMinutes($duration)], $run);
+            $runEnd = $slots[array_key_last($slots)][1];
+            $quotes = $this->rentals->quoteEach($court, [[$run[0], $runEnd], ...$slots]);
+            // quote() refuses with the first unpriced minute.
+            $left = ($quotes[0] ?? $this->rentals->quote($court, $run[0], $runEnd, null))->rental;
+            foreach ($slots as $index => [$start, $end]) {
+                $quote = $quotes[$index + 1] ?? $this->rentals->quote($court, $start, $end, null);
+                $price = $index === array_key_last($slots) ? $left : $quote->rental;
+                $left -= $price;
+                $snapshot[] = [
+                    'court_id' => (int) $court->id,
+                    'starts_at' => $start->utc()->toIso8601String(),
+                    'ends_at' => $end->utc()->toIso8601String(),
+                    'unit_price' => $price,
+                    'parts' => $quote->snapshot['parts'],
+                ];
+            }
+        }
+
+        return $snapshot;
     }
 
     /** @return Collection<int,Carbon> */

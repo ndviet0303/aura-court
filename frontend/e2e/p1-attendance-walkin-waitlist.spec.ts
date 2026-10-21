@@ -1,4 +1,4 @@
-import { getCanonicalBackendEnv } from './runner/test-data.ts'
+import { getCanonicalBackendEnv, priceCourtPhp } from './runner/test-data.ts'
 import { test, expect } from '@playwright/test'
 import { getTestManifest } from './runner/test-data.ts'
 import { getActorCredentials } from './runner/auth.ts'
@@ -40,7 +40,6 @@ test.describe('P1: Khách vãng lai, Khung giờ đến, Vắng mặt, Hàng ch�
       $kernel->bootstrap();
 
       use App\\Models\\Court;
-      use App\\Models\\PriceRule;
       use App\\Models\\Reservation;
       use App\\Models\\ReservationEntitlement;
       use App\\Models\\ReservationSlot;
@@ -60,16 +59,7 @@ test.describe('P1: Khách vãng lai, Khung giờ đến, Vắng mặt, Hàng ch�
         'is_active' => true,
       ]);
 
-      PriceRule::create([
-        'organization_id' => ${org1Id},
-        'venue_id' => ${venue1Id},
-        'court_id' => $court->id,
-        'type' => 'base',
-        'price' => 150000,
-        'priority' => 1,
-        'is_active' => true,
-        'version' => 1,
-      ]);
+      ${priceCourtPhp(150000)}
 
       $now = Carbon::now(config('app.timezone'));
       $startTime = $now->copy()->startOfHour();
@@ -205,7 +195,6 @@ test.describe('P1: Khách vãng lai, Khung giờ đến, Vắng mặt, Hàng ch�
       $kernel->bootstrap();
 
       use App\\Models\\Court;
-      use App\\Models\\PriceRule;
       use App\\Models\\Reservation;
       use App\\Models\\ReservationEntitlement;
       use App\\Models\\ReservationSlot;
@@ -356,7 +345,6 @@ test.describe('P1: Khách vãng lai, Khung giờ đến, Vắng mặt, Hàng ch�
       $kernel->bootstrap();
 
       use App\\Models\\Court;
-      use App\\Models\\PriceRule;
       use App\\Models\\Reservation;
       use App\\Models\\ReservationEntitlement;
       use App\\Models\\ReservationSlot;
@@ -520,7 +508,6 @@ test.describe('P1: Khách vãng lai, Khung giờ đến, Vắng mặt, Hàng ch�
       $kernel->bootstrap();
 
       use App\\Models\\Court;
-      use App\\Models\\PriceRule;
       use App\\Models\\Reservation;
       use App\\Models\\ReservationSlot;
       use App\\Models\\User;

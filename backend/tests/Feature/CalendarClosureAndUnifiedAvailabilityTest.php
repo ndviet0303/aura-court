@@ -6,7 +6,6 @@ use App\Models\Booking;
 use App\Models\BookingSlot;
 use App\Models\Court;
 use App\Models\CourtBlock;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\Reservation;
@@ -15,10 +14,12 @@ use App\Models\User;
 use App\Models\Venue;
 use App\Services\Reservation\LegacyBookingBackfillService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private function setupCourtEnvironment(): array
@@ -50,17 +51,8 @@ class CalendarClosureAndUnifiedAvailabilityTest extends TestCase
         $tomorrow = now(config('app.timezone'))->addDay();
         $weekday = $tomorrow->dayOfWeekIso;
 
-        // Create standard price slots for the weekday (e.g. 08:00 to 22:00)
-        for ($hour = 8; $hour <= 21; $hour++) {
-            CourtPriceSlot::create([
-                'court_id' => $court->id,
-                'weekday' => $weekday,
-                'starts_at' => sprintf('%02d:00:00', $hour),
-                'ends_at' => sprintf('%02d:00:00', $hour + 1),
-                'price' => 150000,
-                'is_active' => true,
-            ]);
-        }
+        // Price the weekday from 08:00 to 22:00
+        $this->priceCourtWith($court, [['08:00', '22:00', 150000, [$weekday]]]);
 
         return compact('org', 'venue', 'court', 'tomorrow', 'weekday');
     }

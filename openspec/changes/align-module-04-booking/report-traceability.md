@@ -17,7 +17,7 @@
   - 0.4: lịch sân dùng ngày địa phương.
   - 0.5: lịch sử đơn có phân trang, số đếm từ `total`, nhãn trạng thái và QR theo D10.
   - 0.6: `finance/audit-logs` lọc theo tổ chức.
-- Cột "Task" trỏ tới `tasks.md`. Cột "Test dự kiến" là test sẽ viết hoặc viết lại. Mọi dòng đang ở trạng thái **chưa nghiệm thu** cho tới task 6.3.
+- Cột "Task" trỏ tới `tasks.md`. Cột "Test dự kiến" là test sẽ viết hoặc viết lại. Hai bảng FR và BR giữ hiện trạng lúc lập change. Trạng thái sau từng pha, commit và test thật nằm ở mục "Nghiệm thu theo pha" (task 6.3).
 - Tên capability viết tắt trong bảng:
   - `rp`: `reservations-and-pricing`.
   - `vco`: `venue-court-operations`.
@@ -64,6 +64,52 @@
 | BR-86 | Khoản bất thường không tự xác nhận hay khôi phục; không gán theo số tiền trùng; hoàn tiền ngoài hệ thống. | khớp | – | `dop`: Receiver-bound payment evidence; `dop`: Owner lookup of payment exceptions | 4.1 | `OwnerPaymentExceptionLookupTest` ("Unknown payment code") |
 | BR-87 | Kiểm lại đơn chờ tại mốc chuyển giá như FR-78. | lệch có chủ đích | – | `rp`: Pending bookings at a price change | 5.6 | `PendingPriceChangeTest` |
 | BR-88 | Khách chỉ xem đơn của mình. Chủ cơ sở chỉ tra cứu khoản bất thường và đơn liên quan của tổ chức mình. | khớp một phần | 0.2 | `rp`: Customer booking list and detail; `dop`: Owner lookup of payment exceptions; `osa`: Attendance lookup scope | 4.2 | `OwnerPaymentExceptionLookupTest`; `AttendanceOperationsAndReadinessTest` (Pha 0) |
+
+## Nghiệm thu theo pha
+
+Cập nhật sau Pha 4, tại `d8648d7c`. Pha 1 chỉ là phối hợp tài liệu, không có code. Commit của từng pha:
+
+| Pha | Commit | Merge |
+| --- | --- | --- |
+| Pha 0 – lỗi production | `ff8b41a6` | `7312b44c` |
+| Pha 2 – tạo yêu cầu đặt sân | `579f595c` | `851c173e` |
+| Pha 3 – huỷ đơn chờ thanh toán, chi tiết đơn | `6350cac6` | `7bf9874c` |
+| Pha 4 – tra cứu thanh toán bất thường | `b58bf0b6` | `d8648d7c` |
+
+Test trong bảng dưới đã chạy xanh ở gate của pha tương ứng. Playwright 4.3 và 4.4 có sẵn từ trước; 4.6 thêm ở task 6.2, chạy trên môi trường e2e cô lập (`E2E_TARGET=local`).
+
+| ID | Trạng thái sau Pha 4 | Pha | Test đã chạy | Còn lại |
+| --- | --- | --- | --- | --- |
+| FR-69 | khớp một phần | – | – | Module 2 và 3 (task 6.4) |
+| FR-70 | khớp một phần | Pha 0 (0.4), Pha 2 | `OverdueHoldTest`; vitest `ScheduleView` (ngày địa phương) | Bước 30 phút (task 5.1, 5.7) |
+| FR-71 | khớp một phần | Pha 2 | `BookerSnapshotTest`, `AgreedAmountTest`; vitest `ScheduleView` (thiếu SĐT, `PRICE_CHANGED`), `HomeView` | Chọn khoảng theo mốc 30 phút (task 5.7) |
+| FR-72 | khớp một phần | Pha 2 | `PaymentDeadlineTest`, `AgreedAmountTest`, `BookerSnapshotTest`, `OverdueHoldTest`, `HeldReservationReleaseTest` | Hợp đồng một khoảng (task 5.1); giữ voucher theo module 3 |
+| FR-73 | khớp | Pha 2 | `PaymentDeadlineTest` ("Reopening the payment information"); vitest `ReservationPaymentModal` | – |
+| FR-74 | khớp một phần | – | Test có sẵn | Ghi nhận voucher khi xác nhận (task 5.5) |
+| FR-75 | khớp một phần | – | – | Task 5.4 của module 3 |
+| FR-76 | khớp | Pha 3 | `CustomerPaymentCancelTest`; vitest `CancelPaymentButton`, `ReservationPaymentModal`, `ReservationDetailModal`; Playwright 4.6 | – |
+| FR-77 | khớp | Pha 2 | `HeldReservationReleaseTest`, `AutomaticUnpaidExpiryTest`; Playwright 4.4 | – |
+| FR-78 | lệch có chủ đích | – | – | Task 5.6 |
+| FR-79 | khớp một phần | Pha 0 (0.5), Pha 3 | `CustomerPaymentCancelTest` (chi tiết đơn chờ, đã xong, hết hạn); vitest `ReservationDetailModal`, `BookingView` | Xử lý sự cố (task 3.6, chờ module 2); voucher trong chi tiết (module 3) |
+| FR-80 | khớp | Pha 0 (0.3, 0.5) | vitest `QrImage`, `BookingView` (QR chỉ hiện khi còn dùng được) | – |
+| FR-81 | khớp | Pha 0 (0.6), Pha 4 | `OwnerPaymentExceptionLookupTest`; vitest `OwnerPaymentExceptionsView`, `AdminLayout`; Playwright 4.6 | – |
+| BR-72 | khớp | – | `EmailVerificationBookingEnforcementTest`, `RestrictedAccountLifecycleTest` (cập nhật ở Pha 2) | – |
+| BR-73 | khớp một phần | Pha 2 | `OverdueHoldTest` ("Configured booking window"), `SlotSelectionPolicyEnforcementTest` | Một khoảng liên tục trong hợp đồng mới (task 5.1) |
+| BR-74 | khớp | Pha 2 | `BookerSnapshotTest`; vitest `ScheduleView`, `AdminDashboardReservations` | – |
+| BR-75 | khớp một phần | Pha 2 | `PaymentDeadlineTest` ("No payment window left") | Mốc 30 phút (task 5.1–5.4) |
+| BR-76 | khớp một phần | – | – | Module 2 và 3 (task 6.4) |
+| BR-77 | khớp | Pha 2 | `OverdueHoldTest`, `ReservationSlotOverlapExclusionTest`; Playwright 4.3 | – |
+| BR-78 | khớp | – | Thuộc module 3 | – |
+| BR-79 | khớp | Pha 2 | `PaymentDeadlineTest` (giờ bắt đầu, hạn voucher, trần 10 phút, mở lại không gia hạn) | – |
+| BR-80 | khớp một phần | Pha 2 | `AgreedAmountTest`; vitest `ScheduleView` | Engine tính tiền của module 3 (task 5.1) |
+| BR-81 | khớp (trừ D13) | Pha 0 (0.1), Pha 2 | `PaymentDeadlineTest`; test có sẵn | D13 (task 6.4) |
+| BR-82 | khớp một phần | – | – | Task 5.4 của module 3 |
+| BR-83 | khớp một phần | – | – | Task 5.5 |
+| BR-84 | khớp | Pha 2, Pha 3 | `CustomerPaymentCancelTest`, `HeldReservationReleaseTest` | – |
+| BR-85 | khớp | Pha 3 | `CustomerPaymentCancelTest` (đua huỷ và xác nhận); Playwright 4.6 | – |
+| BR-86 | khớp | Pha 4 | `OwnerPaymentExceptionLookupTest` ("Unknown payment code") | – |
+| BR-87 | lệch có chủ đích | – | – | Task 5.6 |
+| BR-88 | khớp | Pha 0 (0.2), Pha 3, Pha 4 | `CustomerPaymentCancelTest` ("Another customer's booking"), `OwnerPaymentExceptionLookupTest` (hai tổ chức, "Unauthorized reader"), `AttendanceOperationsAndReadinessTest` | – |
 
 ## Use case
 

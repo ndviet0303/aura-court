@@ -33,12 +33,12 @@ export function venueDate(value?: string | null): string {
   return Number.isNaN(instant.getTime()) ? '' : dateFormat.format(instant)
 }
 
-/** "YYYY-MM-DDTHH:mm" on the venue clock → UTC ISO instant. Vietnam has no DST, so +07:00 is fixed. */
-export function venueLocalToUtc(local: string): string {
-  return new Date(`${local}:00+07:00`).toISOString()
-}
-
 /** "HH:mm - HH:mm" on the venue clock. */
 export function venueClockRange(start?: string | null, end?: string | null): string {
   return `${venueClock(start)} - ${venueClock(end)}`
+}
+
+/** ISO instant of a venue wall-clock "YYYY-MM-DDTHH:mm"; Vietnam has no DST, so the offset is fixed. */
+export function venueInstant(local: string): string {
+  return `${local}:00+07:00`
 }

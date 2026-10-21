@@ -403,11 +403,9 @@ class SplitPaymentService
 
             $group->shares()->where('status', 'pending')->update(['status' => 'expired']);
             $this->expiredShares->record($group);
-
-            $this->attempts->expirePendingForPurpose('split_share', 'split_group:'.$group->id.':coverage');
-            foreach ($group->shares()->get() as $share) {
-                $this->attempts->expirePendingForPurpose('split_share', 'split_group:'.$group->id.':share:'.$share->id);
-            }
+            // A receipt locks its attempt before the group, so attempts expire after commit, outside the group lock (D12).
+            $purposeIds = $group->shares()->pluck('id')->map(fn ($id) => "split_group:{$group->id}:share:{$id}")->push("split_group:{$group->id}:coverage");
+            DB::afterCommit(fn () => DB::transaction(fn () => $purposeIds->each(fn ($purposeId) => $this->attempts->expirePendingForPurpose('split_share', $purposeId))));
 
             return $group->fresh('shares', 'reservation');
         });

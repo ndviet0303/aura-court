@@ -45,13 +45,7 @@ class ReservationService
         return $this->transactionWithConflictHandling(function () use ($user, $organizationId, $data, $actor): Reservation {
             $quote = $this->findQuote($user->id, $organizationId, $data);
             if (! $quote) {
-                $quote = $this->quotes->create(
-                    $user->id,
-                    $organizationId,
-                    (int) ($data['court_id'] ?? 0),
-                    (array) ($data['slots'] ?? []),
-                    $data['coupon_code'] ?? null,
-                );
+                $quote = $this->quotes->create($user->id, $organizationId, (int) ($data['court_id'] ?? 0), $data['starts_at'] ?? null, $data['ends_at'] ?? null);
                 $quote = PriceQuote::query()->withoutGlobalScope('tenant_isolation')->whereKey($quote->id)->lockForUpdate()->firstOrFail();
             }
 
@@ -67,12 +61,13 @@ class ReservationService
             $verifier = app(VerifyEffectiveBookingEligibility::class);
             $verifier->getEntitlement((int) $quote->organization_id);
             $lockedCourt = Court::query()->whereKey($quote->court_id)->lockForUpdate()->first();
-            abort_unless($lockedCourt && $lockedCourt->is_active, 409, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
+            abort_unless($lockedCourt && $lockedCourt->status === Court::STATUS_ACTIVE, 409, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
             $lockedVenue = Venue::query()->whereKey($lockedCourt->venue_id)->lockForUpdate()->firstOrFail();
             // BR-20/21: staff book for a customer only at a venue assigned to them.
             abort_if($actor !== null && ! $actor->canOperateVenue($lockedVenue), 403, 'Bạn không được giao cơ sở này.');
             $eligibility = $verifier->execute($lockedCourt->setRelation('venue', $lockedVenue));
             abort_unless($eligibility['eligible'], 409, $eligibility['message'] ?? '');
+            $this->intake->recheckBookingTime($lockedCourt, $quote);
             $intervals = fn (): array => collect($quote->slot_snapshot)->map(fn (array $slotSnapshot): array => [
                 'start' => $slotSnapshot['starts_at'],
                 'end' => $slotSnapshot['ends_at'],
@@ -80,10 +75,9 @@ class ReservationService
             $this->intake->releaseOverdueHolds($lockedCourt, $intervals());
             // The client always sends the amount it showed; recurring periods price their own fresh quote.
             if (isset($data['expected_total'])) {
-                $this->quotes->reprice($quote, $lockedCourt, $user);
+                $this->quotes->reprice($quote, $lockedCourt);
                 $this->intake->assertAgreedAmount((int) $data['expected_total'], (int) $quote->subtotal, (int) $quote->total_amount);
             }
-            $couponUsage = $this->quoteCoupons->reserve($quote, $user, $lockedCourt);
             $directOwnerPayments = app(FeatureFlagService::class)
                 ->enabled('direct_owner_payments', (int) $lockedVenue->organization_id);
 
@@ -104,9 +98,6 @@ class ReservationService
             $metadata = [...(array) ($data['metadata'] ?? []), 'booker' => $this->intake->booker($user)];
             if ($quote->benefit_snapshot) {
                 $metadata['benefit_snapshot'] = $quote->benefit_snapshot;
-            }
-            if ($couponUsage !== null) {
-                $metadata['coupon_usage'] = $couponUsage;
             }
             if ($directOwnerPayments) {
                 $metadata['booking_policy_snapshot'] = $bookingPolicySnapshot;

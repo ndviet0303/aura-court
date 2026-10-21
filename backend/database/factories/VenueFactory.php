@@ -29,8 +29,7 @@ class VenueFactory extends Factory
             'name' => fake()->company(),
             'slug' => 'venue-'.Str::lower(Str::random(10)),
             'address' => fake()->streetAddress(),
-            'status' => 'published',
-            'is_active' => true,
+            'status' => Venue::STATUS_ACTIVE,
         ];
     }
 

@@ -3,7 +3,6 @@
 namespace Tests\Feature\Venue;
 
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
@@ -17,10 +16,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private function addPolicy(Venue $venue, int $ownerId): void
@@ -88,14 +89,7 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
         $this->selectVerifiedReceiver($venue, $owner);
 
         $court1 = Court::create(['venue_id' => $venue->id, 'name' => 'Court 1', 'slug' => 'court-1', 'is_active' => true]);
-        CourtPriceSlot::create([
-            'court_id' => $court1->id,
-            'weekday' => 1,
-            'starts_at' => '06:00',
-            'ends_at' => '22:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourtWith($court1, [['06:00', '22:00', 100000]]);
 
         // Submit & approve Revision 1
         Sanctum::actingAs($owner);
@@ -111,14 +105,7 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
 
         // Owner adds Court 2 (material change)
         $court2 = Court::create(['venue_id' => $venue->id, 'name' => 'Court 2', 'slug' => 'court-2', 'is_active' => true]);
-        CourtPriceSlot::create([
-            'court_id' => $court2->id,
-            'weekday' => 1,
-            'starts_at' => '06:00',
-            'ends_at' => '22:00',
-            'price' => 120000,
-            'is_active' => true,
-        ]);
+        $this->priceCourtWith($court2, [['06:00', '22:00', 120000]]);
 
         // Public snapshot MUST STILL only contain Court 1!
         $this->assertCount(1, $venue->fresh()->approved_public_snapshot['courts']);
@@ -171,14 +158,7 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
         $this->selectVerifiedReceiver($venue, $owner);
 
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'San 1', 'slug' => 'san-1', 'is_active' => true]);
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => 1,
-            'starts_at' => '06:00',
-            'ends_at' => '22:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourtWith($court, [['06:00', '22:00', 100000]]);
 
         Sanctum::actingAs($owner);
         $subRes = $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication");
@@ -232,14 +212,7 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
         $this->selectVerifiedReceiver($venue, $owner);
 
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'San 1', 'slug' => 'san-1', 'is_active' => true]);
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => 1,
-            'starts_at' => '06:00',
-            'ends_at' => '22:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourtWith($court, [['06:00', '22:00', 100000]]);
 
         Sanctum::actingAs($owner);
         $subRes = $this->postJson("/api/partner/organizations/{$org->id}/venues/{$venue->id}/submit-publication");
@@ -279,14 +252,7 @@ class VenuePublicSnapshotAndOperationalClosureTest extends TestCase
             'ends_at' => now()->addMonth(),
         ]);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Operational Court', 'slug' => 'operational-court', 'is_active' => true]);
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => 1,
-            'starts_at' => '06:00',
-            'ends_at' => '22:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourtWith($court, [['06:00', '22:00', 100000]]);
         $this->addPolicy($venue, $owner->id);
         $this->addOperatingSchedule($venue, $owner->id);
         $this->selectVerifiedReceiver($venue, $owner);

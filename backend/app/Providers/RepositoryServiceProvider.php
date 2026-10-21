@@ -5,7 +5,6 @@ namespace App\Providers;
 use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Contracts\Repositories\AuditLogRepositoryInterface;
 use App\Contracts\Repositories\CourtBlockRepositoryInterface;
-use App\Contracts\Repositories\CourtPriceSlotRepositoryInterface;
 use App\Contracts\Repositories\CourtRepositoryInterface;
 use App\Contracts\Repositories\DisputeRepositoryInterface;
 use App\Contracts\Repositories\FinanceExceptionRepositoryInterface;
@@ -16,6 +15,7 @@ use App\Contracts\Repositories\PackagePriceRepositoryInterface;
 use App\Contracts\Repositories\PaymentRepositoryInterface;
 use App\Contracts\Repositories\PlatformPlanRepositoryInterface;
 use App\Contracts\Repositories\PlatformSubscriptionRepositoryInterface;
+use App\Contracts\Repositories\PriceTableRepositoryInterface;
 use App\Contracts\Repositories\ReconciliationRepositoryInterface;
 use App\Contracts\Repositories\RecurringContractRepositoryInterface;
 use App\Contracts\Repositories\ReservationRepositoryInterface;
@@ -28,7 +28,6 @@ use App\Contracts\Storage\FileStorageServiceInterface;
 use App\Contracts\Storage\PartnerDocumentStorageInterface;
 use App\Infrastructure\Repositories\Eloquent\EloquentAuditLogRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentCourtBlockRepository;
-use App\Infrastructure\Repositories\Eloquent\EloquentCourtPriceSlotRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentCourtRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentDisputeRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentFinanceExceptionRepository;
@@ -39,6 +38,7 @@ use App\Infrastructure\Repositories\Eloquent\EloquentPackagePriceRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPaymentRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPlatformPlanRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPlatformSubscriptionRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentPriceTableRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReconciliationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentRecurringContractRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReservationRepository;
@@ -60,7 +60,7 @@ class RepositoryServiceProvider extends ServiceProvider
     public array $bindings = [
         VenueRepositoryInterface::class => EloquentVenueRepository::class,
         CourtRepositoryInterface::class => EloquentCourtRepository::class,
-        CourtPriceSlotRepositoryInterface::class => EloquentCourtPriceSlotRepository::class,
+        PriceTableRepositoryInterface::class => EloquentPriceTableRepository::class,
         CourtBlockRepositoryInterface::class => EloquentCourtBlockRepository::class,
         ReservationRepositoryInterface::class => EloquentReservationRepository::class,
         PaymentRepositoryInterface::class => EloquentPaymentRepository::class,

@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Domain\Booking\Actions\ExpirePendingBookings;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\User;
 use App\Models\Venue;
 use App\Notifications\AuraBookingNotification;
@@ -12,10 +11,12 @@ use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class WaitlistLifecycleTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private function fundUserWallet(User $user, int $organizationId, int $amount = 1000000): void
@@ -51,7 +52,7 @@ class WaitlistLifecycleTest extends TestCase
 
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Occupied Waitlist', 'is_active' => true]);
         $date = Carbon::now(config('app.timezone'))->addDays(2)->setTime(10, 0)->startOfHour();
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
+        $this->priceCourt($court);
 
         // 1. Owner books the slot
         $this->actingAs($owner)->withHeader('Idempotency-Key', 'owner-checkout')->postJson('/api/reservations/checkout', [
@@ -91,7 +92,7 @@ class WaitlistLifecycleTest extends TestCase
 
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Leave Waitlist', 'is_active' => true]);
         $date = Carbon::now(config('app.timezone'))->addDays(2)->setTime(10, 0)->startOfHour();
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
+        $this->priceCourt($court);
 
         // Book slot
         $this->actingAs($owner)->withHeader('Idempotency-Key', 'owner-checkout')->postJson('/api/reservations/checkout', [
@@ -130,7 +131,7 @@ class WaitlistLifecycleTest extends TestCase
 
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Notify Waitlist', 'is_active' => true]);
         $date = Carbon::now(config('app.timezone'))->addDays(2)->setTime(10, 0)->startOfHour();
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
+        $this->priceCourt($court);
 
         // 1. Owner books
         $bookRes = $this->actingAs($owner)->withHeader('Idempotency-Key', 'owner-checkout')->postJson('/api/reservations/checkout', [
@@ -159,7 +160,7 @@ class WaitlistLifecycleTest extends TestCase
         // Supported release path: create pending hold and expire it
         $court2 = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Expiry Waitlist', 'is_active' => true]);
         $date2 = Carbon::now(config('app.timezone'))->addDays(2)->setTime(14, 0)->startOfHour();
-        CourtPriceSlot::create(['court_id' => $court2->id, 'weekday' => $date2->dayOfWeekIso, 'starts_at' => '14:00', 'ends_at' => '15:00', 'price' => 100000, 'is_active' => true]);
+        $this->priceCourt($court2);
 
         $this->actingAs($owner)->withHeader('Idempotency-Key', 'owner-hold')->postJson('/api/reservations', [
             'court_id' => $court2->id,

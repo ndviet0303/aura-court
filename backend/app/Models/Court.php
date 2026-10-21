@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Events\CourtStatusUpdated;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,14 +9,25 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Spatie\Translatable\HasTranslations;
 
-#[Fillable(['name', 'slug', 'venue_id', 'sport_type', 'slot_duration', 'description', 'image_url', 'amenities', 'surface_type', 'capacity', 'is_active'])]
+#[Fillable(['name', 'slug', 'venue_id', 'sport_type', 'slot_duration', 'description', 'image_url', 'amenities', 'surface_type', 'capacity', 'status'])]
 class Court extends Model
 {
     use HasTranslations;
 
+    /** D3: the same four statuses as venues; see Venue::STATUSES and LifecycleGuard. */
+    public const STATUS_INACTIVE = Venue::STATUS_INACTIVE;
+
+    public const STATUS_ACTIVE = Venue::STATUS_ACTIVE;
+
+    public const STATUS_PAUSED = Venue::STATUS_PAUSED;
+
+    public const STATUS_CLOSED = Venue::STATUS_CLOSED;
+
+    public const STATUSES = Venue::STATUSES;
+
     public const SPORT_TYPES = ['badminton', 'football_5v5', 'football_7v7', 'tennis', 'pickleball', 'basketball', 'volleyball', 'table_tennis'];
 
-    public const SLOT_DURATIONS = [30, 45, 60, 90, 120];
+    public const SLOT_DURATIONS = [30, 60, 90, 120];
 
     public array $translatable = ['name', 'description'];
 
@@ -43,25 +53,22 @@ class Court extends Model
             if ($court->isDirty('name') && ! $court->slug) {
                 $court->slug = Str::slug($court->name);
             }
-            if ($court->isDirty('is_active') && $court->venue_id) {
-                CourtStatusUpdated::dispatch(
-                    venueId: (int) $court->venue_id,
-                    courtId: (int) $court->id,
-                    status: $court->is_active ? 'available' : 'maintenance',
-                    metadata: ['court_id' => $court->id, 'is_active' => $court->is_active]
-                );
-            }
         });
     }
 
     protected function casts(): array
     {
         return [
-            'is_active' => 'boolean',
             'amenities' => 'array',
             'capacity' => 'integer',
             'slot_duration' => 'integer',
         ];
+    }
+
+    // ponytail: read-only mirror of status for frontend views that still read is_active; drop it with the is_active column once they read status.
+    public function getIsActiveAttribute(): bool
+    {
+        return ($this->attributes['status'] ?? null) === self::STATUS_ACTIVE;
     }
 
     public function getAmenitiesAttribute($value): array
@@ -86,9 +93,10 @@ class Court extends Model
             ?? 'Asia/Ho_Chi_Minh';
     }
 
-    public function priceSlots(): HasMany
+    /** @return HasMany<CourtPriceTableLink, $this> */
+    public function priceTableLinks(): HasMany
     {
-        return $this->hasMany(CourtPriceSlot::class);
+        return $this->hasMany(CourtPriceTableLink::class);
     }
 
     /** @return BelongsTo<Venue, $this> */
@@ -100,6 +108,12 @@ class Court extends Model
     public function blocks(): HasMany
     {
         return $this->hasMany(CourtBlock::class);
+    }
+
+    /** @return HasMany<OperationalStop, $this> */
+    public function operationalStops(): HasMany
+    {
+        return $this->hasMany(OperationalStop::class);
     }
 
     public function bookings(): HasMany

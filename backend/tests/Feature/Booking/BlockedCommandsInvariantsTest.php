@@ -5,7 +5,6 @@ namespace Tests\Feature\Booking;
 use App\Events\CourtStatusUpdated;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
 use App\Models\User;
@@ -15,10 +14,12 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class BlockedCommandsInvariantsTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private function setupTenant(): array
@@ -55,12 +56,7 @@ class BlockedCommandsInvariantsTest extends TestCase
         OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $user->id, 'role' => 'customer', 'status' => 'active']);
         $this->fundUserWallet($user, $org->id, 500000);
 
-        PriceRule::create([
-            'organization_id' => $org->id,
-            'court_id' => $court->id,
-            'type' => 'base',
-            'price' => 150000,
-        ]);
+        $this->priceCourt($court, 150000);
 
         $date = Carbon::now(config('app.timezone'))->addDays(4)->setTime(10, 0)->startOfHour();
 

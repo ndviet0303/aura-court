@@ -18,7 +18,7 @@ use Illuminate\Validation\Rule;
 class CourtController extends Controller
 {
     // Draft, paused and suspended venues still take court setup and fixes; only ended venues refuse it.
-    private const CLOSED_VENUE_STATUSES = ['closed', 'archived'];
+    private const CLOSED_VENUE_STATUSES = [Venue::STATUS_CLOSED];
 
     public function index(Request $request)
     {
@@ -27,20 +27,18 @@ class CourtController extends Controller
         Cache::add('venues_version', 1, now()->addYears(10));
         $courtsVersion = Cache::get('courts_version', 1);
         $venuesVersion = Cache::get('venues_version', 1);
-        $cacheKey = "courts:c{$courtsVersion}:v{$venuesVersion}:".md5(json_encode($request->only(['sport_type', 'venue_id'])));
+        // v2: entries cached before price tables carry the old price slots and no from_price.
+        $cacheKey = "courts:v2:c{$courtsVersion}:v{$venuesVersion}:".md5(json_encode($request->only(['sport_type', 'venue_id'])));
         $courts = Cache::remember($cacheKey, 300, function () use ($request) {
-            $courtsQuery = Court::where('is_active', true)
-                ->whereHas('venue', fn ($query) => $query->where('is_active', true))
+            $courtsQuery = Court::where('status', Court::STATUS_ACTIVE)
+                ->whereHas('venue', fn ($query) => $query->where('status', Venue::STATUS_ACTIVE)->whereDoesntHave('activeSuspension'))
                 ->when($request->query('sport_type'), function ($q, $sportType) {
                     $q->where('sport_type', $sportType);
                 })
                 ->when($request->query('venue_id'), function ($q, $venueId) {
                     $q->where('venue_id', $venueId);
                 })
-                ->with([
-                    'priceSlots' => fn ($q) => $q->select(['id', 'court_id', 'price', 'weekday', 'starts_at', 'ends_at'])->where('is_active', true),
-                    'venue.organization',
-                ])
+                ->with(['venue.organization'])
                 ->withCount(['reviews as reviews_count' => fn ($query) => $query->where('is_published', true)])
                 ->withAvg(['reviews as reviews_avg_rating' => fn ($query) => $query->where('is_published', true)], 'rating')
                 ->orderBy('id')
@@ -50,7 +48,9 @@ class CourtController extends Controller
             $features = app(FeatureFlagService::class);
             $venueEligibilityCache = [];
             $filteredCourts = [];
-            $pricedCourtIds = app(CourtPriceRuleService::class)->pricedCourtIds($courtsQuery);
+            $priceRules = app(CourtPriceRuleService::class);
+            $pricedCourtIds = $priceRules->pricedCourtIds($courtsQuery);
+            $fromPrices = $priceRules->fromPrices($courtsQuery);
 
             foreach ($courtsQuery as $court) {
                 $venueId = (int) $court->venue_id;
@@ -60,7 +60,7 @@ class CourtController extends Controller
                         : false;
                 }
 
-                if ($venueEligibilityCache[$venueId] && $court->is_active && isset($pricedCourtIds[$court->id])) {
+                if ($venueEligibilityCache[$venueId] && isset($pricedCourtIds[$court->id])) {
                     $courtArray = $court->toArray();
                     // The organization row carries tax and KYC fields that public readers must not see
                     unset($courtArray['venue']['organization']);
@@ -68,6 +68,7 @@ class CourtController extends Controller
                     $courtArray['venue']['payment_model'] = $features->enabled('direct_owner_payments', $organizationId)
                         ? 'direct_owner_v1'
                         : 'legacy_wallet_v1';
+                    $courtArray['from_price'] = $fromPrices[$court->id] ?? null;
                     $filteredCourts[] = $courtArray;
                 }
             }
@@ -83,7 +84,7 @@ class CourtController extends Controller
         $result = app(VerifyEffectiveBookingEligibility::class)->execute($court);
         abort_unless($result['eligible'], 404, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
         $court = $result['court'];
-        $court->loadMissing(['priceSlots', 'venue'])
+        $court->loadMissing(['venue'])
             ->loadCount(['reviews as reviews_count' => fn ($query) => $query->where('is_published', true)])
             ->loadAvg(['reviews as reviews_avg_rating' => fn ($query) => $query->where('is_published', true)], 'rating');
         $organizationId = (int) ($court->venue?->organization_id ?? 0);
@@ -94,6 +95,7 @@ class CourtController extends Controller
                 : 'legacy_wallet_v1'
         );
         $court->venue?->unsetRelation('organization');
+        $court->setAttribute('from_price', app(CourtPriceRuleService::class)->fromPrices([$court])[$court->id] ?? null);
 
         return response()->json($court);
     }
@@ -119,14 +121,9 @@ class CourtController extends Controller
             'venue',
             'blocks' => fn ($query) => $query->latest('starts_at'),
         ])
-            ->withCount('priceSlots')
             ->when($scopedVenueIds !== null, fn ($q) => $q->whereIn('venue_id', $scopedVenueIds))
             ->when($request->query('sport_type'), fn ($q, $sportType) => $q->where('sport_type', $sportType))
             ->orderBy('id');
-
-        if ($request->boolean('include_prices') || ($scopedVenueIds !== null && count($scopedVenueIds) === 1)) {
-            $query->with(['priceSlots' => fn ($q) => $q->select(['id', 'court_id', 'weekday', 'starts_at', 'ends_at', 'price'])]);
-        }
 
         return $query->get();
     }

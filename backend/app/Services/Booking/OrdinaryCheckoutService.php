@@ -4,7 +4,6 @@ namespace App\Services\Booking;
 
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Models\Court;
-use App\Models\PointLedger;
 use App\Models\PriceQuote;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
@@ -15,8 +14,6 @@ use App\Models\WalletAccount;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\ObservabilityService;
-use App\Services\Loyalty\LoyaltyPointService;
-use App\Services\Loyalty\LoyaltyPolicyService;
 use App\Services\Payment\ReservationPaymentService;
 use App\Services\Payment\WalletPaymentService;
 use App\Services\Reservation\PriceQuoteService;
@@ -32,10 +29,7 @@ class OrdinaryCheckoutService
         private readonly WalletPaymentService $walletPayments,
         private readonly FinancialPostingService $financials,
         private readonly PriceQuoteService $quotes,
-        private readonly QuoteCouponService $quoteCoupons,
         private readonly SlotSelectionPolicy $slotPolicy,
-        private readonly LoyaltyPolicyService $loyaltyPolicyService,
-        private readonly LoyaltyPointService $loyaltyPointService,
         private readonly ReservationIntake $intake,
     ) {}
 
@@ -63,6 +57,7 @@ class OrdinaryCheckoutService
                 abort_if($actor !== null && ! $actor->canOperateVenue($lockedVenue), 403, 'Bạn không được giao cơ sở này.');
                 $eligibility = $verifier->execute($court->setRelation('venue', $lockedVenue));
                 abort_unless($eligibility['eligible'], 409, $eligibility['message'] ?? '');
+                $this->intake->recheckBookingTime($court, $quote);
                 $intervals = fn (): array => collect((array) $quote->slot_snapshot)->map(fn (array $slotSnapshot): array => [
                     'start' => $slotSnapshot['starts_at'],
                     'end' => $slotSnapshot['ends_at'],
@@ -71,77 +66,16 @@ class OrdinaryCheckoutService
                 // The client always sends the amount it showed; internal callers have nothing to compare.
                 $expectedTotal = isset($data['expected_total']) ? (int) $data['expected_total'] : null;
                 if ($expectedTotal !== null) {
-                    $this->quotes->reprice($quote, $court, $user);
+                    $this->quotes->reprice($quote, $court);
                 }
                 $slotSnapshots = (array) $quote->slot_snapshot;
-                $couponUsage = $this->quoteCoupons->reserve($quote, $user, $court);
                 $directOwnerPayments = app(FeatureFlagService::class)->enabled('direct_owner_payments', (int) $lockedVenue->organization_id);
                 $bookingPolicySnapshot = $directOwnerPayments ? $this->intake->bookingPolicySnapshot($lockedVenue) : null;
-                $payableBeforeLoyalty = (int) $quote->total_amount;
-                // Lock user for point and wallet balance serialization
-                $lockedUser = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
-
-                // Loyalty points handling
-                $loyaltyPoints = ! empty($data['loyalty_points']) ? (int) $data['loyalty_points'] : 0;
-                $loyaltyPolicyVersion = ! empty($data['loyalty_policy_version']) ? (int) $data['loyalty_policy_version'] : null;
-                $loyaltySnapshot = null;
-                $loyaltyDiscount = 0;
-                $netPayable = $payableBeforeLoyalty;
-                $policy = null;
-                $currentPointBalance = 0;
-
-                if ($loyaltyPoints > 0) {
-                    $policy = $this->loyaltyPolicyService->getActiveBasePolicy($organizationId);
-                    if (! $policy) {
-                        abort(422, 'Tổ chức này chưa cấu hình chính sách đổi điểm.');
-                    }
-
-                    if ($loyaltyPolicyVersion !== null && (int) $policy->version !== (int) $loyaltyPolicyVersion) {
-                        abort(422, 'Chính sách đổi điểm đã thay đổi. Vui lòng tải lại xem trước.');
-                    }
-
-                    $currentPointBalance = (int) PointLedger::query()
-                        ->where('organization_id', $organizationId)
-                        ->where('user_id', $user->id)
-                        ->sum('delta');
-
-                    // Only unexpired lots are spendable; the raw running total above
-                    // is retained solely for the append-only balance_after column.
-                    $availablePoints = $this->loyaltyPointService->availableBalance($organizationId, (int) $user->id);
-                    if ($availablePoints < $loyaltyPoints) {
-                        abort(422, 'Số dư điểm không đủ để thực hiện quy đổi.');
-                    }
-
-                    $ratio = $this->loyaltyPolicyService->extractConversionRatio($policy);
-                    $discountCalc = $this->loyaltyPolicyService->calculateDiscount(
-                        $loyaltyPoints,
-                        $ratio['points_redeemed'],
-                        $ratio['reward_value_vnd'],
-                        $payableBeforeLoyalty,
-                        $availablePoints
-                    );
-
-                    $loyaltyDiscount = (int) $discountCalc['discount_vnd'];
-                    $netPayable = (int) $discountCalc['remaining_payable_vnd'];
-
-                    $loyaltySnapshot = [
-                        'rule_id' => $policy->id,
-                        'rule_version' => $policy->version,
-                        'points_redeemed' => $ratio['points_redeemed'],
-                        'reward_value_vnd' => $ratio['reward_value_vnd'],
-                        'points_spent' => $loyaltyPoints,
-                        'discount_vnd' => $loyaltyDiscount,
-                    ];
-                }
-
+                // Only the rental is payable: no coupon, membership discount or points on court bookings (design D21).
+                $netPayable = (int) $quote->total_amount;
                 if ($expectedTotal !== null) {
                     $this->intake->assertAgreedAmount($expectedTotal, (int) $quote->subtotal, $netPayable);
                 }
-
-                // Direct-cohort holds reserve loyalty points at hold time: the negative
-                // PointLedger entry below blocks concurrent spend, is consumed on verified
-                // confirmation, and is released on expiry/cancellation. Partial redemption
-                // alongside a pending transfer is therefore supported.
 
                 // Get and lock wallet
                 $wallet = null;
@@ -167,22 +101,14 @@ class OrdinaryCheckoutService
                 }
 
                 $metadata['booker'] = $this->intake->booker($user);
-                $metadata['loyalty_discount_amount'] = $loyaltyDiscount;
-                $metadata['loyalty_points_redeemed'] = $loyaltyPoints;
                 if ($quote->benefit_snapshot) {
                     $metadata['benefit_snapshot'] = $quote->benefit_snapshot;
-                }
-                if ($loyaltySnapshot) {
-                    $metadata['loyalty_snapshot'] = $loyaltySnapshot;
                 }
                 if ($bookingPolicySnapshot !== null) {
                     $metadata['booking_policy_snapshot'] = $bookingPolicySnapshot;
                 }
                 if ($directOwnerPayments && $netPayable === 0) {
                     $metadata['zero_payable'] = true;
-                }
-                if ($couponUsage !== null) {
-                    $metadata['coupon_usage'] = $couponUsage;
                 }
 
                 $reservation = Reservation::create([
@@ -225,25 +151,6 @@ class OrdinaryCheckoutService
                     ]);
                 }
 
-                // Debit PointLedger if points redeemed
-                if ($loyaltyPoints > 0 && isset($policy)) {
-                    PointLedger::create([
-                        'organization_id' => $organizationId,
-                        'user_id' => $user->id,
-                        'loyalty_rule_id' => $policy->id,
-                        'delta' => -$loyaltyPoints,
-                        'balance_after' => $currentPointBalance - $loyaltyPoints,
-                        'source_type' => 'reservation',
-                        'source_id' => $reservation->id,
-                        'metadata' => [
-                            'reservation_code' => $reservation->code,
-                            'rule_version' => $policy->version,
-                            'points_spent' => $loyaltyPoints,
-                            'discount_vnd' => $loyaltyDiscount,
-                        ],
-                    ]);
-                }
-
                 // Debit wallet if netPayable > 0
                 if ($netPayable > 0 && ! $directOwnerPayments) {
                     $walletTx = $this->walletPayments->debit(
@@ -269,7 +176,6 @@ class OrdinaryCheckoutService
                         'subtotal' => $quote->subtotal,
                         'total_amount' => $quote->total_amount,
                         'benefit_snapshot' => $quote->benefit_snapshot,
-                        'loyalty_snapshot' => $loyaltySnapshot,
                         'net_payable' => $netPayable,
                     ],
                 ]);
@@ -304,13 +210,7 @@ class OrdinaryCheckoutService
         } elseif (! empty($data['quote_id'])) {
             $query->whereKey($data['quote_id']);
         } else {
-            $quote = $this->quotes->create(
-                $userId,
-                $organizationId,
-                (int) ($data['court_id'] ?? 0),
-                (array) ($data['slots'] ?? []),
-                $data['coupon_code'] ?? null,
-            );
+            $quote = $this->quotes->create($userId, $organizationId, (int) ($data['court_id'] ?? 0), $data['starts_at'] ?? null, $data['ends_at'] ?? null);
 
             return PriceQuote::query()->withoutGlobalScope('tenant_isolation')->whereKey($quote->id)->lockForUpdate()->firstOrFail();
         }

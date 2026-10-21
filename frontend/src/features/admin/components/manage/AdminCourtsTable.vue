@@ -22,7 +22,6 @@ const emit = defineEmits<{
   (e: 'update:searchQuery', val: string): void
   (e: 'createCourt'): void
   (e: 'editCourt', court: Court): void
-  (e: 'openPriceModal', court: Court): void
   (e: 'openBlockModal', court: Court): void
   (e: 'toggleStatus', court: Court): void
 }>()
@@ -204,14 +203,6 @@ function goToPage(page: number) {
           </div>
 
           <div class="court-stats-row">
-            <span class="stat-badge">
-              <span class="material-symbols-outlined icon-14">schedule</span>
-              <span>{{
-                t('admin.manage.priceSlotsCount', {
-                  count: court.price_slots_count ?? court.price_slots?.length ?? 0,
-                })
-              }}</span>
-            </span>
             <span class="stat-badge text-yellow">
               <span class="material-symbols-outlined icon-14">build</span>
               <span>{{ t('admin.manage.blocksCount', { count: court.blocks?.length || 0 }) }}</span>
@@ -219,15 +210,6 @@ function goToPage(page: number) {
           </div>
 
           <div class="court-actions-footer">
-            <button
-              type="button"
-              class="btn-court-action"
-              :title="t('admin.manage.btnPricing')"
-              @click="emit('openPriceModal', court)"
-            >
-              <span class="material-symbols-outlined icon-14">price_change</span>
-              <span>{{ t('admin.manage.btnPricing') }}</span>
-            </button>
             <button
               type="button"
               class="btn-court-action"

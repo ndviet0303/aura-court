@@ -64,14 +64,14 @@ class AdvancedBookingController extends Controller
             'ends_at' => 'nullable|date|after:starts_at',
             'until' => 'nullable|date|after_or_equal:starts_at',
             'occurrences' => 'nullable|integer|min:1|max:104',
-            'coupon_code' => 'nullable|string|max:40',
             'accept_partial' => 'sometimes|boolean',
             'accepted' => 'sometimes|array',
             'accepted.total' => 'required_with:accepted|integer|min:0',
             'accepted.occurrences' => 'required_with:accepted|array|min:1',
             'accepted.occurrences.*.starts_at' => 'required|date',
             'accepted.occurrences.*.price' => 'required|integer|min:0',
-        ]);
+            ...RecurringSeriesPreviewRequest::NO_BENEFITS,
+        ], RecurringSeriesPreviewRequest::NO_BENEFIT_MESSAGES);
 
         return $this->idempotency->run($request, function () use ($request, $organization, $data) {
             $result = $this->recurring->createAndConfirm($request->user(), $organization->id, $data);

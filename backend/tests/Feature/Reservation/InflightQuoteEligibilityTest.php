@@ -3,23 +3,25 @@
 namespace Tests\Feature\Reservation;
 
 use App\Models\Court;
+use App\Models\CourtPriceTableLink;
 use App\Models\MatchPost;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
 use App\Models\PlatformSubscription;
-use App\Models\PriceRule;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Payment\WalletPaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 /** Step-14 / BR-37: a quote issued before a suspension, pause or closure must not still turn into a booking. */
 class InflightQuoteEligibilityTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private Organization $org;
@@ -43,7 +45,7 @@ class InflightQuoteEligibilityTest extends TestCase
         OrganizationMember::create(['organization_id' => $this->org->id, 'user_id' => $this->customer->id, 'role' => OrganizationMember::ROLE_CUSTOMER, 'status' => 'active']);
         $this->venue = Venue::create(['organization_id' => $this->org->id, 'name' => 'Sân Inflight', 'slug' => 'san-inflight', 'status' => 'published', 'is_active' => true]);
         $this->court = Court::create(['venue_id' => $this->venue->id, 'name' => 'Sân 1', 'is_active' => true]);
-        PriceRule::create(['organization_id' => $this->org->id, 'court_id' => $this->court->id, 'type' => 'base', 'price' => 150000]);
+        $this->priceCourt($this->court, 150000);
 
         $wallets = app(WalletPaymentService::class);
         $wallets->credit($wallets->getOrCreateWallet($this->customer->id, $this->org->id), 1000000, 'test_topup', 1, 'Fund for test');
@@ -136,7 +138,7 @@ class InflightQuoteEligibilityTest extends TestCase
 
         // A session carries its own price, so an unpriced court may still host one.
         $this->court->update(['is_active' => true]);
-        PriceRule::query()->delete();
+        CourtPriceTableLink::query()->delete();
         $this->as($this->owner)->postJson('/api/social/matches', $this->hostedSession())->assertCreated();
     }
 

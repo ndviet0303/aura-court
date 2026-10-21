@@ -11,7 +11,6 @@ use App\Models\OrganizationMember;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
 use App\Models\OwnerRefundObligation;
-use App\Models\PriceRule;
 use App\Models\ReceivingConnection;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
@@ -26,10 +25,12 @@ use App\Services\Payment\WalletPaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class SplitPaymentReceiptVerificationTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private array $eventDates = [];
@@ -334,7 +335,7 @@ class SplitPaymentReceiptVerificationTest extends TestCase
             'is_active' => true,
         ]);
         $court = $venue->courts()->create(['name' => 'Court 1', 'is_active' => true]);
-        PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 200000]);
+        $this->priceCourt($court, 200000);
 
         VenueBookingPolicy::create([
             'venue_id' => $venue->id,

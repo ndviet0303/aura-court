@@ -54,7 +54,7 @@ class VerifyEffectiveBookingEligibility
         if (! $venueEligibility['eligible']) {
             return $venueEligibility + [
                 'court' => $courtModel,
-                'is_nonpublic' => ! $courtModel->venue->isPublished() || ! $courtModel->venue->is_active,
+                'is_nonpublic' => ! $courtModel->venue->isActive() || $courtModel->venue->isSuspended(),
             ];
         }
 
@@ -90,7 +90,7 @@ class VerifyEffectiveBookingEligibility
         $enforcePublication = $org ? $rollout->shouldEnforce($org, 'publication') : false;
         $enforceSubscription = $org ? $rollout->shouldEnforce($org, 'subscription') : false;
 
-        if (! $venueModel->is_active || ! $venueModel->isPublished()) {
+        if (! $venueModel->isActive() || $venueModel->isSuspended()) {
             return [
                 'eligible' => false,
                 'reason' => 'VENUE_NOT_OPERATIONAL',
@@ -115,7 +115,7 @@ class VerifyEffectiveBookingEligibility
             ];
         }
 
-        if (($enforcePublication || $venueModel->isPublished()) && ! $org->isApprovedPartner()) {
+        if (($enforcePublication || $venueModel->isActive()) && ! $org->isApprovedPartner()) {
             return [
                 'eligible' => false,
                 'reason' => 'PARTNER_NOT_ELIGIBLE',

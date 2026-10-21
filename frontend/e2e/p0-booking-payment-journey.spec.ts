@@ -5,7 +5,6 @@ import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import {
   getTestManifest,
-  getFuturePlayDate,
   formatVietnamDate,
   sendSyntheticPaymentWebhook,
   expireHolds,
@@ -808,7 +807,7 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     await expect(page.locator('[data-testid="reservation-payment-modal"]')).toHaveCount(0)
   })
 
-  test('4.5: Xem trước coupon và điểm tích lũy không trừ trước, giữ nguyên sau F5 và chống tiêu điểm hai lần', async ({
+  test('4.5: Xem trước coupon không giữ lượt, đặt sân không giữ hay trừ điểm và giữ nguyên sau F5', async ({
     page,
   }) => {
     const manifest = getTestManifest()
@@ -994,21 +993,7 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     )
     expect(membershipJson).toBeDefined()
 
-    // 6. Shared entry point controls: HomeView quick-booking dock LoyaltyPointSelector
-    await page.goto('/', { waitUntil: 'domcontentloaded' })
-    const homeSlot = page.locator('.availability-grid .slot:not(.unavailable)').first()
-    if (await homeSlot.isVisible({ timeout: 10000 }).catch(() => false)) {
-      await homeSlot.click()
-      const dockLoyalty = page.locator('.dock-loyalty-container .loyalty-point-selector')
-      await expect(dockLoyalty).toBeVisible({ timeout: 15000 })
-      await expect(dockLoyalty.locator('.loyalty-balance-badge')).toContainText(
-        new RegExp(String(initialState.balance)),
-      )
-      // Clear home selection to dismiss dock
-      await page.locator('.dock-btn-clear').click()
-    }
-
-    // 7. Navigate to schedule and select future date
+    // 6. Navigate to schedule and select future date
     await page.goto(`/courts/${courtId}/schedule`, { waitUntil: 'domcontentloaded' })
     await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
       timeout: 20000,
@@ -1020,45 +1005,10 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     await targetCard.click()
     await expect(targetCard).toHaveClass(/active/, { timeout: 10000 })
 
-    // 8. Select an available slot (100,000 VND)
+    // 7. Select an available slot (100,000 VND) and check out; bookings no longer take points
     const availableSlot = page.locator('.slots-grid .slot-cell-btn.is-available').first()
     await expect(availableSlot).toBeVisible({ timeout: 25000 })
     await availableSlot.click()
-    // 5. Verify LoyaltyPointSelector controls and preview without debiting
-    const loyaltyBox = page.locator('.loyalty-point-selector')
-    await expect(loyaltyBox).toBeVisible({ timeout: 15000 })
-    await expect(loyaltyBox.locator('.loyalty-balance-badge')).toContainText(
-      new RegExp(String(initialState.balance)),
-    )
-
-    const pointsInput = loyaltyBox.locator('.loyalty-input')
-    await pointsInput.fill('50')
-    await pointsInput.press('Enter')
-
-    // Preview breakdown renders discount and remaining payable
-    await expect(loyaltyBox.locator('.loyalty-breakdown')).toBeVisible({ timeout: 10000 })
-    await expect(loyaltyBox.locator('.loyalty-breakdown .discount-value')).toContainText(/50\.000/i)
-    await expect(loyaltyBox.locator('.loyalty-breakdown .remaining-value')).toContainText(
-      /50\.000/i,
-    )
-
-    // Test clear action
-    const clearBtn = loyaltyBox.locator('.btn-quick.clear')
-    await expect(clearBtn).toBeVisible({ timeout: 10000 })
-    await clearBtn.click()
-    await expect(loyaltyBox.locator('.loyalty-breakdown')).toHaveCount(0)
-
-    // Re-apply 50 points
-    await pointsInput.fill('50')
-    await pointsInput.press('Enter')
-    await expect(loyaltyBox.locator('.loyalty-breakdown')).toBeVisible({ timeout: 10000 })
-
-    // Authoritative check: Preview stage has NOT debited PointLedger or incremented coupon usage
-    const previewState = checkPointState()
-    expect(previewState.debit_entries).toBe(initialDebitEntries)
-    expect(previewState.coupon_usage).toBe(0)
-
-    // 6. Proceed to checkout and verify snapshot persistence
     const checkoutBtn = page.locator('.schedule-summary-card .btn-checkout')
     await expect(checkoutBtn).toBeEnabled({ timeout: 10000 })
     await checkoutBtn.click()
@@ -1070,32 +1020,21 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     await expect(paymentModal.locator('[data-testid="reservation-payment-qr"]')).toBeVisible({
       timeout: 25000,
     })
-    // Payment modal asks for the discounted payable (50,000 VND instead of 100,000 VND)
-    await expect(paymentModal.locator('.payment-details')).toContainText(/50\.000/i)
-    // Authoritative check: checkout debited points in PointLedger and recorded the loyalty snapshot
+    await expect(paymentModal.locator('.payment-details')).toContainText(/100\.000/i)
+    // Authoritative check: the hold asks for the full rental and no point was held or debited
     const postHoldStateScript = `
       require "vendor/autoload.php";
       $app = require_once "bootstrap/app.php";
       $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
       $kernel->bootstrap();
 
-      use App\\Models\\PointLedger;
       use App\\Models\\Reservation;
 
       $reservation = Reservation::withoutGlobalScope('tenant_isolation')->where('code', '${reservationCode}')->firstOrFail();
-      $metadata = $reservation->metadata ?: [];
-      $loyaltySnapshot = $metadata['loyalty_snapshot'] ?? null;
-      $debit = PointLedger::where('user_id', ${customerId})->where('organization_id', ${orgId})
-        ->where('source_type', 'reservation')->where('source_id', $reservation->id)->where('delta', -50)->first();
 
       echo json_encode([
         'status' => $reservation->status,
         'total_amount' => (int) $reservation->total_amount,
-        'loyalty_discount_amount' => (int) ($metadata['loyalty_discount_amount'] ?? 0),
-        'loyalty_points_redeemed' => (int) ($metadata['loyalty_points_redeemed'] ?? 0),
-        'has_loyalty_snapshot' => !empty($loyaltySnapshot),
-        'points_spent_in_snapshot' => $loyaltySnapshot['points_spent'] ?? null,
-        'has_debit_ledger' => $debit !== null,
       ]);
     `
     const holdOut = execFileSync('php', ['-r', postHoldStateScript], {
@@ -1103,311 +1042,164 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
       env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
       encoding: 'utf-8',
     })
-    const holdState = JSON.parse(holdOut) as {
-      status: string
-      total_amount: number
-      loyalty_discount_amount: number
-      loyalty_points_redeemed: number
-      has_loyalty_snapshot: boolean
-      points_spent_in_snapshot: number | null
-      has_debit_ledger: boolean
-    }
+    const holdState = JSON.parse(holdOut) as { status: string; total_amount: number }
 
     expect(holdState.status).toBe('held')
-    expect(holdState.total_amount).toBe(50000)
-    expect(holdState.loyalty_discount_amount).toBe(50000)
-    expect(holdState.loyalty_points_redeemed).toBe(50)
-    expect(holdState.has_loyalty_snapshot).toBe(true)
-    expect(holdState.points_spent_in_snapshot).toBe(50)
-    expect(holdState.has_debit_ledger).toBe(true)
+    expect(holdState.total_amount).toBe(100000)
+    const afterHoldState = checkPointState()
+    expect(afterHoldState.balance).toBe(initialState.balance)
+    expect(afterHoldState.debit_entries).toBe(initialDebitEntries)
 
-    // 7. Verify snapshot persistence after reload: the held reservation reopens its payment
+    // 8. Verify persistence after reload: the held reservation reopens its payment
     await page.reload({ waitUntil: 'domcontentloaded' })
     await expect(paymentModal.locator('[data-testid="reservation-payment-qr"]')).toBeVisible({
       timeout: 15000,
     })
-    await expect(paymentModal.locator('.payment-details')).toContainText(/50\.000/i)
-
-    // 8. Protection against double consumption on invalid points or stale policy
-    const future = getFuturePlayDate(4, 15)
-    const invalidBookingScript = `
-      require "vendor/autoload.php";
-      $app = require_once "bootstrap/app.php";
-      $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
-      $kernel->bootstrap();
-
-      use App\\Models\\User;
-      use App\\Services\\Booking\\OrdinaryCheckoutService;
-      use Illuminate\\Validation\\ValidationException;
-
-      $caught = false;
-      $errorMsg = '';
-      try {
-        app(OrdinaryCheckoutService::class)->checkout(User::findOrFail(${customerId}), ${orgId}, [
-          'court_id' => ${courtId},
-          'slots' => ['${future.slotTime}'],
-          'loyalty_points' => 999999,
-          'loyalty_policy_version' => 999,
-        ]);
-      } catch (ValidationException $e) {
-        $caught = true;
-        $errorMsg = json_encode($e->errors(), JSON_UNESCAPED_UNICODE);
-      } catch (\\Throwable $t) {
-        $caught = true;
-        $errorMsg = $t->getMessage();
-      }
-
-      echo json_encode(['caught' => $caught, 'error' => $errorMsg]);
-    `
-    const invOut = execFileSync('php', ['-r', invalidBookingScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })
-    const invResult = JSON.parse(invOut) as { caught: boolean; error: string }
-    expect(invResult.caught).toBe(true)
-    expect(invResult.error).toMatch(
-      /loyalty_policy_version|loyalty_points|Chính sách đổi điểm|Số dư điểm|thay đổi|không đủ/i,
-    )
-    // Authoritative check: Debit entries count has NOT increased (no point leakage or double consumption)
-    const afterInvalidState = checkPointState()
-    expect(afterInvalidState.debit_entries).toBe(initialDebitEntries + 1)
-
-    // 9. Reservation checkout with valid coupon applies discount and increments coupon usage
-    const futureCoupon = getFuturePlayDate(5, 11)
-    const couponBookingScript = `
-      require "vendor/autoload.php";
-      $app = require_once "bootstrap/app.php";
-      $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
-      $kernel->bootstrap();
-
-      use App\\Models\\Coupon;
-      use App\\Models\\User;
-      use App\\Services\\Booking\\OrdinaryCheckoutService;
-
-      $reservation = app(OrdinaryCheckoutService::class)->checkout(User::findOrFail(${customerId}), ${orgId}, [
-        'court_id' => ${courtId},
-        'slots' => ['${futureCoupon.slotTime}'],
-        'coupon_code' => '${coupon.code}',
-      ]);
-      $cpn = Coupon::find(${coupon.coupon_id});
-
-      echo json_encode([
-        'coupon_discount' => (int) data_get($reservation->metadata, 'benefit_snapshot.coupon_discount_amount', 0),
-        'coupon_usage' => $cpn ? $cpn->usage_count : 0,
-      ]);
-    `
-    const cpnBookingOut = execFileSync('php', ['-r', couponBookingScript], {
-      cwd: backendDir,
-      env: { ...getCanonicalBackendEnv(manifest), ...backendEnv },
-      encoding: 'utf-8',
-    })
-    const cpnResult = JSON.parse(cpnBookingOut) as { coupon_discount: number; coupon_usage: number }
-    expect(cpnResult.coupon_discount).toBe(20000)
-    expect(cpnResult.coupon_usage).toBe(1)
+    await expect(paymentModal.locator('.payment-details')).toContainText(/100\.000/i)
   })
 
-  test('4.5.2: Nhập mã giảm giá ở lịch sân -> checkout reservation giữ lượt coupon và QR đúng số tiền đã giảm', async ({
+  test('4.6: Hủy thanh toán trả khung giờ ngay, tiền chuyển sau khi hủy hiện ở màn Thanh toán bất thường của chủ sân khi tắt payout', async ({
     page,
+    browser,
   }) => {
+    // Three sessions: the customer, a visitor watching the schedule, and the owner
+    test.slow()
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
+    const owner = getActorCredentials(manifest, 'owner1')
     const venue1A = manifest.fixtures?.organizations.org1?.venue1A
-    const orgId = manifest.fixtures?.organizations.org1?.id
-    if (!venue1A || !orgId) {
-      throw new Error('E2E fixture missing: venue1A or organizationId')
+    if (!venue1A?.routingId) {
+      throw new Error('E2E fixture missing: venue1A routingId')
+    }
+    const court = arrangeCourt(manifest, { testKey: '4_6_cancel_payment', venueId: venue1A.id })
+
+    // The schedule of a future date (card index 4), as every viewer opens it
+    async function openSchedule(target: typeof page) {
+      await target.goto(`/courts/${court.court_id}/schedule`, { waitUntil: 'domcontentloaded' })
+      const card = target.locator('.date-carousel .date-card-btn').nth(4)
+      await card.waitFor({ state: 'visible', timeout: 15000 })
+      await card.click()
+      await expect(card).toHaveClass(/active/, { timeout: 10000 })
+      await expect(target.locator('.slots-grid .slot-cell-btn').first()).toBeVisible({
+        timeout: 25000,
+      })
+      return target.locator('.slots-grid .slot-cell-btn')
     }
 
-    const court = arrangeCourt(manifest, {
-      testKey: '4_5_2_coupon',
-      venueId: venue1A.id,
-      price: 100000,
-    })
-    const coupon = arrangeCoupon(manifest, {
-      testKey: '4_5_2_cpn',
-      discountValue: 20000,
-      venueId: venue1A.id,
-      organizationId: orgId,
-    })
-    const backendDir = path.resolve(import.meta.dirname, '../../backend')
-
+    // 1. Customer holds the first free slot
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
     await page.locator('input[type="email"], input[name="email"]').fill(customer.email)
     await page.locator('input[type="password"], input[name="password"]').fill(customer.password)
     await page.locator('button[type="submit"]').click()
     await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
 
-    await page.goto(`/courts/${court.court_id}/schedule`, { waitUntil: 'domcontentloaded' })
-    const targetCard = page.locator('.date-carousel .date-card-btn').nth(1)
-    await targetCard.waitFor({ state: 'visible', timeout: 20000 })
-    await targetCard.click()
-    await expect(targetCard).toHaveClass(/active/, { timeout: 10000 })
-    const availableSlot = page.locator('.slots-grid .slot-cell-btn.is-available').first()
-    await expect(availableSlot).toBeVisible({ timeout: 25000 })
-    await availableSlot.click()
-
-    // The quote prices the selection with the code; nothing is reserved yet.
-    const summary = page.locator('.schedule-summary-card')
-    await summary.locator('.coupon-text-input').fill(coupon.code)
-    await summary.locator('.btn-apply-coupon').click()
-    await expect(summary.locator('.coupon-discount')).toContainText(/20\.000/, { timeout: 15000 })
-    await expect(summary.locator('.total-num')).toContainText(/80\.000/)
-
-    await summary.locator('.btn-checkout').click()
-    await expect(page).toHaveURL(/\/reservations\/RSV[A-Z0-9]+/, { timeout: 20000 })
-    const reservationCode = page.url().split('/reservations/')[1]?.split('?')[0]
-    const paymentModal = page.locator('[data-testid="reservation-payment-modal"]')
-    await expect(paymentModal.locator('[data-testid="reservation-payment-qr"]')).toBeVisible({
+    const slots = await openSchedule(page)
+    await expect(page.locator('.slots-grid .slot-cell-btn.is-available').first()).toBeVisible({
       timeout: 25000,
     })
-    await expect(paymentModal.locator('.payment-details')).toContainText(/80\.000/)
-
-    const stateScript = `
-      require "vendor/autoload.php";
-      $app = require_once "bootstrap/app.php";
-      $app->make(Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap();
-
-      use App\\Models\\Coupon;
-      use App\\Models\\Reservation;
-
-      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->where('code', '${reservationCode}')->firstOrFail();
-      echo json_encode([
-        'status' => $reservation->status,
-        'total_amount' => (int) $reservation->total_amount,
-        'coupon_discount' => (int) data_get($reservation->metadata, 'benefit_snapshot.coupon_discount_amount', 0),
-        'coupon_usage_id' => data_get($reservation->metadata, 'coupon_usage.coupon_id'),
-        'usage_count' => (int) Coupon::findOrFail(${coupon.coupon_id})->usage_count,
-      ]);
-    `
-    const state = JSON.parse(
-      execFileSync('php', ['-r', stateScript], {
-        cwd: backendDir,
-        env: getCanonicalBackendEnv(manifest),
-        encoding: 'utf-8',
-      }),
-    ) as {
-      status: string
-      total_amount: number
-      coupon_discount: number
-      coupon_usage_id: number | null
-      usage_count: number
-    }
-    expect(state.status).toBe('held')
-    expect(state.total_amount).toBe(80000)
-    expect(state.coupon_discount).toBe(20000)
-    expect(state.coupon_usage_id).toBe(coupon.coupon_id)
-    expect(state.usage_count).toBe(1)
-  })
-
-  test('4.5.1: Điểm tích lũy phủ toàn bộ giá -> đặt sân xác nhận ngay, không mở thanh toán (zero-payable)', async ({
-    page,
-  }) => {
-    const manifest = getTestManifest()
-    const customer = getActorCredentials(manifest, 'customer')
-    const venue1A = manifest.fixtures?.organizations.org1?.venue1A
-    const orgId = manifest.fixtures?.organizations.org1?.id
-    const customerId = manifest.fixtures?.users.customer?.id
-    if (!venue1A || !orgId || !customerId) {
-      throw new Error('E2E fixture missing: venue1A, organizationId or customer ID')
-    }
-
-    // 1. A 100,000 VND court and 100 points (1 point = 1,000 VND) cover the whole price
-    const court = arrangeCourt(manifest, {
-      testKey: '4_5_zero',
-      venueId: venue1A.id,
-      price: 100000,
-    })
-    grantLoyaltyPoints(manifest, { userId: customerId, organizationId: orgId, points: 100 })
-
-    // 2. Authenticate customer and pick a slot
-    await page.goto('/login', { waitUntil: 'domcontentloaded' })
-    await page.locator('input[type="email"], input[name="email"]').fill(customer.email)
-    await page.locator('input[type="password"], input[name="password"]').fill(customer.password)
-    await page.locator('button[type="submit"]').click()
-    await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
-
-    await page.goto(`/courts/${court.court_id}/schedule`, { waitUntil: 'domcontentloaded' })
-    await expect(page.locator('.schedule-split-layout, .schedule-view-page').first()).toBeVisible({
-      timeout: 20000,
-    })
-    const targetCard = page.locator('.date-carousel .date-card-btn').nth(2)
-    await targetCard.waitFor({ state: 'visible', timeout: 15000 })
-    await targetCard.click()
-    await expect(targetCard).toHaveClass(/active/, { timeout: 10000 })
-    const availableSlot = page.locator('.slots-grid .slot-cell-btn.is-available').first()
-    await expect(availableSlot).toBeVisible({ timeout: 25000 })
-    await availableSlot.click()
-
-    // 3. Redeem 100 points: the preview shows the full 100,000 VND discount
-    const loyaltyBox = page.locator('.loyalty-point-selector')
-    await expect(loyaltyBox).toBeVisible({ timeout: 15000 })
-    const pointsInput = loyaltyBox.locator('.loyalty-input')
-    await pointsInput.fill('100')
-    await pointsInput.press('Enter')
-    await expect(loyaltyBox.locator('.loyalty-breakdown .discount-value')).toContainText(
-      /100\.000/i,
-      { timeout: 10000 },
+    const slotIndex = await slots.evaluateAll((cells) =>
+      cells.findIndex((cell) => cell.classList.contains('is-available')),
     )
+    await slots.nth(slotIndex).click()
 
-    // 4. Checkout confirms at once: the reservation opens confirmed, with no payment modal
     const checkoutBtn = page.locator('.schedule-summary-card .btn-checkout')
     await expect(checkoutBtn).toBeEnabled({ timeout: 10000 })
+    const paymentResponsePromise = page.waitForResponse(
+      (res) =>
+        res.url().includes('/payment') &&
+        res.request().method() === 'POST' &&
+        (res.status() === 200 || res.status() === 201),
+      { timeout: 25000 },
+    )
     await checkoutBtn.click()
-    await expect(page).toHaveURL(/\/reservations\/RSV[A-Z0-9]+/, { timeout: 20000 })
-    const reservationCode = page.url().split('/reservations/')[1]?.split('?')[0]
-    await expect(page.locator('.status-badge.confirmed')).toBeVisible({ timeout: 15000 })
-    await expect(page.locator('[data-testid="reservation-payment-modal"]')).toHaveCount(0)
+    await expect(page).toHaveURL(/\/reservations\/RSV[A-Z0-9]+/, { timeout: 25000 })
+    const paymentBody = (await (await paymentResponsePromise).json()) as {
+      reservation: { code: string; status: string }
+      payment_attempt: {
+        amount: number
+        transfer_content: string
+        receiver: { account_number: string }
+      }
+    }
+    const reservationCode = paymentBody.reservation.code
+    const attempt = paymentBody.payment_attempt
+    expect(paymentBody.reservation.status).toBe('held')
 
-    // 5. Authoritative check: confirmed, nothing payable, zero_payable recorded, no payment attempt
-    const state = JSON.parse(
-      execFileSync(
-        'php',
-        [
-          '-r',
-          `
-      require "vendor/autoload.php";
-      $app = require_once "bootstrap/app.php";
-      $kernel = $app->make(Illuminate\\Contracts\\Console\\Kernel::class);
-      $kernel->bootstrap();
+    // 2. Another visitor sees the held slot taken
+    const visitorContext = await browser.newContext()
+    try {
+      const visitor = await visitorContext.newPage()
+      await visitor.addInitScript(() => sessionStorage.setItem('aura_demo_warned', 'true'))
+      await expect((await openSchedule(visitor)).nth(slotIndex)).toHaveClass(/is-occupied/, {
+        timeout: 15000,
+      })
 
-      use App\\Models\\OwnerPaymentAttempt;
-      use App\\Models\\PointLedger;
-      use App\\Models\\Reservation;
+      // 3. Customer cancels the payment after confirming
+      const modal = page.locator('[data-testid="reservation-payment-modal"]')
+      await expect(modal).toBeVisible({ timeout: 20000 })
+      await modal.locator('[data-testid="cancel-payment"]').click()
+      const cancelResponsePromise = page.waitForResponse(
+        (res) =>
+          res.url().includes(`/reservations/${reservationCode}/cancel-payment`) &&
+          res.request().method() === 'POST',
+        { timeout: 15000 },
+      )
+      await modal.locator('[data-testid="confirm-cancel-payment"]').click()
+      const cancelResponse = await cancelResponsePromise
+      expect(cancelResponse.status()).toBe(200)
+      await expect(page.locator('.alert-pill-success')).toBeVisible({ timeout: 10000 })
 
-      $reservation = Reservation::withoutGlobalScope('tenant_isolation')->where('code', '${reservationCode}')->firstOrFail();
-      echo json_encode([
-        'status' => $reservation->status,
-        'payment_model' => $reservation->payment_model,
-        'total_amount' => (int) $reservation->total_amount,
-        'zero_payable' => $reservation->metadata['zero_payable'] ?? null,
-        'loyalty_points_redeemed' => (int) ($reservation->metadata['loyalty_points_redeemed'] ?? 0),
-        'attempt_count' => OwnerPaymentAttempt::where('purpose', 'booking')->where('purpose_id', $reservation->code)->count(),
-        'debit_count' => PointLedger::where('source_type', 'reservation')->where('source_id', $reservation->id)->where('delta', -100)->count(),
-      ]);
-    `,
-        ],
-        {
-          cwd: path.resolve(import.meta.dirname, '../../backend'),
-          env: getCanonicalBackendEnv(manifest),
-          encoding: 'utf-8',
-        },
-      ),
-    ) as {
-      status: string
-      payment_model: string
-      total_amount: number
-      zero_payable: boolean | null
-      loyalty_points_redeemed: number
-      attempt_count: number
-      debit_count: number
+      await page.reload({ waitUntil: 'domcontentloaded' })
+      await expect(page.locator('.status-badge.cancelled')).toBeVisible({ timeout: 15000 })
+      await expect(page.locator('[data-testid="reservation-payment-modal"]')).toHaveCount(0)
+
+      // 4. The slot is free again at once, with no expiry sweep
+      await expect((await openSchedule(visitor)).nth(slotIndex)).toHaveClass(/is-available/, {
+        timeout: 15000,
+      })
+    } finally {
+      await visitorContext.close()
     }
 
-    expect(state.status).toBe('confirmed')
-    expect(state.payment_model).toBe('direct_owner_v1')
-    expect(state.total_amount).toBe(0)
-    expect(state.zero_payable).toBe(true)
-    expect(state.loyalty_points_redeemed).toBe(100)
-    expect(state.attempt_count).toBe(0)
-    expect(state.debit_count).toBe(1)
+    // 5. Money for the cancelled request arrives before its original deadline
+    const webhookRes = await sendSyntheticPaymentWebhook(manifest, {
+      routingId: venue1A.routingId,
+      secret: `whsec_e2e_1a_${manifest.runId}`,
+      accountNumber: attempt.receiver.account_number,
+      amount: attempt.amount,
+      code: attempt.transfer_content,
+      referenceCode: attempt.transfer_content,
+      transactionId: `TXN-46-${Date.now()}`,
+      transactionDate: formatVietnamDate(new Date(Date.now() + 10000)),
+    })
+    expect(webhookRes.statusCode).toBe(200)
+
+    // 6. Payouts are off: the owner finds it under "Thanh toán bất thường", not the payout queues
+    const ownerContext = await browser.newContext()
+    try {
+      const ownerPage = await ownerContext.newPage()
+      await ownerPage.addInitScript(() => sessionStorage.setItem('aura_demo_warned', 'true'))
+      await ownerPage.goto('/login', { waitUntil: 'domcontentloaded' })
+      await ownerPage.locator('input[type="email"], input[name="email"]').fill(owner.email)
+      await ownerPage.locator('input[type="password"], input[name="password"]').fill(owner.password)
+      await ownerPage.locator('button[type="submit"]').click()
+      await expect(ownerPage).not.toHaveURL(/\/login/, { timeout: 15000 })
+
+      await ownerPage.goto('/admin/payment-exceptions', { waitUntil: 'domcontentloaded' })
+      await expect(ownerPage.locator('a[href="/admin/payment-exceptions"]').first()).toBeVisible({
+        timeout: 15000,
+      })
+      await expect(ownerPage.locator('a[href="/admin/financial-exceptions"]')).toHaveCount(0)
+
+      const row = ownerPage
+        .locator('[data-testid="owner-payment-exceptions"] tbody tr')
+        .filter({ hasText: reservationCode })
+      await expect(row).toHaveCount(1, { timeout: 15000 })
+      await expect(row).toContainText('Chuyển sau khi đơn hết hạn hoặc đã hủy')
+      await expect(row).toContainText(attempt.transfer_content)
+      await expect(row).toContainText('Chưa xử lý')
+    } finally {
+      await ownerContext.close()
+    }
   })
 })

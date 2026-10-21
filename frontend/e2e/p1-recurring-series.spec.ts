@@ -1,4 +1,4 @@
-import { getCanonicalBackendEnv } from './runner/test-data.ts'
+import { getCanonicalBackendEnv, priceCourtPhp } from './runner/test-data.ts'
 import { withE2EApi } from './runner/with-api.ts'
 import { test, expect } from '@playwright/test'
 import { getTestManifest } from './runner/test-data.ts'
@@ -43,7 +43,6 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       $kernel->bootstrap();
 
       use App\\Models\\Court;
-      use App\\Models\\PriceRule;
       use Illuminate\\Support\\Str;
 
       $court = Court::create([
@@ -55,16 +54,7 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       ]);
 
       // Base pricing rule: 100,000 VND / hour
-      PriceRule::create([
-        'organization_id' => ${orgId},
-        'venue_id' => ${venue1Id},
-        'court_id' => $court->id,
-        'type' => 'base',
-        'price' => 100000,
-        'priority' => 1,
-        'is_active' => true,
-        'version' => 1,
-      ]);
+      ${priceCourtPhp(100000)}
 
       echo json_encode(['court_id' => $court->id]);
     `
@@ -181,7 +171,6 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       $kernel->bootstrap();
 
       use App\\Models\\Court;
-      use App\\Models\\PriceRule;
       use App\\Models\\Reservation;
       use App\\Models\\ReservationSlot;
       use App\\Models\\VenueBookingPolicy;
@@ -196,16 +185,7 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
         'is_active' => true,
       ]);
 
-      PriceRule::create([
-        'organization_id' => ${orgId},
-        'venue_id' => ${venue1Id},
-        'court_id' => $court->id,
-        'type' => 'base',
-        'price' => 100000,
-        'priority' => 1,
-        'is_active' => true,
-        'version' => 1,
-      ]);
+      ${priceCourtPhp(100000)}
 
       // Ensure VenueBookingPolicy has conflict_policy: all_or_nothing
       $policy = VenueBookingPolicy::where('venue_id', ${venue1Id})->latest('version')->first();
@@ -376,7 +356,6 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       $kernel->bootstrap();
 
       use App\\Models\\Court;
-      use App\\Models\\PriceRule;
       use App\\Models\\Reservation;
       use App\\Models\\ReservationSlot;
       use App\\Models\\VenueBookingPolicy;
@@ -391,16 +370,7 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
         'is_active' => true,
       ]);
 
-      PriceRule::create([
-        'organization_id' => ${orgId},
-        'venue_id' => ${venue1Id},
-        'court_id' => $court->id,
-        'type' => 'base',
-        'price' => 100000,
-        'priority' => 1,
-        'is_active' => true,
-        'version' => 1,
-      ]);
+      ${priceCourtPhp(100000)}
 
       // Ensure VenueBookingPolicy has conflict_policy: partial
       $policy = VenueBookingPolicy::where('venue_id', ${venue1Id})->latest('version')->first();
@@ -585,7 +555,6 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       use App\\Models\\Court;
       use App\\Models\\MonthlyInvoice;
       use App\\Models\\OwnerPaymentAttempt;
-      use App\\Models\\PriceRule;
       use App\\Models\\ReceivingConnection;
       use App\\Models\\User;
       use App\\Models\\VenueBookingPolicy;
@@ -601,16 +570,7 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
         'is_active' => true,
       ]);
 
-      PriceRule::create([
-        'organization_id' => ${orgId},
-        'venue_id' => ${venue1Id},
-        'court_id' => $court->id,
-        'type' => 'base',
-        'price' => 150000,
-        'priority' => 1,
-        'is_active' => true,
-        'version' => 1,
-      ]);
+      ${priceCourtPhp(150000)}
 
       // Set policy: per_period payment
       $policy = VenueBookingPolicy::where('venue_id', ${venue1Id})->latest('version')->first();
@@ -832,7 +792,6 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
       use App\\Models\\Court;
       use App\\Models\\MonthlyInvoice;
       use App\\Models\\OwnerPaymentAttempt;
-      use App\\Models\\PriceRule;
       use App\\Models\\RecurringOccurrence;
       use App\\Models\\RecurringSeries;
       use App\\Models\\User;
@@ -849,16 +808,7 @@ test.describe('P1: Đặt sân định kỳ, Xử lý xung đột, Thanh toán t
         'is_active' => true,
       ]);
 
-      PriceRule::create([
-        'organization_id' => ${orgId},
-        'venue_id' => ${venue1Id},
-        'court_id' => $court->id,
-        'type' => 'base',
-        'price' => 120000,
-        'priority' => 1,
-        'is_active' => true,
-        'version' => 1,
-      ]);
+      ${priceCourtPhp(120000)}
 
       $policy = VenueBookingPolicy::where('venue_id', ${venue1Id})->latest('version')->first();
       $settings = $policy ? $policy->settings : [];

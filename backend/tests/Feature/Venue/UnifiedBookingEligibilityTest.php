@@ -3,7 +3,6 @@
 namespace Tests\Feature\Venue;
 
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
@@ -15,10 +14,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class UnifiedBookingEligibilityTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private function createCustomerWithWallet(int $orgId, int $balance = 500000): User
@@ -53,14 +54,7 @@ class UnifiedBookingEligibilityTest extends TestCase
         ]);
 
         $court = Court::create(['venue_id' => $venue->id, 'sport_type' => 'badminton', 'name' => 'Draft Court', 'slug' => 'draft-court', 'is_active' => true]);
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => now()->addDay()->dayOfWeekIso,
-            'starts_at' => '08:00',
-            'ends_at' => '09:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourt($court, 100000);
 
         Sanctum::actingAs($customer);
 
@@ -122,14 +116,7 @@ class UnifiedBookingEligibilityTest extends TestCase
         ]);
 
         $court = Court::create(['venue_id' => $venue->id, 'sport_type' => 'badminton', 'name' => 'Court 1', 'slug' => 'court-1', 'is_active' => true]);
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => now()->addDay()->dayOfWeekIso,
-            'starts_at' => '08:00',
-            'ends_at' => '09:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourt($court, 100000);
 
         Sanctum::actingAs($customer);
 
@@ -195,15 +182,7 @@ class UnifiedBookingEligibilityTest extends TestCase
             'is_active' => true,
         ]);
         $court = Court::create(['venue_id' => $venue->id, 'sport_type' => 'badminton', 'name' => 'Court', 'slug' => 'expiring-court', 'is_active' => true]);
-        $slotDate = now()->addDays(4);
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => $slotDate->dayOfWeekIso,
-            'starts_at' => '08:00',
-            'ends_at' => '09:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourt($court, 100000);
         Sanctum::actingAs($customer);
 
         $this->getJson('/api/venues')->assertOk()->assertJsonFragment(['slug' => $venue->slug]);

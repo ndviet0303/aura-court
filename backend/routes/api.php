@@ -35,11 +35,12 @@ use App\Http\Controllers\Partner\PartnerVenueScheduleController;
 use App\Http\Controllers\Partner\ReceivingConnectionController;
 use App\Http\Controllers\POS\PosController;
 use App\Http\Controllers\POS\ServiceTabController;
+use App\Http\Controllers\Pricing\CourtPricingController;
+use App\Http\Controllers\Pricing\PriceTableController;
 use App\Http\Controllers\Promotion\PromotionController;
 use App\Http\Controllers\Reservation\AdminReservationController;
 use App\Http\Controllers\Reservation\CancelReservationPaymentController;
 use App\Http\Controllers\Reservation\MyReservationController;
-use App\Http\Controllers\Reservation\PriceRuleController;
 use App\Http\Controllers\Reservation\ReservationController;
 use App\Http\Controllers\Social\CommunityFeedController;
 use App\Http\Controllers\Social\FriendshipController;
@@ -352,11 +353,6 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             Route::delete('venues/{venue}', [AdminController::class, 'destroyVenue']);
             Route::get('courts', [CourtController::class, 'adminIndex']);
             Route::apiResource('courts', CourtController::class)->except(['index', 'show']);
-            Route::get('courts/{court}/prices', [AdminController::class, 'pricesIndex']);
-            Route::post('courts/{court}/prices', [AdminController::class, 'prices']);
-            Route::post('courts/{court}/prices/bulk', [AdminController::class, 'bulkPrices']);
-            Route::patch('courts/{court}/prices/{price}', [AdminController::class, 'updatePrice']);
-            Route::delete('courts/{court}/prices/{price}', [AdminController::class, 'destroyPrice']);
             Route::post('courts/{court}/blocks', [AdminController::class, 'blocks']);
             Route::get('courts/{court}/blocks', [AdminController::class, 'blocksIndex']);
             Route::delete('courts/{court}/blocks/{block}', [AdminController::class, 'destroyBlock']);
@@ -398,11 +394,6 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
         Route::get('me/reservations', MyReservationController::class);
         Route::get('admin/reservations', AdminReservationController::class)->middleware('venue_admin');
         Route::post('price-quotes', [ReservationController::class, 'quote']);
-        Route::get('price-rules', [PriceRuleController::class, 'index']);
-        Route::get('pricing/calendar', [ReservationController::class, 'pricingCalendar']);
-        Route::post('price-rules', [PriceRuleController::class, 'store']);
-        Route::patch('price-rules/{rule}', [PriceRuleController::class, 'update']);
-        Route::delete('price-rules/{rule}', [PriceRuleController::class, 'destroy']);
         Route::post('reservations', [ReservationController::class, 'store'])->middleware('verified');
         Route::post('reservations/checkout', [ReservationController::class, 'checkout'])->middleware('verified');
         Route::get('reservations/{reservation}', [ReservationController::class, 'show']);
@@ -410,7 +401,6 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
         Route::post('reservations/{reservation}/payment', [ReservationController::class, 'createPayment'])->middleware('verified');
         Route::post('reservations/{reservation}/confirm', [ReservationController::class, 'confirm'])->middleware('verified');
         Route::post('reservations/{reservation}/cancel-payment', CancelReservationPaymentController::class);
-        Route::post('loyalty/preview', [LoyaltyController::class, 'preview']);
         Route::post('loyalty/redeem', [LoyaltyController::class, 'redeem'])->middleware('verified');
 
         Route::middleware(RequireOrganizationRole::class.':organization_owner,staff')->group(function () {
@@ -609,6 +599,18 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::delete('admin/memberships/multiplier-rules/{id}', [AdminMembershipController::class, 'deleteMultiplierRule']);
             Route::get('admin/memberships/version-history', [AdminMembershipController::class, 'versionHistory']);
             Route::get('admin/memberships/stats', [AdminMembershipController::class, 'stats']);
+        });
+
+        // D25: price tables, their court links and price coverage belong to the owner; demo owners only simulate changes.
+        Route::middleware([RequireOrganizationRole::class.':organization_owner', SimulateDemoMutations::class])->prefix('admin')->group(function () {
+            Route::get('venues/{venue}/price-tables', [PriceTableController::class, 'index']);
+            Route::post('venues/{venue}/price-tables', [PriceTableController::class, 'store']);
+            Route::get('price-tables/{table}', [PriceTableController::class, 'show']);
+            Route::post('price-tables/{table}/versions', [PriceTableController::class, 'publishVersion']);
+            Route::post('price-tables/{table}/links', [PriceTableController::class, 'applyLinks']);
+            Route::post('price-tables/{table}/retire', [PriceTableController::class, 'retire']);
+            Route::post('courts/{court}/price-table-links/end', [CourtPricingController::class, 'endLink']);
+            Route::get('courts/{court}/price-coverage', [CourtPricingController::class, 'coverage']);
         });
     });
 

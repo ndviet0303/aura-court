@@ -3,9 +3,7 @@
 namespace Tests\Feature\Readiness;
 
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
-use App\Models\PriceRule;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Booking\OrdinaryCheckoutService;
@@ -13,6 +11,7 @@ use App\Services\Payment\WalletPaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 /**
@@ -20,21 +19,14 @@ use Tests\TestCase;
  */
 class ConcurrencyAndLoadBaselineTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     public function test_100_concurrent_reservation_attempts_result_in_exactly_1_winner_and_99_conflicts(): void
     {
         $court = Court::create(['name' => 'Center Court Stadium', 'is_active' => true]);
         $targetDate = now(config('app.timezone'))->addDays(5)->setTime(18, 0);
-
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => $targetDate->dayOfWeekIso,
-            'starts_at' => '18:00',
-            'ends_at' => '19:00',
-            'price' => 200000,
-            'is_active' => true,
-        ]);
+        $this->priceCourt($court, 200000);
 
         $users = User::factory()->count(100)->create();
         $isoSlot = $targetDate->toIso8601String();
@@ -80,7 +72,7 @@ class ConcurrencyAndLoadBaselineTest extends TestCase
         $organization = Organization::create(['name' => 'Aura Arena Org', 'slug' => 'aura-arena-org-'.uniqid(), 'status' => 'active', 'partner_status' => 'approved']);
         $venue = Venue::create(['organization_id' => $organization->id, 'name' => 'Aura Arena', 'slug' => 'aura-arena', 'address' => '123 Main St', 'is_active' => true]);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Court 2', 'is_active' => true]);
-        PriceRule::create(['organization_id' => $organization->id, 'type' => 'base', 'price' => 100000, 'is_active' => true]);
+        $this->priceCourt($court, 100000);
         $user = User::factory()->create();
 
         // Verify read availability and courts response

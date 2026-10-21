@@ -5,7 +5,6 @@ namespace Tests\Feature\Readiness;
 use App\Models\Booking;
 use App\Models\BookingSlot;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\Journal;
 use App\Models\LegacyBookingMapping;
 use App\Models\LegacyBookingSlotMapping;
@@ -28,6 +27,7 @@ use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 /**
@@ -39,6 +39,7 @@ use Tests\TestCase;
  */
 class AdditiveMigrationAndRollbackRehearsalTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private function createTenantEnvironment(string $prefix = 'rehearsal'): array
@@ -522,14 +523,7 @@ class AdditiveMigrationAndRollbackRehearsalTest extends TestCase
         [$org, $venue, $court, $customer] = $this->createTenantEnvironment('sc4');
 
         $tomorrow = Carbon::now(config('app.timezone'))->addDay()->setTime(10, 0)->startOfHour();
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => $tomorrow->dayOfWeekIso,
-            'starts_at' => '10:00',
-            'ends_at' => '11:00',
-            'price' => 150000,
-            'is_active' => true,
-        ]);
+        $this->priceCourt($court, 150000);
 
         // 1. Pending topup PaymentIntent prepared prior to pause
         $intent = PaymentIntent::create([

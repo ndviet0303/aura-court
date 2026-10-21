@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton, CurrencyInput, DateTimePicker, SelectDropdown } from '@/shared/components'
 import type { DropdownOption } from '@/shared/components'
-import { venueLocalToUtc } from '@/core/utils/venueTime'
+import { venueInstant } from '@/core/utils/venueTime'
 import { usePackagePrices } from '../composables/usePackagePrices'
 import { PACKAGE_TERMS } from '../types/platformFee'
 import PackagePriceTable from './PackagePriceTable.vue'
@@ -26,7 +26,7 @@ async function submit() {
   const saved = await schedule({
     term_days: term.value,
     amount: amount.value,
-    effective_at: effectiveAt.value ? venueLocalToUtc(effectiveAt.value) : undefined,
+    effective_at: effectiveAt.value ? venueInstant(effectiveAt.value) : undefined,
   })
   if (saved) {
     amount.value = null

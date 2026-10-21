@@ -36,12 +36,7 @@ export interface VenuePublicationRevision {
     courts: Array<{
       id: number
       name: string
-      price_slots: Array<{
-        weekday: number
-        starts_at: string
-        ends_at: string
-        price: number
-      }>
+      price_table: { id: number; name: string } | null
     }>
     organization?: {
       id: number

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { grantLoyaltyPoints } from './runner/test-data.ts'
+import { arrangeCourt, grantLoyaltyPoints } from './runner/test-data.ts'
 import { getTestManifest, getActorCredentials } from './runner/auth.ts'
 
 test.describe('OpenSpec UAT: Hành trình đặt sân, Điểm tích lũy và Khả dụng @p0', () => {
@@ -163,11 +163,12 @@ test.describe('OpenSpec UAT: Hành trình đặt sân, Điểm tích lũy và Kh
     await expect(slotList.first()).toBeVisible({ timeout: 25000 })
   })
 
-  test('Journey 4: Xem trước tiêu điểm tích lũy, số dư và tính số tiền giảm trừ', async ({
+  test('Journey 4: Trang đặt sân không còn bộ chọn điểm tích lũy, kể cả khi khách có điểm', async ({
     page,
   }) => {
     const manifest = getTestManifest()
     const customer = getActorCredentials(manifest, 'customer')
+    const court = arrangeCourt(manifest, { testKey: 'uat_journey_4', price: 100000 })
 
     // Grant deterministic 500 loyalty points to non-demo customer
     const customerId = customer.id || manifest.fixtures?.users.customer?.id
@@ -181,27 +182,19 @@ test.describe('OpenSpec UAT: Hành trình đặt sân, Điểm tích lũy và Kh
     await page.locator('button[type="submit"].auth-submit-btn').click()
     await expect(page).not.toHaveURL(/.*login/, { timeout: 20000 })
 
-    // 4.2 Wait for home availability and select available slot
-    const availabilitySection = page.locator('#availability, .availability-container').first()
-    await expect(availabilitySection).toBeVisible({ timeout: 25000 })
+    // 4.2 Select an available slot on the court schedule
+    await page.goto(`/courts/${court.court_id}/schedule`, { waitUntil: 'domcontentloaded' })
+    const targetCard = page.locator('.date-carousel .date-card-btn').nth(1)
+    await targetCard.waitFor({ state: 'visible', timeout: 20000 })
+    await targetCard.click()
+    await expect(targetCard).toHaveClass(/active/, { timeout: 10000 })
+    const availableSlot = page.locator('.slots-grid .slot-cell-btn.is-available').first()
+    await expect(availableSlot).toBeVisible({ timeout: 25000 })
+    await availableSlot.click()
 
-    const availableSlot = availabilitySection
-      .locator('.slot:not(:disabled), .time-slot:not(.booked)')
-      .first()
-    if (await availableSlot.isVisible()) {
-      await availableSlot.click()
-
-      // 4.3 Check for floating booking summary or loyalty selector if visible
-      const loyaltySelector = page.locator('.loyalty-point-selector, .loyalty-points-container')
-      if (await loyaltySelector.isVisible()) {
-        const pointsInput = loyaltySelector.locator('.loyalty-input, input[type="number"]')
-        if (await pointsInput.isVisible()) {
-          await pointsInput.fill('100')
-          await pointsInput.press('Enter')
-          const breakdown = loyaltySelector.locator('.loyalty-breakdown, .discount-summary')
-          await expect(breakdown).toBeVisible({ timeout: 15000 })
-        }
-      }
-    }
+    // 4.3 The quoted summary is ready to book, and offers no point selector
+    const summary = page.locator('.schedule-summary-card')
+    await expect(summary.locator('.btn-checkout')).toBeEnabled({ timeout: 15000 })
+    await expect(page.locator('.loyalty-point-selector')).toHaveCount(0)
   })
 })

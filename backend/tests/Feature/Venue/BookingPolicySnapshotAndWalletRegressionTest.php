@@ -4,7 +4,6 @@ namespace Tests\Feature\Venue;
 
 use App\Models\Booking;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
@@ -16,10 +15,12 @@ use App\Services\Payment\WalletPaymentService;
 use App\Services\Reservation\LegacyBookingBackfillService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private function createCustomerWithWallet(int $orgId, int $balance = 500000): User
@@ -66,14 +67,7 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
         ]);
 
         $court = Court::create(['venue_id' => $venue->id, 'sport_type' => 'badminton', 'name' => 'Court P', 'slug' => 'court-p', 'is_active' => true]);
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => now()->addDays(2)->dayOfWeekIso,
-            'starts_at' => '10:00',
-            'ends_at' => '11:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourtWith($court, [['10:00', '11:00', 100000, [now()->addDays(2)->dayOfWeekIso]]]);
 
         $customer = $this->createCustomerWithWallet($org->id, 500000);
         Sanctum::actingAs($customer);
@@ -168,14 +162,7 @@ class BookingPolicySnapshotAndWalletRegressionTest extends TestCase
         ]);
 
         $court = Court::create(['venue_id' => $venue->id, 'sport_type' => 'badminton', 'name' => 'Court S', 'slug' => 'court-s', 'is_active' => true]);
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => now()->addDays(2)->dayOfWeekIso,
-            'starts_at' => '10:00',
-            'ends_at' => '11:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourtWith($court, [['10:00', '11:00', 100000, [now()->addDays(2)->dayOfWeekIso]]]);
 
         $customer = $this->createCustomerWithWallet($org->id, 500000);
         Sanctum::actingAs($customer);
