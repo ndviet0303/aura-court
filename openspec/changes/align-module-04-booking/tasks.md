@@ -141,10 +141,19 @@
   - `processReceipt` khoá cơ sở `FOR KEY SHARE` trước khi khoá attempt. `confirmPaidAttempt` khoá đơn bằng `HeldReservationRelease::lock` trước khi đánh dấu nhóm `confirmed`.
   - Nhánh hỏng của `confirmPaidAttempt` và `SplitPaymentService::expire` hết hạn attempt `split_share` còn chờ bằng `DB::afterCommit`, trong một transaction riêng, không làm trong transaction đang giữ nhóm. Phải xong trước khi module 3 merge task 5.4 của họ.
   - Đã làm trước (2026-10-22, chưa có test): `processReceipt` khoá cơ sở `FOR KEY SHARE` trước attempt; `SplitPaymentService::expire` hết hạn attempt `split_share` sau commit. Còn lại chờ `VoucherUsageService` (task 5.1–5.3 của module 3): `consume`, `release`, `VoucherNoLongerApplies`, khoá đơn trước khi nhóm `confirmed` và nhánh hỏng của `confirmPaidAttempt` (dùng cùng cách hết hạn sau commit như `expire`).
-- [ ] 5.6 D11: listener `CourtPricesTookEffect(courtIds, effectiveAt)`.
+- [x] 5.6 D11: listener `CourtPricesTookEffect(courtIds, effectiveAt)`. (test: chưa làm)
   - Tìm đơn `held` trên `courtIds` có giờ kết thúc sau `effectiveAt`.
   - Mỗi đơn một transaction: khoá qua `HeldReservationRelease::lock`, đơn không còn `held` thì bỏ qua, tính lại bằng `RentalPriceCalculator::quote` với voucher đơn đang giữ và `$heldBy` là chính đơn đó.
   - Tiền khác → `releaseHeld(…, 'expired', 'price_changed')`; chỉ thông báo qua `DurableNotificationService` khi hàm này trả `true`. Tiền bằng → giữ nguyên.
+  - Ghi chú khi apply (2026-10-22):
+    - Nguồn: merge local commit `abd903a4` (Pha 3 của module 3, nhánh `feat/module03-price-tables`) vào nhánh này.
+    - `App\Listeners\RecheckHeldReservationsAtNewPrice`, Laravel tự đăng ký qua event discovery (`app/Listeners`). Chạy đồng bộ: sự kiện đã chờ commit, đơn chờ chỉ sống vài phút nên mỗi lần ít đơn.
+    - Lọc đơn theo slot: slot nằm trên `courtIds` và `ends_at > effectiveAt` (UTC).
+    - Tiền mới là tổng `quote(...)->total` của từng slot; đơn mới chỉ có một slot. Khoảng giờ không còn giá (`quote` trả 422) cũng tính là đổi giá và nhả đơn, vì đơn đó không thể xác nhận ở giá nào.
+    - Mỗi đơn chạy trong `rescue(DB::transaction(...))`: một đơn lỗi được report, không chặn các đơn sau và không làm request công bố giá của chủ sân lỗi sau khi đã commit.
+    - Thông báo ghi vào outbox trong cùng transaction với `releaseHeld` (kênh database và mail, khoá `reservation.notification.{id}.price_changed`), nên rollback thì không gửi. Slot được nhả báo cho danh sách chờ sau commit, như huỷ thanh toán của khách.
+    - Quyết định: bỏ đơn của chuỗi đặt định kỳ (`recurringOccurrence`). Lý do: giá đơn định kỳ đã chốt trong hợp đồng và hoá đơn tháng, attempt của nó là `recurring_period` theo chuỗi nên `releaseHeld` không cho hết hạn được; đặt định kỳ là Non-Goal của change này (giữ báo giá theo slot và `hold_expires_at_override`). Phương án khác: kiểm cả đơn định kỳ, loại vì sẽ nhả lẻ một buổi và lệch hoá đơn tháng.
+    - Voucher: chưa truyền voucher (`ponytail:` trong code) vì module 3 chưa ghi lượt voucher đơn giữ (task 5.1–5.3 của họ). Task 5.5 nối phần này.
 - [x] 5.7 Frontend: (test: chưa làm)
   - Form chọn giờ bắt đầu và kết thúc trên lưới 30 phút, từ availability mới.
   - Hiện khoảng giờ và thời lượng ("1 giờ 30 phút") thay cho danh sách slot.
