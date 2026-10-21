@@ -20,12 +20,11 @@ class CourtAvailabilityService
     public function forDate(Court $court, string $date): array
     {
         $day = CarbonImmutable::createFromFormat('!Y-m-d', $date, $court->venue?->timezone ?: config('app.timezone'));
-        $step = $this->step($court);
         $slots = [];
         foreach (VenueOperatingCalendar::openMinutes($this->calendar->scheduleFor($court), $this->calendar->exceptionFor($court, $date), $day->dayOfWeekIso) as [$from, $to]) {
-            // Quotes take starts on a 30-minute mark only.
-            for ($minute = (int) ceil($from / 30) * 30; $minute + $step <= $to; $minute += $step) {
-                $slots[] = [$day->addMinutes($minute), $day->addMinutes($minute + $step)];
+            // Every court on the same 30-minute grid; a booking picks a start and an end on it (design D14).
+            for ($minute = (int) ceil($from / 30) * 30; $minute + 30 <= $to; $minute += 30) {
+                $slots[] = [$day->addMinutes($minute), $day->addMinutes($minute + 30)];
             }
         }
         $quotes = $this->rentals->quoteEach($court, $slots);
@@ -54,11 +53,5 @@ class CourtAvailabilityService
         }
 
         return $times;
-    }
-
-    /** The grid step, here alone: the court's slot length while bookings send `slots` (design D29). */
-    private function step(Court $court): int
-    {
-        return (int) $court->slot_duration;
     }
 }

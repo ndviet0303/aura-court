@@ -45,12 +45,7 @@ class ReservationService
         return $this->transactionWithConflictHandling(function () use ($user, $organizationId, $data, $actor): Reservation {
             $quote = $this->findQuote($user->id, $organizationId, $data);
             if (! $quote) {
-                $quote = $this->quotes->create(
-                    $user->id,
-                    $organizationId,
-                    (int) ($data['court_id'] ?? 0),
-                    (array) ($data['slots'] ?? []),
-                );
+                $quote = $this->quotes->create($user->id, $organizationId, (int) ($data['court_id'] ?? 0), $data['starts_at'] ?? null, $data['ends_at'] ?? null);
                 $quote = PriceQuote::query()->withoutGlobalScope('tenant_isolation')->whereKey($quote->id)->lockForUpdate()->firstOrFail();
             }
 
@@ -72,6 +67,7 @@ class ReservationService
             abort_if($actor !== null && ! $actor->canOperateVenue($lockedVenue), 403, 'Bạn không được giao cơ sở này.');
             $eligibility = $verifier->execute($lockedCourt->setRelation('venue', $lockedVenue));
             abort_unless($eligibility['eligible'], 409, $eligibility['message'] ?? '');
+            $this->intake->recheckBookingTime($lockedCourt, $quote);
             $intervals = fn (): array => collect($quote->slot_snapshot)->map(fn (array $slotSnapshot): array => [
                 'start' => $slotSnapshot['starts_at'],
                 'end' => $slotSnapshot['ends_at'],

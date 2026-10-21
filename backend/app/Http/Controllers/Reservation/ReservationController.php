@@ -13,6 +13,7 @@ use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\IdempotencyService;
 use App\Services\Payment\ReservationPaymentService;
 use App\Services\Reservation\PriceQuoteService;
+use App\Services\Reservation\ReservationIntake;
 use App\Services\Reservation\ReservationService;
 use App\Services\Reservation\VisibleReservations;
 use Illuminate\Http\Request;
@@ -35,6 +36,7 @@ class ReservationController extends Controller
         private readonly IdempotencyService $idempotency,
         private readonly OrdinaryCheckoutService $checkoutService,
         private readonly VisibleReservations $visible,
+        private readonly ReservationIntake $intake,
     ) {}
 
     public function index(Request $request)
@@ -108,15 +110,16 @@ class ReservationController extends Controller
     public function quote(Request $request)
     {
         $organization = $this->organization($request);
+        $this->refuseSlotList($request);
         $data = $request->validate([
             'court_id' => 'required|integer',
-            'slots' => 'required|array|min:1|max:24',
-            'slots.*' => 'required',
+            'starts_at' => 'required|string|max:40',
+            'ends_at' => 'required|string|max:40',
             ...self::NO_BENEFITS,
         ], self::NO_BENEFIT_MESSAGES);
 
         return $this->idempotency->run($request, function () use ($request, $organization, $data) {
-            $quote = $this->quotes->create($request->user()->id, $organization->id, (int) $data['court_id'], $data['slots']);
+            $quote = $this->quotes->create($request->user()->id, $organization->id, (int) $data['court_id'], $data['starts_at'], $data['ends_at']);
 
             return response()->json(['quote' => $quote], 201);
         });
@@ -125,12 +128,13 @@ class ReservationController extends Controller
     public function store(Request $request)
     {
         $organization = $this->organization($request);
+        $this->refuseSlotList($request);
         $data = $request->validate([
             'quote_id' => 'nullable|integer',
             'quote_token' => 'nullable|string|max:80',
             'court_id' => 'required_without_all:quote_id,quote_token|integer',
-            'slots' => 'required_without_all:quote_id,quote_token|array|min:1|max:24',
-            'slots.*' => 'required',
+            'starts_at' => 'required_without_all:quote_id,quote_token|string|max:40',
+            'ends_at' => 'required_without_all:quote_id,quote_token|string|max:40',
             'customer_id' => 'nullable|integer',
             'expected_total' => 'required|integer|min:0',
             ...self::NO_BENEFITS,
@@ -173,12 +177,13 @@ class ReservationController extends Controller
     public function checkout(Request $request)
     {
         $organization = $this->organization($request);
+        $this->refuseSlotList($request);
         $data = $request->validate([
             'quote_id' => 'nullable|integer',
             'quote_token' => 'nullable|string|max:80',
             'court_id' => 'required_without_all:quote_id,quote_token|integer',
-            'slots' => 'required_without_all:quote_id,quote_token|array|min:1|max:24',
-            'slots.*' => 'required',
+            'starts_at' => 'required_without_all:quote_id,quote_token|string|max:40',
+            'ends_at' => 'required_without_all:quote_id,quote_token|string|max:40',
             'customer_id' => 'nullable|integer',
             'expected_total' => 'required|integer|min:0',
             ...self::NO_BENEFITS,
@@ -225,5 +230,13 @@ class ReservationController extends Controller
         return $this->idempotency->run($request, function () use ($record) {
             return response()->json(['reservation' => $this->reservations->confirm($record)]);
         });
+    }
+
+    /** A booking is one interval now (design D14): a list of start times is refused, not converted. */
+    private function refuseSlotList(Request $request): void
+    {
+        if ($request->has('slots')) {
+            $this->intake->refuseBookingTime();
+        }
     }
 }

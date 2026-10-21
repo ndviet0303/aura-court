@@ -113,14 +113,20 @@
 
 Điều kiện (module 3 D29): module 3 đã merge Pha 3 (sự kiện `CourtPricesTookEffect`; trước đó Pha 2 có engine và `AvailabilityController` mới với bước `slot_duration`) và task 5.1–5.3 (phần voucher của engine, `VoucherUsageService`, danh sách voucher). Không chờ cả Pha 5 của module 3: task 5.4–5.5 của họ merge sau task 5.1, 5.5 và 5.7 của change này. Dùng đúng tên ở Open Questions của design.
 
-- [ ] 5.1 Cắt hợp đồng quote, hold, checkout (D14, D15):
+- [x] 5.1 Cắt hợp đồng quote, hold, checkout (D14, D15): (test: chưa làm)
   - Nhận `court_id`, `starts_at`, `ends_at`; bỏ mảng `slots` (gửi `slots` → 422).
   - Helper kiểm dưới lock: :00 hoặc :30 theo giờ cơ sở, cùng ngày chơi (kết thúc được phép 24:00), kết thúc > bắt đầu, ≥ 30 phút, bắt đầu chưa qua. Sai → 422 `INVALID_BOOKING_TIME`.
   - Áp như nhau cho mọi sân, không phụ thuộc `slot_duration`.
   - `PriceQuote` đổi sang `starts_at/ends_at`, giữ token, hạn 15 phút và các kiểm tra trước khi giữ chỗ (D15).
   - `AvailabilityController` (bản Pha 2 của module 3) đổi bước lưới từ `slot_duration` sang 30 phút cho mọi sân; panel trang chủ theo đó. Test: đơn 19:00–21:00 làm bốn mốc 19:00, 19:30, 20:00, 20:30 không trống (scenario "One court is booked from 19 to 21" của module 3).
-- [ ] 5.2 Đơn mới tạo đúng một `ReservationSlot` và một `ReservationEntitlement` phủ cả khoảng; `unit_price` là tiền thuê do engine tính.
-- [ ] 5.3 Bán lại: đơn mới bán nguyên đơn qua entitlement duy nhất; đơn cũ bán từng slot như cũ. Chữ tiếng Việt ghi khoảng giờ, ví dụ "Pass lại đơn 15:30–17:00", không dùng chữ "slot".
+  - Ghi chú khi làm (2026-10-22):
+    - Helper nằm ở `ReservationIntake` (`bookingInterval`, `recheckBookingTime`, `refuseBookingTime`). Hold và checkout kiểm lại ngay sau khi khoá sân, cơ sở và kiểm điều kiện cơ sở, trên khoảng từ đầu tới cuối của `slot_snapshot`.
+    - `ReservationController` trả 422 `INVALID_BOOKING_TIME` khi request có `slots`, trước bước validate, để cả quote, store và checkout trả cùng một mã.
+    - `PriceQuoteService::create` nhận `starts_at`, `ends_at`. Đặt định kỳ dùng `createForSlots` (giữ cách tính theo `slot_duration`). Phương án khác: cho đặt định kỳ cũng gửi một khoảng. Loại vì một buổi định kỳ vẫn là các slot dài `slot_duration` (D14), đổi nó nằm ngoài change này.
+    - `reprice` lấy độ dài từ slot đầu của `slot_snapshot`, vì mọi slot trong một báo giá dài bằng nhau.
+    - `CourtAvailabilityService` (bước lưới của `AvailabilityController`) bỏ `step()` theo `slot_duration`, dùng 30 phút cho mọi sân.
+- [x] 5.2 Đơn mới tạo đúng một `ReservationSlot` và một `ReservationEntitlement` phủ cả khoảng; `unit_price` là tiền thuê do engine tính. Có sẵn khi báo giá chỉ có một mốc bắt đầu với độ dài cả khoảng: `priceSnapshots` trả một phần tử, giá là tiền thuê engine tính cho cả khoảng, và hold/checkout tạo một slot, một entitlement cho mỗi phần tử.
+- [x] 5.3 Bán lại: đơn mới bán nguyên đơn qua entitlement duy nhất; đơn cũ bán từng slot như cũ. Chữ tiếng Việt ghi khoảng giờ, ví dụ "Pass lại đơn 15:30–17:00", không dùng chữ "slot". Backend không đổi: tin bán gắn với một entitlement, và đơn mới chỉ có một entitlement phủ cả khoảng. Frontend: nút "Pass lại đơn {khoảng giờ}", bỏ "1h"/"1 giờ" ở thông báo đăng tin, nút "Pass Thêm" và tiêu đề mua.
 - [x] 5.4 `Court::SLOT_DURATIONS = [30, 60, 90, 120]`. Migration đổi `slot_duration` 45 → 60 và in số dòng đã đổi. Đặt định kỳ vẫn dùng `slot_duration`. (test: chưa làm)
 - [ ] 5.5 D12: nối `VoucherUsageService`.
   - `consume`: `processReceipt` (với `$receipt->event_at`), `SplitPaymentService::confirmPaidAttempt` (với `$paidAt`), `ReservationService::confirm` (với `now()`). Đơn 0đ và đơn xác nhận ngay khi tạo do module 3 gọi.

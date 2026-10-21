@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Venue;
 use App\Models\VenueBookingPolicy;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -33,6 +34,46 @@ class ReservationIntake
                 'code' => 'PHONE_REQUIRED',
             ], 422));
         }
+    }
+
+    /**
+     * The one interval a customer books (design D14): whole or half hours of venue time within one play date, the
+     * end at most its closing midnight, at least 30 minutes, not started yet. Anything else is 422 INVALID_BOOKING_TIME.
+     *
+     * @return array{0: CarbonImmutable, 1: CarbonImmutable}
+     */
+    public function bookingInterval(Court $court, mixed $startsAt, mixed $endsAt): array
+    {
+        $zone = $court->loadMissing('venue')->venue?->timezone ?: config('app.timezone');
+        try {
+            $start = CarbonImmutable::parse((string) $startsAt, $zone)->setTimezone($zone);
+            $end = CarbonImmutable::parse((string) $endsAt, $zone)->setTimezone($zone);
+        } catch (\Throwable) {
+            $this->refuseBookingTime();
+        }
+        $onGrid = fn (CarbonImmutable $time): bool => $time->minute % 30 === 0 && $time->second === 0 && $time->microsecond === 0;
+        if (! $onGrid($start) || ! $onGrid($end) || $end->getTimestamp() - $start->getTimestamp() < 1800
+            || $end->greaterThan($start->startOfDay()->addDay()) || $start->isPast()) {
+            $this->refuseBookingTime();
+        }
+
+        return [$start, $end];
+    }
+
+    /** Re-check a quoted interval, first start to last end, under the allocation lock (design D14). */
+    public function recheckBookingTime(Court $court, PriceQuote $quote): void
+    {
+        $slots = collect((array) $quote->slot_snapshot);
+        $this->bookingInterval($court, $slots->first()['starts_at'] ?? null, $slots->last()['ends_at'] ?? null);
+    }
+
+    /** Also the answer to a request that lists start times instead of one interval. */
+    public function refuseBookingTime(): never
+    {
+        abort(response()->json([
+            'message' => 'Giờ đặt phải theo mốc 30 phút, dài ít nhất 30 phút, trong cùng một ngày và chưa bắt đầu.',
+            'code' => 'INVALID_BOOKING_TIME',
+        ], 422));
     }
 
     /** @return array{name: string, phone: string, email: string} */

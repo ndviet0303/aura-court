@@ -215,7 +215,7 @@ const {
                 :disabled="!slot.eligible"
                 @click="openSellModal(slot)"
               >
-                {{ $t('resale.passSlotBtn') }}
+                {{ $t('resale.passSlotBtn', { range: slot.timeSlot }) }}
               </AuraButton>
             </div>
           </div>

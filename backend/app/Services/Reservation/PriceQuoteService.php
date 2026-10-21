@@ -19,19 +19,34 @@ class PriceQuoteService
     public function __construct(
         private readonly VenueOperatingCalendar $operatingCalendar,
         private readonly RentalPriceCalculator $rentals,
+        private readonly ReservationIntake $intake,
     ) {}
 
-    public function create(int $userId, int $organizationId, int $courtId, array $slots): PriceQuote
+    /** A customer's quote: one interval on the 30-minute grid, priced and later stored as one slot (design D14, D15). */
+    public function create(int $userId, int $organizationId, int $courtId, mixed $startsAt, mixed $endsAt): PriceQuote
     {
-        $eligibility = app(VerifyEffectiveBookingEligibility::class);
-        $court = $eligibility->assertEligible($courtId, publicFacing: true);
+        $court = app(VerifyEffectiveBookingEligibility::class)->assertEligible($courtId, publicFacing: true);
+        [$start, $end] = $this->intake->bookingInterval($court, $startsAt, $endsAt);
+
+        return $this->open($userId, $organizationId, $court, collect([Carbon::instance($start)]), intdiv($end->getTimestamp() - $start->getTimestamp(), 60));
+    }
+
+    /** A recurring session's quote: slot starts of the court's own interval length. */
+    public function createForSlots(int $userId, int $organizationId, int $courtId, array $slots): PriceQuote
+    {
+        $court = app(VerifyEffectiveBookingEligibility::class)->assertEligible($courtId, publicFacing: true);
+        $duration = (int) $court->slot_duration;
+
+        return $this->open($userId, $organizationId, $court, $this->resolveSlots($slots, $duration, $court->venue?->timezone ?: config('app.timezone')), $duration);
+    }
+
+    /** @param  Collection<int, Carbon>  $resolvedSlots */
+    private function open(int $userId, int $organizationId, Court $court, Collection $resolvedSlots, int $duration): PriceQuote
+    {
         if ($court->venue?->organization_id) {
             $organizationId = (int) $court->venue->organization_id;
         }
 
-        $duration = (int) $court->slot_duration;
-        $timezone = $court->venue?->timezone ?: config('app.timezone');
-        $resolvedSlots = $this->resolveSlots($slots, $duration, $timezone);
         foreach ($resolvedSlots as $time) {
             if (! $this->operatingCalendar->isOpen($court, $time, $time->copy()->addMinutes($duration))) {
                 throw ValidationException::withMessages(['slots' => 'Khung giờ đã chọn nằm ngoài lịch hoạt động của sân.']);
@@ -83,9 +98,12 @@ class PriceQuoteService
      */
     public function reprice(PriceQuote $quote, Court $court): void
     {
-        $times = collect((array) $quote->slot_snapshot)->map(fn (array $slot): Carbon => Carbon::parse($slot['starts_at']))->all();
+        $slots = collect((array) $quote->slot_snapshot);
+        $times = $slots->map(fn (array $slot): Carbon => Carbon::parse($slot['starts_at']))->all();
+        // A quote's slots share one length: the whole interval of a booking, or the court's interval in a recurring session.
+        $duration = intdiv(Carbon::parse($slots->first()['ends_at'])->getTimestamp() - $times[0]->getTimestamp(), 60);
 
-        $quote->forceFill($this->priceAttributes($court, $times, (int) $court->slot_duration))->save();
+        $quote->forceFill($this->priceAttributes($court, $times, $duration))->save();
     }
 
     /**

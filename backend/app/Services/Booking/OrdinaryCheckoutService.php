@@ -57,6 +57,7 @@ class OrdinaryCheckoutService
                 abort_if($actor !== null && ! $actor->canOperateVenue($lockedVenue), 403, 'Bạn không được giao cơ sở này.');
                 $eligibility = $verifier->execute($court->setRelation('venue', $lockedVenue));
                 abort_unless($eligibility['eligible'], 409, $eligibility['message'] ?? '');
+                $this->intake->recheckBookingTime($court, $quote);
                 $intervals = fn (): array => collect((array) $quote->slot_snapshot)->map(fn (array $slotSnapshot): array => [
                     'start' => $slotSnapshot['starts_at'],
                     'end' => $slotSnapshot['ends_at'],
@@ -209,12 +210,7 @@ class OrdinaryCheckoutService
         } elseif (! empty($data['quote_id'])) {
             $query->whereKey($data['quote_id']);
         } else {
-            $quote = $this->quotes->create(
-                $userId,
-                $organizationId,
-                (int) ($data['court_id'] ?? 0),
-                (array) ($data['slots'] ?? []),
-            );
+            $quote = $this->quotes->create($userId, $organizationId, (int) ($data['court_id'] ?? 0), $data['starts_at'] ?? null, $data['ends_at'] ?? null);
 
             return PriceQuote::query()->withoutGlobalScope('tenant_isolation')->whereKey($quote->id)->lockForUpdate()->firstOrFail();
         }
