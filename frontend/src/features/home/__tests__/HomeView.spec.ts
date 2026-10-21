@@ -6,7 +6,7 @@ import { i18n, setAppLocale } from '@/i18n'
 import { useBookingStore } from '@/stores/booking'
 import { useAuthStore } from '@/stores/auth'
 import { bookingApi } from '@/features/booking/api/bookingApi'
-import type { Reservation } from '@/features/booking/types/reservation'
+import type { PriceQuote, Reservation } from '@/features/booking/types/reservation'
 import type { Court } from '@/features/court/types/court'
 
 const mockPush = vi.hoisted(() => vi.fn())
@@ -33,7 +33,7 @@ describe('HomeView i18n & rendering', () => {
         name: 'Sân 1 - Thảm BWF Tiêu Chuẩn',
         slug: 'san-1',
         description: 'Sân cầu lông đạt chuẩn thi đấu BWF',
-        price_slots: [{ id: 1, price: 120000, start_time: '08:00', end_time: '09:00' }],
+        from_price: 120000,
       } as any,
     ]
 
@@ -78,7 +78,7 @@ describe('HomeView i18n & rendering', () => {
         name: 'Court 1 - BWF Standard',
         slug: 'court-1',
         description: 'BWF standard tournament court',
-        price_slots: [{ id: 1, price: 120000, start_time: '08:00', end_time: '09:00' }],
+        from_price: 120000,
       } as any,
     ]
 
@@ -115,9 +115,14 @@ describe('HomeView i18n & rendering', () => {
       mockPush.mockClear()
     })
 
-    async function mountWithSelection(phone?: string) {
+    const quoted = (total: number) => ({
+      quote: { quote_token: 'qt-home', subtotal: total, total_amount: total } as PriceQuote,
+    })
+
+    async function mountWithSelection(phone?: string, quote = Promise.resolve(quoted(120000))) {
       vi.spyOn(bookingApi, 'getCourts').mockResolvedValue([court])
       vi.spyOn(bookingApi, 'getAvailability').mockResolvedValue([slot])
+      vi.spyOn(bookingApi, 'getPriceQuote').mockReturnValue(quote)
       useAuthStore().user = {
         id: 1,
         name: 'Player',
@@ -125,9 +130,7 @@ describe('HomeView i18n & rendering', () => {
         role: 'customer',
         phone,
       }
-      const wrapper = mount(HomeView, {
-        global: { plugins: [i18n], stubs: { LoyaltyPointSelector: true } },
-      })
+      const wrapper = mount(HomeView, { global: { plugins: [i18n] } })
       await flushPromises()
       useBookingStore().toggle(slot)
       await flushPromises()
@@ -146,15 +149,27 @@ describe('HomeView i18n & rendering', () => {
       await wrapper.find('.btn-floating-proceed').trigger('click')
       await flushPromises()
 
-      // No loyalty selection: no key, so the client generates its own Idempotency-Key.
-      expect(checkout).toHaveBeenCalledWith(
-        { court_id: 7, slots: [slot.startsAt], expected_total: 120000 },
-        undefined,
-      )
+      expect(bookingApi.getPriceQuote).toHaveBeenCalledWith({ court_id: 7, slots: [slot.startsAt] })
+      expect(checkout).toHaveBeenCalledWith({
+        court_id: 7,
+        slots: [slot.startsAt],
+        expected_total: 120000,
+      })
       expect(mockPush).toHaveBeenCalledWith({
         name: 'reservations',
         params: { code: 'RSV-HOME-1' },
       })
+    })
+
+    it('shows no total and cannot book while the quote is pending', async () => {
+      const checkout = vi.spyOn(bookingApi, 'checkoutReservation')
+      const wrapper = await mountWithSelection('0912345678', new Promise(() => {}))
+
+      expect(wrapper.get('.dock-total-val').text()).toBe('—')
+      expect(wrapper.find('[data-testid="quote-pending"]').exists()).toBe(true)
+      expect(wrapper.get('.btn-floating-proceed').attributes('disabled')).toBeDefined()
+      await wrapper.find('.btn-floating-proceed').trigger('click')
+      expect(checkout).not.toHaveBeenCalled()
     })
 
     it('blocks checkout and links to the profile while the account has no valid phone', async () => {
@@ -195,10 +210,11 @@ describe('HomeView i18n & rendering', () => {
       await wrapper.get('[data-testid="confirm-new-price"]').trigger('click')
       await flushPromises()
 
-      expect(checkout).toHaveBeenLastCalledWith(
-        { court_id: 7, slots: [slot.startsAt], expected_total: 150000 },
-        undefined,
-      )
+      expect(checkout).toHaveBeenLastCalledWith({
+        court_id: 7,
+        slots: [slot.startsAt],
+        expected_total: 150000,
+      })
       expect(wrapper.find('[data-testid="price-changed"]').exists()).toBe(false)
       expect(mockPush).toHaveBeenCalledWith({
         name: 'reservations',
@@ -235,9 +251,7 @@ describe('HomeView i18n & rendering', () => {
     async function mountHome() {
       vi.spyOn(bookingApi, 'getCourts').mockResolvedValue(courts)
       vi.spyOn(bookingApi, 'getAvailability').mockResolvedValue([])
-      const wrapper = mount(HomeView, {
-        global: { plugins: [i18n], stubs: { LoyaltyPointSelector: true } },
-      })
+      const wrapper = mount(HomeView, { global: { plugins: [i18n] } })
       await flushPromises()
       return wrapper
     }

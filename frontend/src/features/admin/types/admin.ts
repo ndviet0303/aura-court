@@ -12,13 +12,6 @@ export type CourtForm = {
   is_active: boolean
 }
 
-export type PriceForm = {
-  weekday: number
-  starts_at: string
-  ends_at: string
-  price: number
-}
-
 export type BlockForm = {
   starts_at: string
   ends_at: string

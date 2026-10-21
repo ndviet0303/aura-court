@@ -3,6 +3,7 @@ import {
   executeGuardedBackendPhp,
   getCanonicalBackendEnv,
   getFuturePlayDate,
+  priceCourtPhp,
 } from './runner/test-data.ts'
 import { withE2EApi } from './runner/with-api.ts'
 import { test, expect } from '@playwright/test'
@@ -212,7 +213,6 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
       $kernel->bootstrap();
 
       use App\\Models\\Court;
-      use App\\Models\\CourtPriceSlot;
       use App\\Models\\ReceivingConnection;
       use App\\Models\\Venue;
       use Illuminate\\Support\\Facades\\Crypt;
@@ -228,17 +228,8 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
         'is_active' => true,
       ]);
 
-      // 2. Add court price slots for all 7 weekdays
-      for ($w = 0; $w <= 6; $w++) {
-        CourtPriceSlot::create([
-          'court_id' => $court->id,
-          'weekday' => $w,
-          'starts_at' => '06:00',
-          'ends_at' => '22:00',
-          'price' => 120000,
-          'is_active' => true,
-        ]);
-      }
+      // 2. Price the court all day
+      ${priceCourtPhp(120000)}
 
       // 3. Add verified receiving connection
       $rc = ReceivingConnection::create([
@@ -322,7 +313,6 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
       $kernel->bootstrap();
 
       use App\\Models\\Court;
-      use App\\Models\\CourtPriceSlot;
       use App\\Models\\ReceivingConnection;
       use App\\Models\\Venue;
       use App\\Models\\VenueBookingPolicy;
@@ -392,16 +382,7 @@ test.describe('P1: Vòng đời cơ sở, Điều kiện sẵn sàng, Hàng đ�
         'is_active' => true,
       ]);
 
-      for ($w = 0; $w <= 6; $w++) {
-        CourtPriceSlot::create([
-          'court_id' => $court->id,
-          'weekday' => $w,
-          'starts_at' => '06:00',
-          'ends_at' => '22:00',
-          'price' => 150000,
-          'is_active' => true,
-        ]);
-      }
+      ${priceCourtPhp(150000)}
 
       $rc = ReceivingConnection::create([
         'organization_id' => ${orgId},

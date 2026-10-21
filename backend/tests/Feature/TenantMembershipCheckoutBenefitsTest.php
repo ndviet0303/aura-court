@@ -6,19 +6,20 @@ use App\Models\Court;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PosProduct;
-use App\Models\PriceRule;
 use App\Models\TenantMembership;
 use App\Models\User;
 use App\Models\Venue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class TenantMembershipCheckoutBenefitsTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
-    public function test_owner_membership_plan_is_reloaded_and_applies_only_to_its_tenant_in_reservations_and_pos(): void
+    public function test_owner_membership_plan_is_reloaded_and_discounts_only_its_tenant_pos_not_court_bookings(): void
     {
         config([
             'features.flags.direct_owner_payments' => false,
@@ -39,8 +40,8 @@ class TenantMembershipCheckoutBenefitsTest extends TestCase
             'status' => 'active',
         ]);
 
-        PriceRule::create(['organization_id' => $tenant['organization']->id, 'type' => 'base', 'price' => 100000]);
-        PriceRule::create(['organization_id' => $otherTenant['organization']->id, 'type' => 'base', 'price' => 100000]);
+        $this->priceCourt($tenant['court'], 100000);
+        $this->priceCourt($otherTenant['court'], 100000);
         $primaryProduct = PosProduct::create([
             'organization_id' => $tenant['organization']->id,
             'sku' => 'MEMBER-PRIMARY',
@@ -123,15 +124,16 @@ class TenantMembershipCheckoutBenefitsTest extends TestCase
                 'court_id' => $tenant['court']->id,
                 'slots' => [$v2Time->toIso8601String()],
             ])->assertCreated()
+            // Court bookings carry no membership discount (design D21); the plan still discounts POS below.
             ->assertJsonPath('quote.subtotal', 100000)
-            ->assertJsonPath('quote.total_amount', 90000)
-            ->assertJsonPath('quote.benefit_snapshot.membership_discount_amount', 10000);
+            ->assertJsonPath('quote.total_amount', 100000)
+            ->assertJsonPath('quote.benefit_snapshot', null);
 
         $this->actingAs($tenant['customer'])->withHeaders($headers + ['Idempotency-Key' => 'member-v2-hold'])
             ->postJson('/api/reservations', ['quote_token' => $quote->json('quote.quote_token'), 'expected_total' => $quote->json('quote.total_amount')])
             ->assertCreated()
-            ->assertJsonPath('reservation.total_amount', 90000)
-            ->assertJsonPath('reservation.metadata.benefit_snapshot.membership_discount_amount', 10000);
+            ->assertJsonPath('reservation.total_amount', 100000)
+            ->assertJsonPath('reservation.metadata.benefit_snapshot', null);
 
         $this->actingAs($tenant['owner'])->withHeaders($headers)->postJson('/api/pos/quote', [
             'customer_id' => $tenant['customer']->id,

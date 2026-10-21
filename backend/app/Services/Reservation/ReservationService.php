@@ -50,7 +50,6 @@ class ReservationService
                     $organizationId,
                     (int) ($data['court_id'] ?? 0),
                     (array) ($data['slots'] ?? []),
-                    $data['coupon_code'] ?? null,
                 );
                 $quote = PriceQuote::query()->withoutGlobalScope('tenant_isolation')->whereKey($quote->id)->lockForUpdate()->firstOrFail();
             }
@@ -80,10 +79,9 @@ class ReservationService
             $this->intake->releaseOverdueHolds($lockedCourt, $intervals());
             // The client always sends the amount it showed; recurring periods price their own fresh quote.
             if (isset($data['expected_total'])) {
-                $this->quotes->reprice($quote, $lockedCourt, $user);
+                $this->quotes->reprice($quote, $lockedCourt);
                 $this->intake->assertAgreedAmount((int) $data['expected_total'], (int) $quote->subtotal, (int) $quote->total_amount);
             }
-            $couponUsage = $this->quoteCoupons->reserve($quote, $user, $lockedCourt);
             $directOwnerPayments = app(FeatureFlagService::class)
                 ->enabled('direct_owner_payments', (int) $lockedVenue->organization_id);
 
@@ -104,9 +102,6 @@ class ReservationService
             $metadata = [...(array) ($data['metadata'] ?? []), 'booker' => $this->intake->booker($user)];
             if ($quote->benefit_snapshot) {
                 $metadata['benefit_snapshot'] = $quote->benefit_snapshot;
-            }
-            if ($couponUsage !== null) {
-                $metadata['coupon_usage'] = $couponUsage;
             }
             if ($directOwnerPayments) {
                 $metadata['booking_policy_snapshot'] = $bookingPolicySnapshot;

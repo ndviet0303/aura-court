@@ -7,7 +7,7 @@ import { useBookingStore } from '@/stores/booking'
 import { useAuthStore } from '@/stores/auth'
 import { courtApi } from '../api/courtApi'
 import { bookingApi } from '@/features/booking/api/bookingApi'
-import type { Reservation } from '@/features/booking/types/reservation'
+import type { PriceQuote, Reservation } from '@/features/booking/types/reservation'
 
 const mockRoute = vi.hoisted(() => ({
   params: { slug: 'san-1-tham-bwf-cau-giay' },
@@ -17,8 +17,35 @@ const mockRoute = vi.hoisted(() => ({
 
 vi.mock('../api/courtApi', () => ({ courtApi: { getBySlug: vi.fn() } }))
 vi.mock('@/features/booking/api/bookingApi', () => ({
-  bookingApi: { getAvailability: vi.fn(), getCourts: vi.fn(), checkoutReservation: vi.fn() },
+  bookingApi: {
+    getAvailability: vi.fn(),
+    getCourts: vi.fn(),
+    getPriceQuote: vi.fn(),
+    checkoutReservation: vi.fn(),
+  },
 }))
+
+const quoted = (total: number) => ({
+  quote: {
+    id: 1,
+    quote_token: `qt-${total}`,
+    subtotal: total,
+    total_amount: total,
+    benefit_snapshot: null,
+    expires_at: '2099-01-01T00:00:00Z',
+    slot_snapshot: [],
+  } as PriceQuote,
+})
+
+const signIn = () => {
+  useAuthStore().user = {
+    id: 1,
+    name: 'Player',
+    email: 'p@example.com',
+    role: 'customer',
+    phone: '0912345678',
+  }
+}
 
 const mockPush = vi.fn()
 const mockReplace = vi.fn()
@@ -112,7 +139,9 @@ describe('ScheduleView', () => {
     expect(wrapper.find('.court-name').text()).toContain('Sân 1 - Thảm BWF Tiêu Chuẩn')
   })
 
-  it('allows selecting slots, calculates total price, and allows slot removal from summary', async () => {
+  it('allows selecting slots, shows the quoted total, and allows slot removal from summary', async () => {
+    signIn()
+    vi.mocked(bookingApi.getPriceQuote).mockResolvedValue(quoted(100000))
     const store = useBookingStore()
     store.courts = [mockCourt]
     store.slots = mockSlots
@@ -129,6 +158,7 @@ describe('ScheduleView', () => {
     const quickBtn = wrapper.findAll('.btn-quick')[0]
     expect(quickBtn).toBeDefined()
     await quickBtn?.trigger('click')
+    await flushPromises()
 
     expect(store.selectedSlots.length).toBe(1)
     expect(wrapper.find('[data-testid="agreement-payable"]').text()).toContain('100.000')
@@ -208,70 +238,97 @@ describe('ScheduleView', () => {
     expect(bookingApi.checkoutReservation).not.toHaveBeenCalled()
   })
 
-  it('checks out the selected slots and opens the reservation', async () => {
-    useAuthStore().user = {
-      id: 1,
-      name: 'Player',
-      email: 'p@example.com',
-      role: 'customer',
-      phone: '0912345678',
-    }
+  it('sends the quote total of two slots with a fractional part, not the slot sum', async () => {
+    signIn()
+    // Each slot price drops its own fraction (41666); the two-slot quote drops it once (83333).
+    vi.mocked(bookingApi.getAvailability).mockResolvedValue(
+      mockSlots.slice(0, 2).map((slot) => ({ ...slot, price: 41666 })),
+    )
+    vi.mocked(bookingApi.getPriceQuote).mockResolvedValue(quoted(83333))
     vi.mocked(bookingApi.checkoutReservation).mockResolvedValue({
       reservation: { code: 'RSV-NEW-1', status: 'held' } as Reservation,
     })
 
-    const wrapper = mount(ScheduleView, {
-      global: { plugins: [i18n], stubs: { LoyaltyPointSelector: true } },
-    })
+    const wrapper = mount(ScheduleView, { global: { plugins: [i18n] } })
     await flushPromises()
-    await wrapper.findAll('.btn-quick')[0]!.trigger('click')
-    wrapper.findComponent({ name: 'LoyaltyPointSelector' }).vm.$emit('change', {
-      loyalty_points: 50,
-      loyalty_policy_version: 2,
-      idempotency_key: 'loy-key-1',
-      discount_vnd: 20000,
-    })
+    await wrapper.findAll('.btn-quick')[1]!.trigger('click')
     await flushPromises()
-    expect(wrapper.get('[data-testid="agreement-payable"]').text()).toContain('80.000')
+    const slots = [mockSlots[0]!.startsAt, mockSlots[1]!.startsAt]
+    expect(bookingApi.getPriceQuote).toHaveBeenLastCalledWith({ court_id: 1, slots })
+    expect(wrapper.get('[data-testid="agreement-payable"]').text()).toContain('83.333')
     await wrapper.find('.btn-checkout').trigger('click')
     await flushPromises()
 
-    // The selector's stable key travels as the Idempotency-Key request option, not in the body;
-    // expected_total is the amount payable shown, after the points discount.
-    expect(bookingApi.checkoutReservation).toHaveBeenCalledWith(
-      {
-        court_id: 1,
-        slots: [mockSlots[0]!.startsAt],
-        expected_total: 80000,
-        loyalty_points: 50,
-        loyalty_policy_version: 2,
-      },
-      'loy-key-1',
-    )
+    expect(vi.mocked(bookingApi.checkoutReservation).mock.calls).toEqual([
+      [{ court_id: 1, slots, expected_total: 83333 }],
+    ])
     expect(mockPush).toHaveBeenCalledWith({ name: 'reservations', params: { code: 'RSV-NEW-1' } })
+  })
+
+  it('cannot book while the quote is pending', async () => {
+    signIn()
+    vi.mocked(bookingApi.getPriceQuote).mockReturnValue(new Promise(() => {}))
+
+    const wrapper = mount(ScheduleView, { global: { plugins: [i18n] } })
+    await flushPromises()
+    await wrapper.findAll('.btn-quick')[0]!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="quote-pending"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="agreement-payable"]').exists()).toBe(false)
+    expect(wrapper.get('.btn-checkout').attributes('disabled')).toBeDefined()
+    await wrapper.find('.btn-checkout').trigger('click')
+    expect(bookingApi.checkoutReservation).not.toHaveBeenCalled()
+  })
+
+  it('cannot book after the quote failed and quotes again on retry', async () => {
+    signIn()
+    vi.mocked(bookingApi.getPriceQuote)
+      .mockRejectedValueOnce({ status: 500, message: 'Máy chủ lỗi.' })
+      .mockResolvedValueOnce(quoted(100000))
+    vi.mocked(bookingApi.checkoutReservation).mockResolvedValue({
+      reservation: { code: 'RSV-NEW-3', status: 'held' } as Reservation,
+    })
+
+    const wrapper = mount(ScheduleView, { global: { plugins: [i18n] } })
+    await flushPromises()
+    await wrapper.findAll('.btn-quick')[0]!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="quote-error"]').text()).toContain('Máy chủ lỗi.')
+    expect(wrapper.find('[data-testid="agreement-payable"]').exists()).toBe(false)
+    expect(wrapper.get('.btn-checkout').attributes('disabled')).toBeDefined()
+
+    await wrapper.get('[data-testid="retry-quote"]').trigger('click')
+    await flushPromises()
+
+    expect(bookingApi.getPriceQuote).toHaveBeenCalledTimes(2)
+    expect(wrapper.get('[data-testid="agreement-payable"]').text()).toContain('100.000')
+    await wrapper.find('.btn-checkout').trigger('click')
+    await flushPromises()
+    expect(bookingApi.checkoutReservation).toHaveBeenCalledWith({
+      court_id: 1,
+      slots: [mockSlots[0]!.startsAt],
+      expected_total: 100000,
+    })
   })
 
   it('blocks checkout and links to the profile while the account has no phone', async () => {
     useAuthStore().user = { id: 1, name: 'Player', email: 'p@example.com', role: 'customer' }
+    vi.mocked(bookingApi.getPriceQuote).mockResolvedValue(quoted(100000))
 
-    const wrapper = mount(ScheduleView, {
-      global: { plugins: [i18n], stubs: { LoyaltyPointSelector: true } },
-    })
+    const wrapper = mount(ScheduleView, { global: { plugins: [i18n] } })
     await flushPromises()
     await wrapper.findAll('.btn-quick')[0]!.trigger('click')
+    await flushPromises()
 
     expect(wrapper.get('[data-testid="update-phone-link"]').text()).toBe('Cập nhật số điện thoại')
     expect(wrapper.get('.btn-checkout').attributes('disabled')).toBeDefined()
   })
 
   it('resubmits at a changed price only after the customer confirms it', async () => {
-    useAuthStore().user = {
-      id: 1,
-      name: 'Player',
-      email: 'p@example.com',
-      role: 'customer',
-      phone: '+84912345678',
-    }
+    signIn()
+    vi.mocked(bookingApi.getPriceQuote).mockResolvedValue(quoted(100000))
     vi.mocked(bookingApi.checkoutReservation)
       .mockRejectedValueOnce({
         status: 409,
@@ -283,16 +340,10 @@ describe('ScheduleView', () => {
       })
       .mockResolvedValueOnce({ reservation: { code: 'RSV-NEW-2', status: 'held' } as Reservation })
 
-    const wrapper = mount(ScheduleView, {
-      global: { plugins: [i18n], stubs: { LoyaltyPointSelector: true } },
-    })
+    const wrapper = mount(ScheduleView, { global: { plugins: [i18n] } })
     await flushPromises()
     await wrapper.findAll('.btn-quick')[0]!.trigger('click')
-    wrapper.findComponent({ name: 'LoyaltyPointSelector' }).vm.$emit('change', {
-      loyalty_points: 0,
-      loyalty_policy_version: 2,
-      idempotency_key: 'loy-key-2',
-    })
+    await flushPromises()
     await wrapper.find('.btn-checkout').trigger('click')
     await flushPromises()
 
@@ -306,9 +357,8 @@ describe('ScheduleView', () => {
 
     const slots = [mockSlots[0]!.startsAt]
     expect(vi.mocked(bookingApi.checkoutReservation).mock.calls).toEqual([
-      [{ court_id: 1, slots, expected_total: 100000 }, 'loy-key-2'],
-      // Another body, so the resubmission does not reuse the first Idempotency-Key.
-      [{ court_id: 1, slots, expected_total: 120000 }, undefined],
+      [{ court_id: 1, slots, expected_total: 100000 }],
+      [{ court_id: 1, slots, expected_total: 120000 }],
     ])
     expect(mockPush).toHaveBeenCalledWith({ name: 'reservations', params: { code: 'RSV-NEW-2' } })
   })

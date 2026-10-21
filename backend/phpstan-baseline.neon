@@ -313,12 +313,6 @@ parameters:
 			path: app/Domain/Venue/Actions/EvaluateVenueReadiness.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$priceSlots\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Venue/Actions/EvaluateVenueReadiness.php
-
-		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:filter\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: bool\)\|null, Closure\(App\\Models\\Court\)\: bool given\.$#'
 			identifier: argument.type
 			count: 1
@@ -338,12 +332,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Venue/Actions/SubmitVenueForPublication.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$priceSlots\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Domain/Venue/Actions/SubmitVenueForPublication.php
@@ -439,30 +427,6 @@ parameters:
 			path: app/Http/Controllers/Booking/AdvancedBookingController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ends_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Booking/AvailabilityController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_active\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Booking/AvailabilityController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$starts_at\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/Booking/AvailabilityController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$weekday\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Booking/AvailabilityController.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>organization_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
@@ -497,12 +461,6 @@ parameters:
 			identifier: return.type
 			count: 1
 			path: app/Http/Controllers/Finance/FinanceExceptionController.php
-
-		-
-			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\User\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Loyalty/LoyaltyController.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\CashShift\:\:\$cash_sales\.$#'
@@ -1531,12 +1489,6 @@ parameters:
 			path: app/Infrastructure/Repositories/Eloquent/EloquentCourtBlockRepository.php
 
 		-
-			message: '#^Method App\\Infrastructure\\Repositories\\Eloquent\\EloquentCourtPriceSlotRepository\:\:updateOrCreate\(\) should return App\\Models\\CourtPriceSlot but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Infrastructure/Repositories/Eloquent/EloquentCourtPriceSlotRepository.php
-
-		-
 			message: '#^Method App\\Infrastructure\\Repositories\\Eloquent\\EloquentHostKycRepository\:\:attachDocument\(\) should return App\\Models\\PartnerDocument but returns Illuminate\\Database\\Eloquent\\Model\.$#'
 			identifier: return.type
 			count: 1
@@ -1893,12 +1845,6 @@ parameters:
 		-
 			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/Booking/OrdinaryCheckoutService.php
-
-		-
-			message: '#^Variable \$policy in isset\(\) always exists and is not nullable\.$#'
-			identifier: isset.variable
 			count: 1
 			path: app/Services/Booking/OrdinaryCheckoutService.php
 
@@ -2273,30 +2219,6 @@ parameters:
 			identifier: function.impossibleType
 			count: 1
 			path: app/Services/Loyalty/LoyaltyPointService.php
-
-		-
-			message: '#^Left side of && is always true\.$#'
-			identifier: booleanAnd.leftAlwaysTrue
-			count: 1
-			path: app/Services/Loyalty/LoyaltyPolicyService.php
-
-		-
-			message: '#^Negated boolean expression is always false\.$#'
-			identifier: booleanNot.alwaysFalse
-			count: 2
-			path: app/Services/Loyalty/LoyaltyPolicyService.php
-
-		-
-			message: '#^Strict comparison using \!\=\= between int and '''' will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 2
-			path: app/Services/Loyalty/LoyaltyPolicyService.php
-
-		-
-			message: '#^Strict comparison using \!\=\= between int and null will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 3
-			path: app/Services/Loyalty/LoyaltyPolicyService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$currentBookingPolicy\.$#'
@@ -2732,12 +2654,6 @@ parameters:
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>starts_at" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>timezone" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Services/Social/MatchService.php

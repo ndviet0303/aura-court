@@ -99,15 +99,8 @@ export function useRecurringBooking() {
     return Math.max(0.5, diffMinutes > 0 ? diffMinutes / 60 : 2)
   })
 
-  // Hourly price estimate based on court pricing
-  const hourlyRate = computed(() => {
-    if (!selectedCourt.value) return 120000
-    const slots = selectedCourt.value.price_slots
-    if (slots && slots.length > 0 && slots[0]?.price) {
-      return slots[0].price
-    }
-    return 120000
-  })
+  // The court's "from" price; no invented price when it has none.
+  const hourlyRate = computed(() => selectedCourt.value?.from_price ?? null)
 
   // Local fallback estimate of the number of sessions, used only until the
   // server preview loads (or if it fails). It never drives the persisted series.
@@ -226,12 +219,8 @@ export function useRecurringBooking() {
     preview.value ? preview.value.count : localSessionCountEstimate.value,
   )
 
-  const estimatedTotalAmount = computed(() => {
-    if (preview.value) return preview.value.total_amount
-    return Math.round(
-      localSessionCountEstimate.value * sessionDurationHours.value * hourlyRate.value,
-    )
-  })
+  // Only the server preview prices the series; there is no local estimate.
+  const estimatedTotalAmount = computed(() => preview.value?.total_amount ?? null)
 
   // Aggregated all invoices from seriesList
   const allInvoices = computed<RecurringInvoice[]>(() => {

@@ -47,16 +47,6 @@ export type CourtBlock = {
   reason?: string
 }
 
-export type PriceSlot = {
-  id?: number
-  court_id?: number
-  weekday: number
-  starts_at: string
-  ends_at: string
-  price: number
-  is_active?: boolean
-}
-
 export type AvailabilitySlot = {
   startsAt: string
   endsAt: string
@@ -75,8 +65,8 @@ export type Court = {
   description?: string
   image_url?: string
   is_active?: boolean
-  price_slots?: PriceSlot[]
-  price_slots_count?: number
+  /** Lowest hourly price a booking can pay now; null when the court has no price. */
+  from_price?: number | null
   blocks?: CourtBlock[]
   reviews_count?: number
   reviews_avg_rating?: number | null

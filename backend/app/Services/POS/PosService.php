@@ -4,7 +4,6 @@ namespace App\Services\POS;
 
 use App\Models\CashShift;
 use App\Models\Coupon;
-use App\Models\LoyaltyRule;
 use App\Models\MembershipEntitlement;
 use App\Models\OrganizationMember;
 use App\Models\PointLedger;
@@ -1061,21 +1060,6 @@ class PosService
                 'rule_version' => (int) $earn['rule']->version,
             ],
         );
-    }
-
-    public function redeemPoints(int $organizationId, int $userId, int $points, string $sourceType, int $sourceId): PointLedger
-    {
-        abort_unless($points > 0, 422);
-
-        return DB::transaction(function () use ($organizationId, $userId, $points, $sourceType, $sourceId): PointLedger {
-            User::query()->whereKey($userId)->lockForUpdate()->first();
-            // Only unexpired lots are spendable; retries/concurrent spend cannot overdraw.
-            $available = $this->loyaltyPoints->availableBalance($organizationId, $userId);
-            abort_unless($available >= $points, 409, 'Insufficient loyalty points.');
-            $rule = LoyaltyRule::where('organization_id', $organizationId)->where('status', 'published')->latest('version')->firstOrFail();
-
-            return $this->writePoints($organizationId, $userId, $rule->id, -$points, $sourceType, $sourceId);
-        });
     }
 
     public function benefits(int $organizationId, int $userId)

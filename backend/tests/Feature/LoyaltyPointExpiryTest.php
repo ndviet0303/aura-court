@@ -12,7 +12,6 @@ use App\Models\User;
 use App\Services\Loyalty\LoyaltyPointService;
 use App\Services\POS\PosService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 /**
@@ -64,7 +63,7 @@ class LoyaltyPointExpiryTest extends TestCase
         $this->assertEqualsWithDelta(2.0, (float) ($entry->metadata['earn_multiplier'] ?? 0), 0.001);
     }
 
-    public function test_available_balance_excludes_expired_lots_and_blocks_overdraw(): void
+    public function test_available_balance_excludes_expired_lots(): void
     {
         [$organization, $customer] = $this->tenant();
         $this->baseRule($organization);
@@ -75,19 +74,6 @@ class LoyaltyPointExpiryTest extends TestCase
 
         $svc = app(LoyaltyPointService::class);
         $this->assertSame(200, $svc->availableBalance($organization->id, $customer->id));
-
-        // Cannot spend the expired 300; only 200 is spendable.
-        try {
-            app(PosService::class)->redeemPoints($organization->id, $customer->id, 300, 'pos_discount', 9);
-            $this->fail('Expected 409 for overdrawing expired points.');
-        } catch (HttpException $e) {
-            $this->assertSame(409, $e->getStatusCode());
-            $this->assertStringContainsString('Insufficient loyalty points', $e->getMessage());
-        }
-
-        $entry = app(PosService::class)->redeemPoints($organization->id, $customer->id, 200, 'pos_discount', 10);
-        $this->assertSame(-200, $entry->delta);
-        $this->assertSame(0, $svc->availableBalance($organization->id, $customer->id));
     }
 
     public function test_award_sets_book_ahead_expiry_from_rule_metadata(): void

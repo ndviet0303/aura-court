@@ -9,7 +9,6 @@ use App\Models\MarketplaceListing;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\OwnerPaymentAttempt;
-use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
@@ -28,10 +27,12 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class MarketplaceTransferVerificationTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     public function test_list_rechecks_dispute_restriction_venue_policy_and_cutoff(): void
@@ -404,7 +405,7 @@ class MarketplaceTransferVerificationTest extends TestCase
         OrganizationMember::where('organization_id', $organization->id)->where('role', 'staff')
             ->get()->each(fn (OrganizationMember $m) => $m->update(['permissions' => ['venue_ids' => [$venue->id]]]));
         $court = $venue->courts()->create(['name' => 'Court M1', 'is_active' => true]);
-        PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 200000]);
+        $this->priceCourt($court, 200000);
 
         VenueBookingPolicy::create([
             'venue_id' => $venue->id,

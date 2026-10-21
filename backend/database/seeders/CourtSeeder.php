@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Contracts\Repositories\PriceTableRepositoryInterface;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
-use App\Models\PriceRule;
+use App\Models\CourtPriceTableLink;
+use App\Models\PriceTable;
 use App\Models\Venue;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
@@ -15,7 +16,6 @@ class CourtSeeder extends Seeder
     {
         $timezone = config('app.timezone', 'Asia/Ho_Chi_Minh');
         $now = Carbon::now($timezone);
-        $timestamp = $now->toDateTimeString();
 
         $venues = Venue::all()->keyBy('slug');
 
@@ -354,6 +354,7 @@ class CourtSeeder extends Seeder
             }
         }
 
+        $courtIdsByPrice = [];
         foreach ($courtDefs as $def) {
             if (! isset($venues[$def['venue_slug']])) {
                 continue;
@@ -372,51 +373,45 @@ class CourtSeeder extends Seeder
                 ]
             );
 
-            // Generate full weekly pricing slots (weekdays 1..7, hours 6..22)
-            $priceRows = [];
-            $basePrice = $def['base_price'];
+            $courtIdsByPrice[$venue->id][$def['base_price']][] = $court->id;
+        }
 
-            for ($weekday = 1; $weekday <= 7; $weekday++) {
-                for ($hour = 6; $hour < 23; $hour++) {
-                    $isWeekend = $weekday >= 6;
-                    $isPeak = $hour >= 17 && $hour < 22;
+        $this->seedPriceTables($courtIdsByPrice, $now);
+    }
 
-                    $weekendSurge = (int) round($basePrice * 0.2);
-                    $peakSurge = (int) round($basePrice * 0.25);
-
-                    $slotPrice = $basePrice + ($isWeekend ? $weekendSurge : 0) + ($isPeak ? $peakSurge : 0);
-                    // Round to nearest 5000 VND
-                    $slotPrice = (int) (round($slotPrice / 5000) * 5000);
-
-                    $startsAt = sprintf('%02d:00', $hour);
-
-                    $priceRows[] = [
-                        'court_id' => $court->id,
-                        'weekday' => $weekday,
-                        'starts_at' => $startsAt,
-                        'ends_at' => sprintf('%02d:00', $hour + 1),
-                        'price' => $slotPrice,
-                        'is_active' => true,
-                        'created_at' => $timestamp,
-                        'updated_at' => $timestamp,
-                    ];
+    /**
+     * Per venue and base price, a normal table (peak 17:00–22:00 and weekends dearer, rounded to 5.000 ₫) and a
+     * holiday table for the coming public holidays, both covering the demo hours 06:00–23:00. Linked from a year
+     * back so the past demo bookings price too; courts already linked are left as they are.
+     *
+     * @param  array<int, array<int, list<int>>>  $courtIdsByPrice  venue id => base price => court ids
+     */
+    private function seedPriceTables(array $courtIdsByPrice, Carbon $now): void
+    {
+        $tables = app(PriceTableRepositoryInterface::class);
+        $since = $now->copy()->subYear();
+        $holidays = array_map(fn (string $monthDay): string => ($date = Carbon::parse($now->year.'-'.$monthDay, $now->timezone))->lt($now->copy()->startOfDay())
+            ? $date->addYear()->toDateString()
+            : $date->toDateString(), ['01-01', '04-30', '05-01', '09-02']);
+        foreach ($courtIdsByPrice as $venueId => $byPrice) {
+            foreach ($byPrice as $base => $courtIds) {
+                $price = fn (bool $weekend, bool $peak): int => (int) (round(($base + ($weekend ? (int) round($base * 0.2) : 0) + ($peak ? (int) round($base * 0.25) : 0)) / 5000) * 5000);
+                $day = fn (array $weekdays, bool $weekend): array => array_map(fn (array $part): array => [
+                    'weekdays' => $weekdays, 'dates' => null, 'start_minute' => $part[0], 'end_minute' => $part[1], 'price_per_hour' => $price($weekend, $part[2]),
+                ], [[360, 1020, false], [1020, 1320, true], [1320, 1380, false]]);
+                $label = number_format($base, 0, ',', '.').' ₫';
+                foreach ([
+                    PriceTable::KIND_NORMAL => ["Bảng giá {$label}", [...$day([1, 2, 3, 4, 5], false), ...$day([6, 7], true)]],
+                    PriceTable::KIND_HOLIDAY => ["Ngày lễ {$label}", [['weekdays' => null, 'dates' => $holidays, 'start_minute' => 360, 'end_minute' => 1380, 'price_per_hour' => $price(true, true)]]],
+                ] as $kind => [$name, $intervals]) {
+                    $unlinked = array_values(array_diff($courtIds, CourtPriceTableLink::whereIn('court_id', $courtIds)->where('kind', $kind)->pluck('court_id')->all()));
+                    if ($unlinked === []) {
+                        continue;
+                    }
+                    $table = $tables->create(['venue_id' => $venueId, 'name' => $name, 'kind' => $kind]);
+                    $tables->publishVersion($table, $since, $since, $intervals);
+                    $tables->createLinks($table, $unlinked, $since);
                 }
-            }
-            CourtPriceSlot::upsert($priceRows, ['court_id', 'weekday', 'starts_at'], ['ends_at', 'price', 'is_active', 'updated_at']);
-
-            // Court-level base price: PriceQuoteService prefers the hourly slots above and falls back to this.
-            if ($venue->organization_id) {
-                PriceRule::updateOrCreate(
-                    ['court_id' => $court->id, 'type' => 'base', 'weekday' => null],
-                    [
-                        'organization_id' => $venue->organization_id,
-                        'venue_id' => $venue->id,
-                        'price' => $basePrice,
-                        'version' => 1,
-                        'priority' => 1,
-                        'is_active' => true,
-                    ]
-                );
             }
         }
     }

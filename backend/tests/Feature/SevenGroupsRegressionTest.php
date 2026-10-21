@@ -8,17 +8,18 @@ use App\Models\Court;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PosProduct;
-use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Venue;
 use App\Models\WalletAccount;
 use App\Services\Payment\WalletPaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class SevenGroupsRegressionTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     /**
@@ -31,13 +32,8 @@ class SevenGroupsRegressionTest extends TestCase
         [$organization, $customer, $court] = $this->tenant();
         $date = now(config('app.timezone'))->addDays(3)->setTime(18, 0);
 
-        // Create price rule for 200,000 VND
-        PriceRule::create([
-            'organization_id' => $organization->id,
-            'court_id' => $court->id,
-            'type' => 'base',
-            'price' => 200000,
-        ]);
+        // Price the court at 200,000 VND per hour
+        $this->priceCourt($court, 200000);
 
         // Customer wallet has 0 VND balance
         $wallet = WalletAccount::create([

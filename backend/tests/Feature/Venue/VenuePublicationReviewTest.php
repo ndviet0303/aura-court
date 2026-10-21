@@ -3,7 +3,6 @@
 namespace Tests\Feature\Venue;
 
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
@@ -17,10 +16,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class VenuePublicationReviewTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private function addPolicy(Venue $venue, int $ownerId): void
@@ -111,14 +112,7 @@ class VenuePublicationReviewTest extends TestCase
         ]);
 
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'San 1', 'slug' => 'san-1', 'is_active' => true]);
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => 1,
-            'starts_at' => '06:00',
-            'ends_at' => '22:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourtWith($court, [['06:00', '22:00', 100000]]);
         $this->addPolicy($venue, $owner->id);
         $this->addOperatingSchedule($venue, $owner->id);
         $this->selectVerifiedReceiver($venue, $owner);
@@ -185,14 +179,7 @@ class VenuePublicationReviewTest extends TestCase
         ]);
 
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'San A', 'slug' => 'san-a', 'is_active' => true]);
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => 1,
-            'starts_at' => '06:00',
-            'ends_at' => '22:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourtWith($court, [['06:00', '22:00', 100000]]);
         $this->addPolicy($venue, $owner->id);
         $this->addOperatingSchedule($venue, $owner->id);
         $this->selectVerifiedReceiver($venue, $owner);

@@ -3,7 +3,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useBookingStore } from '@/stores/booking'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '@/features/auth/api/authApi'
-import { bookingErrorMessage, type LoyaltySelection } from '@/features/booking/utils/reservation'
+import { bookingErrorMessage } from '@/features/booking/utils/reservation'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type { Court, AvailabilitySlot, Venue } from '../types/court'
 import { courtApi } from '../api/courtApi'
@@ -226,14 +226,9 @@ export function useCourtSchedule() {
     }
   }
 
-  // expectedTotal is the amount payable shown; confirmedPrice marks a resubmission at a new price the
-  // customer confirmed after a PRICE_CHANGED.
-  async function proceedToBooking(
-    loyaltyPayload: LoyaltySelection | undefined,
-    couponCode: string | null | undefined,
-    expectedTotal: number,
-    confirmedPrice = false,
-  ) {
+  // expectedTotal is the quote total shown, or the new price confirmed after a PRICE_CHANGED; it is
+  // null until a signed-in customer's quote is in.
+  async function proceedToBooking(expectedTotal: number | null) {
     if (
       loading.value ||
       !court.value ||
@@ -245,19 +240,15 @@ export function useCourtSchedule() {
       router.push({ name: 'login', query: { redirect: route.fullPath } })
       return
     }
+    if (expectedTotal === null) return
 
     checkoutLoading.value = true
     error.value = ''
     try {
-      const reservation = await store.checkoutReservation(
-        loyaltyPayload,
-        couponCode,
-        expectedTotal,
-        confirmedPrice,
-      )
+      const reservation = await store.checkoutReservation(expectedTotal)
       router.push({ name: 'reservations', params: { code: reservation.code } })
     } catch (cause) {
-      const again = (total: number) => proceedToBooking(loyaltyPayload, couponCode, total, true)
+      const again = (total: number) => proceedToBooking(total)
       if (!store.catchPriceChange(cause, again)) {
         error.value = bookingErrorMessage(
           cause,

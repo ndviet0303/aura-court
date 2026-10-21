@@ -4,7 +4,6 @@ namespace Tests\Feature\Readiness;
 
 use App\Models\Booking;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\DisputeCase;
 use App\Models\FeedPost;
 use App\Models\FeedReport;
@@ -13,7 +12,6 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\OwnerRefundObligation;
 use App\Models\PosProduct;
-use App\Models\PriceRule;
 use App\Models\ReceivingConnection;
 use App\Models\ReconciliationRun;
 use App\Models\Reservation;
@@ -35,6 +33,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Tests\Concerns\PaysOwnerByQr;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 /**
@@ -51,6 +50,7 @@ use Tests\TestCase;
 class SevenModulesContractAndE2EAcceptanceTest extends TestCase
 {
     use PaysOwnerByQr;
+    use PricesCourts;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -110,14 +110,6 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $user2 = User::factory()->create(['email_verified_at' => now()]);
 
         $targetDate = now(config('app.timezone'))->addDays(3)->setTime(14, 0)->startOfHour();
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => $targetDate->dayOfWeekIso,
-            'starts_at' => '14:00',
-            'ends_at' => '15:00',
-            'price' => 150000,
-            'is_active' => true,
-        ]);
 
         $walletService = app(WalletPaymentService::class);
         $wallet1 = $walletService->getOrCreateWallet($user1->id, $org->id);
@@ -145,19 +137,11 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
 
     public function test_module_1_core_booking_200_on_valid_booking_with_reload_and_404_checks(): void
     {
-        [$org, $venue, $court] = $this->createTenantWithCourt('Module 1 Success Org');
+        [$org, $venue, $court] = $this->createTenantWithCourt('Module 1 Success Org', 200000);
         $user = User::factory()->create(['email_verified_at' => now()]);
         OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $user->id, 'role' => 'customer', 'status' => 'active']);
 
         $targetDate = now(config('app.timezone'))->addDays(4)->setTime(16, 0)->startOfHour();
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => $targetDate->dayOfWeekIso,
-            'starts_at' => '16:00',
-            'ends_at' => '17:00',
-            'price' => 200000,
-            'is_active' => true,
-        ]);
 
         $walletService = app(WalletPaymentService::class);
         $wallet = $walletService->getOrCreateWallet($user->id, $org->id);
@@ -810,7 +794,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
     // Fixture Helpers
     // =========================================================================
 
-    private function createTenantWithCourt(string $name): array
+    private function createTenantWithCourt(string $name, int $price = 150000): array
     {
         $org = Organization::create([
             'name' => $name,
@@ -833,12 +817,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'is_active' => true,
         ]);
 
-        PriceRule::create([
-            'organization_id' => $org->id,
-            'court_id' => $court->id,
-            'type' => 'base',
-            'price' => 150000,
-        ]);
+        $this->priceCourt($court, $price);
 
         return [$org, $venue, $court];
     }
@@ -867,7 +846,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
             'is_active' => true,
         ]);
         $court = $venue->courts()->create(['name' => 'Court 1', 'is_active' => true]);
-        PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 200000]);
+        $this->priceCourt($court, 200000);
 
         VenueBookingPolicy::create([
             'venue_id' => $venue->id,

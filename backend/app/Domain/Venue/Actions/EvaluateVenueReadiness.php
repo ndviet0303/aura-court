@@ -7,6 +7,7 @@ use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
 use App\Models\Court;
 use App\Models\ReceivingConnection;
 use App\Models\Venue;
+use App\Services\Reservation\CourtPriceRuleService;
 use App\Services\Reservation\VenueOperatingCalendar;
 
 class EvaluateVenueReadiness
@@ -15,6 +16,7 @@ class EvaluateVenueReadiness
         private readonly VenueLifecycleRepositoryInterface $venueRepo,
         private readonly PlatformSubscriptionRepositoryInterface $subRepo,
         private readonly VenueOperatingCalendar $operatingCalendar,
+        private readonly CourtPriceRuleService $priceRules,
     ) {}
 
     /**
@@ -31,7 +33,7 @@ class EvaluateVenueReadiness
             abort(404, 'Cơ sở thể thao không tồn tại.');
         }
 
-        $venue->loadMissing(['organization', 'courts.priceSlots', 'currentBookingPolicy', 'currentReceivingConnection']);
+        $venue->loadMissing(['organization', 'courts', 'currentBookingPolicy', 'currentReceivingConnection']);
         $org = $venue->organization;
 
         $missingItems = [];
@@ -93,14 +95,8 @@ class EvaluateVenueReadiness
             ];
         }
 
-        // 5. Deterministic Pricing on Active Courts
-        $courtsWithoutPrices = 0;
-        foreach ($activeCourts as $court) {
-            $hasActivePrice = $court->priceSlots->where('is_active', true)->isNotEmpty();
-            if (! $hasActivePrice) {
-                $courtsWithoutPrices++;
-            }
-        }
+        // 5. Every active court has a normal price table link in effect
+        $courtsWithoutPrices = $activeCourts->count() - count($this->priceRules->pricedCourtIds($activeCourts));
         $pricingComplete = $hasActiveCourts && $courtsWithoutPrices === 0;
         $checklist['court_pricing'] = $pricingComplete;
         if ($courtsWithoutPrices > 0) {

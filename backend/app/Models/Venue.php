@@ -77,6 +77,12 @@ class Venue extends Model
         return $this->hasMany(Court::class);
     }
 
+    /** @return HasMany<PriceTable, $this> */
+    public function priceTables(): HasMany
+    {
+        return $this->hasMany(PriceTable::class);
+    }
+
     public function publicationRevisions(): HasMany
     {
         return $this->hasMany(VenuePublicationRevision::class)->orderBy('revision_number', 'desc');

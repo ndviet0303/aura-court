@@ -6,7 +6,6 @@ import { useAdminManageCourts } from '../composables/useAdminManageCourts'
 import { useAdminVenues } from '../composables/useAdminVenues'
 import { useAdminStaff } from '../composables/useAdminStaff'
 import { useAdminSchedule } from '../composables/useAdminSchedule'
-import { usePricingCalendar } from '../composables/usePricingCalendar'
 import { useOrganizationOwner } from '../composables/useOrganizationOwner'
 import { useAdminShiftReconciliation } from '../composables/useAdminShiftReconciliation'
 import { api } from '@/core/api/client'
@@ -75,7 +74,6 @@ describe('Admin Venue API & Consumers (Task 2.3 & 2.4)', () => {
       if (url.includes('/members')) return { members: [] }
       if (url === '/organizations') return { organizations: [{ id: 1, name: 'Org 1' }] }
       if (url.startsWith('/organizations/')) return { organization: { id: 1, name: 'Org 1' } }
-      if (url === '/price-rules' || url === '/pricing/calendar') return { rules: [] }
       return []
     })
   })
@@ -201,29 +199,6 @@ describe('Admin Venue API & Consumers (Task 2.3 & 2.4)', () => {
 
       const { loadData, error } = useAdminSchedule()
       await loadData()
-      expect(error.value).not.toBe('')
-    })
-  })
-
-  describe('Caller: Pricing (usePricingCalendar)', () => {
-    it('loads venues and populates state', async () => {
-      const { venues, loadData, error } = usePricingCalendar()
-      await loadData()
-
-      expect(api.get).toHaveBeenCalledWith('/admin/venues')
-      expect(venues.value).toEqual(mockVenues)
-      expect(error.value).toBe('')
-    })
-
-    it('surfaces error when venues endpoint fails', async () => {
-      vi.mocked(api.get).mockImplementation(async (url: string) => {
-        if (url === '/admin/venues') throw new Error('Venues 500')
-        return []
-      })
-
-      const { loadData, error } = usePricingCalendar()
-      await loadData()
-
       expect(error.value).not.toBe('')
     })
   })

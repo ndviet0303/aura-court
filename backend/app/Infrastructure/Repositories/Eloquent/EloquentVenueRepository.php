@@ -29,7 +29,7 @@ class EloquentVenueRepository implements VenueRepositoryInterface
             ->where('status', Venue::STATUS_ACTIVE)
             ->whereDoesntHave('activeSuspension')
             ->whereHas('organization', fn ($q) => $q->where('partner_status', 'approved')->where('status', 'active'))
-            ->with(['courts' => fn ($c) => $c->where('status', Court::STATUS_ACTIVE)->with('priceSlots')])
+            ->with(['courts' => fn ($c) => $c->where('status', Court::STATUS_ACTIVE)])
             ->first();
     }
 

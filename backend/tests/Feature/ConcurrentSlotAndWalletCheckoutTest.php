@@ -2,20 +2,20 @@
 
 namespace Tests\Feature;
 
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class ConcurrentSlotAndWalletCheckoutTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private function setupTenant(): array
@@ -23,7 +23,7 @@ class ConcurrentSlotAndWalletCheckoutTest extends TestCase
         $organization = Organization::create(['name' => 'Org Concurrency', 'slug' => 'org-conc-'.uniqid(), 'status' => 'active', 'partner_status' => 'approved']);
         $venue = Venue::create(['organization_id' => $organization->id, 'name' => 'Venue Conc', 'slug' => 'venue-conc-'.uniqid(), 'is_active' => true]);
         $court = $venue->courts()->create(['name' => 'Court Conc', 'is_active' => true]);
-        PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 200000]);
+        $this->priceCourt($court, 200000);
 
         return [$organization, $venue, $court];
     }
@@ -45,12 +45,10 @@ class ConcurrentSlotAndWalletCheckoutTest extends TestCase
         $this->fundUserWallet($user, $organization->id, 200000);
 
         $court2 = $venue->courts()->create(['name' => 'Court Conc 2', 'is_active' => true]);
-        PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court2->id, 'type' => 'base', 'price' => 200000]);
+        $this->priceCourt($court2, 200000);
 
         $date1 = Carbon::now(config('app.timezone'))->addDays(2)->setTime(8, 0)->startOfHour();
         $date2 = Carbon::now(config('app.timezone'))->addDays(2)->setTime(9, 0)->startOfHour();
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date1->dayOfWeekIso, 'starts_at' => '08:00', 'ends_at' => '09:00', 'price' => 200000, 'is_active' => true]);
-        CourtPriceSlot::create(['court_id' => $court2->id, 'weekday' => $date2->dayOfWeekIso, 'starts_at' => '09:00', 'ends_at' => '10:00', 'price' => 200000, 'is_active' => true]);
 
         // Attempt checkout 1
         $res1 = $this->actingAs($user)->withHeader('Idempotency-Key', 'wallet-overdraft-1')->postJson('/api/reservations/checkout', [

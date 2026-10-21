@@ -3,12 +3,9 @@
 namespace Tests\Feature\Booking;
 
 use App\Domain\Booking\Actions\ExpirePendingBookings;
-use App\Models\Coupon;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PointLedger;
-use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Venue;
@@ -20,10 +17,14 @@ use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Tests\Concerns\HoldsLegacyCoupon;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class AutomaticUnpaidExpiryTest extends TestCase
 {
+    use HoldsLegacyCoupon;
+    use PricesCourts;
     use RefreshDatabase;
 
     private function setupTenant(): array
@@ -66,29 +67,16 @@ class AutomaticUnpaidExpiryTest extends TestCase
         $date1 = Carbon::now(config('app.timezone'))->addDays(2)->setTime(10, 0)->startOfHour();
         $date2 = Carbon::now(config('app.timezone'))->addDays(2)->setTime(14, 0)->startOfHour();
 
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date1->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date2->dayOfWeekIso, 'starts_at' => '14:00', 'ends_at' => '15:00', 'price' => 100000, 'is_active' => true]);
+        $this->priceCourt($court, 100000);
 
-        $coupon = Coupon::create([
-            'organization_id' => $org->id,
-            'code' => 'COUPONEXP',
-            'discount_type' => 'fixed',
-            'discount_value' => 20000,
-            'starts_at' => now()->subDays(2),
-            'ends_at' => now()->addDays(2),
-            'is_active' => true,
-            'usage_count' => 0,
-        ]);
-
-        // 1. Unpaid hold with a coupon on date1
+        // 1. Unpaid hold on date1, holding a coupon use from before coupons left court bookings
         $heldCode = $this->actingAs($unpaidUser)->withHeader('Idempotency-Key', 'unpaid-hold')->postJson('/api/reservations', [
             'court_id' => $court->id,
             'slots' => [$date1->toIso8601String()],
-            'coupon_code' => 'COUPONEXP',
-            'expected_total' => 80000,
-        ])->assertCreated()->assertJsonPath('reservation.total_amount', 80000)->json('reservation.code');
+            'expected_total' => 100000,
+        ])->assertCreated()->assertJsonPath('reservation.total_amount', 100000)->json('reservation.code');
         $held = Reservation::where('code', $heldCode)->firstOrFail();
-        $this->assertSame(1, (int) $coupon->fresh()->usage_count);
+        $coupon = $this->holdLegacyCoupon($held, now()->addDays(2));
 
         // 2. Confirmed paid booking on date2
         $paidCode = $this->actingAs($paidUser)->withHeader('Idempotency-Key', 'paid-checkout')->postJson('/api/reservations/checkout', [
@@ -170,7 +158,7 @@ class AutomaticUnpaidExpiryTest extends TestCase
         $unpaidBalanceBefore = (int) $unpaidWallet->fresh()->balance;
         $paidBalanceBefore = (int) $paidWallet->fresh()->balance;
 
-        PriceRule::create(['organization_id' => $org->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 150000]);
+        $this->priceCourt($court, 150000);
 
         $date1 = Carbon::now(config('app.timezone'))->addDays(3)->setTime(10, 0)->startOfHour();
         $date2 = Carbon::now(config('app.timezone'))->addDays(3)->setTime(14, 0)->startOfHour();

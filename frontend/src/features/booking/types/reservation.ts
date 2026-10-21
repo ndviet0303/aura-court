@@ -124,7 +124,6 @@ export type Reservation = {
 export type PriceQuotePayload = {
   court_id: number
   slots: string[]
-  coupon_code?: string
 }
 
 export type HoldReservationPayload = {
@@ -134,9 +133,6 @@ export type HoldReservationPayload = {
   quote_id?: number
   court_id?: number
   slots?: string[]
-  coupon_code?: string
-  loyalty_points?: number
-  loyalty_policy_version?: number
 }
 
 // New amounts of a 409 PRICE_CHANGED: nothing was created and the customer must confirm them first.

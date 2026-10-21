@@ -5,7 +5,7 @@ namespace Tests\Concerns;
 use App\Models\Court;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\PriceRule;
+use App\Models\PriceTable;
 use App\Models\ReceivingConnection;
 use App\Models\User;
 use App\Models\Venue;
@@ -18,10 +18,11 @@ use Illuminate\Testing\TestResponse;
 trait BooksDirectOwnerCourt
 {
     use PaysOwnerByQr;
+    use PricesCourts;
 
     /**
      * @param  array<string, mixed>  $booking  overrides of the venue policy's booking settings
-     * @return array{organization: Organization, owner: User, payer: User, venue: Venue, court: Court, rule: PriceRule, connection: ReceivingConnection, secret: string}
+     * @return array{organization: Organization, owner: User, payer: User, venue: Venue, court: Court, table: PriceTable, connection: ReceivingConnection, secret: string}
      */
     protected function directOwnerCourt(int $price = 200000, array $booking = []): array
     {
@@ -61,19 +62,14 @@ trait BooksDirectOwnerCourt
                 'transfer' => ['cutoff_hours' => 2, 'max_consideration_percent' => 100, 'free_transfer_allowed' => false, 'seller_reimbursement_required' => true],
             ],
         ]);
-        $rule = PriceRule::create([
-            'organization_id' => $organization->id,
-            'court_id' => $court->id,
-            'type' => 'base',
-            'price' => $price,
-        ]);
+        $table = $this->priceCourt($court, $price);
         [$connection, $secret] = $this->connectOwnerReceiver($venue);
         config([
             'features.flags.direct_owner_payments' => true,
             'features.pilot_organizations' => [(string) $organization->id],
         ]);
 
-        return compact('organization', 'owner', 'payer', 'venue', 'court', 'rule', 'connection', 'secret');
+        return compact('organization', 'owner', 'payer', 'venue', 'court', 'table', 'connection', 'secret');
     }
 
     protected function bookingCustomer(Organization $organization, array $attributes = []): User
