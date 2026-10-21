@@ -6,7 +6,7 @@ import type { Reservation, PriceQuote } from '../types/reservation'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { i18n, formatCurrency, getCurrentLocale } from '@/i18n'
 import { bookingErrorMessage, displayCode, displayStatus } from '../utils/reservation'
-import { venueClock } from '@/core/utils/venueTime'
+import { venueClock, venueInstant } from '@/core/utils/venueTime'
 import { usePriceChange } from './usePriceChange'
 
 const t = (key: string, params?: Record<string, unknown>) => i18n.global.t(key, params || {})
@@ -135,7 +135,8 @@ export function useReservations() {
     }
   }
 
-  async function calculateQuote() {
+  // One interval from the chosen start, `minutes` long, on the venue clock (design D14).
+  async function calculateQuote(minutes = 60) {
     if (!selectedCourtId.value || !selectedDate.value || !selectedTimeSlot.value) {
       error.value = t('reservations.messages.selectCourtAndTime')
       return
@@ -147,10 +148,11 @@ export function useReservations() {
     price.clear()
 
     try {
-      const slotIso = new Date(`${selectedDate.value}T${selectedTimeSlot.value}:00`).toISOString()
+      const startsAt = venueInstant(`${selectedDate.value}T${selectedTimeSlot.value}`)
       const response = await bookingApi.getPriceQuote({
         court_id: Number(selectedCourtId.value),
-        slots: [slotIso],
+        starts_at: startsAt,
+        ends_at: new Date(Date.parse(startsAt) + minutes * 60000).toISOString(),
       })
 
       if (response && response.quote) {

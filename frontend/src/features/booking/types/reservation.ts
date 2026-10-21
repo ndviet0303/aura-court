@@ -121,9 +121,11 @@ export type Reservation = {
   attendance?: ReservationAttendance | null
 }
 
+// One interval on the 30-minute grid (design D14); a list of slot starts is refused with 422.
 export type PriceQuotePayload = {
   court_id: number
-  slots: string[]
+  starts_at: string
+  ends_at: string
 }
 
 export type HoldReservationPayload = {
@@ -132,7 +134,8 @@ export type HoldReservationPayload = {
   quote_token?: string
   quote_id?: number
   court_id?: number
-  slots?: string[]
+  starts_at?: string
+  ends_at?: string
 }
 
 // New amounts of a 409 PRICE_CHANGED: nothing was created and the customer must confirm them first.

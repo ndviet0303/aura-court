@@ -4,11 +4,12 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
 import { isUnverifiedEmailError } from '@/core/utils/errorMessage'
+import { venueClockRange } from '@/core/utils/venueTime'
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { useBookingStore } from '@/features/booking/stores/bookingStore'
 import BookingAgreement from '@/features/booking/components/BookingAgreement.vue'
 import { useSelectionQuote } from '@/features/booking/composables/useSelectionQuote'
-import { validBookerPhone } from '@/features/booking/utils/reservation'
+import { formatDuration, validBookerPhone } from '@/features/booking/utils/reservation'
 import type { Court, AvailabilitySlot } from '../../types/court'
 const { locale } = useI18n()
 const auth = useAuthStore()
@@ -29,12 +30,13 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'checkout', expectedTotal: number | null): void
-  (e: 'removeSlot', slot: AvailabilitySlot): void
+  (e: 'removeSlot'): void
   (e: 'resendVerification'): void
   (e: 'clearError'): void
 }>()
 
 const isUnverified = computed(() => isUnverifiedEmailError(props.error))
+const duration = computed(() => formatDuration(bookingStore.selection?.minutes ?? 0))
 // A signed-in customer books only at a quoted total; a guest is sent to sign in.
 const blocked = computed(
   () =>
@@ -59,7 +61,6 @@ const formattedDate = computed(() => {
 
 <template>
   <div class="schedule-summary-card">
-    <!-- Header -->
     <div class="summary-hdr">
       <div class="title-row">
         <h3 class="title">
@@ -67,7 +68,7 @@ const formattedDate = computed(() => {
           <span>{{ $t('schedule.summaryTitle') }}</span>
         </h3>
         <span v-if="selectedSlots.length > 0" class="badge-count">
-          {{ $t('schedule.slotsBadge', { count: selectedSlots.length }) }}
+          {{ duration }}
         </span>
       </div>
 
@@ -89,12 +90,11 @@ const formattedDate = computed(() => {
       </div>
     </div>
 
-    <!-- Selected Slots Section -->
     <div class="selected-slots-section">
       <div class="section-label-row">
         <span class="section-sub-label">{{ $t('schedule.selectedSlotsLabel') }}</span>
         <span v-if="selectedSlots.length > 0" class="duration-badge">
-          {{ $t('schedule.totalPlayDuration', { count: selectedSlots.length }) }}
+          {{ $t('schedule.totalPlayDuration', { duration }) }}
         </span>
       </div>
 
@@ -103,22 +103,24 @@ const formattedDate = computed(() => {
         <p class="hint-text">{{ $t('schedule.noSlotsSelectedHint') }}</p>
       </div>
 
-      <div v-else class="slots-list-wrap">
-        <div v-for="s in selectedSlots" :key="s.startsAt" class="slot-summary-item">
+      <div v-else-if="bookingStore.selection" class="slots-list-wrap">
+        <div class="slot-summary-item">
           <div class="slot-time-badge">
             <span class="material-symbols-outlined icon-14">schedule</span>
             <span class="font-mono time-txt">
-              {{ s.startsAt.slice(11, 16) }} - {{ s.endsAt.slice(11, 16) }}
+              {{ venueClockRange(bookingStore.selection.startsAt, bookingStore.selection.endsAt) }}
             </span>
           </div>
 
           <div class="slot-price-wrap">
-            <span class="font-mono item-price">{{ formatCurrency(s.price) }}</span>
+            <span v-if="quote.rental !== null" class="font-mono item-price">{{
+              formatCurrency(quote.rental)
+            }}</span>
             <button
               type="button"
               class="btn-remove-slot"
               :title="$t('schedule.removeSlot')"
-              @click="emit('removeSlot', s)"
+              @click="emit('removeSlot')"
             >
               <span class="material-symbols-outlined icon-14">close</span>
             </button>
@@ -127,7 +129,6 @@ const formattedDate = computed(() => {
       </div>
     </div>
 
-    <!-- Guarantees & Perks -->
     <div class="trust-perks-box">
       <div class="perk-item">
         <span class="material-symbols-outlined perk-icon">bolt</span>
@@ -135,7 +136,6 @@ const formattedDate = computed(() => {
       </div>
     </div>
 
-    <!-- Feedback Notice Alert -->
     <div v-if="notice" class="summary-notice-box" role="status">
       <span class="material-symbols-outlined notice-icon">check_circle</span>
       <p class="notice-msg">{{ notice }}</p>
@@ -195,7 +195,7 @@ const formattedDate = computed(() => {
       <div class="price-breakdown">
         <div class="breakdown-row">
           <span>{{ $t('schedule.playDuration') }}</span>
-          <strong>{{ $t('schedule.hours', { count: selectedSlots.length }) }}</strong>
+          <strong>{{ duration }}</strong>
         </div>
         <div v-if="auth.user && !directOwnerPayments" class="breakdown-row wallet-status-row">
           <div class="wallet-status-left">
