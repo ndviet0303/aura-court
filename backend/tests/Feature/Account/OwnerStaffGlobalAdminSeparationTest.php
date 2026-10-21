@@ -191,8 +191,8 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
 
     /**
      * Scenario: Staff operate only their assigned venue (BR-20/BR-21)
-     * Staff of Venue A see its bookings and reports but leave venue details and pricing to the owner;
-     * sibling Venue B is denied.
+     * Staff of Venue A see its bookings but leave venue details, pricing and aggregated finance reports (BR-89)
+     * to the owner; sibling Venue B is denied.
      */
     public function test_venue_manager_can_operate_assigned_venue_but_is_denied_sibling_venue(): void
     {
@@ -211,9 +211,9 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
             'status' => 'active',
         ]);
 
-        // 1. Bookings and reports of assigned Venue A open; venue details stay with the owner
+        // 1. Bookings of assigned Venue A open; venue details and finance reports stay with the owner
         $this->actingAs($manager)->getJson("/api/admin/reservations?venue_id={$venueA->id}")->assertOk();
-        $this->actingAs($manager)->getJson("/api/admin/reports?venue_id={$venueA->id}")->assertOk();
+        $this->actingAs($manager)->getJson("/api/admin/reports?venue_id={$venueA->id}")->assertForbidden();
         $this->actingAs($manager)
             ->patchJson("/api/admin/venues/{$venueA->id}", ['address' => 'Updated Venue A'])
             ->assertStatus(403);
@@ -243,9 +243,9 @@ class OwnerStaffGlobalAdminSeparationTest extends TestCase
             ])
             ->assertStatus(403);
 
-        // 5. Cannot export reports for sibling Venue B
+        // 5. Cannot read bookings or reports of sibling Venue B
         $this->actingAs($manager)
-            ->getJson("/api/admin/reports?venue_id={$venueB->id}")
+            ->getJson("/api/admin/reservations?venue_id={$venueB->id}")
             ->assertStatus(403);
 
         $this->actingAs($manager)

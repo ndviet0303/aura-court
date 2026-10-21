@@ -454,8 +454,8 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
             'is_active' => true,
         ])->assertForbidden();
 
-        // 2. Staff view reports and bookings for the assigned venue
-        $this->getJson("/api/admin/reports?venue_id={$this->venueAlpha->id}")->assertOk();
+        // 2. Staff view bookings for the assigned venue; aggregated finance reports stay with the owner (BR-89)
+        $this->getJson("/api/admin/reports?venue_id={$this->venueAlpha->id}")->assertForbidden();
         $this->getJson("/api/admin/reservations?venue_id={$this->venueAlpha->id}")->assertOk();
     }
 
@@ -502,8 +502,8 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
      */
     public function test_matrix_3_revoked_grant_or_removed_membership_immediately_blocks_manager(): void
     {
-        $reports = fn (Venue $venue) => $this->actingAs($this->managerAlpha->fresh())->getJson("/api/admin/reports?venue_id={$venue->id}");
-        $reports($this->venueAlpha)->assertOk();
+        $reservations = fn (Venue $venue) => $this->actingAs($this->managerAlpha->fresh())->getJson("/api/admin/reservations?venue_id={$venue->id}");
+        $reservations($this->venueAlpha)->assertOk();
 
         // 1. Shift grant: Owner Alpha shifts the staff member to Venue Alpha 2, revoking Venue Alpha
         $this->actingAs($this->ownerAlpha)
@@ -512,8 +512,8 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
             ])->assertOk();
 
         // Immediate effect: Venue Alpha is denied, Venue Alpha 2 is reachable
-        $reports($this->venueAlpha)->assertStatus(403);
-        $reports($this->venueAlpha2)->assertOk();
+        $reservations($this->venueAlpha)->assertStatus(403);
+        $reservations($this->venueAlpha2)->assertOk();
 
         // 2. Removal: Owner Alpha ends the staff membership
         $this->actingAs($this->ownerAlpha)
@@ -521,7 +521,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
             ->assertOk();
 
         // Immediate effect: the former staff member is denied across all venues in the org
-        $reports($this->venueAlpha2)->assertStatus(403);
+        $reservations($this->venueAlpha2)->assertStatus(403);
         $this->actingAs($this->managerAlpha->fresh())
             ->getJson('/api/admin/venues')
             ->assertStatus(403);

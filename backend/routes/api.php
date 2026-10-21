@@ -336,7 +336,7 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             });
         });
 
-        // Reports: platform-wide for a platform admin, otherwise scoped to the caller's venues.
+        // Reports: platform-wide for a platform admin, otherwise owner-only and scoped to the organizations the caller owns (BR-89).
         Route::get('reports', [AdminController::class, 'report']);
         Route::get('reports.csv', [AdminController::class, 'reportCsv']);
         Route::get('reports/csv', [AdminController::class, 'reportCsv']);

@@ -549,9 +549,13 @@ class AdminController extends Controller
         $user = $request->user();
         $scopedVenueIds = null;
         if ($user && ! $user->isPlatformAdmin()) {
-            abort_unless($user->organizationMembers()->where('status', 'active')
-                ->whereIn('role', [OrganizationMember::ROLE_ORGANIZATION_OWNER, OrganizationMember::ROLE_STAFF])->exists(), 403, 'Organization admin or staff access required.');
-            $authorizedVenueIds = $user->getAuthorizedVenueIds();
+            // BR-89: aggregated finance belongs to owners only, scoped to the organizations they own (not ones they staff).
+            $ownedOrganizationIds = $user->organizationMembers()->where('status', 'active')
+                ->where('role', OrganizationMember::ROLE_ORGANIZATION_OWNER)->pluck('organization_id');
+            abort_if($ownedOrganizationIds->isEmpty(), 403, 'Organization owner access required.');
+            $authorizedVenueIds = $ownedOrganizationIds
+                ->flatMap(fn ($organizationId) => $user->getAuthorizedVenueIds((int) $organizationId))
+                ->unique()->values()->all();
             if ($request->filled('venue_id')) {
                 $requestedVenueId = (int) $request->input('venue_id');
                 abort_unless(in_array($requestedVenueId, $authorizedVenueIds, true), 403, 'Unauthorized venue report.');

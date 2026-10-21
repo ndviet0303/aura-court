@@ -158,7 +158,7 @@ class OrganizationGrantsAndVenueScopingTest extends TestCase
             ->assertStatus(403);
 
         $this->actingAs($user)
-            ->getJson("/api/admin/reports?venue_id={$venue10->id}")
+            ->getJson("/api/admin/reservations?venue_id={$venue10->id}")
             ->assertOk();
 
         // When attempting to access Org 20 members, denied with 403
@@ -168,7 +168,7 @@ class OrganizationGrantsAndVenueScopingTest extends TestCase
 
         // Venue 20 is denied with 403
         $this->actingAs($user)
-            ->getJson("/api/admin/reports?venue_id={$venue20->id}")
+            ->getJson("/api/admin/reservations?venue_id={$venue20->id}")
             ->assertStatus(403);
     }
 }
