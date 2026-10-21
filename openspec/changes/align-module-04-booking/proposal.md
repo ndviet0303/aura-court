@@ -74,8 +74,11 @@ Người dùng chốt Q1 = A ngày 2026-10-21: theo report, lưới 30 phút.
   - Tiền phải trả đổi: yêu cầu cũ hết hiệu lực, nhả chỗ và voucher, báo khách.
   - Tiền không đổi: giữ nguyên đơn và hạn.
   - Đơn đã xác nhận không tính lại.
-  - Gắn vào hook công bố giá của module 3.
-- **Ghi nhận voucher lúc xác nhận (D12; BR-83, FR-74, FR-75).** Gọi `consume` của service voucher module 3, trong cùng transaction xác nhận.
+  - Nghe sự kiện `CourtPricesTookEffect` của module 3, phát lúc công bố phiên bản giá và lúc đổi liên kết sân – bảng giá.
+- **Ghi nhận voucher lúc xác nhận (D12; BR-83, FR-74).**
+  - Gọi `consume` của service voucher module 3 trong transaction xác nhận: webhook chuyển khoản, nhóm chia tiền đủ tiền, xác nhận bằng ví legacy. Gọi `release` ở mọi đường nhả đơn chờ.
+  - Voucher không còn áp được lúc xác nhận thì đơn hết hạn với lý do `voucher_changed`, nhả lượt một lần và báo khách.
+  - Đơn xác nhận ngay khi tạo (0đ, ví legacy ở checkout) do module 3 gọi `consume` (FR-75, BR-82).
 - **Danh sách và chi tiết đơn (D9, D10; FR-79, FR-80).**
   - Chi tiết có hạn thanh toán, kết quả thanh toán, người đặt, check-in/check-out và sự cố.
   - Nhãn trạng thái và QR đơn như Pha 0 đã làm.
@@ -94,7 +97,8 @@ None.
 
 - `reservations-and-pricing`:
   - Thêm các requirement: lưới 30 phút, hạn thanh toán, người đặt, số tiền đã đồng ý, khách huỷ đơn chờ, đơn chờ tại mốc đổi giá, danh sách và chi tiết đơn.
-  - Sửa "Active inventory exclusivity" (liên tục bắt buộc, hold quá hạn không chặn), "Immutable price quotes" (chỉ đơn đã xác nhận giữ giá) và "Final bookings and released availability" (cấm khách huỷ chỉ áp cho đơn đã xác nhận).
+  - Sửa "Active inventory exclusivity" (liên tục bắt buộc, hold quá hạn không chặn) và "Final bookings and released availability" (cấm khách huỷ chỉ áp cho đơn đã xác nhận).
+  - Không sửa "Immutable price quotes": module 3 bỏ requirement đó và chép nguyên văn câu về đơn chờ thanh toán sang "Court quotes from price tables".
   - Bỏ "One-hour booking slots".
 - `venue-court-operations`: "Courts carry their own sport and booking interval" bỏ độ dài 45 phút; đặt sân của khách theo lưới 30 phút thay vì độ dài slot của sân.
 - `direct-owner-payments`: thêm "Owner lookup of payment exceptions".
@@ -112,8 +116,8 @@ None.
   - Pha 4: endpoint ngoại lệ cho owner, thêm trường vào `recordReceiptException`.
   - Pha 5, chờ module 3:
     - lưới 30 phút với `starts_at/ends_at` trên engine theo phút;
-    - hook đổi giá;
-    - `consume` voucher.
+    - listener sự kiện đổi giá;
+    - `consume` và `release` voucher ở các đường xác nhận và nhả.
 - **API:**
   - Thêm `POST reservations/{code}/cancel-payment` và `GET owner-payment-exceptions`.
   - Mã lỗi mới: `PHONE_REQUIRED`, `PRICE_CHANGED`, `PAYMENT_WINDOW_CLOSED`, `INVALID_BOOKING_TIME`.
@@ -131,12 +135,13 @@ None.
   - Sân có `slot_duration` = 45 chuyển thành 60 trong migration. Prod sau reseed không có dòng nào.
   - Đơn cũ giữ slot đã ghi.
 - **Phối hợp:**
-  - Thứ tự archive: `direct-owner-cutover` → `align-module-02-venue-court` → change của module 3 → change này.
+  - Thứ tự archive: `direct-owner-cutover` → `align-module-02-venue-court` → `align-module-03-pricing-promotions` → change này, ngay sau module 3.
   - Khối MODIFIED trùng header được dựng lại từ text đang có ở spec chính lúc archive.
-  - Module 2 nhận task bỏ `hold_ttl_minutes` và `require_continuity` khỏi form chính sách. Module 3 viết lại availability (khoảng nửa mở, bỏ hold quá hạn, mốc 30 phút).
+  - Module 2 nhận task bỏ `hold_ttl_minutes` và `require_continuity` khỏi form chính sách.
+  - Module 3 viết lại availability ở Pha 2 của họ (khoảng nửa mở, bỏ hold quá hạn, bước `slot_duration`). Change này đổi bước sang 30 phút cho mọi sân ở task 5.1.
 - **Non-goals:**
   - BR-76 và giá "từ" ở FR-69: thuộc module 2 và 3.
   - Đặt hộ ở quầy.
   - Tài khoản nhận tiền khai sau khi tạo cơ sở.
-  - Nhóm chia tiền (`split-groups`).
+  - Nhóm chia tiền (`split-groups`), trừ việc nối `consume` và `release` voucher (D12).
   - Đặt định kỳ.

@@ -25,7 +25,7 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
 - **Các change song song.**
   - `direct-owner-cutover` chưa archive và đang giữ requirement "One-hour booking slots".
   - `align-module-02-venue-court` sửa "Final bookings and released availability" và "Courts carry their own sport and booking interval". Task 2.16 của change này bỏ `hold_ttl_minutes` và `require_continuity` khỏi form chính sách.
-  - Module 3 (chưa tạo change) giữ phần `price_tables`, engine tính tiền theo phút, service voucher `hold / release / consume`, sự kiện công bố giá và việc viết lại `AvailabilityController`.
+  - Module 3 (`align-module-03-pricing-promotions`) giữ phần `price_tables`, engine tính tiền theo phút, `VoucherUsageService` (`hold / release / consume`), sự kiện giá có hiệu lực và việc viết lại `AvailabilityController`. Bản viết lại ở Pha 2 của họ vẫn dùng bước `slot_duration`; change này đổi bước sang 30 phút ở task 5.1 (D14).
 
 ## Goals / Non-Goals
 
@@ -37,10 +37,10 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
 - Cắt hợp đồng API một lần (`slots[]` → `starts_at/ends_at`), không giữ đường tương thích.
 
 **Non-Goals:**
-- Engine giá, bảng giá, bộ đếm voucher, viết lại availability: thuộc module 3. Module 04 chỉ gọi tới.
+- Engine giá, bảng giá, bộ đếm voucher, viết lại availability: thuộc module 3. Module 04 chỉ gọi tới, và chỉ đổi bước lưới của availability sang 30 phút (D14).
 - Form chính sách cơ sở: thuộc module 2 (task 2.16).
 - Đặt định kỳ: vẫn dùng độ dài slot của sân và hạn giữ chỗ riêng của nó.
-- Đặt hộ ở quầy, nhóm chia tiền, thời điểm khai tài khoản nhận tiền (D13).
+- Đặt hộ ở quầy, nhóm chia tiền, thời điểm khai tài khoản nhận tiền (D13). Nhóm chia tiền chỉ được nối `consume` và `release` voucher (D12).
 
 ## Decisions
 
@@ -63,11 +63,11 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
   - hoàn điểm nếu đơn có giữ điểm. Checkout thường không còn trừ điểm (module 3, Q2 = A), nhưng đơn tạo trước đó vẫn phải được hoàn;
   - cho attempt đang chờ hết hạn;
   - ghi `metadata.release_reason`.
-- Hàm không làm gì khi đơn không còn `held`. Bốn chỗ dùng: job hết hạn, D1, D7, D11.
+- Hàm không làm gì khi đơn không còn `held`. Các chỗ dùng: job hết hạn, D1, D7, D11, D12 (voucher hỏng lúc xác nhận) và D19 của module 3 (chương trình đổi khi có đơn chờ). Hai chỗ cuối ghi lý do `voucher_changed`.
 - Phương án khác:
   - Dùng `ReservationService::release`. Loại: hàm này không hoàn điểm và không cho attempt hết hạn.
   - Mỗi trường hợp tự nhả. Loại: các bản sẽ lệch nhau theo thời gian.
-- Lý do: BR-84 đòi giải phóng chỗ và voucher đúng một lần. Spec ghi rõ bốn trường hợp cho cùng một trạng thái sau khi nhả. Spec không nhắc tới điểm vì checkout thường không còn giữ điểm.
+- Lý do: BR-84 đòi giải phóng chỗ và voucher đúng một lần. Spec ghi rõ năm trường hợp (hết hạn, khách huỷ, hold quá hạn, đổi giá, voucher đổi) cho cùng một trạng thái sau khi nhả. Spec không nhắc tới điểm vì checkout thường không còn giữ điểm.
 
 ### D3. Hạn thanh toán
 - Chọn: helper tính `hold_expires_at = min(now + 10 phút, starts_at, voucher_ends_at)` trước khi chèn.
@@ -76,6 +76,8 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
   - `initiate` tạo attempt với `expires_at = hold_expires_at`. Nếu attempt cũ còn chờ thì trả lại chính nó: cùng mã, cùng số tiền, cùng người nhận.
   - 10 phút là hằng số trong code, không phải cài đặt của cơ sở.
   - Đặt sân thường bỏ hẳn việc đọc `booking.hold_ttl_minutes`.
+  - Hạn voucher lấy từ snapshot của engine. Module 3 nối vào `ReservationIntake::paymentDeadline` ở task 5.4 của họ. Từ Pha 2 của họ tới lúc đó, đơn mới không có voucher.
+  - Thứ tự kiểm khi tạo đơn (module 3 D20): voucher (422 `VOUCHER_INVALID`) → so `expected_total` (409 `PRICE_CHANGED`, D5) → hạn thanh toán (422 `PAYMENT_WINDOW_CLOSED`). `ReservationIntake` giữ thứ tự này khi module 3 thêm bước voucher. Voucher hết hạn đúng lúc gửi đã bị `VOUCHER_INVALID` chặn, nên không tới bước hạn thanh toán.
 - Phương án khác:
   - Giữ hạn theo chính sách cơ sở (design archive `2026-09-27`). Loại: BR-79 cố định 10 phút.
   - Giữ hạn của cơ sở nhưng chặn bởi giờ bắt đầu. Loại: vẫn trái BR-79 khi cơ sở đặt hơn 10 phút.
@@ -96,6 +98,7 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
   - Server tính lại trong transaction, sau khi khoá.
   - Tiền tính lại > `expected_total` → 409 `PRICE_CHANGED`, kèm `{rental, discount, total}` mới, không tạo gì.
   - Tiền tính lại ≤ `expected_total` → tạo đơn theo số tính lại.
+  - Bước so nằm sau bước kiểm voucher và trước bước tính hạn thanh toán (thứ tự ở D3).
 - Phương án khác:
   - Từ chối mọi chênh lệch (bản nháp D6 của module 3). Loại: BR-68 của module 3 và BR-80 chỉ cấm số cao hơn; chặn cả giá giảm làm khách phải bấm thêm một lần mà không bảo vệ thêm gì.
   - Tin giá server, không so. Loại: trái BR-80 và BR-68.
@@ -141,11 +144,13 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
   - người đặt (D4);
   - giờ check-in và check-out (eager-load `attendance`);
   - xử lý sự cố, đọc từ bản ghi đơn bị ảnh hưởng của module 2 (D8 của module 2). Phần này chờ module 2, xem task 3.6.
+- Voucher trong chi tiết đơn do module 3 thêm ở task 5.4–5.5 của họ: `Reservation::voucherUse`, trường `voucher` ở `ReservationController::show`, phần voucher ở `ReservationDetailFacts` và `quoteDiscounts`.
 - Lý do: FR-79, D50 archive (trạng thái vận hành nằm trong metadata).
 
 ### D11. Kiểm lại đơn chờ khi giá mới có hiệu lực
-- Chọn: một listener nghe sự kiện "giá mới có hiệu lực" do module 3 phát (lúc công bố nếu hiệu lực ngay, hoặc lúc tới `effective_at`).
-  - Listener tìm các đơn `held` trên những sân bị ảnh hưởng có khoảng nằm trong vùng hiệu lực, rồi tính lại tiền bằng engine của module 3.
+- Chọn: một listener nghe `CourtPricesTookEffect(courtIds, effectiveAt)` của module 3.
+  - Module 3 phát sự kiện sau commit, lúc công bố phiên bản (`effectiveAt = max(effective_at, now)`) và lúc áp, thay hay kết thúc liên kết sân – bảng giá. Không phát khi tới `effective_at` (module 3 D16): theo D6 của họ, giá một đơn xác nhận phải trả chỉ đổi ở hai thời điểm đó.
+  - Listener tìm các đơn `held` trên `courtIds` có giờ kết thúc sau `effectiveAt`, rồi tính lại bằng `RentalPriceCalculator::quote` với voucher đơn đang giữ và `$heldBy` là chính đơn đó. Thiếu `$heldBy` thì lượt cuối hoặc mã riêng mà đơn đang giữ bị coi là hết, và đơn bị nhả oan.
   - Tiền khác → `releaseHeld(…, 'expired', 'price_changed')` và gửi thông báo qua `DurableNotificationService`.
   - Tiền bằng → không làm gì.
   - Đơn đã xác nhận không nằm trong truy vấn.
@@ -154,10 +159,31 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
   - Định giá lại đơn tại chỗ và cấp mã mới. Loại: BR-87 đòi yêu cầu cũ hết hiệu lực và khách gửi lại.
 - Lý do: FR-78, BR-87.
 
-### D12. Ghi nhận dùng voucher lúc xác nhận
-- Chọn: gọi `consume($reservation)` của service voucher module 3 trong cùng transaction xác nhận (webhook và đơn 0đ). Lượt được giữ lúc tạo đơn chờ và nhả qua D2.
-- Phương án khác: module 04 tự sửa bộ đếm. Loại: bộ đếm thuộc module 3 và đã thống nhất ngày 2026-10-20.
-- Lý do: BR-82, BR-83.
+### D12. Ghi nhận và nhả lượt voucher
+- Chọn: transaction nào xác nhận đơn thì gọi `consume($reservation, $confirmedAt)` của `VoucherUsageService` (module 3 D11, D29). Lượt được module 3 giữ bằng `hold` lúc tạo đơn chờ.
+  - Change này gọi `consume` ở:
+    - `OwnerPaymentAttemptService::processReceipt` (đơn trả một lần), với `$receipt->event_at`;
+    - `SplitPaymentService::confirmPaidAttempt` (gọi từ `processReceipt`, `payShare`, `coverShortfall`), với `$paidAt`;
+    - `ReservationService::confirm` (ví legacy), với `now()`.
+  - Đường xác nhận của `RecurringSeriesService` không gọi, vì đơn định kỳ không giữ voucher.
+  - Đơn xác nhận ngay trong transaction tạo nó (checkout 0đ, checkout ví legacy, `ReservationService::hold` 0đ trực tiếp) do module 3 gọi `consume` ngay sau `hold` (task 5.4 của họ).
+  - Gọi `release` ở `releaseHeld` và `ReservationService::release` (gọi từ `confirm` khi hold quá hạn, `SplitPaymentService::expire`, `RecurringReleaseService`).
+  - `consume` và `release` không làm gì khi đơn không giữ voucher, nên nối được trước khi module 3 bật `hold`.
+- `consume` ném `VoucherNoLongerApplies` khi voucher không còn áp được hoặc tiền giảm đổi. Mọi đường đều nhả đơn bằng `releaseHeld(…, 'expired', 'voucher_changed')` và báo khách. Lỗi không được lan ra khỏi transaction ngoài sau khi đã nhả.
+  - `processReceipt`: gọi sau khi `applyAttemptChecks` ra ALLOCATED và đơn đã khoá qua kiểm `held`, trước khi lưu receipt và tạo `OwnerPaymentAllocation`. Hỏng → receipt thành EXCEPTION mã `voucher_changed`, nhả đơn, `recordReceiptException` ghi như các ngoại lệ khác. Không ném lại, để job không chạy lại.
+  - `confirmPaidAttempt`: khi nhóm đủ tiền, khoá đơn trước bằng `HeldReservationRelease::lock` (hiện đơn chỉ bị khoá sau khi nhóm thành `confirmed`), gọi `consume`, rồi mới đánh dấu nhóm `confirmed`. Hỏng → làm như `expire`: nhóm và phần chia còn chờ sang `expired`, attempt `split_share` còn chờ hết hạn, mọi phần đã trả (kể cả phần vừa nhận) được ghi qua `SplitExpiredShareExceptions::record` đúng một lần. Khác `expire` ở chỗ đơn được nhả bằng `releaseHeld` trên bản đã khoá. Không ném lại.
+  - `ReservationService::confirm`: gọi trước khi trừ ví. Hỏng → nhả đơn, không trừ ví, không ghi ngoại lệ thanh toán, rồi ném sau khi transaction của service xong. `ReservationController::confirm` bắt lỗi trong closure của `IdempotencyService::run` và trả 422 `VOUCHER_INVALID` kèm lý do, để việc nhả được commit.
+  - Nhánh hold quá hạn hiện có của `confirm` gọi `release` rồi `abort(409)` nên bị rollback; lượt của đơn đó do `releaseHeld` nhả sau.
+- Khoá:
+  - Thứ tự chung: attempt → reservation → chương trình. `consume` khoá dòng chương trình `FOR SHARE`. `release` không khoá chương trình hay mã, nên các transaction nhả nhiều đơn liền nhau không tạo vòng khoá.
+  - `processReceipt` khoá dòng cơ sở `FOR KEY SHARE` trước `consume`, vì insert allocation sau đó khoá ngầm cơ sở. Chọn khoá ngay trước khi khoá attempt (đọc `venue_id` của attempt trước, cột này không đổi), không phải ngay sau khi khoá đơn như module 3 đề xuất. Lý do: checkout khoá cơ sở `FOR UPDATE` rồi mới khoá attempt của hold quá hạn (D7). Khoá cơ sở sau attempt vẫn để lại vòng khoá hiện có (xem Risks), còn khoá trước attempt thì cùng chiều với checkout và `initiate`.
+  - `ReservationService::confirm` không khoá cơ sở.
+- Phương án khác:
+  - Module 04 tự sửa bộ đếm. Loại: bộ đếm thuộc module 3 và đã thống nhất ngày 2026-10-20.
+  - Change này gọi `consume` cho đơn 0đ (bản trước). Loại: đơn đó xác nhận trong transaction checkout mà module 3 viết lại; hai module cùng sửa một transaction dễ gọi thiếu hoặc gọi hai lần.
+  - Để `VoucherNoLongerApplies` lan ra. Loại: transaction ngoài rollback luôn việc nhả, đơn giữ lượt tới lần quét kế tiếp.
+  - Khoá cơ sở ngay sau khi khoá đơn (đề xuất của module 3). Loại: vẫn còn vòng attempt → cơ sở ngược với checkout.
+- Lý do: BR-83, FR-74; BR-71 của module 3 (không xác nhận bằng voucher của chương trình đã dừng). FR-75 và BR-82 (đơn 0đ) chuyển sang task 5.4 của module 3.
 
 ### D13. Không đổi trong change này
 - BR-76 (giao lịch sân với giờ cơ sở, đình chỉ) và giá "từ" của FR-69: thuộc module 2 và module 3.
@@ -173,6 +199,7 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
   - Đơn mới lưu đúng một `ReservationSlot` và một `ReservationEntitlement` phủ `[starts_at, ends_at)`. `unit_price` là tổng tiền thuê do engine theo phút của module 3 tính.
   - Bán lại chuyển entitlement duy nhất đó, tức là bán nguyên đơn.
   - `slot_duration` của sân chỉ còn dùng cho đặt định kỳ và chỉ nhận 30, 60, 90, 120.
+  - Availability: task 5.1 đổi bước lưới của `AvailabilityController` (bản Pha 2 của module 3, bước `slot_duration`) sang 30 phút cho mọi sân, cùng panel trang chủ. Module 3 giữ khối MODIFIED "Home availability identifies its selected court and date" với mốc 30 phút; change này không thêm khối trùng.
 - Phương án khác:
   - Mỗi 30 phút một slot. Loại: tính giá theo từng slot rồi làm tròn từng slot thì lệch với `T = ⌊Σ dᵢ·pᵢ / 60⌋` của BR-55; số dòng cũng gấp đôi.
   - Giữ slot 1 giờ (phương án B của Q1). Loại: người dùng đã chọn A.
@@ -183,18 +210,28 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
 
 ### D15. Cắt hợp đồng API một lần
 - Chọn: backend bỏ hẳn mảng `slots` ở quote, hold và checkout. Client gửi `slots` nhận 422. Frontend đổi form sang chọn giờ bắt đầu và kết thúc trong cùng lần merge.
-- Phương án khác: nhận cả hai dạng trong một thời gian. Loại: AGENTS.md yêu cầu cutover sạch, và hai dạng thì phải định giá theo hai cách.
+  - `PriceQuote` được giữ và đổi sang `starts_at/ends_at`: token, hạn 15 phút và các kiểm tra trước khi giữ chỗ vẫn như cũ, `slot_snapshot` chỉ còn một khoảng. Giá vẫn tính lại lúc gửi bằng `reprice`.
+  - Form đặt sân không gửi `coupon_code` hay `loyalty_points`: từ Pha 2 của module 3, hai trường không rỗng nhận 422. Form chừa chỗ cho phần chọn voucher; task 5.5 của module 3 thêm phần chọn và gửi `voucher_program_id` hoặc `voucher_code`.
+- Phương án khác:
+  - Nhận cả hai dạng trong một thời gian. Loại: AGENTS.md yêu cầu cutover sạch, và hai dạng thì phải định giá theo hai cách.
+  - Bỏ `PriceQuote`. Loại: checkout đang dùng `quote_token`, và "Court quotes from price tables" của module 3 vẫn đòi báo giá hết hạn phải được khách đồng ý lại.
 - Lý do: client duy nhất là frontend của dự án.
 
 ### Phối hợp và thứ tự archive
-- Thứ tự archive: `direct-owner-cutover` → `align-module-02-venue-court` → change của module 3 → change này.
+- Thứ tự archive: `direct-owner-cutover` → `align-module-02-venue-court` → `align-module-03-pricing-promotions` → change này. Change này archive ngay sau module 3, vì "Court quotes from price tables" của module 3 nhắc tới "Pending bookings at a price change" của change này.
 - Các khối MODIFIED trùng header:
   - "Final bookings and released availability", "Courts carry their own sport and booking interval": dựng trên text của module 2.
-  - "Active inventory exclusivity", "Immutable price quotes": dựng trên text ở spec chính.
+  - "Active inventory exclusivity": dựng trên text ở spec chính.
   - "Settlement and payout lifecycle": dựng trên text của cutover.
   - Trước khi archive, dựng lại các khối này từ text đang có ở spec chính, chỉ giữ phần sửa của change này (task 6.5).
 - REMOVED "One-hour booking slots" chỉ archive được sau cutover, vì requirement đó do cutover thêm.
-- Module 3 viết lại "Immutable price quotes" thì phải giữ câu về đơn chờ thanh toán (task 1.2).
+- Không có khối MODIFIED "Immutable price quotes": module 3 REMOVED requirement đó. Câu "a booking still pending payment SHALL follow 'Pending bookings at a price change'" và scenario "Price rules change after quote acceptance" nằm nguyên văn trong "Court quotes from price tables" của module 3.
+- File của change này mà module 3 sửa (module 3 D29):
+  - Pha 2 của họ: `PriceQuoteService::create` và `reprice` tính bằng engine; bỏ phần đọc `Coupon`/`PromotionCampaign` trong `ReservationIntake::voucherEndsAt`; sửa các test đang gửi `coupon_code` (`PaymentDeadlineTest`, `HeldReservationReleaseTest`, `OverdueHoldTest`, `AgreedAmountTest`, `CustomerPaymentCancelTest`). Ca voucher của `PaymentDeadlineTest` và ca giá tăng có coupon của `AgreedAmountTest` được `OrdinaryCheckoutVoucherTest` của họ phủ lại ở task 5.4.
+  - Pha 4 của họ: bỏ nhánh nhả coupon trong `releaseHeld` và `ReservationService::release`.
+  - Task 5.4 của họ: nối hạn voucher của snapshot vào `ReservationIntake::paymentDeadline`; khoá dòng chương trình sau `releaseOverdueHolds` và trước `reprice` ở hai đường tạo đơn; chặn `hold_expires_at` của đơn legacy trong `ReservationService::hold` (đang giữ hạn báo giá) bằng hạn voucher.
+  - Task 5.4–5.5 của họ: phần voucher trong chi tiết đơn (D10).
+- Cổng với module 3 (module 3 D29): Pha 5 của change này chờ Pha 3 của module 3 (sự kiện giá, sau Pha 2 có engine và `AvailabilityController` mới) và task 5.1–5.3 của họ (phần voucher của engine, `VoucherUsageService`, danh sách voucher), không chờ cả Pha 5 của họ. Task 5.4–5.5 của module 3 merge sau task 5.1, 5.5 và 5.7 của change này.
 
 ### Ghi chú khi apply Pha 2
 - **Tính lại giá lúc gửi.**
@@ -208,11 +245,12 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
   - Đơn ví cũ (`legacy_wallet_v1`) giữ hạn của báo giá.
   - `initiate` cho attempt hết hạn đúng lúc hết hạn đơn, nên mở lại màn thanh toán không gia hạn.
 - **Nhả hold quá hạn (D7).**
-  - Thứ tự khoá: sân → cơ sở → attempt của đơn quá hạn → reservation. Webhook khoá attempt → reservation. `initiate` khoá cơ sở → kết nối → attempt → reservation. Không có vòng khoá.
+  - Thứ tự khoá: sân → cơ sở → attempt của đơn quá hạn → reservation. Webhook khoá attempt → reservation. `initiate` khoá cơ sở → kết nối → attempt → reservation. Từ task 5.4 của module 3, checkout khoá thêm chương trình sau cùng (sân → cơ sở → attempt → reservation → chương trình).
+  - Ghi chú này từng kết luận "không có vòng khoá". Kết luận đó sai: webhook insert `OwnerPaymentAllocation` sau khi khoá attempt và đơn, và insert này khoá ngầm cơ sở. Xem Risks "Vòng khoá webhook và nhả hold quá hạn".
   - Sau commit, khách của đơn bị nhả nhận thông báo hết hạn. Không báo waitlist, vì chỗ đó vừa được đặt ngay.
 - **Truy vấn chồng lấn.**
   - Scope `Reservation::blocksInventory()` dùng chung cho `SlotSelectionPolicy` và kiểm chồng lấn của báo giá.
-  - `AvailabilityController` để module 3 viết lại (đã báo module 3).
+  - `AvailabilityController` để module 3 viết lại (đã báo module 3). Bước lưới đổi sang 30 phút ở task 5.1 (D14).
 - **Người đặt trên JSON.** Accessor `booker` đọc `metadata.booker` và được append vào JSON của reservation. Danh sách đơn của chủ sân và tra mã ở quầy dùng nó mà không cần thêm query.
 - **Điểm (module 3, Q2 = A).**
   - Pha 2 không gỡ phần điểm khỏi checkout; module 3 làm việc đó.
@@ -270,8 +308,10 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
 
 - **[Cửa sổ deploy]** Push lên main thì frontend tự deploy, còn backend chờ người dùng chạy `glab ci run -b main`. Với D15, giữa hai lần deploy, form đặt sân mới gọi vào backend cũ (hoặc ngược lại) sẽ hỏng.
   → Hẹn giờ với người dùng trước khi push Pha 5, chọn giờ ít khách, chạy backend ngay sau push, rồi smoke test đặt 15:30–17:00.
-- **[Phụ thuộc module 3]** D11, D12 và phần định giá của D14 cần engine, service voucher và sự kiện công bố giá của module 3.
-  → Pha 2–4 không phụ thuộc. Pha 5 chỉ bắt đầu khi module 3 đã merge các phần đó. Tới lúc đó lưới 1 giờ vẫn chạy như cũ.
+- **[Phụ thuộc module 3]** D11, D12 và phần định giá của D14 cần engine, `VoucherUsageService` và sự kiện giá của module 3.
+  → Pha 2–4 không phụ thuộc. Pha 5 chờ Pha 3 và task 5.1–5.3 của module 3 (cổng ở mục "Phối hợp và thứ tự archive"). Tới lúc đó lưới vẫn theo `slot_duration` như cũ.
+- **[Vòng khoá webhook và nhả hold quá hạn]** Có trên main từ Pha 2. Checkout khoá cơ sở `FOR UPDATE` rồi khoá attempt của hold quá hạn (D7). Webhook khoá attempt và đơn rồi insert allocation, khoá ngầm cơ sở `FOR KEY SHARE`. Hai bên chờ nhau khi một khoản chuyển tới trước hạn nhưng được xử lý sau hạn, đúng lúc một khách khác đặt khoảng chồng lấn trên cùng sân. PostgreSQL huỷ một bên: job chạy lại, còn checkout trả lỗi.
+  → Hiếm và tự hồi phục. Task 5.5 khoá cơ sở `FOR KEY SHARE` trước khi khoá attempt trong `processReceipt` (D12), nên vòng này đóng cùng lúc với việc nối `consume`.
 - **[Khoá khi nhả hold quá hạn]** D7 khoá thêm các đơn khác trong request giữ chỗ.
   → Chỉ khoá đơn `held` đã quá hạn chồng lấn trên đúng sân đó, theo thứ tự id. Webhook khoá attempt trước rồi mới tới reservation và không bao giờ khoá hai reservation, nên không có vòng khoá.
 - **[Đặt định kỳ vẫn đọc `hold_ttl_minutes`]** `RecurringSeriesService.php:147` đọc key này, mặc định 30. Khi form không ghi key này nữa, giá trị cũ vẫn nằm trong settings và cơ sở mới dùng mặc định.
@@ -298,9 +338,10 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
 
 ## Open Questions
 
-- Tên và chữ ký phía module 3 chốt trong design của change module 3. Module 3 đưa tên dự kiến ngày 2026-10-21:
-  - Sự kiện `CourtPricesTookEffect(courtIds, effectiveAt)`. Phát khi công bố giá có hiệu lực ngay, khi tới `effective_at`, và khi gán hay thay bảng giá của sân. D11 kiểm lại các đơn `held` trên các sân đó có giờ kết thúc sau `effectiveAt`.
-  - `RentalPriceCalculator::quote(Court, startsAt, endsAt, ?voucherCode, ?customer)` trả `{rental, discount, total}` kèm snapshot phiên bản giá và voucher. D14 và D5 dùng hàm này.
-  - Service voucher: `hold(reservation, code)` trả hạn voucher, `release(reservation)`, `consume(reservation)`. D2 và D12 dùng service này.
-  - Snapshot của `quote` có hạn voucher (null khi không có voucher). Module 3 đã nhận vào hợp đồng ngày 2026-10-21. Lý do: D3 phải tính hạn thanh toán trước khi chèn đơn, còn `hold` chỉ chạy được sau khi có reservation. Giá trị `hold` trả về được dùng để kiểm lại trong cùng transaction.
-  - Các tên này không đổi spec hay cách chia task. Task 5.x dùng đúng tên cuối cùng của module 3.
+- Tên và chữ ký phía module 3 đã chốt trong design của `align-module-03-pricing-promotions` (D11, D16, D17). Task 5.x dùng đúng các tên này:
+  - Sự kiện `CourtPricesTookEffect(courtIds, effectiveAt)`: phát sau commit lúc công bố phiên bản và lúc áp, thay hay kết thúc liên kết; không phát khi tới `effective_at`. D11 kiểm lại các đơn `held` trên các sân đó có giờ kết thúc sau `effectiveAt`.
+  - `RentalPriceCalculator::quote(Court $court, CarbonImmutable $startsAt, CarbonImmutable $endsAt, ?VoucherChoice $voucher, ?Reservation $heldBy = null)` trả `{rental, discount, total}` kèm snapshot các phần giá và voucher (chương trình, điều khoản, `ends_at`) hoặc `null`. Không có tham số khách hàng. D5, D11 và D14 dùng hàm này; D11 truyền `$heldBy`.
+  - `VoucherUsageService::hold(Reservation, VoucherChoice)` không trả gì; `release(Reservation)`; `consume(Reservation, CarbonInterface $confirmedAt)` ném `VoucherNoLongerApplies`. D2 và D12 dùng `release` và `consume`; `hold` do module 3 gọi.
+  - Hạn voucher lấy từ snapshot của `quote`, không từ `hold`: checkout khoá chương trình trước khi tính giá, nên hạn trong snapshot đúng tới lúc commit (module 3 D17). D3 tính hạn thanh toán trước khi chèn đơn từ giá trị này.
+  - `VoucherChoice` đến từ request: `voucher_program_id` (chương trình công khai) hoặc `voucher_code` (mã riêng), không gửi cả hai.
+- Không còn câu hỏi mở với module 3. Nếu module 3 đổi các tên trên thì sửa lại mục này và task 5.x.
