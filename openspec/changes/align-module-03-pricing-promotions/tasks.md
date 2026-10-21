@@ -47,10 +47,10 @@
   - Tên test: module 3 dùng `PriceTableLinkActionTest` cho action áp liên kết; `CourtPriceTableLinkTest` (task 3.2 của họ) để cho module 2.
   - Module 2 đã áp (nhánh `docs/align-module-02-venue-court`) và hỏi lại ba điểm, đã xử lý ở change này: entry point theo lô `uncoveredCourtIds` (D3, task 2.4); `consume` kiểm theo sân và giờ hiện tại của đơn, và `holdsVoucher` để module 2 chặn chuyển sân hoặc đổi giờ đơn `held` giữ lượt (D11, task 5.2); câu thứ tự khoá của hai action lịch phục vụ ghi theo task 4.4 của họ (D11). Các điểm thêm sau đó gửi ở task 1.7.
 - [x] 1.5 Cập nhật `.claude/plans/module-03-report-alignment.plan.md` theo thứ tự pha và quyết định mới (D11, D16, D22, D27, D28, D29).
-- [ ] 1.6 Gửi lại session module 4 (sau khi họ áp task 1.3 ở `f1554e19`):
+- [x] 1.6 Gửi lại session module 4 (sau khi họ áp task 1.3 ở `f1554e19`):
   - Nhánh hỏng của `SplitPaymentService::confirmPaidAttempt` hết hạn các attempt `split_share` còn chờ sau commit bằng `DB::afterCommit` trong transaction riêng, không trong transaction đang giữ nhóm và đơn, vì `processReceipt` của phần chia khác giữ attempt của nó rồi chờ khoá nhóm (D11). Sửa D12 và task 5.5 của họ.
   - Listener giá (task 5.6 của họ) chạy mỗi đơn một transaction: khoá qua `HeldReservationRelease::lock`, kiểm đơn còn `held`, tính lại, rồi nhả hoặc giữ; chỉ báo khách khi `releaseHeld` trả true (D11, D19). Sửa D11, task 5.6 và mục khoá ở D12 của họ (câu "các transaction nhả nhiều đơn liền nhau" không còn gồm listener).
-- [ ] 1.7 Gửi lại session module 2 (sau task 1.4):
+- [x] 1.7 Gửi lại session module 2 (sau task 1.4):
   - Chặn đơn `held` giữ lượt voucher (D11, điều kiện Pha 5): module 2 thêm 409 qua `VoucherUsageService::holdsVoucher(Reservation): bool` vào `move-court`/`change-time` (task 4.8–4.9 của họ) khi task 5.1–5.3 của module 3 đã có trên main, và không merge còn `ponytail:` khi task 5.4 đã có trên main. Nếu lúc merge task 5.4 mà `ponytail:` còn đó, task 5.4 của module 3 thay nó và viết test scenario "Held booking with a voucher" trong `HeldVoucherMoveBlockedTest`. Nếu `attendance/reassign-court` còn trên main lúc đó, task 5.4 thêm 409 cho route này và một ca trong `HeldVoucherMoveBlockedTest`; task 4.12 của module 2 xoá ca đó cùng route.
   - Nếu lệnh 4.8–4.9 tới sau task 6.1 thì test của họ phủ ca đơn đã xác nhận có voucher chuyển sân hoặc đổi giờ vẫn giữ lượt `used` và không thêm lượt (BR-70).
   - D11 của module 3 nay ghi lệnh tạm ngừng của họ khoá sân trước cơ sở.
