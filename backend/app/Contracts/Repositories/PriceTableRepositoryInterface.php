@@ -43,6 +43,13 @@ interface PriceTableRepositoryInterface
     public function findForUpdate(int $id): ?PriceTable;
 
     /**
+     * The ids, ascending, of the courts with a link to the table in effect at $at or starting later.
+     *
+     * @return list<int>
+     */
+    public function courtIdsLinkedFrom(PriceTable $table, CarbonInterface $at): array;
+
+    /**
      * The courts that exist among $courtIds, locked in id order so link changes of one court run one at a time.
      *
      * @param  list<int>  $courtIds

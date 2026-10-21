@@ -35,6 +35,10 @@ return new class extends Migration
 
     public function up(): void
     {
+        // Every read returns nothing while pretending, so --pretend SQL would convert nothing and raise nothing.
+        if (DB::connection()->pretending()) {
+            throw new RuntimeException('Price conversion reads data and cannot be pretended; run artisan migrate (in the container or on a restore), not SQL from --pretend.');
+        }
         $now = CarbonImmutable::now()->startOfMinute();
         DB::transaction(fn () => $this->convert($now));
         // The public court list is cached by this key and shows only courts with a normal link in effect.

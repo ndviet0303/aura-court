@@ -66,7 +66,13 @@ const errorList = computed(() => Object.values(props.errors).flat())
             )
           }}</span>
           <DateTimePicker v-model="at" />
-          <span class="form-hint">{{ t('admin.priceTables.link.nowHint') }}</span>
+          <span class="form-hint">{{
+            t(
+              mode === 'apply'
+                ? 'admin.priceTables.link.nowHint'
+                : 'admin.priceTables.link.endNowHint',
+            )
+          }}</span>
           <span class="form-hint">{{
             t(
               mode === 'apply'

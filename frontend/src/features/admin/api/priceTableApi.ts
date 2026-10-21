@@ -1,6 +1,7 @@
 import { api } from '@/core/api/client'
 import type {
   CreatePriceTablePayload,
+  CreatePriceTableVersionPayload,
   PriceTable,
   PriceTableDetail,
   PriceTableKind,
@@ -12,6 +13,8 @@ export const priceTableApi = {
   create: (venueId: number, payload: CreatePriceTablePayload) =>
     api.post<{ data: PriceTableDetail }>(`/admin/venues/${venueId}/price-tables`, payload),
   show: (tableId: number) => api.get<{ data: PriceTableDetail }>(`/admin/price-tables/${tableId}`),
+  createVersion: (tableId: number, payload: CreatePriceTableVersionPayload) =>
+    api.post<{ data: PriceTableDetail }>(`/admin/price-tables/${tableId}/versions`, payload),
   applyLinks: (tableId: number, payload: { court_ids: number[]; starts_at?: string }) =>
     api.post<{ data: PriceTableDetail }>(`/admin/price-tables/${tableId}/links`, payload),
   endLink: (courtId: number, payload: { kind: PriceTableKind; ends_at?: string }) =>

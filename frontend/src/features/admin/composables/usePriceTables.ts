@@ -8,9 +8,11 @@ import { adminApi } from '../api/adminApi'
 import { priceTableApi } from '../api/priceTableApi'
 import type {
   CreatePriceTablePayload,
+  CreatePriceTableVersionPayload,
   PriceCoverageMissingItem,
   PriceTable,
   PriceTableDetail,
+  PriceTableLink,
 } from '../types/priceTable'
 import { usePriceTableLabels } from './usePriceTableLabels'
 
@@ -126,17 +128,39 @@ export function usePriceTables() {
     }, success)
   }
 
+  const createVersion = (payload: CreatePriceTableVersionPayload) =>
+    changeDetail(
+      async (table) => (await priceTableApi.createVersion(table.id, payload)).data,
+      t('admin.priceTables.versionCreatedNotice'),
+    )
+
   const applyLinks = (courtIds: number[], switchAt: string) =>
     changeDetail(async (table) => {
       const payload = { court_ids: courtIds, starts_at: switchInstant(switchAt) }
       return (await priceTableApi.applyLinks(table.id, payload)).data
     }, t('admin.priceTables.appliedNotice'))
 
-  const endLink = (courtId: number, endsAt: string) =>
-    changeDetail(async (table) => {
-      await priceTableApi.endLink(courtId, { kind: table.kind, ends_at: switchInstant(endsAt) })
+  // The end call cuts whichever same-kind link is in effect at the time, so it must stay inside the clicked link's
+  // period; left empty on a link not started yet, it cancels that link from its start.
+  function endLink(link: PriceTableLink, endsAt: string) {
+    const start = Date.parse(link.starts_at)
+    const at = endsAt ? venueInstant(endsAt) : start > Date.now() ? link.starts_at : undefined
+    if (
+      at !== undefined &&
+      (Date.parse(at) < start ||
+        (link.ends_at !== null && Date.parse(at) > Date.parse(link.ends_at)))
+    ) {
+      notice.value = ''
+      fieldErrors.value = {
+        ends_at: [t('admin.priceTables.link.endOutOfRange', { period: labels.linkPeriod(link) })],
+      }
+      return Promise.resolve(false)
+    }
+    return changeDetail(async (table) => {
+      await priceTableApi.endLink(link.court_id, { kind: table.kind, ends_at: at })
       return (await priceTableApi.show(table.id)).data
     }, t('admin.priceTables.endedNotice'))
+  }
 
   async function retire() {
     const name = detail.value?.name
@@ -180,6 +204,7 @@ export function usePriceTables() {
     loadVenue,
     openDetail,
     create,
+    createVersion,
     applyLinks,
     endLink,
     retire,

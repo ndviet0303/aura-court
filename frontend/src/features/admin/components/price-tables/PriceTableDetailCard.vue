@@ -11,12 +11,13 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'apply'): void
+  (e: 'new-version'): void
   (e: 'end-link', link: PriceTableLink): void
   (e: 'retire'): void
 }>()
 
 const { t } = useI18n()
-const { kind, status, days, instant, money } = usePriceTableLabels()
+const { kind, status, versionState, days, instant, linkPeriod, money } = usePriceTableLabels()
 </script>
 
 <template>
@@ -35,6 +36,15 @@ const { kind, status, days, instant, money } = usePriceTableLabels()
           @click="emit('apply')"
         >
           {{ t('admin.priceTables.applyBtn') }}
+        </AuraButton>
+        <AuraButton
+          v-if="table.status === 'active'"
+          variant="secondary"
+          size="sm"
+          :disabled="saving"
+          @click="emit('new-version')"
+        >
+          {{ t('admin.priceTables.newVersionBtn') }}
         </AuraButton>
         <AuraButton
           v-if="table.status === 'active'"
@@ -58,14 +68,7 @@ const { kind, status, days, instant, money } = usePriceTableLabels()
         data-testid="price-table-link"
       >
         <span class="link-court">{{ link.court_name }}</span>
-        <span class="muted">{{
-          link.ends_at
-            ? t('admin.priceTables.linkPeriod', {
-                from: instant(link.starts_at),
-                to: instant(link.ends_at),
-              })
-            : t('admin.priceTables.linkOpenEnded', { from: instant(link.starts_at) })
-        }}</span>
+        <span class="muted">{{ linkPeriod(link) }}</span>
         <button
           type="button"
           class="link-end-btn"
@@ -81,6 +84,9 @@ const { kind, status, days, instant, money } = usePriceTableLabels()
     <article v-for="version in table.versions" :key="version.id" class="version-card">
       <p class="version-meta">
         <strong>{{ t('admin.priceTables.versionLabel', { id: version.id }) }}</strong>
+        <span class="badge" :class="`badge--${version.state}`">{{
+          versionState(version.state)
+        }}</span>
         <span>{{
           t('admin.priceTables.publishedAt', { time: instant(version.published_at) })
         }}</span>
@@ -190,9 +196,32 @@ const { kind, status, days, instant, money } = usePriceTableLabels()
 .version-meta {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 4px 12px;
   margin: 0 0 8px;
   font-size: 13px;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--soft, rgba(0, 0, 0, 0.05));
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge--active {
+  color: #047857;
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.badge--scheduled {
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.badge--superseded {
+  color: var(--muted);
 }
 
 .interval-table {

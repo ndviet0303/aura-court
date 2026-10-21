@@ -598,6 +598,7 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::get('venues/{venue}/price-tables', [PriceTableController::class, 'index']);
             Route::post('venues/{venue}/price-tables', [PriceTableController::class, 'store']);
             Route::get('price-tables/{table}', [PriceTableController::class, 'show']);
+            Route::post('price-tables/{table}/versions', [PriceTableController::class, 'publishVersion']);
             Route::post('price-tables/{table}/links', [PriceTableController::class, 'applyLinks']);
             Route::post('price-tables/{table}/retire', [PriceTableController::class, 'retire']);
             Route::post('courts/{court}/price-table-links/end', [CourtPricingController::class, 'endLink']);

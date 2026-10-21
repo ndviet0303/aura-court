@@ -2058,6 +2058,7 @@ export default {
       statusRetired: 'Đã ngừng',
       courtsCount: '{count} sân',
       applyBtn: 'Áp cho sân',
+      newVersionBtn: 'Tạo phiên bản mới',
       retireBtn: 'Ngừng bảng giá',
       retireConfirm:
         'Ngừng bảng giá "{name}"? Bảng đã ngừng không áp thêm cho sân được; các sân đang dùng vẫn tính theo bảng này tới khi bị thay hoặc kết thúc.',
@@ -2066,8 +2067,11 @@ export default {
       linkPeriod: 'Từ {from} đến {to}',
       linkOpenEnded: 'Từ {from}, không thời hạn',
       endLinkBtn: 'Kết thúc',
-      versionsTitle: 'Phiên bản',
+      versionsTitle: 'Lịch sử phiên bản',
       versionLabel: 'Phiên bản #{id}',
+      versionActive: 'Đang hiệu lực',
+      versionScheduled: 'Lên lịch',
+      versionSuperseded: 'Đã thay thế',
       publishedAt: 'Công bố {time}',
       effectiveAt: 'Hiệu lực từ {time}',
       colDays: 'Ngày áp dụng',
@@ -2077,7 +2081,8 @@ export default {
       appliedNotice: 'Đã áp bảng giá cho sân.',
       endedNotice: 'Đã kết thúc bảng giá của sân.',
       retiredNotice: 'Đã ngừng bảng giá.',
-      planRequired: 'Cần gói dịch vụ nền tảng còn hạn để tạo bảng giá.',
+      versionCreatedNotice: 'Đã công bố phiên bản mới.',
+      planRequired: 'Cần gói dịch vụ nền tảng còn hạn để tạo bảng giá hoặc công bố phiên bản mới.',
       form: {
         title: 'Tạo bảng giá',
         nameLabel: 'Tên bảng giá',
@@ -2098,6 +2103,12 @@ export default {
         cancel: 'Huỷ',
         submit: 'Tạo và công bố',
       },
+      version: {
+        title: 'Phiên bản mới của "{name}"',
+        note: 'Phiên bản đã công bố không sửa được. Từ thời điểm hiệu lực, phiên bản mới thay các phiên bản trước, kể cả phiên bản đang lên lịch chưa tới hiệu lực.',
+        nowHint: 'Để trống để có hiệu lực ngay khi công bố.',
+        submit: 'Công bố phiên bản',
+      },
       link: {
         applyTitle: 'Áp "{name}" cho sân',
         endTitle: 'Kết thúc bảng giá {kind} của {court}',
@@ -2106,6 +2117,8 @@ export default {
         switchAtLabel: 'Thời điểm áp dụng',
         endAtLabel: 'Thời điểm kết thúc',
         nowHint: 'Để trống để áp dụng ngay bây giờ.',
+        endNowHint: 'Để trống để kết thúc ngay bây giờ; liên kết chưa bắt đầu thì bị huỷ.',
+        endOutOfRange: 'Thời điểm kết thúc phải nằm trong thời gian của liên kết này: {period}.',
         applyHint:
           'Bảng giá cùng loại đang dùng của sân kết thúc tại thời điểm này; bảng giá cùng loại đã lên lịch sau đó bị huỷ.',
         endHint: 'Bảng giá cùng loại đã lên lịch sau thời điểm này cũng bị huỷ.',

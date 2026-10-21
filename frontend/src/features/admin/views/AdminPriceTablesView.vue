@@ -30,12 +30,14 @@ const {
   loadVenue,
   openDetail,
   create,
+  createVersion,
   applyLinks,
   endLink,
   retire,
 } = usePriceTables()
 
 const showCreate = ref(false)
+const showVersion = ref(false)
 // The link modal stays open on failure, so the chosen courts and time survive the error dialog.
 const linkTarget = ref<{ mode: 'apply' } | { mode: 'end'; link: PriceTableLink } | null>(null)
 
@@ -58,6 +60,11 @@ function openCreate() {
   showCreate.value = true
 }
 
+function openVersion() {
+  fieldErrors.value = {}
+  showVersion.value = true
+}
+
 function openLink(target: NonNullable<typeof linkTarget.value>) {
   fieldErrors.value = {}
   linkTarget.value = target
@@ -67,13 +74,15 @@ async function submitCreate(payload: Parameters<typeof create>[0]) {
   if (await create(payload)) showCreate.value = false
 }
 
+async function submitVersion(payload: Parameters<typeof createVersion>[0]) {
+  if (await createVersion(payload)) showVersion.value = false
+}
+
 async function submitLink(courtIds: number[], at: string) {
   const target = linkTarget.value
   if (!target) return
   const done =
-    target.mode === 'apply'
-      ? await applyLinks(courtIds, at)
-      : await endLink(target.link.court_id, at)
+    target.mode === 'apply' ? await applyLinks(courtIds, at) : await endLink(target.link, at)
   if (done) linkTarget.value = null
 }
 
@@ -122,6 +131,7 @@ onMounted(loadVenues)
         :table="detail"
         :saving="saving"
         @apply="openLink({ mode: 'apply' })"
+        @new-version="openVersion"
         @end-link="openLink({ mode: 'end', link: $event })"
         @retire="retire"
       />
@@ -134,6 +144,14 @@ onMounted(loadVenues)
       :errors="fieldErrors"
       @close="showCreate = false"
       @submit="submitCreate"
+    />
+    <PriceTableCreateModal
+      v-if="showVersion && detail"
+      :table="detail"
+      :saving="saving"
+      :errors="fieldErrors"
+      @close="showVersion = false"
+      @publish="submitVersion"
     />
     <PriceTableLinkModal
       v-if="linkTarget"
