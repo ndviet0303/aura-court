@@ -8,6 +8,7 @@ use App\Models\Booking;
 use App\Models\HostKyc;
 use App\Models\Organization;
 use App\Models\PlatformSubscription;
+use App\Models\Venue;
 use Illuminate\Console\Command;
 
 class ReconcileLegacyPartnersCommand extends Command
@@ -63,7 +64,7 @@ class ReconcileLegacyPartnersCommand extends Command
                     ->where('status', 'approved')
                     ->exists();
 
-                if (! $hasRevision && ($venue->is_active || $venue->status === 'published')) {
+                if (! $hasRevision && $venue->status === Venue::STATUS_ACTIVE) {
                     $venuesWithoutRevision++;
                 }
 

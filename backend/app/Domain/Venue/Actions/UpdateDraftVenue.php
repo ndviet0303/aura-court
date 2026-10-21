@@ -39,8 +39,8 @@ class UpdateDraftVenue
                 abort(403, 'Bạn không có quyền chỉnh sửa cơ sở này.');
             }
 
-            if ($venue->isArchived()) {
-                abort(409, 'Cơ sở đã lưu trữ vĩnh viễn, không thể chỉnh sửa.');
+            if ($venue->isClosed()) {
+                abort(409, 'Cơ sở đã ngừng kinh doanh, không thể chỉnh sửa.');
             }
 
             // Remove any attempts to force publication via draft update

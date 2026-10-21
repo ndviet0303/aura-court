@@ -61,7 +61,7 @@ class ReservationService
             $verifier = app(VerifyEffectiveBookingEligibility::class);
             $verifier->getEntitlement((int) $quote->organization_id);
             $lockedCourt = Court::query()->whereKey($quote->court_id)->lockForUpdate()->first();
-            abort_unless($lockedCourt && $lockedCourt->is_active, 409, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
+            abort_unless($lockedCourt && $lockedCourt->status === Court::STATUS_ACTIVE, 409, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
             $lockedVenue = Venue::query()->whereKey($lockedCourt->venue_id)->lockForUpdate()->firstOrFail();
             // BR-20/21: staff book for a customer only at a venue assigned to them.
             abort_if($actor !== null && ! $actor->canOperateVenue($lockedVenue), 403, 'Bạn không được giao cơ sở này.');

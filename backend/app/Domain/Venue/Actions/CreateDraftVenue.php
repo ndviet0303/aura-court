@@ -61,8 +61,7 @@ class CreateDraftVenue
                 'latitude' => $data->latitude,
                 'longitude' => $data->longitude,
                 'amenities' => $data->amenities,
-                'status' => 'draft',
-                'is_active' => false, // MUST start as non-public draft!
+                'status' => Venue::STATUS_INACTIVE,
             ]);
 
             $this->notif->recordAudit(
@@ -72,7 +71,7 @@ class CreateDraftVenue
                 metadata: [
                     'organization_id' => $org->id,
                     'name' => $data->name,
-                    'status' => 'draft',
+                    'status' => Venue::STATUS_INACTIVE,
                 ]
             );
 

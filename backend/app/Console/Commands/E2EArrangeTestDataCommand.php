@@ -121,7 +121,7 @@ class E2EArrangeTestDataCommand extends Command
             'venue_id' => $venue->id,
             'name' => $courtName,
             'slug' => $courtSlug,
-            'is_active' => true,
+            'status' => Court::STATUS_ACTIVE,
         ]);
 
         // A whole-day normal table of its own, linked from a day ago so it prices any booking a test makes.

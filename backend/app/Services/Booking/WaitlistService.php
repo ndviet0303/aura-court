@@ -23,7 +23,7 @@ class WaitlistService
             throw ValidationException::withMessages(['starts_at' => 'Giờ đăng ký chờ phải bắt đầu tròn giờ và chưa qua.']);
         }
 
-        $court = Court::query()->whereKey($courtId)->where('is_active', true)->firstOrFail();
+        $court = Court::query()->whereKey($courtId)->where('status', Court::STATUS_ACTIVE)->firstOrFail();
         $startUtc = $start->copy()->utc();
         $occupied = ReservationSlot::query()
             ->where('court_id', $court->id)

@@ -58,8 +58,8 @@ class AdminController extends Controller
             $authorizedVenueIds = $user->getAuthorizedVenueIds();
             $venues = Venue::query()
                 ->whereIn('id', $authorizedVenueIds)
-                ->withCount(['courts' => fn ($query) => $query->where('is_active', true)])
-                ->with(['courts' => fn ($query) => $query->where('is_active', true)->select(['id', 'venue_id', 'sport_type'])])
+                ->withCount(['courts' => fn ($query) => $query->where('status', Court::STATUS_ACTIVE)])
+                ->with(['courts' => fn ($query) => $query->where('status', Court::STATUS_ACTIVE)->select(['id', 'venue_id', 'sport_type'])])
                 ->orderBy('id')
                 ->get();
 

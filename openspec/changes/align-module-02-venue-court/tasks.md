@@ -9,13 +9,13 @@
     - `InflightQuoteEligibilityTest`, `DraftVenueCourtSetupTest`, `PricingCalendarGrid.spec.ts`.
     - `PricedCourtVisibilityTest::test_public_court_and_venue_reads_do_not_expose_the_organization_row`.
     - `InflightQuoteEligibilityTest` được viết lại theo 4 trạng thái ở 1.10, `DraftVenueCourtSetupTest` ở 1.16.
-- [ ] 1.2 Migration expand cho trạng thái:
+- [x] 1.2 Migration expand cho trạng thái: (test: chưa làm)
   - CHECK `venues.status` là hợp của 9 giá trị cũ và 4 giá trị mới.
   - Thêm `courts.status`: CHECK `inactive / active / paused / closed`, mặc định `inactive`.
   - Tạo bảng `venue_suspensions`, có partial unique `(venue_id) WHERE lifted_at IS NULL`.
   - Tạo bảng `operational_stops` theo D5.
   - Test: `migrate:fresh` chạy được trên DB `module02_test`.
-- [ ] 1.3 Migration dữ liệu theo D4 và D5:
+- [x] 1.3 Migration dữ liệu theo D4 và D5: (test: chưa làm)
   - Map trạng thái cơ sở cũ.
   - Mỗi cơ sở `suspended` có một dòng `venue_suspensions`. Trạng thái lấy `previous_status` của audit gần nhất; không có audit thì `paused`.
   - `courts.status` lấy từ `is_active`.
@@ -25,7 +25,7 @@
     - Phủ đủ 9 giá trị cũ, `suspended` có audit và không có audit, sân `is_active` true và false.
     - Block cũ chặn đúng khung giờ cũ.
     - Scenario: "Existing venue and court statuses are mapped", "Existing maintenance blocks".
-- [ ] 1.4 `LifecycleGuard` dùng chung cho cơ sở và sân (D3).
+- [x] 1.4 `LifecycleGuard` dùng chung cho cơ sở và sân (D3). (test: chưa làm)
   - Chuyển hợp lệ: `inactive → active`, `active → paused`, `paused → active`, `inactive|active|paused → closed`. Còn lại trả 422, kể cả pause đối tượng `inactive`, `paused` hoặc `closed`.
   - Guard này thay guard của Pha 0. `TransitionVenueLifecycle` bị xoá ở 1.13 và 1.14.
   - Test: `ClosedIsFinalTest`.
@@ -303,7 +303,7 @@
   - Thay đổi cấp cơ sở kiểm mọi sân; thay đổi cấp sân chỉ kiểm sân đó.
   - Trả kèm phiên do owner tổ chức trên sân và giờ bị ảnh hưởng.
   - Test: `AffectedReservationsListTest`. Scenario: "Overlap boundaries", "Venue and court scope", "Checked-in booking during an incident stop" (phần danh sách).
-- [ ] 4.2 Migration `affected_reservation_cases`:
+- [x] 4.2 Migration `affected_reservation_cases`: (test: chưa làm)
   - Unique `(reservation_id, source_type, source_id)`.
   - Trạng thái mở: `pending`, `contacting`, `unreachable`. Trạng thái đóng: `moved`, `time_changed`, `cancelled`, `kept`.
   - Backfill case `pending` cho mọi stop đang mở và mọi đình chỉ đang hiệu lực. Backfill idempotent.
