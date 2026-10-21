@@ -4,6 +4,7 @@ namespace App\Domain\Pricing\Actions;
 
 use App\Contracts\Repositories\PriceTableRepositoryInterface;
 use App\Domain\Pricing\DTOs\PriceTableLinkChange;
+use App\Events\CourtPricesTookEffect;
 use App\Models\Court;
 use App\Models\PriceTable;
 use App\Services\Pricing\PriceCoverageService;
@@ -16,7 +17,7 @@ use Illuminate\Validation\ValidationException;
  * Applies a table to courts or ends their link of one kind at a switch time s (design D2). The newest change wins:
  * each court's same-kind link in effect at s ends there and its same-kind links starting at or after s are removed.
  * The links left must cover every bookable minute from s on (D3), checked in the same transaction, so a gap changes
- * nothing. Price management and the court screen both call it.
+ * nothing. Price management and the court screen both call it; CourtPricesTookEffect follows the commit (D16).
  */
 class ChangeCourtPriceTableLinks
 {
@@ -54,8 +55,10 @@ class ChangeCourtPriceTableLinks
             $this->coverage->assertCovered($change->courtIds, $switchAt);
         });
 
-        // The public court list is cached by this key and shows only courts with a normal link in effect.
-        Cache::increment('courts_version');
+        // The public court list is cached by this key and shows only courts with a normal link in effect. Both wait
+        // for the court screen's transaction when it calls this inside one (module 2).
+        DB::afterCommit(fn () => Cache::increment('courts_version'));
+        CourtPricesTookEffect::dispatch($change->courtIds, $switchAt);
 
         return $switchAt;
     }

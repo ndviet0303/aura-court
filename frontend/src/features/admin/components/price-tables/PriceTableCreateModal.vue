@@ -9,7 +9,13 @@ import {
   SelectDropdown,
 } from '@/shared/components'
 import { venueClock, venueDate, venueInstant } from '@/core/utils/venueTime'
-import type { CreatePriceTablePayload, PriceTableKind } from '../../types/priceTable'
+import type {
+  CreatePriceTablePayload,
+  CreatePriceTableVersionPayload,
+  PriceTableDetail,
+  PriceTableInterval,
+  PriceTableKind,
+} from '../../types/priceTable'
 import { ISO_WEEKDAYS, usePriceTableLabels } from '../../composables/usePriceTableLabels'
 
 type IntervalDraft = {
@@ -23,11 +29,14 @@ type IntervalDraft = {
 const props = defineProps<{
   saving: boolean
   errors: Record<string, string[]>
+  /** Set to publish a new version of this table instead of creating a table. */
+  table?: PriceTableDetail
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'submit', payload: CreatePriceTablePayload): void
+  (e: 'publish', payload: CreatePriceTableVersionPayload): void
 }>()
 
 const { t } = useI18n()
@@ -41,11 +50,21 @@ const blankInterval = (): IntervalDraft => ({
   price: null,
 })
 
+const toDraft = (interval: PriceTableInterval): IntervalDraft => ({
+  weekdays: interval.weekdays ?? [],
+  dates: interval.dates ?? [],
+  start: interval.start,
+  end: interval.end,
+  price: interval.price_per_hour,
+})
+
+// A new version starts from the newest version's intervals, effective at publication.
+const latest = props.table?.versions[0]
 const now = new Date()
 const name = ref('')
-const kind = ref<PriceTableKind>('normal')
-const effectiveAt = ref(`${venueDate(now.toISOString())}T${venueClock(now)}`)
-const intervals = ref<IntervalDraft[]>([blankInterval()])
+const kind = ref<PriceTableKind>(props.table?.kind ?? 'normal')
+const effectiveAt = ref(props.table ? '' : `${venueDate(now.toISOString())}T${venueClock(now)}`)
+const intervals = ref<IntervalDraft[]>(latest ? latest.intervals.map(toDraft) : [blankInterval()])
 
 const kindOptions = computed(() =>
   (['normal', 'holiday'] as const).map((value) => ({ value, label: kindLabel(value) })),
@@ -67,25 +86,41 @@ const intervalErrors = (index: number) =>
     .flatMap(([, messages]) => messages)
 
 function submit() {
+  const rows = intervals.value.map((interval) => ({
+    ...(kind.value === 'normal' ? { weekdays: interval.weekdays } : { dates: interval.dates }),
+    start: interval.start,
+    end: interval.end,
+    price_per_hour: interval.price ?? 0,
+  }))
+  if (props.table) {
+    const at = effectiveAt.value
+    emit('publish', { effective_at: at ? venueInstant(at) : undefined, intervals: rows })
+    return
+  }
   emit('submit', {
     name: name.value.trim(),
     kind: kind.value,
     effective_at: venueInstant(effectiveAt.value),
-    intervals: intervals.value.map((interval) => ({
-      ...(kind.value === 'normal' ? { weekdays: interval.weekdays } : { dates: interval.dates }),
-      start: interval.start,
-      end: interval.end,
-      price_per_hour: interval.price ?? 0,
-    })),
+    intervals: rows,
   })
 }
 </script>
 
 <template>
   <div class="modal-backdrop" @click.self="emit('close')">
-    <form class="modal-card modal-lg" data-testid="price-table-create" @submit.prevent="submit">
+    <form
+      class="modal-card modal-lg"
+      :data-testid="table ? 'price-table-version-create' : 'price-table-create'"
+      @submit.prevent="submit"
+    >
       <div class="modal-header">
-        <h3 class="modal-title">{{ t('admin.priceTables.form.title') }}</h3>
+        <h3 class="modal-title">
+          {{
+            table
+              ? t('admin.priceTables.version.title', { name: table.name })
+              : t('admin.priceTables.form.title')
+          }}
+        </h3>
         <button
           type="button"
           class="modal-close-btn"
@@ -97,7 +132,11 @@ function submit() {
       </div>
 
       <div class="modal-body">
-        <div class="form-row">
+        <p v-if="table" class="form-hint">{{ t('admin.priceTables.version.note') }}</p>
+        <p v-for="message in errors.price_table" :key="message" class="form-error">
+          {{ message }}
+        </p>
+        <div v-if="!table" class="form-row">
           <label class="form-group">
             <span class="form-label">{{ t('admin.priceTables.form.nameLabel') }}</span>
             <input
@@ -129,6 +168,7 @@ function submit() {
         <div class="form-group">
           <span class="form-label">{{ t('admin.priceTables.form.effectiveAtLabel') }}</span>
           <DateTimePicker v-model="effectiveAt" />
+          <span v-if="table" class="form-hint">{{ t('admin.priceTables.version.nowHint') }}</span>
           <span class="form-hint">{{ t('admin.priceTables.form.effectiveAtHint') }}</span>
           <span v-for="message in errors.effective_at" :key="message" class="form-error">{{
             message
@@ -213,7 +253,7 @@ function submit() {
           {{ t('admin.priceTables.form.cancel') }}
         </AuraButton>
         <AuraButton type="submit" variant="primary" :loading="saving">
-          {{ t('admin.priceTables.form.submit') }}
+          {{ t(table ? 'admin.priceTables.version.submit' : 'admin.priceTables.form.submit') }}
         </AuraButton>
       </div>
     </form>

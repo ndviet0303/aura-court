@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Pricing;
 use App\Contracts\Repositories\PriceTableRepositoryInterface;
 use App\Domain\Pricing\Actions\ChangeCourtPriceTableLinks;
 use App\Domain\Pricing\Actions\CreatePriceTable;
+use App\Domain\Pricing\Actions\PublishPriceTableVersion;
 use App\Domain\Pricing\Actions\RetirePriceTable;
 use App\Domain\Pricing\DTOs\CreatePriceTableData;
 use App\Domain\Pricing\DTOs\PriceTableLinkChange;
+use App\Domain\Pricing\DTOs\PublishPriceTableVersionData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pricing\ApplyPriceTableLinksRequest;
+use App\Http\Requests\Pricing\PublishPriceTableVersionRequest;
 use App\Http\Requests\Pricing\StorePriceTableRequest;
 use App\Http\Resources\Pricing\PriceTableResource;
 use App\Models\PriceTable;
@@ -41,6 +44,13 @@ class PriceTableController extends Controller
         $this->authorizeVenue($request, (int) $table->venue_id);
 
         return response()->json(['data' => PriceTableResource::make($this->priceTables->loadDetail($table))]);
+    }
+
+    public function publishVersion(PublishPriceTableVersionRequest $request, PriceTable $table, PublishPriceTableVersion $action): JsonResponse
+    {
+        $table = $action->execute(PublishPriceTableVersionData::from($request));
+
+        return response()->json(['data' => PriceTableResource::make($this->priceTables->loadDetail($table))], 201);
     }
 
     public function applyLinks(ApplyPriceTableLinksRequest $request, PriceTable $table, ChangeCourtPriceTableLinks $action): JsonResponse

@@ -1,5 +1,7 @@
 export type PriceTableKind = 'normal' | 'holiday'
 export type PriceTableStatus = 'active' | 'retired'
+/** Computed by the server: in effect now, waiting for its effective time, or replaced. */
+export type PriceTableVersionState = 'active' | 'scheduled' | 'superseded'
 
 export type PriceTableInterval = {
   /** ISO weekdays 1 = Monday … 7 = Sunday; null on holiday tables. */
@@ -16,6 +18,7 @@ export type PriceTableVersion = {
   id: number
   published_at: string
   effective_at: string
+  state: PriceTableVersionState
   intervals: PriceTableInterval[]
 }
 
@@ -52,6 +55,12 @@ export type CreatePriceTablePayload = {
     end: string
     price_per_hour: number
   }>
+}
+
+export type CreatePriceTableVersionPayload = {
+  /** Omitted = now; a past time takes effect at publication. */
+  effective_at?: string
+  intervals: CreatePriceTablePayload['intervals']
 }
 
 export type PriceCoverageMissingItem = {

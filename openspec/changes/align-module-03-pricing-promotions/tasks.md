@@ -96,6 +96,7 @@ Quy tắc cho mọi lần merge của Pha 2–6 (danh sách file trong từng ta
   - Ngày lễ theo Migration Plan bước 1: mỗi sân lấy các ngày mà rule `holiday/date_exception` chạm tới sau khi xếp hạng phạm vi cũ; mỗi ngày ghi cả ngày theo giá resolver cũ tính (giờ ngoài khung lễ giữ giá peak/weekly/base cũ); các sân cùng nội dung dùng chung một bảng lễ.
   - Script so sánh mọi sân × giờ × (14 ngày tới và mọi ngày có trong bảng lễ đã chuyển) giữa giá cũ và engine, trong transaction; kiểm độ phủ trên các liên kết đã chuyển; lệch hoặc thiếu thì rollback và in danh sách.
   - Backup prod trước khi chạy trên prod; hẹn giờ với người dùng.
+  - Migration chuyển dữ liệu đọc dữ liệu bằng PHP, nên phải chạy qua `artisan migrate` (trong container hoặc trên bản restore), không áp SQL lấy từ `--pretend`: khi pretend mọi truy vấn đọc trả rỗng, nên migration dừng với lỗi. Migration xoá `price_rules`, `court_price_slots` dừng nếu còn giá cũ đang bật mà chưa sân nào có liên kết bảng giá; kiểm tra và lệnh xoá nằm trong một câu lệnh PostgreSQL, nên áp qua psql cũng an toàn.
   - Test: `PriceTableConversionTest` với fixture có `CourtPriceSlot`, rule weekly cấp cơ sở, rule lễ chỉ phủ một phần ngày, và một sân bị hai rule lễ ở hai phạm vi khác nhau chạm tới.
 - [x] 2.7 Viết lại `AvailabilityController` (D18).
   - Mốc từ lịch phục vụ, bước lưới nằm ở một chỗ: Pha 2 dùng `slot_duration` của sân vì đầu vào vẫn là `slots` (D29); giá từ engine; so chồng lấn nửa mở; dùng `Reservation::scopeBlocksInventory()`; giờ không có giá thì không mở.
@@ -172,15 +173,15 @@ Quy tắc cho mọi lần merge của Pha 2–6 (danh sách file trong từng ta
 
 Điều kiện: Pha 2 đã merge.
 
-- [ ] 3.1 Công bố phiên bản mới với `effective_at` (mặc định bây giờ; quá khứ hoặc bằng bây giờ thì hiệu lực lúc công bố); phiên bản cũ giữ nguyên để tra cứu; công bố cần quyền kinh doanh còn hạn và qua kiểm độ phủ cho mọi sân `active` hoặc `paused` có liên kết đang hoặc sẽ hiệu lực tới bảng (D3). Bảng đã ngừng → 422, không tạo phiên bản (D2).
+- [x] 3.1 Công bố phiên bản mới với `effective_at` (mặc định bây giờ; quá khứ hoặc bằng bây giờ thì hiệu lực lúc công bố); phiên bản cũ giữ nguyên để tra cứu; công bố cần quyền kinh doanh còn hạn và qua kiểm độ phủ cho mọi sân `active` hoặc `paused` có liên kết đang hoặc sẽ hiệu lực tới bảng (D3). Bảng đã ngừng → 422, không tạo phiên bản (D2). (test: chưa làm)
   - Sau commit, gọi `Cache::increment('courts_version')` như task 2.5, vì danh sách sân công khai mang `from_price` (task 2.8).
   - Route owner `POST /admin/price-tables/{table}/versions`.
   - Test: `PriceTableVersionTest`. Ba trường hợp công bố/hiệu lực của report; phiên bản mới thay phiên bản lên lịch chưa tới hiệu lực; `effective_at` quá khứ → hiệu lực lúc công bố; gói hết hạn → không công bố; bảng đã ngừng → 422; sân chỉ có liên kết lên lịch tới bảng và phiên bản mới bỏ một khoảng giờ → 422 `PRICE_COVERAGE_INCOMPLETE`; staff hoặc owner tổ chức khác công bố → 403, không tạo phiên bản.
-- [ ] 3.2 Sự kiện `CourtPricesTookEffect(courtIds, effectiveAt)` (D16).
+- [x] 3.2 Sự kiện `CourtPricesTookEffect(courtIds, effectiveAt)` (D16). (test: chưa làm)
   - Phát sau commit khi công bố (`effectiveAt = max(effective_at, now)`, các sân đang hoặc sẽ dùng bảng) và khi áp, thay, kết thúc liên kết.
   - Không phát khi tới `effective_at`.
   - Test: `CourtPricesTookEffectTest`. Rollback không phát; tới `effective_at` không phát.
-- [ ] 3.3 FE: tạo phiên bản mới, xem lịch sử phiên bản.
+- [x] 3.3 FE: tạo phiên bản mới, xem lịch sử phiên bản. (test: chưa làm)
 
 ## 4. Pha 4 – Chương trình khuyến mãi và gỡ coupon (D7, D8, D9, D12, D13, D14, D22, D25, D27, D28)
 

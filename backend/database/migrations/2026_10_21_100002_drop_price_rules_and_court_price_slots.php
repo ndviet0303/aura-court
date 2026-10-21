@@ -2,18 +2,33 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
  * align-module-03-pricing-promotions, Migration Plan step 1: the old price model goes once the previous migration has
  * moved its prices to price tables. down() rebuilds the tables empty; their rows come back only from the backup.
+ *
+ * Active old prices with no price table link anywhere mean the conversion never ran (its migrations row inserted by
+ * hand, this file run alone with --path, or SQL taken from --pretend), so the guard aborts instead of dropping every
+ * price. Guard and drops are one PostgreSQL statement, so the same SQL is safe when applied through psql.
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::dropIfExists('court_price_slots');
-        Schema::dropIfExists('price_rules');
+        DB::statement(<<<'SQL'
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM court_price_table_links)
+                    AND (EXISTS (SELECT 1 FROM price_rules WHERE is_active)
+                        OR EXISTS (SELECT 1 FROM court_price_slots WHERE is_active)) THEN
+                    RAISE EXCEPTION 'price_rules/court_price_slots still hold active prices but no court has a price table link; run 2026_10_21_100001_convert_price_rules_to_price_tables through artisan migrate first';
+                END IF;
+                DROP TABLE IF EXISTS court_price_slots;
+                DROP TABLE IF EXISTS price_rules;
+            END $$
+            SQL);
     }
 
     public function down(): void

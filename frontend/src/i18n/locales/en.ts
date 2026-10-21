@@ -2069,6 +2069,7 @@ export default {
       statusRetired: 'Retired',
       courtsCount: '{count} court(s)',
       applyBtn: 'Apply to courts',
+      newVersionBtn: 'New version',
       retireBtn: 'Retire table',
       retireConfirm:
         'Retire the price table "{name}"? A retired table cannot be applied to more courts; courts already using it keep its prices until their link is replaced or ended.',
@@ -2077,8 +2078,11 @@ export default {
       linkPeriod: 'From {from} to {to}',
       linkOpenEnded: 'From {from}, open-ended',
       endLinkBtn: 'End',
-      versionsTitle: 'Versions',
+      versionsTitle: 'Version history',
       versionLabel: 'Version #{id}',
+      versionActive: 'In effect',
+      versionScheduled: 'Scheduled',
+      versionSuperseded: 'Superseded',
       publishedAt: 'Published {time}',
       effectiveAt: 'Effective from {time}',
       colDays: 'Days',
@@ -2088,7 +2092,9 @@ export default {
       appliedNotice: 'Price table applied to the courts.',
       endedNotice: "The court's price table link was ended.",
       retiredNotice: 'Price table retired.',
-      planRequired: 'A current platform plan is required to create price tables.',
+      versionCreatedNotice: 'New version published.',
+      planRequired:
+        'A current platform plan is required to create price tables or publish new versions.',
       form: {
         title: 'Create price table',
         nameLabel: 'Table name',
@@ -2109,6 +2115,12 @@ export default {
         cancel: 'Cancel',
         submit: 'Create and publish',
       },
+      version: {
+        title: 'New version of "{name}"',
+        note: 'A published version cannot be edited. From its effective time, a new version replaces earlier ones, including a scheduled version that has not taken effect yet.',
+        nowHint: 'Leave empty to take effect as soon as it is published.',
+        submit: 'Publish version',
+      },
       link: {
         applyTitle: 'Apply "{name}" to courts',
         endTitle: 'End the {kind} price table of {court}',
@@ -2117,6 +2129,8 @@ export default {
         switchAtLabel: 'Switch time',
         endAtLabel: 'End time',
         nowHint: 'Leave empty to apply now.',
+        endNowHint: 'Leave empty to end it now; a link that has not started yet is cancelled.',
+        endOutOfRange: "The end time must fall within this link's period: {period}.",
         applyHint:
           "The court's current table of the same kind ends at this time; tables of that kind scheduled later are removed.",
         endHint: 'Tables of the same kind scheduled after this time are removed too.',
