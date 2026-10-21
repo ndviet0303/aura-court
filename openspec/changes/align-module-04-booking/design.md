@@ -140,7 +140,7 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
   - kết quả thanh toán (attempt và receipt mới nhất);
   - người đặt (D4);
   - giờ check-in và check-out (eager-load `attendance`);
-  - xử lý sự cố, đọc từ bản ghi đơn bị ảnh hưởng của module 2 (D8 của module 2).
+  - xử lý sự cố, đọc từ bản ghi đơn bị ảnh hưởng của module 2 (D8 của module 2). Phần này chờ module 2, xem task 3.6.
 - Lý do: FR-79, D50 archive (trạng thái vận hành nằm trong metadata).
 
 ### D11. Kiểm lại đơn chờ khi giá mới có hiệu lực
@@ -229,6 +229,42 @@ Lý do và phạm vi xem `proposal.md`. Phần này chỉ ghi hiện trạng cod
 - **Tra mã ở quầy.**
   - Frontend chưa có màn nào gọi `GET /attendance/{code}`. API đã trả `reservation.booker`; `BookerSnapshotTest` kiểm tra điều này.
   - POS đọc tên và SĐT từ `booker`. Đơn không có `booker` hiện "Khách vãng lai".
+
+### Ghi chú khi apply Pha 3
+- **Endpoint huỷ là một controller riêng.**
+  - `CancelReservationPaymentController` là controller invokable. `ReservationController` đã chạm trần số public method trong allowlist, và luật kiến trúc không cho model query trong controller.
+  - Phần tìm đơn mà người dùng được xem (trước là `findReservation` và `scopeVisibleReservations`) tách sang `App\Services\Reservation\VisibleReservations` để hai controller dùng chung. Trần `model-query` của `ReservationController` hạ từ 7 xuống 6.
+  - Phương án khác: thêm method vào `ReservationController` và nâng allowlist. Loại vì allowlist chỉ được hạ.
+- **Mã trả về.**
+  - Không thấy đơn (khách khác) → 404. Thấy đơn nhưng không phải chủ đơn (chủ cơ sở, nhân viên) → 403.
+  - Đơn `cancelled` hoặc `expired` → 200, trả đơn như hiện tại.
+  - Đơn ở trạng thái khác `held` → 409 với `code = RESERVATION_NOT_PENDING`.
+  - Endpoint cần `Idempotency-Key` như các thao tác ghi khác.
+- **Khoá.** Dùng `HeldReservationRelease::lock()` (attempt → reservation, cùng chiều webhook), đọc lại trạng thái sau khi khoá.
+- **Waitlist.**
+  - Sau commit, báo waitlist cho từng slot vừa nhả, giống job hết hạn, vì giờ đó trống thật.
+  - Khách vừa huỷ không nhận thông báo, vì chính họ vừa bấm huỷ.
+- **Tiền tới sau khi huỷ (3.2).**
+  - Trước đây, receipt cho attempt đã `expired` mà chưa qua `expires_at` rơi vào `attempt_not_pending`. Nay `applyAttemptChecks` coi attempt `expired` như đã quá hạn, nên receipt thành `late` / `transfer_after_expiry`, kèm FinanceException `owner_payment_transfer_after_expiry`.
+  - Thay đổi áp cho mọi đường làm attempt hết hạn sớm: khách huỷ, nhả hold quá hạn, đổi giá, POS nhả QR. Hai test cũ đổi kỳ vọng theo: `OwnerPaymentAttemptServiceTest` và `PosVerifiedPendingQrCollectionTest`.
+  - Attempt `paid` nhận thêm tiền vẫn là `attempt_not_pending`.
+  - Phương án khác: chỉ đổi khi `release_reason = customer_payment_cancel`. Loại: bước kiểm attempt sẽ phải đọc reservation, mà spec direct-owner-payments coi mọi trường hợp tiền tới sau khi yêu cầu hết hạn là cùng một loại ngoại lệ.
+- **Chi tiết đơn (3.3).**
+  - `payment` gồm attempt mới nhất và receipt mới nhất của attempt đó.
+    - Attempt: `status`, `amount`, `currency`, `expires_at`, `paid_at`. Attempt `pending` đã qua `expires_at` trả `status = expired`.
+    - Receipt: `status`, `amount`, `currency`, `transferred_at`.
+    - Đơn không có attempt thì `payment = null`.
+  - `attendance` chỉ gồm `status`, `checked_in_at`, `checked_out_at`. Ghi chú của nhân viên không ra API của khách.
+  - `hold_expires_at` và `booker` đã có sẵn trong JSON.
+  - **Xử lý sự cố chưa làm được.** Bảng `affected_reservation_cases` của module 2 chưa có trên main (task 4.2, D7 trên nhánh `docs/align-module-02-venue-court`). Phần này tách thành task 3.6 và chờ module 2.
+- **Frontend.**
+  - `CancelPaymentButton` dùng chung ở banner đơn chờ, modal thanh toán và modal chi tiết. Nút có bước xác nhận. Lỗi 409 hiện câu `reservations.messages.notPending`.
+  - Nhãn:
+    - Đơn `cancelled` có `release_reason = customer_payment_cancel` → "Đã hủy thanh toán".
+    - Đơn huỷ vì lý do khác → "Đã hủy". Trước đây mọi đơn huỷ đều hiện "Đã hủy thanh toán".
+  - Modal chi tiết gọi `GET /reservations/{code}` khi mở, vì danh sách không trả `payment` và `attendance`.
+  - Khung "quote snapshot" (mã báo giá, giờ hết hạn báo giá) được thay bằng `ReservationDetailFacts`. Giờ hết hạn báo giá dễ bị đọc nhầm thành hạn thanh toán.
+  - `ReservationView.vue` đang ở đúng trần 382 dòng. Bỏ 5 comment HTML chia mục để thêm phần nối sự kiện mà không phải nâng trần.
 
 ## Risks / Trade-offs
 

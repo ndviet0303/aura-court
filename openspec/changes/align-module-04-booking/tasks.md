@@ -62,28 +62,31 @@
 
 ## 3. Pha 3 – Huỷ đơn chờ thanh toán và chi tiết đơn (D1, D2, D10)
 
-- [ ] 3.1 `POST reservations/{code}/cancel-payment`, chỉ chủ đơn (D1).
+- [x] 3.1 `POST reservations/{code}/cancel-payment`, chỉ chủ đơn (D1).
   - Transaction: khoá attempt của đơn rồi khoá reservation.
   - `held` → `releaseHeld(…, 'cancelled', 'customer_payment_cancel')`.
   - `cancelled` hoặc `expired` → 200, không làm gì. `confirmed` → 409. Người khác → 403, hoặc 404 khi không thấy đơn.
-- [ ] 3.2 Kiểm webhook: receipt cho attempt đã hết hạn vì huỷ phải thành ngoại lệ `transfer_after_expiry` và không khôi phục đơn. Sửa `applyAttemptChecks` nếu hiện tại cho kết quả khác.
-- [ ] 3.3 API chi tiết đơn của khách (D10) trả thêm:
+- [x] 3.2 Kiểm webhook: receipt cho attempt đã hết hạn vì huỷ phải thành ngoại lệ `transfer_after_expiry` và không khôi phục đơn. Sửa `applyAttemptChecks` nếu hiện tại cho kết quả khác.
+- [x] 3.3 API chi tiết đơn của khách (D10) trả thêm:
   - `hold_expires_at`; kết quả thanh toán (attempt và receipt mới nhất);
-  - `booker`; giờ check-in, check-out (eager-load `attendance`);
-  - xử lý sự cố từ bản ghi đơn bị ảnh hưởng của module 2.
-- [ ] 3.4 Frontend:
+  - `booker`; giờ check-in, check-out (eager-load `attendance`).
+  - Xử lý sự cố tách sang 3.6.
+- [x] 3.4 Frontend:
   - Nút "Hủy thanh toán" có bước xác nhận, đặt ở `HeldReservationBanner.vue` và `ReservationPaymentModal.vue`.
   - Nhãn "Đã hủy thanh toán" dựa trên `release_reason = customer_payment_cancel`.
   - `ReservationDetailModal.vue` hiện đủ trường của 3.3. Đơn chờ có nút mở lại thanh toán và huỷ.
   - Không có nút check-in hay check-out cho khách.
   - Vitest đi kèm.
-- [ ] 3.5 Test backend `CustomerPaymentCancelTest`:
+- [x] 3.5 Test backend `CustomerPaymentCancelTest`:
   - Scenario "Cancel a pending booking" (chỗ và voucher nhả đúng một lần; hạn voucher không đổi).
   - Scenario "Repeated cancellation", "Confirmed booking" (409), "Another customer's booking".
   - Scenario "Transfer arrives after cancellation" (một `FinanceException`, đơn vẫn `cancelled`).
   - Scenario "Customer cancels a booking still pending payment" (không có refund quote hay refund obligation).
   - Đua: xác nhận commit trước → huỷ trả 409; huỷ commit trước → tiền thành ngoại lệ.
   - Scenario "Pending booking detail", "Completed and expired bookings".
+- [ ] 3.6 Xử lý sự cố trong chi tiết đơn (D10). Chờ module 2 merge bảng `affected_reservation_cases` (task 4.2 của `align-module-02-venue-court`).
+  - API chi tiết đơn của khách trả case đơn bị ảnh hưởng mới nhất: trạng thái và cách đã xử lý (dời, đổi giờ, huỷ, giữ nguyên).
+  - `ReservationDetailModal.vue` hiện dòng xử lý sự cố khi có case. Vitest và test backend đi kèm.
 
 ## 4. Pha 4 – Chủ cơ sở tra cứu thanh toán bất thường (D8)
 

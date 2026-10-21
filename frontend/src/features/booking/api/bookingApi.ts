@@ -100,6 +100,12 @@ export const bookingApi = {
     code: string,
   ) => api.get<T>(`/reservations/${code}/payment`),
 
+  // Cancels the caller's own booking while it is pending payment; repeating it is harmless.
+  cancelReservationPayment: (code: string) =>
+    api.post<{ reservation: import('../types/reservation').Reservation }>(
+      `/reservations/${code}/cancel-payment`,
+    ),
+
   joinWaitlist: (payload: { court_id?: number; starts_at: string }) =>
     api.post('/waitlist', payload),
 }

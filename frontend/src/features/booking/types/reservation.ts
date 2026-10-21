@@ -68,6 +68,28 @@ export type ReservationReview = {
 // Contact recorded when the booking was created; later profile edits do not change it.
 export type ReservationBooker = { name: string; phone: string; email: string }
 
+// Latest payment request of the booking and the latest transfer received for it (detail API only).
+export type ReservationPaymentResult = {
+  status: 'pending' | 'paid' | 'expired' | 'cancelled' | string
+  amount: number
+  currency: string
+  expires_at: string | null
+  paid_at: string | null
+  receipt: {
+    status: 'allocated' | 'late' | 'exception' | 'unmatched' | string
+    amount: number
+    currency: string
+    transferred_at: string | null
+  } | null
+}
+
+// Check-in and check-out recorded on site (detail API only).
+export type ReservationAttendance = {
+  status: string
+  checked_in_at: string | null
+  checked_out_at: string | null
+}
+
 export type Reservation = {
   id: number
   code: string
@@ -89,8 +111,14 @@ export type Reservation = {
   payment_model?: 'direct_owner_v1' | 'legacy_wallet_v1' | string | null
   legacy_mapping?: LegacyMapping[]
   review?: ReservationReview | null
-  metadata?: { operational_status?: 'in_use' | 'completed' | 'no_show' } | null
+  metadata?: {
+    operational_status?: 'in_use' | 'completed' | 'no_show'
+    // Why a held booking was released, e.g. customer_payment_cancel or payment_deadline.
+    release_reason?: string
+  } | null
   booker?: ReservationBooker | null
+  payment?: ReservationPaymentResult | null
+  attendance?: ReservationAttendance | null
 }
 
 export type PriceQuotePayload = {

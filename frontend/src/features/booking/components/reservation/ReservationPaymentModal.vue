@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { bookingApi, type ReservationPaymentAttempt } from '../../api/bookingApi'
 import type { Reservation } from '../../types/reservation'
 import { displayCode } from '../../utils/reservation'
 import { useDeadlineCountdown } from '../../composables/useDeadlineCountdown'
+import CancelPaymentButton from './CancelPaymentButton.vue'
 
 const props = defineProps<{
   show: boolean
@@ -15,6 +16,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'paid'): void
+  (e: 'cancelled', reservation: Reservation): void
 }>()
 
 const { t, d } = useI18n()
@@ -25,6 +27,13 @@ const reservationStatus = ref('held')
 const paymentAttempt = ref<ReservationPaymentAttempt | null>(null)
 let pollInterval: ReturnType<typeof setInterval> | undefined
 const countdown = useDeadlineCountdown(() => props.reservation?.hold_expires_at)
+// An expired attempt reads as expired even when the booking was confirmed by another payment.
+const statusText = computed(() => {
+  const status = paymentAttempt.value?.status
+  const paid = status === 'paid' || reservationStatus.value === 'confirmed'
+  return t(`reservations.payment.${status === 'expired' ? 'expired' : paid ? 'paid' : 'waiting'}`)
+})
+const amountFormat = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 })
 
 function stopPolling() {
   if (pollInterval) clearInterval(pollInterval)
@@ -134,15 +143,7 @@ onUnmounted(stopPolling)
             :class="`status-${paymentAttempt.status}`"
             data-testid="reservation-payment-status"
           >
-            {{
-              paymentAttempt.status === 'paid'
-                ? t('reservations.payment.paid')
-                : paymentAttempt.status === 'expired'
-                  ? t('reservations.payment.expired')
-                  : reservationStatus === 'confirmed'
-                    ? t('reservations.payment.paid')
-                    : t('reservations.payment.waiting')
-            }}
+            {{ statusText }}
           </div>
 
           <div v-if="paymentAttempt.status === 'pending'" class="payment-grid">
@@ -169,12 +170,7 @@ onUnmounted(stopPolling)
               <div>
                 <dt>{{ t('reservations.payment.amount') }}</dt>
                 <dd class="font-mono">
-                  {{
-                    new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
-                      paymentAttempt.amount,
-                    )
-                  }}
-                  {{ paymentAttempt.currency }}
+                  {{ amountFormat.format(paymentAttempt.amount) }} {{ paymentAttempt.currency }}
                 </dd>
               </div>
               <div>
@@ -205,6 +201,11 @@ onUnmounted(stopPolling)
       </div>
 
       <footer class="modal-footer">
+        <CancelPaymentButton
+          v-if="reservationStatus === 'held'"
+          :code="reservation.code"
+          @cancelled="emit('cancelled', reservation)"
+        />
         <button
           v-if="paymentAttempt?.status === 'expired' && reservationStatus === 'held'"
           type="button"

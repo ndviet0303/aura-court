@@ -163,7 +163,7 @@ class PosVerifiedPendingQrCollectionTest extends TestCase
 
         $late = $this->payOwner($this->connection, $this->secret, $order->payment_reference, 1000000, 'SEPAY-POS-LATE');
 
-        $this->assertSame([OwnerPaymentReceipt::STATUS_EXCEPTION, 'attempt_not_pending'], [$late->status, $late->exception_code]);
+        $this->assertSame([OwnerPaymentReceipt::STATUS_LATE, 'transfer_after_expiry'], [$late->status, $late->exception_code]);
         $this->assertTrue(FinanceException::where('reference', "owner-receipt:{$late->id}")->exists());
         $this->assertSame('cancelled', $order->fresh()->status);
         $this->assertSame(0, Journal::where('event_type', 'owner.direct_receipt')->count());

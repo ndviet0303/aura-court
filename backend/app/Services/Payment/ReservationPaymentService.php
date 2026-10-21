@@ -3,6 +3,7 @@
 namespace App\Services\Payment;
 
 use App\Models\OwnerPaymentAttempt;
+use App\Models\OwnerPaymentReceipt;
 use App\Models\ReceivingConnection;
 use App\Models\Reservation;
 use App\Models\User;
@@ -109,13 +110,37 @@ class ReservationPaymentService
             ->first();
     }
 
+    /**
+     * Payment result for the booking detail (design D10): the latest payment request and the latest transfer
+     * received for it, without receiver details. Null when the booking never had a payment request.
+     */
+    public function result(Reservation $reservation): ?array
+    {
+        $attempt = $this->latest($reservation);
+        if (! $attempt) {
+            return null;
+        }
+        $receipt = OwnerPaymentReceipt::query()->where('payment_attempt_id', $attempt->id)->latest('id')->first();
+
+        return [
+            'status' => $this->attemptStatus($attempt),
+            'amount' => (int) $attempt->amount,
+            'currency' => $attempt->currency,
+            'expires_at' => $attempt->expires_at->toIso8601String(),
+            'paid_at' => $attempt->paid_at?->toIso8601String(),
+            'receipt' => $receipt ? [
+                'status' => $receipt->status,
+                'amount' => (int) $receipt->amount,
+                'currency' => $receipt->currency,
+                'transferred_at' => $receipt->event_at?->toIso8601String(),
+            ] : null,
+        ];
+    }
+
     public function instructions(OwnerPaymentAttempt $attempt): array
     {
         $receiver = $attempt->receiverSnapshot();
-        $status = $attempt->status;
-        if ($status === OwnerPaymentAttempt::STATUS_PENDING && $attempt->expires_at?->isPast()) {
-            $status = OwnerPaymentAttempt::STATUS_EXPIRED;
-        }
+        $status = $this->attemptStatus($attempt);
         $accountNumber = (string) $receiver['account_number'];
 
         return [
@@ -126,7 +151,7 @@ class ReservationPaymentService
             'amount' => (int) $attempt->amount,
             'currency' => $attempt->currency,
             'status' => $status,
-            'expires_at' => $attempt->expires_at?->toIso8601String(),
+            'expires_at' => $attempt->expires_at->toIso8601String(),
             'paid_at' => $attempt->paid_at?->toIso8601String(),
             'receiver' => [
                 'bank_code' => $receiver['bank_code'],
@@ -135,5 +160,12 @@ class ReservationPaymentService
             ],
             'qr_url' => VietQrImage::url((string) $receiver['bank_code'], $accountNumber, (string) $receiver['account_name'], (int) $attempt->amount, (string) $attempt->reference),
         ];
+    }
+
+    private function attemptStatus(OwnerPaymentAttempt $attempt): string
+    {
+        return $attempt->status === OwnerPaymentAttempt::STATUS_PENDING && $attempt->expires_at?->isPast()
+            ? OwnerPaymentAttempt::STATUS_EXPIRED
+            : $attempt->status;
     }
 }

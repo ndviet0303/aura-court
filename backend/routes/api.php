@@ -35,6 +35,7 @@ use App\Http\Controllers\POS\PosController;
 use App\Http\Controllers\POS\ServiceTabController;
 use App\Http\Controllers\Promotion\PromotionController;
 use App\Http\Controllers\Reservation\AdminReservationController;
+use App\Http\Controllers\Reservation\CancelReservationPaymentController;
 use App\Http\Controllers\Reservation\MyReservationController;
 use App\Http\Controllers\Reservation\PriceRuleController;
 use App\Http\Controllers\Reservation\ReservationController;
@@ -404,6 +405,7 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
         Route::get('reservations/{reservation}/payment', [ReservationController::class, 'payment']);
         Route::post('reservations/{reservation}/payment', [ReservationController::class, 'createPayment'])->middleware('verified');
         Route::post('reservations/{reservation}/confirm', [ReservationController::class, 'confirm'])->middleware('verified');
+        Route::post('reservations/{reservation}/cancel-payment', CancelReservationPaymentController::class);
         Route::post('loyalty/preview', [LoyaltyController::class, 'preview']);
         Route::post('loyalty/redeem', [LoyaltyController::class, 'redeem'])->middleware('verified');
 

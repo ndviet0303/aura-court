@@ -285,8 +285,17 @@ export function useReservations() {
 
   const selectedCourt = computed(() => courts.value.find((c) => c.id === selectedCourtId.value))
 
-  function openDetails(reservation: Reservation) {
+  // The list row shows at once; the detail API adds the payment result and check-in times.
+  async function openDetails(reservation: Reservation) {
     selectedReservationForDetails.value = reservation
+    try {
+      const detail = await bookingApi.getReservation(reservation.code)
+      if (selectedReservationForDetails.value?.code === reservation.code) {
+        selectedReservationForDetails.value = detail.reservation
+      }
+    } catch (cause: unknown) {
+      error.value = errorMessage(cause, t('reservations.messages.loadError'))
+    }
   }
 
   function closeDetails() {
@@ -309,6 +318,13 @@ export function useReservations() {
     selectedReservationForPayment.value = null
   }
 
+  async function paymentCancelled(reservation: Reservation) {
+    closePayment()
+    closeDetails()
+    notice.value = t('reservations.cancelPayment.done', { code: displayCode(reservation) })
+    await loadData()
+  }
+
   function needsPayment(r: Reservation) {
     return r.status === 'held' && r.payment_model === 'direct_owner_v1'
   }
@@ -319,7 +335,7 @@ export function useReservations() {
     if (typeof code !== 'string' || !code) return
     try {
       const { reservation } = await bookingApi.getReservation(code)
-      openDetails(reservation)
+      selectedReservationForDetails.value = reservation
       if (needsPayment(reservation)) openPayment(reservation)
     } catch (cause: unknown) {
       error.value = errorMessage(cause, t('reservations.messages.loadError'))
@@ -378,5 +394,6 @@ export function useReservations() {
     closeQr,
     openPayment,
     closePayment,
+    paymentCancelled,
   }
 }

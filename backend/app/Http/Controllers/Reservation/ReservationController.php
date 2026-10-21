@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Reservation;
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
-use App\Models\Organization;
 use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\TenantCustomer;
@@ -13,11 +12,10 @@ use App\Models\User;
 use App\Services\Booking\OrdinaryCheckoutService;
 use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\IdempotencyService;
-use App\Services\Infrastructure\TenantContext;
 use App\Services\Payment\ReservationPaymentService;
 use App\Services\Reservation\PriceQuoteService;
 use App\Services\Reservation\ReservationService;
-use Illuminate\Database\Eloquent\Builder;
+use App\Services\Reservation\VisibleReservations;
 use Illuminate\Http\Request;
 
 class ReservationController extends Controller
@@ -29,6 +27,7 @@ class ReservationController extends Controller
         private readonly ReservationService $reservations,
         private readonly IdempotencyService $idempotency,
         private readonly OrdinaryCheckoutService $checkoutService,
+        private readonly VisibleReservations $visible,
     ) {}
 
     public function index(Request $request)
@@ -38,20 +37,23 @@ class ReservationController extends Controller
             ->where('organization_id', $organization->id)
             ->with(['court.venue', 'quote', 'slots', 'entitlements'])
             ->latest()
-            ->where(fn ($q) => $this->scopeVisibleReservations($q, $request, $organization));
+            ->where(fn ($q) => $this->visible->scope($q, $request->user(), $organization));
 
         return $query->paginate(20);
     }
 
-    public function show(Request $request, string $reservation)
+    public function show(Request $request, string $reservation, ReservationPaymentService $payments)
     {
         $organization = $this->organization($request);
-        $record = $this->findReservation($request, $organization, $reservation);
+        $record = $this->visible->find($request->user(), $organization, $reservation);
 
         // legacy_mapping lets a deep link to a V1 mirror show the original booking code and status.
         $legacyMapping = fn ($q) => $q->withoutGlobalScope('tenant_isolation')->select('id', 'reservation_id', 'legacy_code', 'legacy_status');
+        // Check-in and check-out times only; staff notes stay with the venue.
+        $attendance = fn ($q) => $q->select('id', 'reservation_id', 'status', 'checked_in_at', 'checked_out_at');
+        $record->load(['court.venue', 'quote', 'slots', 'entitlements', 'legacyMapping' => $legacyMapping, 'attendance' => $attendance]);
 
-        return response()->json(['reservation' => $record->load(['court.venue', 'quote', 'slots', 'entitlements', 'legacyMapping' => $legacyMapping])]);
+        return response()->json(['reservation' => [...$record->toArray(), 'payment' => $payments->result($record)]]);
     }
 
     public function payment(
@@ -60,7 +62,7 @@ class ReservationController extends Controller
         ReservationPaymentService $payments
     ) {
         $organization = $this->organization($request);
-        $record = $this->findReservation($request, $organization, $reservation);
+        $record = $this->visible->find($request->user(), $organization, $reservation);
         abort_unless((int) $record->user_id === (int) $request->user()->id, 403);
         $attempt = $payments->latest($record);
 
@@ -77,7 +79,7 @@ class ReservationController extends Controller
         FeatureFlagService $features
     ) {
         $organization = $this->organization($request);
-        $record = $this->findReservation($request, $organization, $reservation);
+        $record = $this->visible->find($request->user(), $organization, $reservation);
         abort_unless((int) $record->user_id === (int) $request->user()->id, 403);
         $existing = $payments->latest($record);
         if ($existing && ($existing->status === 'paid' || ($existing->status === 'pending' && $existing->expires_at?->isFuture()))) {
@@ -213,7 +215,7 @@ class ReservationController extends Controller
     public function confirm(Request $request, string $reservation)
     {
         $organization = $this->organization($request);
-        $record = $this->findReservation($request, $organization, $reservation);
+        $record = $this->visible->find($request->user(), $organization, $reservation);
 
         return $this->idempotency->run($request, function () use ($record) {
             return response()->json(['reservation' => $this->reservations->confirm($record)]);
@@ -233,39 +235,5 @@ class ReservationController extends Controller
         }
 
         return response()->json(['rules' => $query->orderBy('type')->orderBy('priority', 'desc')->get()]);
-    }
-
-    /**
-     * The caller's own reservation in any organization, or one at a venue of the context
-     * organization they operate. Binds the tenant context to the record's organization.
-     */
-    private function findReservation(Request $request, Organization $organization, string $identifier): Reservation
-    {
-        $query = Reservation::query()->withoutGlobalScope('tenant_isolation')
-            ->where(fn ($q) => $this->scopeVisibleReservations($q, $request, $organization));
-        if (ctype_digit($identifier)) {
-            $query->whereKey((int) $identifier);
-        } else {
-            $query->where('code', $identifier);
-        }
-        $record = $query->firstOrFail();
-        $recordOrganization = $record->organization;
-        abort_unless($recordOrganization instanceof Organization, 404);
-        app(TenantContext::class)->setOrganization($recordOrganization);
-
-        return $record;
-    }
-
-    /**
-     * BR-21: the owner manages every booking of the organization, staff only those at their assigned venues.
-     *
-     * @param  Builder<Reservation>  $query
-     */
-    private function scopeVisibleReservations(Builder $query, Request $request, Organization $organization): void
-    {
-        $venueIds = $request->user()->getAuthorizedVenueIds($organization->id);
-        $query->where('user_id', $request->user()->id)
-            ->orWhere(fn ($q) => $q->where('organization_id', $organization->id)
-                ->whereHas('court', fn ($court) => $court->whereIn('venue_id', $venueIds)));
     }
 }

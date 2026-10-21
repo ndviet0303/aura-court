@@ -26,8 +26,13 @@ const STATUS_LABELS: Record<string, string> = {
   refunded: 'statusRefunded',
 }
 export const statusLabel = (r: Displayable, t: (key: string) => string): string => {
-  const key = STATUS_LABELS[displayStatus(r)]
-  return key ? t(`booking.${key}`) : displayStatus(r)
+  const status = displayStatus(r)
+  // Only the customer's own cancellation of a pending booking reads as a cancelled payment.
+  if (status === 'cancelled' && r.metadata?.release_reason === 'customer_payment_cancel') {
+    return t('booking.statusPaymentCancelled')
+  }
+  const key = STATUS_LABELS[status]
+  return key ? t(`booking.${key}`) : status
 }
 
 // The order QR is shown for check-in and check-out only (report FR-80).
@@ -79,6 +84,7 @@ export const validBookerPhone = (phone?: string | null): boolean =>
 const BOOKING_ERROR_KEYS: Record<string, string> = {
   PHONE_REQUIRED: 'reservations.messages.phoneRequired',
   PAYMENT_WINDOW_CLOSED: 'reservations.messages.paymentWindowClosed',
+  RESERVATION_NOT_PENDING: 'reservations.messages.notPending',
 }
 
 // Booking refusals with their own copy; any other failure reads as the shared error message.

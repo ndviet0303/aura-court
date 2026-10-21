@@ -239,4 +239,35 @@ describe('useReservations', () => {
     expect(state.error.value).toBe(message)
     expect(state.priceChange.value).toBeNull()
   })
+
+  it('replaces the list row with the full detail when a booking is opened', async () => {
+    const row = reservation({ status: 'held' })
+    const detail = reservation({ status: 'held', hold_expires_at: '2026-09-25T12:30:00Z' })
+    vi.mocked(bookingApi.getReservation).mockResolvedValue({ reservation: detail })
+    const state = mountComposable()
+    await flushPromises()
+
+    const opening = state.openDetails(row)
+    expect(state.selectedReservationForDetails.value).toEqual(row)
+    await opening
+
+    expect(bookingApi.getReservation).toHaveBeenCalledWith('RSV-DEEP-1')
+    expect(state.selectedReservationForDetails.value).toEqual(detail)
+  })
+
+  it('closes the booking, says so and reloads the list after a payment is cancelled', async () => {
+    const held = reservation({ status: 'held' })
+    const state = mountComposable()
+    await flushPromises()
+    state.openPayment(held)
+    state.selectedReservationForDetails.value = held
+    vi.mocked(bookingApi.getMyReservations).mockClear()
+
+    await state.paymentCancelled(held)
+
+    expect(state.selectedReservationForPayment.value).toBeNull()
+    expect(state.selectedReservationForDetails.value).toBeNull()
+    expect(state.notice.value).toContain('RSV-DEEP-1')
+    expect(bookingApi.getMyReservations).toHaveBeenCalled()
+  })
 })

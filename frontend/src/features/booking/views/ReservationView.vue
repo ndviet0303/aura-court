@@ -52,6 +52,7 @@ const {
   closeQr,
   openPayment,
   closePayment,
+  paymentCancelled,
 } = useReservations()
 
 function scrollToCalculator() {
@@ -62,7 +63,6 @@ function scrollToCalculator() {
 
 <template>
   <div class="reservations-page">
-    <!-- Hero Header -->
     <ReservationHero
       :total-count="totalCount"
       :held-count="heldCount"
@@ -73,7 +73,6 @@ function scrollToCalculator() {
       @create-quote="scrollToCalculator"
     />
 
-    <!-- Feedback Notice / Error Alerts -->
     <transition name="fade">
       <div v-if="notice" class="alert-pill-success">
         <span class="material-symbols-outlined alert-icon">check_circle</span>
@@ -99,9 +98,9 @@ function scrollToCalculator() {
       @confirm="confirmReservation"
       @pay="openPayment"
       @details="openDetails"
+      @cancelled="paymentCancelled"
     />
 
-    <!-- Dynamic Quote Calculator Card -->
     <QuoteCalculatorCard
       :courts="courts"
       :selected-court-id="selectedCourtId"
@@ -184,7 +183,6 @@ function scrollToCalculator() {
       </div>
     </section>
 
-    <!-- Details Modal -->
     <ReservationDetailModal
       :show="!!selectedReservationForDetails"
       :reservation="selectedReservationForDetails"
@@ -192,9 +190,10 @@ function scrollToCalculator() {
       :format-date="formatDate"
       :format-time-slot="formatTimeSlot"
       @close="closeDetails"
+      @pay="openPayment"
+      @cancelled="paymentCancelled"
     />
 
-    <!-- QR Pass Modal -->
     <ReservationQrModal
       :show="!!selectedReservationForQr"
       :reservation="selectedReservationForQr"
@@ -208,6 +207,7 @@ function scrollToCalculator() {
       :reservation="selectedReservationForPayment"
       @close="closePayment"
       @paid="loadData"
+      @cancelled="paymentCancelled"
     />
   </div>
 </template>

@@ -73,6 +73,7 @@ const mockBookings = [
     id: 103,
     code: 'RSV-20260820-03',
     status: 'cancelled',
+    metadata: { release_reason: 'customer_payment_cancel' },
     total_amount: 150000,
     court: {
       id: 3,
