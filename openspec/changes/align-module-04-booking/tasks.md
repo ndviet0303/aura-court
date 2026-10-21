@@ -10,15 +10,19 @@
 - [x] 1.2 Gửi session module 3 (đã gửi 2026-10-21):
   - Q1 = A: lưới 30 phút; đầu vào đặt sân là `court_id`, `starts_at`, `ends_at`; mỗi đơn mới là một slot định giá bằng engine theo phút (D14). Bỏ `slot_duration` 45.
   - `expected_total`: chỉ từ chối khi số tính lại cao hơn (D5, BR-68). Module 04 làm phần so sánh trong checkout. D6 của module 3 cần sửa cho khớp.
-  - Khi viết lại "Immutable price quotes", giữ câu "a booking still pending payment SHALL follow 'Pending bookings at a price change'" và kịch bản tương ứng.
-  - `AvailabilityController` viết lại phải: so chồng lấn nửa mở, coi `held` có `hold_expires_at ≤ now` là trống, sinh mốc 30 phút.
-  - Cần ba thứ, có tên và chữ ký cụ thể: sự kiện "giá mới có hiệu lực" (D11), engine tính tiền cho một khoảng, và service voucher `hold / release / consume` (D12).
+  - Giữ câu "a booking still pending payment SHALL follow 'Pending bookings at a price change'" và kịch bản tương ứng. Module 3 đã REMOVED "Immutable price quotes" và chép nguyên văn hai phần này sang "Court quotes from price tables".
+  - `AvailabilityController` viết lại phải: so chồng lấn nửa mở, coi `held` có `hold_expires_at ≤ now` là trống. Mốc 30 phút do change này bật ở task 5.1; bản Pha 2 của module 3 giữ bước `slot_duration` (module 3 D29).
+  - Cần ba thứ, có tên và chữ ký cụ thể: sự kiện "giá mới có hiệu lực" (D11), engine tính tiền cho một khoảng, và service voucher `hold / release / consume` (D12). Tên cuối cùng ở Open Questions của design.
 - [x] 1.3 Gửi session module 2 (đã gửi 2026-10-21):
   - Change này dựng khối MODIFIED "Final bookings and released availability" và "Courts carry their own sport and booking interval" trên text của `align-module-02-venue-court`. Nếu module 2 sửa lại hai requirement đó thì báo để dựng lại.
   - Độ dài slot của sân chỉ còn 30/60/90/120; đặt sân của khách theo lưới 30 phút.
   - Nhắc task 2.16 của module 2: bỏ `hold_ttl_minutes` và `require_continuity` khỏi form và request chính sách.
 - [x] 1.4 Ghi chú phối hợp vào `openspec/changes/direct-owner-cutover/tasks.md`: requirement "One-hour booking slots" bị change này REMOVED; decision 8 (ẩn ngoại lệ khi tắt payout) được nới cho màn tra cứu chỉ đọc.
 - [x] 1.5 `openspec validate align-module-04-booking --strict` đạt.
+- [x] 1.6 Nhận phản hồi của module 3 (task 1.3 của `align-module-03-pricing-promotions`, 2026-10-21) và sửa tài liệu:
+  - Bỏ khối MODIFIED "Immutable price quotes"; bỏ vế voucher khỏi scenario "No payment window left"; thêm lý do nhả `voucher_changed` vào spec.
+  - Design D2, D3, D5, D10, D11, D12, D14, D15, mục phối hợp, Risks và Open Questions theo D11, D16, D17, D19, D20, D29 của module 3.
+  - Lệch với đề xuất của module 3: `processReceipt` khoá cơ sở trước attempt, không phải ngay sau khi khoá đơn (design D12, Risks). Đã báo lại session module 3.
 
 ## 2. Pha 2 – Tạo yêu cầu đặt sân (D2, D3, D4, D5, D6, D7)
 
@@ -104,30 +108,46 @@
 
 ## 5. Pha 5 – Lưới 30 phút và phần phụ thuộc module 3 (D11, D12, D14, D15)
 
-Điều kiện: module 3 đã merge engine tính tiền theo phút, service voucher, sự kiện "giá mới có hiệu lực" và `AvailabilityController` mới. Dùng đúng tên module 3 đưa ra.
+Điều kiện (module 3 D29): module 3 đã merge Pha 3 (sự kiện `CourtPricesTookEffect`; trước đó Pha 2 có engine và `AvailabilityController` mới với bước `slot_duration`) và task 5.1–5.3 (phần voucher của engine, `VoucherUsageService`, danh sách voucher). Không chờ cả Pha 5 của module 3: task 5.4–5.5 của họ merge sau task 5.1, 5.5 và 5.7 của change này. Dùng đúng tên ở Open Questions của design.
 
 - [ ] 5.1 Cắt hợp đồng quote, hold, checkout (D14, D15):
   - Nhận `court_id`, `starts_at`, `ends_at`; bỏ mảng `slots` (gửi `slots` → 422).
   - Helper kiểm dưới lock: :00 hoặc :30 theo giờ cơ sở, cùng ngày chơi (kết thúc được phép 24:00), kết thúc > bắt đầu, ≥ 30 phút, bắt đầu chưa qua. Sai → 422 `INVALID_BOOKING_TIME`.
   - Áp như nhau cho mọi sân, không phụ thuộc `slot_duration`.
+  - `PriceQuote` đổi sang `starts_at/ends_at`, giữ token, hạn 15 phút và các kiểm tra trước khi giữ chỗ (D15).
+  - `AvailabilityController` (bản Pha 2 của module 3) đổi bước lưới từ `slot_duration` sang 30 phút cho mọi sân; panel trang chủ theo đó. Test: đơn 19:00–21:00 làm bốn mốc 19:00, 19:30, 20:00, 20:30 không trống (scenario "One court is booked from 19 to 21" của module 3).
 - [ ] 5.2 Đơn mới tạo đúng một `ReservationSlot` và một `ReservationEntitlement` phủ cả khoảng; `unit_price` là tiền thuê do engine tính.
 - [ ] 5.3 Bán lại: đơn mới bán nguyên đơn qua entitlement duy nhất; đơn cũ bán từng slot như cũ. Chữ tiếng Việt ghi khoảng giờ, ví dụ "Pass lại đơn 15:30–17:00", không dùng chữ "slot".
 - [ ] 5.4 `Court::SLOT_DURATIONS = [30, 60, 90, 120]`. Migration đổi `slot_duration` 45 → 60 và in số dòng đã đổi. Đặt định kỳ vẫn dùng `slot_duration`.
-- [ ] 5.5 D12: gọi `consume($reservation)` trong transaction xác nhận (webhook và đơn 0đ). `releaseHeld` gọi `release` của service voucher.
-- [ ] 5.6 D11: listener sự kiện "giá mới có hiệu lực".
-  - Tìm đơn `held` có khoảng nằm trong vùng hiệu lực, tính lại bằng engine.
+- [ ] 5.5 D12: nối `VoucherUsageService`.
+  - `consume`: `processReceipt` (với `$receipt->event_at`), `SplitPaymentService::confirmPaidAttempt` (với `$paidAt`), `ReservationService::confirm` (với `now()`). Đơn 0đ và đơn xác nhận ngay khi tạo do module 3 gọi.
+  - `release`: `releaseHeld` và `ReservationService::release`.
+  - `VoucherNoLongerApplies` xử lý theo từng đường như D12, nhả bằng `releaseHeld(…, 'expired', 'voucher_changed')` và báo khách. `ReservationController::confirm` trả 422 `VOUCHER_INVALID` kèm lý do.
+  - `processReceipt` khoá cơ sở `FOR KEY SHARE` trước khi khoá attempt. `confirmPaidAttempt` khoá đơn bằng `HeldReservationRelease::lock` trước khi đánh dấu nhóm `confirmed`.
+- [ ] 5.6 D11: listener `CourtPricesTookEffect(courtIds, effectiveAt)`.
+  - Tìm đơn `held` trên `courtIds` có giờ kết thúc sau `effectiveAt`, tính lại bằng `RentalPriceCalculator::quote` với voucher đơn đang giữ và `$heldBy` là chính đơn đó.
   - Tiền khác → `releaseHeld(…, 'expired', 'price_changed')` và thông báo qua `DurableNotificationService`. Tiền bằng → giữ nguyên.
 - [ ] 5.7 Frontend:
   - Form chọn giờ bắt đầu và kết thúc trên lưới 30 phút, từ availability mới.
   - Hiện khoảng giờ và thời lượng ("1 giờ 30 phút") thay cho danh sách slot.
+  - Panel availability ở trang chủ hiện các mốc 30 phút.
+  - Không gửi `coupon_code` hay `loyalty_points`. Chừa chỗ cho phần chọn voucher; task 5.5 của module 3 thêm phần chọn và gửi `voucher_program_id` hoặc `voucher_code`.
   - Rà chữ "slot" trong `vi.ts` cho đặt sân, lỗi, thông báo chờ và bán lại.
   - Vitest đi kèm.
 - [ ] 5.8 Test backend (`ThirtyMinuteBookingIntervalTest`, `PendingPriceChangeTest`, `VoucherConsumeOnConfirmTest`):
   - Scenario "Half-hour boundaries" (15:30–17:00 theo ví dụ report), "Thirty-minute minimum", "Off-grid time", "Gapped selection", "Past start", "Court interval length does not apply", "Resale of a new booking".
   - Scenario "Unsupported interval length", "Interval length does not shape customer bookings", "Existing 45-minute courts".
   - Scenario "Amount payable changes", "Amount payable unchanged", "Confirmed booking", "Transfer for an invalidated request".
-  - Scenario "Price rules change after quote acceptance".
-  - `consume` chạy đúng một lần khi webhook tới hai lần; xác nhận thất bại thì không tiêu lượt.
+  - Scenario "Price rules change after quote acceptance" (nay thuộc "Court quotes from price tables" của module 3). Listener truyền `$heldBy`: đơn giữ lượt cuối mà tiền không đổi thì giữ nguyên.
+  - `VoucherConsumeOnConfirmTest`:
+    - `consume` chạy đúng một lần khi webhook tới hai lần; xác nhận thất bại thì không tiêu lượt.
+    - Khoản nhận tới sau khi chương trình dừng → receipt EXCEPTION `voucher_changed`, đơn `expired`, lượt nhả một lần, job không chạy lại.
+    - Khoản nhận có `event_at` trước lúc chương trình kết thúc mà job chạy sau → đơn xác nhận.
+    - Chia tiền, phần cuối tới sau khi chương trình dừng → nhóm `expired`, mỗi phần đã trả một ngoại lệ, `expireDue` sau đó không ghi thêm.
+    - Hết hạn chia tiền (`SplitPaymentService::expire`) nhả lượt đúng một lần; gọi lại không đổi bộ đếm.
+    - Ví legacy qua HTTP có `Idempotency-Key` → 422 `VOUCHER_INVALID`, ví không đổi, đơn `expired`, lượt nhả một lần.
+    - Query log của `processReceipt` khoá `venues` trước `owner_payment_attempts` và trước `promotion_programs`.
+  - Không thêm scenario dưới "Atomic voucher use"; requirement đó thuộc module 3.
 
 ## 6. Pha 6 – Kiểm tra và archive
 
@@ -142,5 +162,5 @@
   - Owner thấy dòng thanh toán bất thường khi tắt payout.
 - [ ] 6.3 Cập nhật `report-traceability.md`: trạng thái từng mã sau mỗi pha, ghi commit và test thật.
 - [ ] 6.4 Kiểm lại D13 sau khi các pha của module 2 và module 3 xong: BR-76, giá "từ" của FR-69, tài khoản nhận tiền.
-- [ ] 6.5 Trước khi archive: dựng lại các khối MODIFIED ("Active inventory exclusivity", "Immutable price quotes", "Final bookings and released availability", "Courts carry their own sport and booking interval", "Settlement and payout lifecycle") từ text đang có ở spec chính, chỉ giữ phần sửa của change này; chạy lại `openspec validate --strict`.
-- [ ] 6.6 Archive sau `direct-owner-cutover`, `align-module-02-venue-court` và change của module 3.
+- [ ] 6.5 Trước khi archive: dựng lại các khối MODIFIED ("Active inventory exclusivity", "Final bookings and released availability", "Courts carry their own sport and booking interval", "Settlement and payout lifecycle") từ text đang có ở spec chính, chỉ giữ phần sửa của change này; chạy lại `openspec validate --strict`.
+- [ ] 6.6 Archive sau `direct-owner-cutover`, `align-module-02-venue-court` và `align-module-03-pricing-promotions`, ngay sau change của module 3.

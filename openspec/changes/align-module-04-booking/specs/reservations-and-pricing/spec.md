@@ -55,7 +55,7 @@ When a booking with a positive amount payable is created, its payment deadline S
 - **THEN** the same payment code, amount and 09:10 deadline SHALL be returned, and no new payment request SHALL be created
 
 #### Scenario: No payment window left
-- **WHEN** a payable booking is requested at the exact start time of its interval, or with a voucher that ends at that moment
+- **WHEN** a payable booking is requested at the exact start time of its interval
 - **THEN** the request SHALL be rejected with 422 `PAYMENT_WINDOW_CLOSED` without creating any record
 
 ### Requirement: Booker contact snapshot
@@ -85,7 +85,7 @@ Before submitting a booking, the customer SHALL be shown the venue, court code, 
 - **THEN** the request SHALL be rejected with 422 without creating any record
 
 ### Requirement: Customer cancels a pending-payment booking
-A customer SHALL be able to cancel their own booking while it is pending payment. The cancellation SHALL re-check the booking under the same locks as payment confirmation. A pending booking SHALL become cancelled, recorded as a customer payment cancellation; its court-time SHALL be released, its voucher hold SHALL be released without being recorded as used, and its payment request SHALL expire, each exactly once. Releasing a voucher SHALL NOT extend its validity. Repeating the cancellation on a booking that is already cancelled or expired SHALL succeed without releasing anything again. A confirmed booking SHALL NOT be cancelled this way: the request SHALL be rejected with 409 without changing anything. A request from anyone other than the booking's customer SHALL be refused without changing anything. When a cancellation and a payment race, only the first to commit SHALL take effect: after a confirmation the cancellation SHALL be rejected, and after a cancellation the transfer SHALL be recorded as a payment exception and SHALL NOT restore the booking. Expiry, this cancellation, the release of an overdue hold and a price-change release SHALL leave the same released state. The interface SHALL ask for confirmation before cancelling, and the booking SHALL then show as "Đã hủy thanh toán". To book again the customer SHALL submit a new request, which is re-checked for availability, price and voucher.
+A customer SHALL be able to cancel their own booking while it is pending payment. The cancellation SHALL re-check the booking under the same locks as payment confirmation. A pending booking SHALL become cancelled, recorded as a customer payment cancellation; its court-time SHALL be released, its voucher hold SHALL be released without being recorded as used, and its payment request SHALL expire, each exactly once. Releasing a voucher SHALL NOT extend its validity. Repeating the cancellation on a booking that is already cancelled or expired SHALL succeed without releasing anything again. A confirmed booking SHALL NOT be cancelled this way: the request SHALL be rejected with 409 without changing anything. A request from anyone other than the booking's customer SHALL be refused without changing anything. When a cancellation and a payment race, only the first to commit SHALL take effect: after a confirmation the cancellation SHALL be rejected, and after a cancellation the transfer SHALL be recorded as a payment exception and SHALL NOT restore the booking. Expiry, this cancellation, the release of an overdue hold, a price-change release and a release because the booking's voucher no longer applies SHALL leave the same released state. The interface SHALL ask for confirmation before cancelling, and the booking SHALL then show as "Đã hủy thanh toán". To book again the customer SHALL submit a new request, which is re-checked for availability, price and voucher.
 
 #### Scenario: Cancel a pending booking
 - **WHEN** a customer confirms cancelling their pending booking that holds a voucher use
@@ -185,33 +185,6 @@ No overlapping active entitlement or exclusive hold SHALL exist for the same cou
 #### Scenario: Live hold blocks
 - **WHEN** a held booking's payment deadline has not passed and another customer requests an overlapping interval
 - **THEN** the request SHALL receive the availability conflict
-
-### Requirement: Immutable price quotes
-The platform SHALL calculate quotes from effective-dated rules scoped to the organization, a venue, a venue and one sport, or a single court, using holiday/date exception, peak, weekly then explicitly configured base precedence. Within one precedence level, the narrower scope SHALL win (court, then venue and sport, then venue, then organization), followed by priority, version and identifier as deterministic tie-breakers. A sport-scoped rule SHALL name its venue and SHALL apply only to that venue's courts of that sport. Prices and allowed coupon, membership and loyalty benefits SHALL snapshot versions and validity. A random unmatched slot price MUST NOT be a fallback. Later changes SHALL not alter a confirmed booking; a booking still pending payment SHALL follow "Pending bookings at a price change". An expired quote SHALL be recalculated and accepted again before payment.
-
-#### Scenario: Exception overrides a weekly price
-- **WHEN** both a holiday exception and weekly rule match
-- **THEN** both API versions and displayed availability SHALL use the same exception amount
-
-#### Scenario: No applicable price
-- **WHEN** a requested open interval has no applicable rule or configured base
-- **THEN** it SHALL not be sold using the first unrelated price
-
-#### Scenario: Price rules change after quote acceptance
-- **WHEN** a policy changes after quote acceptance
-- **THEN** a confirmed booking's snapshot SHALL remain stable, a booking still pending payment SHALL be re-checked as defined in "Pending bookings at a price change", and an expired unaccepted quote requires renewed consent
-
-#### Scenario: Venue and sport rule
-- **WHEN** a venue has a weekly venue-wide rule and a weekly pickleball rule for the same hour, and a customer quotes that hour on a pickleball court and on a badminton court of the venue
-- **THEN** the pickleball court SHALL be priced by the pickleball rule, the badminton court by the venue-wide rule, and a court-specific rule for that hour SHALL override both
-
-#### Scenario: Sport rule without a venue
-- **WHEN** an operator saves a sport-scoped price rule without naming a venue
-- **THEN** the request SHALL be rejected with a validation error
-
-#### Scenario: Prices survive the grouping removal
-- **WHEN** existing grouping-scoped rules are migrated to venue-and-sport scope
-- **THEN** every court SHALL be quoted the same amount for the same interval before and after, or the migration SHALL stop without changing any data
 
 ### Requirement: Final bookings and released availability
 A confirmed booking SHALL be final for its customer. Customers SHALL NOT be offered cancellation of a confirmed booking, refunds or rescheduling, and no endpoint or interface SHALL create a cancellation request, refund quote, refund obligation, reschedule preview or reschedule request. The only cancellation offered to customers SHALL be cancelling their own booking while it is still pending payment, as defined in "Customer cancels a pending-payment booking", which SHALL involve no refund. Staff and owners SHALL NOT cancel, move or change the time of a confirmed booking, whether or not it is checked in, except through the move, time-change and cancel commands for a booking that has an open affected-booking case, as defined in "Operator handling of affected bookings", and other than ending a recurring contract as below; those commands SHALL NOT create a refund quote, refund obligation or any money movement. A holder who cannot attend SHALL be directed to slot resale under the venue's transfer policy. Ending a recurring contract SHALL release only future occurrences that are unpaid; paid occurrences SHALL remain confirmed. Suspended venues SHALL retain authorized servicing of existing bookings, including the handling of affected bookings; legacy terms SHALL not be silently rewritten. Waitlist notices SHALL never promise automatic booking.
