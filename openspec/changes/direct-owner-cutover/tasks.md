@@ -453,6 +453,11 @@ Người dùng chốt ngày 2026-10-13: không thêm kiểm tra slot 1 giờ tro
 - [ ] 14.5 Bỏ các FR dời lịch khỏi báo cáo, như đã làm với hủy sân và hoàn tiền.
   - Trong bản cũ, đó là FR-BKG-11 "Yêu cầu thay đổi booking" và FR-BKG-12 "Xử lý thay đổi booking".
   - Ghi rõ slot dài 1 giờ.
+  - Ghi chú phối hợp (2026-10-21): change `align-module-02-venue-court` thay một phần delta "Final bookings and released availability" của change này, tức quyết định đơn đã xác nhận là cuối cùng.
+    - Theo design D8 của change đó, owner và staff được chuyển sân, đổi giờ hoặc huỷ một đơn khi đơn còn case "đơn bị ảnh hưởng" mở. Cả ba lệnh cần khách đồng ý và không tạo dòng tiền.
+    - Khi bỏ FR dời lịch khỏi báo cáo, giữ UC-2.16..UC-2.18 của Module 02, gồm UC-2.17 đổi giờ do owner và staff làm. Khách không tự dời hay huỷ đơn đã xác nhận.
+    - `align-module-02-venue-court` phải archive sau change này. Khối MODIFIED trùng header của nó được dựng từ text delta ở đây.
+    - Khi archive, rebase "Versioned reservation API compatibility" sang header "Unversioned reservation API" và giữ nguyên câu cấm huỷ, hoàn tiền, dời của nó. Khối MODIFIED "Unversioned reservation API" của `align-module-02-venue-court` sau đó thêm ngoại lệ cho lệnh của owner và staff với đơn bị ảnh hưởng.
 
 ## 15. Triển khai (design 13)
 
