@@ -106,8 +106,8 @@ class BookingFlowsTest extends TestCase
         $date = Carbon::now()->addDays(3)->setTime(10, 0)->startOfHour();
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
 
-        $this->actingAs($first)->withHeader('Idempotency-Key', uniqid('hold-'))->postJson('/api/reservations', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]])->assertCreated();
-        $this->actingAs($second)->withHeader('Idempotency-Key', uniqid('hold-'))->postJson('/api/reservations', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]])->assertStatus(409);
+        $this->actingAs($first)->withHeader('Idempotency-Key', uniqid('hold-'))->postJson('/api/reservations', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()], 'expected_total' => 100000])->assertCreated();
+        $this->actingAs($second)->withHeader('Idempotency-Key', uniqid('hold-'))->postJson('/api/reservations', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()], 'expected_total' => 100000])->assertStatus(409);
     }
 
     public function test_booking_rejects_past_and_unaligned_slots(): void
@@ -119,9 +119,9 @@ class BookingFlowsTest extends TestCase
         PriceRule::create(['organization_id' => $venue->organization_id, 'court_id' => $court->id, 'type' => 'base', 'price' => 100000, 'is_active' => true]);
         $past = now()->subDay()->setTime(10, 0);
 
-        $this->actingAs($user)->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$past->toIso8601String()]])->assertUnprocessable();
+        $this->actingAs($user)->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$past->toIso8601String()], 'expected_total' => 100000])->assertUnprocessable();
         $future = now()->addDay()->setTime(10, 15);
-        $this->actingAs($user)->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$future->toIso8601String()]])->assertUnprocessable();
+        $this->actingAs($user)->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$future->toIso8601String()], 'expected_total' => 100000])->assertUnprocessable();
     }
 
     public function test_admin_can_list_and_delete_a_block(): void
@@ -146,7 +146,7 @@ class BookingFlowsTest extends TestCase
         $date = now()->addDays(2)->setTime(10, 0);
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 120000, 'is_active' => true]);
         $code = $this->actingAs($user)->withHeader('Idempotency-Key', uniqid('checkout-'))
-            ->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]])
+            ->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()], 'expected_total' => 120000])
             ->assertCreated()
             ->json('reservation.code');
 
@@ -184,7 +184,7 @@ class BookingFlowsTest extends TestCase
         $date = now()->addDays(2)->setTime(10, 0);
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
 
-        $this->actingAs($user)->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]])->assertForbidden();
+        $this->actingAs($user)->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()], 'expected_total' => 100000])->assertForbidden();
         $this->assertDatabaseCount('reservations', 0);
     }
 }

@@ -247,6 +247,7 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
                 ->postJson('/api/reservations/checkout', [
                     'court_id' => $court->id,
                     'slots' => [$date->toIso8601String()],
+                    'expected_total' => 100000,
                 ])->assertCreated();
 
             $newBookingCode = $checkoutRes->json('reservation.code');

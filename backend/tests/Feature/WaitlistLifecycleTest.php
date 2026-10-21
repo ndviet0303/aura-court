@@ -57,6 +57,7 @@ class WaitlistLifecycleTest extends TestCase
         $this->actingAs($owner)->withHeader('Idempotency-Key', 'owner-checkout')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$date->toIso8601String()],
+            'expected_total' => 100000,
         ])->assertCreated();
 
         // 2. Waiter joins waitlist
@@ -96,6 +97,7 @@ class WaitlistLifecycleTest extends TestCase
         $this->actingAs($owner)->withHeader('Idempotency-Key', 'owner-checkout')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$date->toIso8601String()],
+            'expected_total' => 100000,
         ])->assertCreated();
 
         // Join waitlist
@@ -134,6 +136,7 @@ class WaitlistLifecycleTest extends TestCase
         $bookRes = $this->actingAs($owner)->withHeader('Idempotency-Key', 'owner-checkout')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$date->toIso8601String()],
+            'expected_total' => 100000,
         ]);
         $bookRes->assertCreated();
         $bookingCode = $bookRes->json('reservation.code');
@@ -161,6 +164,7 @@ class WaitlistLifecycleTest extends TestCase
         $this->actingAs($owner)->withHeader('Idempotency-Key', 'owner-hold')->postJson('/api/reservations', [
             'court_id' => $court2->id,
             'slots' => [$date2->toIso8601String()],
+            'expected_total' => 100000,
         ])->assertCreated();
 
         $this->actingAs($waiter)->postJson('/api/waitlist', [
@@ -189,6 +193,7 @@ class WaitlistLifecycleTest extends TestCase
         $waiterBookRes = $this->actingAs($waiter)->withHeader('Idempotency-Key', 'waiter-checkout')->postJson('/api/reservations/checkout', [
             'court_id' => $court2->id,
             'slots' => [$date2->toIso8601String()],
+            'expected_total' => 100000,
         ]);
         $waiterBookRes->assertCreated();
         $waiterBookRes->assertJsonPath('reservation.status', 'confirmed');

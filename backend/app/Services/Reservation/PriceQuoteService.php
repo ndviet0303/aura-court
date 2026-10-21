@@ -60,18 +60,47 @@ class PriceQuoteService
             ->where('court_id', $court->id)
             ->where('starts_at', '<', $blockEnds)
             ->where('ends_at', '>', $blockStarts)
-            ->whereHas('reservation', fn ($r) => $r->whereIn('status', ['held', 'confirmed']))
+            ->whereHas('reservation', fn ($r) => $r->blocksInventory())
             ->exists();
 
         if ($overlapping) {
             abort(409, 'The selected court-time is no longer available.');
         }
 
-        $snapshot = $this->priceSnapshots($court, $resolvedSlots->all(), $duration);
+        return PriceQuote::create([
+            'organization_id' => $organizationId,
+            'user_id' => $userId,
+            'court_id' => $court->id,
+            'quote_token' => (string) Str::uuid(),
+            'status' => 'open',
+            'currency' => 'VND',
+            ...$this->priceAttributes($court, $resolvedSlots->all(), $duration, User::findOrFail($userId), $organizationId, $couponCode),
+            'expires_at' => now()->addMinutes(15),
+        ])->load(['court.venue']);
+    }
+
+    /**
+     * Price an open quote's selection again at submission with its coupon (design D5), so the booking is created
+     * from today's amounts and the caller can compare them with what the customer was shown.
+     */
+    public function reprice(PriceQuote $quote, Court $court, User $user): void
+    {
+        $times = collect((array) $quote->slot_snapshot)->map(fn (array $slot): Carbon => Carbon::parse($slot['starts_at']))->all();
+        $couponCode = data_get($quote->benefit_snapshot, 'coupon_code');
+
+        $quote->forceFill($this->priceAttributes($court, $times, (int) $court->slot_duration, $user, (int) $quote->organization_id, $couponCode))->save();
+    }
+
+    /**
+     * @param  array<int, Carbon>  $times
+     * @return array{subtotal: int, total_amount: int, benefit_snapshot: ?array, rule_version: int, slot_snapshot: array, applied_rule_ids: array}
+     */
+    private function priceAttributes(Court $court, array $times, int $duration, User $user, int $organizationId, ?string $couponCode): array
+    {
+        $snapshot = $this->priceSnapshots($court, $times, $duration);
         $subtotal = (int) collect($snapshot)->sum('unit_price');
         $appliedRuleIds = collect($snapshot)->pluck('rule.id')->filter()->values()->all();
         $ruleVersion = max([1, ...collect($snapshot)->map(fn (array $slot) => (int) ($slot['rule']['version'] ?? 1))->all()]);
-        $user = User::findOrFail($userId);
         // preview() lets a code below its minimum spend through with no discount; a quote must refuse it.
         $this->discounts->resolveEligibleCoupon($couponCode, $organizationId, $subtotal, $user, (int) $court->venue_id, (int) $court->id);
         $benefit = $this->discounts->preview($user, $subtotal, $couponCode, $organizationId, (int) $court->venue_id, (int) $court->id);
@@ -83,21 +112,14 @@ class PriceQuoteService
             $benefitSnapshot += ['coupon_id' => (int) $benefit['coupon']->id, 'coupon_code' => $benefit['coupon']->code, 'coupon_discount_amount' => (int) $benefit['coupon_discount']];
         }
 
-        return PriceQuote::create([
-            'organization_id' => $organizationId,
-            'user_id' => $userId,
-            'court_id' => $court->id,
-            'quote_token' => (string) Str::uuid(),
-            'status' => 'open',
-            'currency' => 'VND',
+        return [
             'subtotal' => $subtotal,
             'total_amount' => (int) $benefit['total'],
             'benefit_snapshot' => $benefitSnapshot ?: null,
             'rule_version' => $ruleVersion,
             'slot_snapshot' => $snapshot,
             'applied_rule_ids' => array_values(array_unique($appliedRuleIds)),
-            'expires_at' => now()->addMinutes(15),
-        ])->load(['court.venue']);
+        ];
     }
 
     /**

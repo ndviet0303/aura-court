@@ -49,7 +49,7 @@ class ReservationCouponTest extends TestCase
         $coupon = $this->coupon($organization, ['usage_count' => 3]);
         $this->fundWallet($user, $organization);
 
-        $code = $this->command($user, $organization, '/api/reservations/checkout', $this->slots($court) + ['coupon_code' => 'SAVE20K'])
+        $code = $this->command($user, $organization, '/api/reservations/checkout', $this->slots($court) + ['coupon_code' => 'SAVE20K', 'expected_total' => 100000])
             ->assertCreated()
             ->assertJsonPath('reservation.status', 'confirmed')
             ->assertJsonPath('reservation.total_amount', 100000)
@@ -69,7 +69,7 @@ class ReservationCouponTest extends TestCase
         [$organization, $user, $court] = $this->tenant();
         $coupon = $this->coupon($organization, ['usage_count' => 3]);
         $this->fundWallet($user, $organization);
-        $code = $this->command($user, $organization, '/api/reservations', $this->slots($court) + ['coupon_code' => 'SAVE20K'])
+        $code = $this->command($user, $organization, '/api/reservations', $this->slots($court) + ['coupon_code' => 'SAVE20K', 'expected_total' => 100000])
             ->assertCreated()->json('reservation.code');
 
         $this->command($user, $organization, "/api/reservations/{$code}/confirm", [])
@@ -89,7 +89,7 @@ class ReservationCouponTest extends TestCase
         [$organization, $user, $court] = $this->tenant();
         $coupon = $this->coupon($organization, ['usage_count' => 3]);
 
-        $code = $this->command($user, $organization, '/api/reservations', $this->slots($court) + ['coupon_code' => 'SAVE20K'])
+        $code = $this->command($user, $organization, '/api/reservations', $this->slots($court) + ['coupon_code' => 'SAVE20K', 'expected_total' => 100000])
             ->assertCreated()
             ->assertJsonPath('reservation.status', 'held')
             ->assertJsonPath('reservation.total_amount', 100000)
@@ -117,7 +117,7 @@ class ReservationCouponTest extends TestCase
     {
         [$organization, $user, $court] = $this->tenant();
         $coupon = $this->coupon($organization, ['usage_count' => 3]);
-        $code = $this->command($user, $organization, '/api/reservations', $this->slots($court) + ['coupon_code' => 'SAVE20K'])
+        $code = $this->command($user, $organization, '/api/reservations', $this->slots($court) + ['coupon_code' => 'SAVE20K', 'expected_total' => 100000])
             ->assertCreated()->json('reservation.code');
         $this->assertSame(4, $coupon->fresh()->usage_count);
         $reservation = Reservation::withoutGlobalScope('tenant_isolation')->where('code', $code)->firstOrFail();
@@ -142,7 +142,7 @@ class ReservationCouponTest extends TestCase
 
         foreach (['NOPE', 'PAUSED'] as $couponCode) {
             foreach (['/api/price-quotes', '/api/reservations', '/api/reservations/checkout'] as $uri) {
-                $this->command($user, $organization, $uri, $this->slots($court) + ['coupon_code' => $couponCode])
+                $this->command($user, $organization, $uri, $this->slots($court) + ['coupon_code' => $couponCode, 'expected_total' => 100000])
                     ->assertUnprocessable()
                     ->assertJsonValidationErrors(['coupon_code']);
             }
@@ -165,10 +165,10 @@ class ReservationCouponTest extends TestCase
             ->assertCreated()->json('quote');
 
         // The rival takes the last use after the first quote was made.
-        $this->command($rival, $organization, '/api/reservations/checkout', $this->slots($court, 11) + ['coupon_code' => 'SAVE20K'])
+        $this->command($rival, $organization, '/api/reservations/checkout', $this->slots($court, 11) + ['coupon_code' => 'SAVE20K', 'expected_total' => 100000])
             ->assertCreated();
 
-        $this->command($user, $organization, '/api/reservations/checkout', ['quote_id' => $quote['id']])
+        $this->command($user, $organization, '/api/reservations/checkout', ['quote_id' => $quote['id'], 'expected_total' => $quote['total_amount']])
             ->assertUnprocessable()
             ->assertJsonPath('errors.coupon_code.0', 'Mã giảm giá đã hết lượt sử dụng.');
         $this->command($user, $organization, '/api/price-quotes', $this->slots($court, 12) + ['coupon_code' => 'SAVE20K'])
@@ -190,7 +190,7 @@ class ReservationCouponTest extends TestCase
         $this->fundWallet($user, $organization);
 
         foreach (['/api/price-quotes', '/api/reservations', '/api/reservations/checkout'] as $uri) {
-            $this->command($user, $foreignOrganization, $uri, $this->slots($court) + ['coupon_code' => 'SAVE20K'])
+            $this->command($user, $foreignOrganization, $uri, $this->slots($court) + ['coupon_code' => 'SAVE20K', 'expected_total' => 100000])
                 ->assertUnprocessable()
                 ->assertJsonValidationErrors(['coupon_code']);
         }

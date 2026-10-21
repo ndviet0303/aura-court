@@ -10,7 +10,6 @@ use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
 use App\Models\User;
 use App\Models\Venue;
-use App\Models\VenueBookingPolicy;
 use App\Services\Booking\QuoteCouponService;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\Infrastructure\FeatureFlagService;
@@ -30,6 +29,7 @@ class ReservationService
         private readonly VenueOperatingCalendar $operatingCalendar,
         private readonly SlotSelectionPolicy $slotPolicy,
         private readonly QuoteCouponService $quoteCoupons,
+        private readonly ReservationIntake $intake,
     ) {}
 
     public function hold(User $user, int $organizationId, array $data, ?User $actor = null): Reservation
@@ -40,6 +40,7 @@ class ReservationService
         if ($actor === null && ! $user->hasVerifiedEmail()) {
             abort(403, 'Vui lòng xác thực email của bạn trước khi thực hiện đặt sân. Yêu cầu gửi lại email xác thực tại /api/auth/email/verification-notification.');
         }
+        $this->intake->assertBookerPhone($user);
 
         return $this->transactionWithConflictHandling(function () use ($user, $organizationId, $data, $actor): Reservation {
             $quote = $this->findQuote($user->id, $organizationId, $data);
@@ -72,28 +73,35 @@ class ReservationService
             abort_if($actor !== null && ! $actor->canOperateVenue($lockedVenue), 403, 'Bạn không được giao cơ sở này.');
             $eligibility = $verifier->execute($lockedCourt->setRelation('venue', $lockedVenue));
             abort_unless($eligibility['eligible'], 409, $eligibility['message'] ?? '');
+            $intervals = fn (): array => collect($quote->slot_snapshot)->map(fn (array $slotSnapshot): array => [
+                'start' => $slotSnapshot['starts_at'],
+                'end' => $slotSnapshot['ends_at'],
+            ])->all();
+            $this->intake->releaseOverdueHolds($lockedCourt, $intervals());
+            // The client always sends the amount it showed; recurring periods price their own fresh quote.
+            if (isset($data['expected_total'])) {
+                $this->quotes->reprice($quote, $lockedCourt, $user);
+                $this->intake->assertAgreedAmount((int) $data['expected_total'], (int) $quote->subtotal, (int) $quote->total_amount);
+            }
             $couponUsage = $this->quoteCoupons->reserve($quote, $user, $lockedCourt);
             $directOwnerPayments = app(FeatureFlagService::class)
                 ->enabled('direct_owner_payments', (int) $lockedVenue->organization_id);
+
+            $this->slotPolicy->assertAllowed($lockedCourt, $intervals());
+
             $bookingPolicySnapshot = null;
             $holdExpiresAt = $quote->expires_at;
             if ($directOwnerPayments) {
-                ['snapshot' => $bookingPolicySnapshot, 'expires_at' => $holdExpiresAt] = $this->captureBookingPolicy($lockedVenue);
-                // Recurring periods hold until their own period deadline, not the short booking TTL.
+                $bookingPolicySnapshot = $this->intake->bookingPolicySnapshot($lockedVenue);
+                // Recurring periods hold until their own period deadline (design D3 leaves them out).
                 if (! empty($data['hold_expires_at_override'])) {
                     $holdExpiresAt = Carbon::parse($data['hold_expires_at_override']);
+                } elseif ((int) $quote->total_amount > 0) {
+                    $holdExpiresAt = $this->intake->paymentDeadline($quote);
                 }
             }
 
-            $this->slotPolicy->assertAllowed(
-                $lockedCourt,
-                collect($quote->slot_snapshot)->map(fn (array $slotSnapshot): array => [
-                    'start' => $slotSnapshot['starts_at'],
-                    'end' => $slotSnapshot['ends_at'],
-                ])->all(),
-            );
-
-            $metadata = (array) ($data['metadata'] ?? []);
+            $metadata = [...(array) ($data['metadata'] ?? []), 'booker' => $this->intake->booker($user)];
             if ($quote->benefit_snapshot) {
                 $metadata['benefit_snapshot'] = $quote->benefit_snapshot;
             }
@@ -260,27 +268,6 @@ class ReservationService
         } while (Reservation::query()->where('code', $code)->exists());
 
         return $code;
-    }
-
-    /**
-     * @return array{snapshot: array, expires_at: Carbon}
-     */
-    private function captureBookingPolicy(Venue $venue): array
-    {
-        $policy = $venue->currentBookingPolicy()->first();
-        abort_unless($policy instanceof VenueBookingPolicy, 409, 'A captured venue booking policy is required for direct payment.');
-        $settings = (array) $policy->settings;
-        $holdMinutes = (int) data_get($settings, 'booking.hold_ttl_minutes', 0);
-        abort_unless($holdMinutes >= 1 && $holdMinutes <= 1440, 409, 'The venue payment hold duration is invalid.');
-
-        return [
-            'snapshot' => [
-                'version' => (int) $policy->version,
-                'captured_at' => now()->toIso8601String(),
-                'settings' => $settings,
-            ],
-            'expires_at' => now()->addMinutes($holdMinutes),
-        ];
     }
 
     private function transactionWithConflictHandling(callable $operation): Reservation

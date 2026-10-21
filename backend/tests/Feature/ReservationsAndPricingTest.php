@@ -369,7 +369,7 @@ class ReservationsAndPricingTest extends TestCase
         OrganizationMember::create(['organization_id' => $organization->id, 'user_id' => $secondUser->id, 'role' => OrganizationMember::ROLE_CUSTOMER, 'status' => 'active']);
         $date = now(config('app.timezone'))->addDays(5)->setTime(11, 0);
         PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 180000]);
-        $payload = ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]];
+        $payload = ['court_id' => $court->id, 'slots' => [$date->toIso8601String()], 'expected_total' => 180000];
 
         $winner = $this->actingAs($firstUser)->withHeader('X-Organization-ID', (string) $organization->id)->withHeader('Idempotency-Key', 'reservation-one')->postJson('/api/reservations', $payload);
         $loser = $this->actingAs($secondUser)->withHeader('X-Organization-ID', (string) $organization->id)->withHeader('Idempotency-Key', 'reservation-two')->postJson('/api/reservations', $payload);
@@ -396,7 +396,7 @@ class ReservationsAndPricingTest extends TestCase
         $this->fundWallet($user, $organization->id);
         $payload = ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]];
         $quote = $this->actingAs($user)->withHeaders($headers + ['Idempotency-Key' => 'immutable-quote'])->postJson('/api/price-quotes', $payload);
-        $hold = $this->actingAs($user)->withHeaders($headers + ['Idempotency-Key' => 'immutable-hold'])->postJson('/api/reservations', ['quote_id' => $quote->json('quote.id')]);
+        $hold = $this->actingAs($user)->withHeaders($headers + ['Idempotency-Key' => 'immutable-hold'])->postJson('/api/reservations', ['quote_id' => $quote->json('quote.id'), 'expected_total' => $quote->json('quote.total_amount')]);
         $reservationCode = $hold->json('reservation.code');
         $this->actingAs($user)->withHeaders($headers + ['Idempotency-Key' => 'immutable-confirm'])->postJson("/api/reservations/{$reservationCode}/confirm")->assertOk();
 
@@ -490,7 +490,7 @@ class ReservationsAndPricingTest extends TestCase
         $res4->assertCreated()->assertJsonPath('quote.total_amount', 100000);
     }
 
-    public function test_concurrent_rule_change_preserves_quoted_snapshot_for_in_flight_checkout(): void
+    public function test_rule_change_before_submission_refuses_the_older_quote_at_its_shown_price(): void
     {
         [$organization, $user1, $court] = $this->tenant();
         $user2 = User::factory()->create();
@@ -537,30 +537,28 @@ class ReservationsAndPricingTest extends TestCase
             ->assertJsonPath('quote.rule_version', 2);
         $q2Id = $q2->json('quote.id');
 
-        // 5. User 1 checks out Quote 1: reservation total is 120k (snapshot honored)
+        // 5. User 1 submits Quote 1 at the 120k it showed: repriced at submission, the rise is refused (PRICE_CHANGED)
         $this->fundWallet($user1, $organization->id);
         $this->fundWallet($user2, $organization->id);
-        $hold1 = $this->actingAs($user1)->withHeaders($headers + ['Idempotency-Key' => 'hold-user-1'])
-            ->postJson('/api/reservations', ['quote_id' => $q1Id]);
-        $hold1->assertCreated()->assertJsonPath('reservation.total_amount', 120000);
-        $res1Code = $hold1->json('reservation.code');
-        $this->actingAs($user1)->withHeaders($headers + ['Idempotency-Key' => 'confirm-user-1'])
-            ->postJson("/api/reservations/{$res1Code}/confirm")
-            ->assertOk();
+        $this->actingAs($user1)->withHeaders($headers + ['Idempotency-Key' => 'hold-user-1'])
+            ->postJson('/api/reservations', ['quote_id' => $q1Id, 'expected_total' => 120000])
+            ->assertConflict()
+            ->assertJsonPath('code', 'PRICE_CHANGED')
+            ->assertJsonPath('total', 240000);
+        $this->assertDatabaseMissing('reservations', ['user_id' => $user1->id]);
 
         // 6. User 2 checks out Quote 2: reservation total is 240k (new rule honored)
         $hold2 = $this->actingAs($user2)->withHeaders($headers + ['Idempotency-Key' => 'hold-user-2'])
-            ->postJson('/api/reservations', ['quote_id' => $q2Id]);
+            ->postJson('/api/reservations', ['quote_id' => $q2Id, 'expected_total' => 240000]);
         $hold2->assertCreated()->assertJsonPath('reservation.total_amount', 240000);
         $res2Code = $hold2->json('reservation.code');
         $this->actingAs($user2)->withHeaders($headers + ['Idempotency-Key' => 'confirm-user-2'])
             ->postJson("/api/reservations/{$res2Code}/confirm")
             ->assertOk();
 
-        // Verify both reservations and quotes retain their independent snapshots
-        $this->assertDatabaseHas('reservations', ['code' => $res1Code, 'total_amount' => 120000, 'status' => 'confirmed']);
+        // The refused quote is left untouched; the accepted one keeps its snapshot
         $this->assertDatabaseHas('reservations', ['code' => $res2Code, 'total_amount' => 240000, 'status' => 'confirmed']);
-        $this->assertDatabaseHas('price_quotes', ['id' => $q1Id, 'total_amount' => 120000, 'rule_version' => 1, 'status' => 'accepted']);
+        $this->assertDatabaseHas('price_quotes', ['id' => $q1Id, 'total_amount' => 120000, 'rule_version' => 1, 'status' => 'open']);
         $this->assertDatabaseHas('price_quotes', ['id' => $q2Id, 'total_amount' => 240000, 'rule_version' => 2, 'status' => 'accepted']);
     }
 
@@ -574,7 +572,7 @@ class ReservationsAndPricingTest extends TestCase
         PriceRule::create(['organization_id' => $orgB->id, 'court_id' => $courtB->id, 'type' => 'base', 'price' => 150000]);
         $date = now(config('app.timezone'))->addDays(4)->setTime(9, 0);
         $code = $this->actingAs($customer)->withHeaders(['X-Organization-ID' => (string) $orgB->id, 'Idempotency-Key' => 'cross-org-hold'])
-            ->postJson('/api/reservations', ['court_id' => $courtB->id, 'slots' => [$date->toIso8601String()]])
+            ->postJson('/api/reservations', ['court_id' => $courtB->id, 'slots' => [$date->toIso8601String()], 'expected_total' => 150000])
             ->assertCreated()->json('reservation.code');
         $headersA = ['X-Organization-ID' => (string) $orgA->id];
 
@@ -602,7 +600,7 @@ class ReservationsAndPricingTest extends TestCase
             ->assertCreated()->json('quote');
 
         $this->actingAs($customer)->withHeaders(['X-Organization-ID' => (string) $orgA->id, 'Idempotency-Key' => 'cross-org-checkout'])
-            ->postJson('/api/reservations/checkout', ['quote_token' => $quote['quote_token']])
+            ->postJson('/api/reservations/checkout', ['quote_token' => $quote['quote_token'], 'expected_total' => $quote['total_amount']])
             ->assertNotFound();
 
         $this->assertDatabaseCount('reservations', 0);

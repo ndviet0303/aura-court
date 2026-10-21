@@ -98,6 +98,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $res2 = $this->actingAs($user)->withHeader('Idempotency-Key', 'module-1-bad-date')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => ['invalid-datetime-string'],
+            'expected_total' => 150000,
         ]);
         $res2->assertStatus(422);
     }
@@ -129,6 +130,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $res1 = $this->actingAs($user1)->withHeader('Idempotency-Key', 'module-1-first')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$targetDate->toIso8601String()],
+            'expected_total' => 150000,
         ]);
         $res1->assertCreated();
 
@@ -136,6 +138,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $res2 = $this->actingAs($user2)->withHeader('Idempotency-Key', 'module-1-second')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$targetDate->toIso8601String()],
+            'expected_total' => 150000,
         ]);
         $res2->assertStatus(409);
     }
@@ -165,6 +168,7 @@ class SevenModulesContractAndE2EAcceptanceTest extends TestCase
         $res = $this->actingAs($user)->withHeader('Idempotency-Key', 'module-1-success')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$targetDate->toIso8601String()],
+            'expected_total' => 200000,
         ]);
         $res->assertCreated();
         $code = $res->json('reservation.code');

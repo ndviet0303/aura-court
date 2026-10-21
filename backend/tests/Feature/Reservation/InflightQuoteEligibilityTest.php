@@ -69,9 +69,9 @@ class InflightQuoteEligibilityTest extends TestCase
             'court_inactive' => $this->court->update(['is_active' => false]),
         };
 
-        $this->as($this->customer)->postJson('/api/reservations', ['quote_token' => $quote['quote_token']])
+        $this->as($this->customer)->postJson('/api/reservations', ['quote_token' => $quote['quote_token'], 'expected_total' => $quote['total_amount']])
             ->assertStatus(409)->assertJsonPath('message', $message);
-        $this->as($this->customer)->postJson('/api/reservations/checkout', ['quote_token' => $quote['quote_token']])
+        $this->as($this->customer)->postJson('/api/reservations/checkout', ['quote_token' => $quote['quote_token'], 'expected_total' => $quote['total_amount']])
             ->assertStatus(409)->assertJsonPath('message', $message);
 
         $this->assertDatabaseCount('reservations', 0);
@@ -86,8 +86,8 @@ class InflightQuoteEligibilityTest extends TestCase
         $quote = $this->quote(10);
         $subscription->update(['ends_at' => now()->subMinute()]);
 
-        $this->as($this->customer)->postJson('/api/reservations', ['quote_token' => $quote['quote_token']])->assertStatus(409);
-        $this->as($this->customer)->postJson('/api/reservations/checkout', ['quote_token' => $quote['quote_token']])->assertStatus(409);
+        $this->as($this->customer)->postJson('/api/reservations', ['quote_token' => $quote['quote_token'], 'expected_total' => $quote['total_amount']])->assertStatus(409);
+        $this->as($this->customer)->postJson('/api/reservations/checkout', ['quote_token' => $quote['quote_token'], 'expected_total' => $quote['total_amount']])->assertStatus(409);
 
         $this->assertDatabaseCount('reservations', 0);
     }
@@ -96,9 +96,9 @@ class InflightQuoteEligibilityTest extends TestCase
     {
         [$held, $paid] = [$this->quote(10), $this->quote(12)];
 
-        $this->as($this->customer)->postJson('/api/reservations', ['quote_token' => $held['quote_token']])
+        $this->as($this->customer)->postJson('/api/reservations', ['quote_token' => $held['quote_token'], 'expected_total' => $held['total_amount']])
             ->assertCreated()->assertJsonPath('reservation.status', 'held');
-        $this->as($this->customer)->postJson('/api/reservations/checkout', ['quote_token' => $paid['quote_token']])
+        $this->as($this->customer)->postJson('/api/reservations/checkout', ['quote_token' => $paid['quote_token'], 'expected_total' => $paid['total_amount']])
             ->assertCreated()->assertJsonPath('reservation.status', 'confirmed');
 
         $this->assertDatabaseCount('reservations', 2);
@@ -111,7 +111,7 @@ class InflightQuoteEligibilityTest extends TestCase
         foreach (['/api/reservations', '/api/reservations/checkout'] as $i => $uri) {
             DB::flushQueryLog();
             DB::enableQueryLog();
-            $this->as($this->customer)->postJson($uri, ['quote_token' => $quotes[$i]['quote_token']])->assertCreated();
+            $this->as($this->customer)->postJson($uri, ['quote_token' => $quotes[$i]['quote_token'], 'expected_total' => $quotes[$i]['total_amount']])->assertCreated();
             // An opposite order to quote creation (subscription, then court) lets two bookings deadlock.
             $locks = collect(DB::getQueryLog())->pluck('query')->filter(fn (string $q) => str_contains($q, 'for update'))->values();
             $subscriptionLock = $locks->search(fn (string $q) => preg_match('/\bfrom\W+platform_subscriptions\b/', $q) === 1);

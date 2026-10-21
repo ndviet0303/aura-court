@@ -605,6 +605,7 @@ export default {
       amount: 'Exact amount',
       transferContent: 'Transfer content',
       expiresAt: 'Payment instructions expire at {time}.',
+      countdown: 'Time left to pay: {time}',
       qrAlt: 'Bank transfer QR code',
       refresh: 'Refresh payment status',
       refreshing: 'Refreshing…',
@@ -658,6 +659,20 @@ export default {
       confirmSuccess: 'Reservation #{code} confirmed successfully!',
       confirmError: 'Unable to confirm reservation.',
       copyNotice: 'Copied {label}',
+      phoneRequired: 'Please add a phone number to your profile before booking.',
+      paymentWindowClosed:
+        'There is no time left to pay for this booking. Please choose another time.',
+    },
+    agreement: {
+      booker: 'Booker',
+      noPhone: 'No phone number',
+      updatePhone: 'Update phone number',
+      rental: 'Court rental',
+      voucher: 'Applied voucher',
+      discount: 'Discount',
+      payable: 'Amount payable',
+      priceChanged: 'The price has changed. New amounts:',
+      confirmNewPrice: 'Confirm new price',
     },
   },
   payment: {

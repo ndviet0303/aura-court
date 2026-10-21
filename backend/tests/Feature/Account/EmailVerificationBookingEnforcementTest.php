@@ -42,6 +42,7 @@ class EmailVerificationBookingEnforcementTest extends TestCase
         $response = $this->withHeader('Idempotency-Key', 'test-booking-'.uniqid())->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slot],
+            'expected_total' => 100000,
         ]);
 
         $response->assertStatus(403);
@@ -100,6 +101,7 @@ class EmailVerificationBookingEnforcementTest extends TestCase
         ])->postJson('/api/reservations', [
             'court_id' => $court->id,
             'slots' => [$slot],
+            'expected_total' => 100000,
         ]);
 
         $response->assertStatus(403);
@@ -135,6 +137,7 @@ class EmailVerificationBookingEnforcementTest extends TestCase
         ])->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slot],
+            'expected_total' => 100000,
         ]);
 
         $response->assertStatus(403);
@@ -275,6 +278,7 @@ class EmailVerificationBookingEnforcementTest extends TestCase
         ])->postJson('/api/reservations', [
             'court_id' => $court->id,
             'slots' => [$slot],
+            'expected_total' => 100000,
             'customer_id' => $walkinCustomer->id,
         ]);
 

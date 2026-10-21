@@ -65,6 +65,7 @@ class SevenGroupsRegressionTest extends TestCase
         $holdRes = $this->actingAs($customer)->withHeaders($headers + ['Idempotency-Key' => 'hold-unpaid-1'])
             ->postJson('/api/reservations', [
                 'quote_id' => $quoteId,
+                'expected_total' => $quoteRes->json('quote.total_amount'),
             ]);
         $holdRes->assertCreated();
         $code = $holdRes->json('reservation.code');

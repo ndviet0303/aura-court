@@ -16,6 +16,8 @@ const legacyMirror = {
   code: 'LEGACY-BK-OLD1',
   status: 'legacy',
   total_amount: 200000,
+  // No contact was recorded on this booking; the account is never shown in its place.
+  booker: null,
   user: { name: 'Khách Cũ', email: 'old@example.test' },
   court: { id: 3, name: 'Sân 3' },
   slots: [{ starts_at: '2026-09-01T08:00:00+07:00', ends_at: '2026-09-01T09:00:00+07:00' }],
@@ -27,7 +29,8 @@ const reservation = {
   code: 'RSV-NEW1',
   status: 'held',
   total_amount: 150000,
-  user: { name: 'Khách Mới', email: 'new@example.test' },
+  booker: { name: 'Người Đặt', phone: '0912345678', email: 'booker@example.test' },
+  user: { name: 'Tên Hồ Sơ Mới', email: 'profile@example.test' },
   court: { id: 4, name: 'Sân 4' },
   slots: [{ starts_at: '2026-10-12T08:00:00+07:00', ends_at: '2026-10-12T09:00:00+07:00' }],
   legacy_mapping: [],
@@ -98,6 +101,21 @@ describe('Admin dashboard reservations list (GET /admin/reservations)', () => {
     expect(api.get).toHaveBeenCalledWith('/admin/reservations', {
       params: { status: 'disputed' },
     })
+  })
+
+  it('shows the booker recorded on the booking, not the account profile', async () => {
+    const wrapper = mountDashboard()
+    await flushPromises()
+
+    const [legacy, recorded] = wrapper.findAll('.booking-row .user-col')
+    expect(legacy!.text()).toBe('—')
+    expect(recorded!.find('strong').text()).toBe('Người Đặt')
+    expect(recorded!.find('.email-sub').text()).toBe('0912345678 · booker@example.test')
+    expect(wrapper.text()).not.toContain('Khách Cũ')
+    expect(wrapper.text()).not.toContain('Tên Hồ Sơ Mới')
+
+    await wrapper.find('input.search-input').setValue('người đặt')
+    expect(wrapper.findAll('.booking-row')).toHaveLength(1)
   })
 
   it('searches the displayed booking code of a legacy mirror', async () => {

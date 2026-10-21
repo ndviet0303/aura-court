@@ -29,7 +29,7 @@ class BookingApiTest extends TestCase
         $walletService->credit($wallet, 500000, 'test_deposit', 1, 'Initial topup');
 
         $response = $this->actingAs($user)->withHeader('Idempotency-Key', 'wallet-checkout')
-            ->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]]);
+            ->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()], 'expected_total' => 120000]);
 
         $response->assertCreated()
             ->assertJsonPath('reservation.status', 'confirmed')
@@ -52,7 +52,7 @@ class BookingApiTest extends TestCase
         CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 120000, 'is_active' => true]);
 
         $response = $this->actingAs($user)->withHeader('Idempotency-Key', 'wallet-insufficient')
-            ->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()]]);
+            ->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()], 'expected_total' => 120000]);
 
         $response->assertStatus(422)
             ->assertJsonPath('message', 'Số dư ví không đủ để thanh toán lịch đặt. Vui lòng nạp thêm tiền vào ví.');

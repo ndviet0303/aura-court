@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { errorMessage } from '@/core/utils/errorMessage'
 import { useBookingStore } from '@/stores/booking'
-import { useAuthStore } from '@/stores/auth'
 import type { AvailabilitySlot, Court } from '@/features/court/types/court'
 import { formatCurrency } from '@/i18n'
 import { DatePicker, SelectDropdown, SkeletonLoader } from '@/shared/components'
@@ -19,15 +17,9 @@ import { describeCourtPlace } from '../utils/courtArea'
 import { useCourtAreaFilter } from '../composables/useCourtAreaFilter'
 import CourtAreaTabs from '../components/CourtAreaTabs.vue'
 import CourtSearchBox from '../components/CourtSearchBox.vue'
-import LoyaltyPointSelector from '@/features/booking/components/LoyaltyPointSelector.vue'
-import CouponCodeField from '@/features/booking/components/CouponCodeField.vue'
-import { useCheckoutCoupon } from '@/features/booking/composables/useCheckoutCoupon'
-import type { LoyaltySelection } from '@/features/booking/utils/reservation'
+import HomeBookingDock from '../components/HomeBookingDock.vue'
 const { t, locale } = useI18n()
 const store = useBookingStore()
-const coupon = reactive(useCheckoutCoupon())
-const auth = useAuthStore()
-const router = useRouter()
 const selected = ref<number | null>(null)
 const selectedCourtObj = computed(
   () => store.courts.find((c: Court) => c.id === selected.value) || null,
@@ -41,8 +33,6 @@ const selectedTimezone = computed(
 const date = ref(getVenueLocalDate(new Date(), selectedTimezone.value))
 const timeFilter = ref('all')
 const sportTypeFilter = ref('all')
-const loading = ref(false)
-const error = ref('')
 
 const sportCategories = [
   { id: 'all', name: 'Tất cả môn', icon: 'apps' },
@@ -247,23 +237,6 @@ async function chooseCourt(courtId?: string | number) {
   date.value = getVenueLocalDate(new Date(), selectedTimezone.value)
   await loadAvailability()
   scrollToSelectedChip()
-}
-
-const loyaltyPayload = ref<LoyaltySelection>(null)
-
-async function submit() {
-  if (!auth.user) return router.push({ name: 'login', query: { redirect: '/booking' } })
-  if (!store.selectedSlots.length) return
-  loading.value = true
-  error.value = ''
-  try {
-    const reservation = await store.checkoutReservation(loyaltyPayload.value, coupon.appliedCode)
-    router.push({ name: 'reservations', params: { code: reservation.code } })
-  } catch (cause: unknown) {
-    error.value = errorMessage(cause, t('common.error'))
-  } finally {
-    loading.value = false
-  }
 }
 
 async function handleSearch() {
@@ -579,87 +552,7 @@ onMounted(async () => {
     </div>
   </section>
 
-  <Transition name="slide-up">
-    <div
-      v-if="store.selectedSlots.length"
-      class="floating-booking"
-      role="region"
-      :aria-label="
-        t('home.floating.summary', {
-          count: store.selectedSlots.length,
-          total: formatCurrency(coupon.total),
-        })
-      "
-    >
-      <!-- Floating Inline Error Notification if booking creation fails -->
-      <div v-if="error" class="floating-dock-error" role="alert">
-        <span class="material-symbols-outlined icon-18">error</span>
-        <span>{{ error }}</span>
-        <button
-          type="button"
-          class="btn-dock-close-err"
-          aria-label="Đóng thông báo"
-          @click="error = ''"
-        >
-          ×
-        </button>
-      </div>
-
-      <!-- Dock Summary Left -->
-      <div class="dock-summary">
-        <div class="dock-badge">
-          <span class="material-symbols-outlined icon-18">schedule</span>
-          <span>{{ t('home.floating.slotsCount', { count: store.selectedSlots.length }) }}</span>
-        </div>
-        <div class="dock-total-box">
-          <span class="dock-total-lbl">{{ t('home.floating.totalLabel') }}</span>
-          <strong class="dock-total-val">{{ formatCurrency(coupon.total) }}</strong>
-        </div>
-      </div>
-
-      <!-- Dock Loyalty Point Selector -->
-      <div v-if="auth.user && selected" class="dock-loyalty-container">
-        <CouponCodeField
-          v-model="coupon.code"
-          :loading="coupon.loading"
-          :error="coupon.error"
-          :discount="coupon.discount"
-          @apply="coupon.apply"
-        />
-        <LoyaltyPointSelector
-          :court-id="selected"
-          :slots="store.selectedSlots.map((s: AvailabilitySlot) => s.startsAt)"
-          :coupon-code="coupon.appliedCode ?? undefined"
-          @change="loyaltyPayload = $event"
-        />
-      </div>
-      <!-- Dock Actions Right -->
-      <div class="dock-actions">
-        <button
-          type="button"
-          class="dock-btn-clear"
-          :title="t('home.floating.clear')"
-          :aria-label="t('home.floating.clear')"
-          @click="store.selectedSlots = []"
-        >
-          <span class="material-symbols-outlined icon-18">close</span>
-        </button>
-        <button
-          class="btn btn-floating-proceed"
-          :disabled="loading || coupon.loading"
-          @click="submit"
-        >
-          <span v-if="loading" class="material-symbols-outlined spin-icon icon-18"
-            >progress_activity</span
-          >
-          <span v-else class="material-symbols-outlined icon-18">payments</span>
-          <span>{{ loading ? t('home.floating.processing') : t('home.floating.proceed') }}</span>
-          <span v-if="!loading" class="material-symbols-outlined icon-18">arrow_forward</span>
-        </button>
-      </div>
-    </div>
-  </Transition>
-  <p v-if="error && !store.selectedSlots.length" class="error container">{{ error }}</p>
+  <HomeBookingDock :court-id="selected" />
 </template>
 <style scoped>
 .availability-beside-bar {

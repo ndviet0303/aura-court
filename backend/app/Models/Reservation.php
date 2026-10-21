@@ -6,6 +6,7 @@ use App\Events\CourtStatusUpdated;
 use App\Traits\BelongsToTenant;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -17,7 +18,7 @@ class Reservation extends Model
 {
     use BelongsToTenant;
 
-    protected $appends = ['loyalty_discount_amount', 'loyalty_points_redeemed'];
+    protected $appends = ['loyalty_discount_amount', 'loyalty_points_redeemed', 'booker'];
 
     protected static function booted(): void
     {
@@ -80,6 +81,30 @@ class Reservation extends Model
         return (int) ($this->metadata['loyalty_points_redeemed']
             ?? $this->metadata['loyalty_snapshot']['points_spent']
             ?? 0);
+    }
+
+    /** @return array{name: string, phone: string, email: string}|null contact recorded when the booking was created */
+    public function getBookerAttribute(): ?array
+    {
+        $booker = $this->metadata['booker'] ?? null;
+
+        return is_array($booker) ? $booker : null;
+    }
+
+    /**
+     * Bookings that still own their court-time: confirmed, or held before their payment deadline.
+     * A hold past its deadline no longer excludes anyone, whether or not the expiry job has run.
+     *
+     * @param  Builder<Reservation>  $query
+     * @return Builder<Reservation>
+     */
+    public function scopeBlocksInventory(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $active) => $active
+            ->where('status', 'confirmed')
+            ->orWhere(fn (Builder $held) => $held
+                ->where('status', 'held')
+                ->where(fn (Builder $deadline) => $deadline->whereNull('hold_expires_at')->orWhere('hold_expires_at', '>', now()))));
     }
 
     public function getStartsAtAttribute(): ?Carbon

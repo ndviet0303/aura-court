@@ -65,6 +65,7 @@ class OrdinaryWalletCheckoutTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
                 'slots' => [$date->toIso8601String()],
+                'expected_total' => 120000,
             ]);
 
         $response->assertCreated();
@@ -128,6 +129,7 @@ class OrdinaryWalletCheckoutTest extends TestCase
             'Idempotency-Key' => 'v2-canonical-checkout-2',
         ])->postJson('/api/reservations/checkout', [
             'quote_id' => $quoteId,
+            'expected_total' => $quoteRes->json('quote.total_amount'),
         ]);
 
         $checkoutRes->assertCreated();
@@ -183,6 +185,7 @@ class OrdinaryWalletCheckoutTest extends TestCase
         ])->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$date->toIso8601String()],
+            'expected_total' => 200000,
         ]);
 
         $checkoutRes->assertStatus(422);
@@ -210,6 +213,7 @@ class OrdinaryWalletCheckoutTest extends TestCase
         ])->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$date->toIso8601String()],
+            'expected_total' => 200000,
         ])->assertCreated();
         $code = $res->json('reservation.code');
         $this->assertSame(300000, $wallet->fresh()->balance);

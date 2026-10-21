@@ -2,6 +2,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { apiUrl } from '@/core/api/client'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
+import type { ReservationBooker } from '@/features/booking/types/reservation'
 
 export interface AdminReport {
   from?: string
@@ -26,7 +27,8 @@ export interface AdminReservation {
   status: string
   total_amount: number
   created_at?: string
-  user?: { name?: string; email?: string } | null
+  // Contact recorded when the booking was made; null on a booking that has none.
+  booker?: ReservationBooker | null
   court?: { id?: number; name: string }
   slots?: { starts_at: string; ends_at?: string; status?: string }[]
   legacy_mapping?: { legacy_code: string; legacy_status: string }[]
@@ -46,6 +48,9 @@ export const RESERVATION_STATUSES = [
 export const reservationCode = (r: AdminReservation) => r.legacy_mapping?.[0]?.legacy_code ?? r.code
 export const reservationStatus = (r: AdminReservation) =>
   r.status === 'legacy' ? (r.legacy_mapping?.[0]?.legacy_status ?? r.status) : r.status
+// Phone and email of the booker recorded on the booking; empty when it has none.
+export const bookerContact = (r: AdminReservation) =>
+  [r.booker?.phone, r.booker?.email].filter(Boolean).join(' · ')
 
 export interface ReviewPayment {
   id: number
@@ -123,7 +128,7 @@ export function useAdminDashboard() {
       (b) =>
         !kw ||
         reservationCode(b).toLowerCase().includes(kw) ||
-        (b.user?.name || '').toLowerCase().includes(kw),
+        (b.booker?.name || '').toLowerCase().includes(kw),
     )
   })
 

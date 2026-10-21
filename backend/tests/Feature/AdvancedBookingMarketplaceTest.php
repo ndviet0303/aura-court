@@ -101,7 +101,7 @@ class AdvancedBookingMarketplaceTest extends TestCase
     {
         $date = now(config('app.timezone'))->addDays($future ? 4 : 2)->setTime(8, 0);
         $slots = array_map(fn (int $hour) => $date->copy()->addHours($hour)->toIso8601String(), range(0, $hours - 1));
-        $response = $this->actingAs($user)->withHeaders(['X-Organization-ID' => (string) $organization->id, 'Idempotency-Key' => uniqid('reservation-')])->postJson('/api/reservations', ['court_id' => $courtId, 'slots' => $slots]);
+        $response = $this->actingAs($user)->withHeaders(['X-Organization-ID' => (string) $organization->id, 'Idempotency-Key' => uniqid('reservation-')])->postJson('/api/reservations', ['court_id' => $courtId, 'slots' => $slots, 'expected_total' => 200000 * $hours]);
         $response->assertCreated();
         $reservation = Reservation::where('code', $response->json('reservation.code'))->firstOrFail();
         $this->actingAs($user)->withHeaders(['X-Organization-ID' => (string) $organization->id, 'Idempotency-Key' => uniqid('confirm-')])->postJson('/api/reservations/'.$reservation->code.'/confirm')->assertOk();

@@ -71,6 +71,7 @@ class GatedMarketplaceAndSplitRegressionTest extends TestCase
         ])->postJson('/api/reservations', [
             'court_id' => $court->id,
             'slots' => [$date->toIso8601String()],
+            'expected_total' => 200000,
         ]);
         $reservationResponse->assertCreated();
 

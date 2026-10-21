@@ -6,12 +6,15 @@ import type { Reservation, PriceQuote } from '../types/reservation'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { i18n, formatCurrency, getCurrentLocale } from '@/i18n'
 import {
+  amountPayable,
+  bookingErrorMessage,
   displayCode,
   displayStatus,
   loyaltyFields,
   type LoyaltySelection,
 } from '../utils/reservation'
 import { venueClock } from '@/core/utils/venueTime'
+import { usePriceChange } from './usePriceChange'
 
 const t = (key: string, params?: Record<string, unknown>) => i18n.global.t(key, params || {})
 
@@ -42,6 +45,8 @@ export function useReservations() {
   const selectedTimeSlot = ref('18:00')
 
   const activeQuote = ref<PriceQuote | null>(null)
+  // A PRICE_CHANGED on hold or checkout, shown until the customer confirms it or prices again.
+  const price = usePriceChange()
   const quoteExpiresInSeconds = ref<number>(0)
   let quoteTimerInterval: number | NodeJS.Timeout | undefined = undefined
 
@@ -146,6 +151,7 @@ export function useReservations() {
     calculatingQuote.value = true
     error.value = ''
     notice.value = ''
+    price.clear()
 
     try {
       const slotIso = new Date(`${selectedDate.value}T${selectedTimeSlot.value}:00`).toISOString()
@@ -166,7 +172,8 @@ export function useReservations() {
     }
   }
 
-  async function holdReservation() {
+  // A hold spends no points, so the amount agreed is the quote total; agreedTotal is a confirmed new price.
+  async function holdReservation(agreedTotal?: number) {
     if (!activeQuote.value) return
     holdingReservation.value = true
     error.value = ''
@@ -175,6 +182,7 @@ export function useReservations() {
     try {
       await bookingApi.holdReservation({
         quote_token: activeQuote.value.quote_token,
+        expected_total: agreedTotal ?? activeQuote.value.total_amount,
       })
       activeQuote.value = null
       clearInterval(quoteTimerInterval)
@@ -182,12 +190,17 @@ export function useReservations() {
       await loadData()
       activeTab.value = 'held'
     } catch (cause: unknown) {
-      error.value = errorMessage(cause, t('reservations.messages.holdError'))
+      if (!price.caught(cause, holdReservation)) {
+        error.value = bookingErrorMessage(cause, t('reservations.messages.holdError'))
+      }
     } finally {
       holdingReservation.value = false
     }
   }
-  async function checkoutReservation(loyaltyPayload?: LoyaltySelection) {
+
+  // Sends the amount payable shown (quote total less the points discount). A resubmission at a confirmed
+  // new price (agreedTotal) has another body, so it goes under a fresh Idempotency-Key.
+  async function checkoutReservation(loyaltyPayload?: LoyaltySelection, agreedTotal?: number) {
     if (!activeQuote.value) return
     holdingReservation.value = true
     error.value = ''
@@ -198,9 +211,11 @@ export function useReservations() {
         {
           quote_token: activeQuote.value.quote_token,
           court_id: selectedCourtId.value ?? undefined,
+          expected_total:
+            agreedTotal ?? amountPayable(activeQuote.value.total_amount, loyaltyPayload),
           ...loyaltyFields(loyaltyPayload),
         },
-        loyaltyPayload?.idempotency_key,
+        agreedTotal === undefined ? loyaltyPayload?.idempotency_key : undefined,
       )
       const code = reservation.code
       activeQuote.value = null
@@ -215,7 +230,10 @@ export function useReservations() {
         activeTab.value = 'confirmed'
       }
     } catch (cause: unknown) {
-      error.value = errorMessage(cause, t('reservations.messages.checkoutError'))
+      const again = (total: number) => checkoutReservation(loyaltyPayload, total)
+      if (!price.caught(cause, again)) {
+        error.value = bookingErrorMessage(cause, t('reservations.messages.checkoutError'))
+      }
     } finally {
       holdingReservation.value = false
     }
@@ -325,6 +343,8 @@ export function useReservations() {
     selectedDate,
     selectedTimeSlot,
     activeQuote,
+    priceChange: price.priceChange,
+    confirmPriceChange: price.confirm,
     quoteExpiresInSeconds,
     formattedQuoteRemaining,
     loading,

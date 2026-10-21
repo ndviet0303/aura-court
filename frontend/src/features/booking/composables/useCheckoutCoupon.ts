@@ -20,6 +20,7 @@ export function useCheckoutCoupon() {
   const appliedCode = computed(() => quote.value?.benefit_snapshot?.coupon_code ?? null)
   const discount = computed(() => quote.value?.benefit_snapshot?.coupon_discount_amount ?? 0)
   const total = computed(() => quote.value?.total_amount ?? subtotal.value)
+  const rental = computed(() => quote.value?.subtotal ?? subtotal.value)
 
   function clear() {
     request++
@@ -54,5 +55,5 @@ export function useCheckoutCoupon() {
 
   watch([code, () => store.selectedCourt, () => slots.value.join()], clear)
 
-  return { code, quote, error, loading, appliedCode, discount, total, apply, clear }
+  return { code, quote, error, loading, appliedCode, discount, total, rental, apply, clear }
 }

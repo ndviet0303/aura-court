@@ -133,6 +133,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
                 'slots' => [$isoSlot],
+                'expected_total' => 200000,
             ]);
         if ($res0->status() === 201) {
             $successCount++;
@@ -150,6 +151,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
                 ->postJson($i % 2 === 1 ? '/api/reservations/checkout' : '/api/reservations', [
                     'court_id' => $court->id,
                     'slots' => [$isoSlot],
+                    'expected_total' => 200000,
                 ]);
 
             if ($res->status() === 409) {
@@ -235,6 +237,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
                 'slots' => [$slot1->toIso8601String()],
+                'expected_total' => 80000,
                 'coupon_code' => 'DISC20K',
                 'loyalty_points' => 10,
                 'loyalty_policy_version' => 1,
@@ -253,6 +256,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
                 'slots' => [$slot2->toIso8601String()],
+                'expected_total' => 100000,
                 'coupon_code' => 'DISC20K',
             ]);
         $res2->assertStatus(422);
@@ -264,6 +268,7 @@ class ComprehensiveConcurrencyAndRetryInvariantsTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
                 'slots' => [$slot3->toIso8601String()],
+                'expected_total' => 100000,
                 'loyalty_points' => 10,
                 'loyalty_policy_version' => 1,
             ]);

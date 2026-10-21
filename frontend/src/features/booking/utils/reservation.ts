@@ -1,3 +1,6 @@
+import type { ApiError } from '@/core/types/api'
+import { errorMessage } from '@/core/utils/errorMessage'
+import { i18n } from '@/i18n'
 import type { HoldReservationPayload, PriceQuote, Reservation } from '../types/reservation'
 
 type Displayable = Pick<Reservation, 'code' | 'status' | 'legacy_mapping' | 'metadata'>
@@ -49,14 +52,37 @@ export type LoyaltySelection = {
   loyalty_policy_version?: number | null
   // Stable per court/slots from LoyaltyPointSelector; sent as the Idempotency-Key so a retry replays.
   idempotency_key?: string
+  discount_vnd?: number
 } | null
 
 // The checkout API rejects loyalty_points < 1, so loyalty fields are sent only for a real redemption.
-export function loyaltyFields(selection?: LoyaltySelection): HoldReservationPayload {
+export function loyaltyFields(
+  selection?: LoyaltySelection,
+): Pick<HoldReservationPayload, 'loyalty_points' | 'loyalty_policy_version'> {
   const points = selection?.loyalty_points ?? 0
   if (points <= 0) return {}
   return {
     loyalty_points: points,
     loyalty_policy_version: selection?.loyalty_policy_version ?? undefined,
   }
+}
+
+// The amount payable shown before submitting and sent as expected_total: the priced total less the
+// loyalty discount of a real redemption.
+export const amountPayable = (total: number, loyalty?: LoyaltySelection): number =>
+  Math.max(0, total - ((loyalty?.loyalty_points ?? 0) > 0 ? (loyalty?.discount_vnd ?? 0) : 0))
+
+// Same rule as the backend User::PHONE_PATTERN; without it a booking is refused with PHONE_REQUIRED.
+export const validBookerPhone = (phone?: string | null): boolean =>
+  /^(0\d{9}|\+84\d{9})$/.test(phone ?? '')
+
+const BOOKING_ERROR_KEYS: Record<string, string> = {
+  PHONE_REQUIRED: 'reservations.messages.phoneRequired',
+  PAYMENT_WINDOW_CLOSED: 'reservations.messages.paymentWindowClosed',
+}
+
+// Booking refusals with their own copy; any other failure reads as the shared error message.
+export function bookingErrorMessage(cause: unknown, fallback?: string): string {
+  const key = BOOKING_ERROR_KEYS[String((cause as ApiError | null)?.code)]
+  return key ? i18n.global.t(key) : errorMessage(cause, fallback)
 }

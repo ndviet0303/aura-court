@@ -65,11 +65,15 @@ export type ReservationReview = {
   body?: string | null
 }
 
+// Contact recorded when the booking was created; later profile edits do not change it.
+export type ReservationBooker = { name: string; phone: string; email: string }
+
 export type Reservation = {
   id: number
   code: string
   status: ReservationStatus | string
   total_amount: number
+  // The single payment deadline of a held booking; its payment attempt expires at the same instant.
   hold_expires_at?: string
   created_at?: string
   user_id?: number
@@ -86,6 +90,7 @@ export type Reservation = {
   legacy_mapping?: LegacyMapping[]
   review?: ReservationReview | null
   metadata?: { operational_status?: 'in_use' | 'completed' | 'no_show' } | null
+  booker?: ReservationBooker | null
 }
 
 export type PriceQuotePayload = {
@@ -95,6 +100,8 @@ export type PriceQuotePayload = {
 }
 
 export type HoldReservationPayload = {
+  // The amount payable the customer was shown; a higher recalculated amount is refused with PRICE_CHANGED.
+  expected_total: number
   quote_token?: string
   quote_id?: number
   court_id?: number
@@ -103,3 +110,6 @@ export type HoldReservationPayload = {
   loyalty_points?: number
   loyalty_policy_version?: number
 }
+
+// New amounts of a 409 PRICE_CHANGED: nothing was created and the customer must confirm them first.
+export type PriceChange = { rental: number; discount: number; total: number }

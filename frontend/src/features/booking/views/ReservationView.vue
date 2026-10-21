@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useReservations } from '../composables/useReservations'
-
-const { t } = useI18n()
-
 import ReservationHero from '../components/reservation/ReservationHero.vue'
 import QuoteCalculatorCard from '../components/reservation/QuoteCalculatorCard.vue'
 import HeldReservationBanner from '../components/reservation/HeldReservationBanner.vue'
@@ -13,12 +10,16 @@ import ReservationDetailModal from '../components/reservation/ReservationDetailM
 import ReservationQrModal from '../components/reservation/ReservationQrModal.vue'
 import ReservationPaymentModal from '../components/reservation/ReservationPaymentModal.vue'
 
+const { t } = useI18n()
+
 const {
   courts,
   selectedCourtId,
   selectedDate,
   selectedTimeSlot,
   activeQuote,
+  priceChange,
+  confirmPriceChange,
   formattedQuoteRemaining,
   loading,
   calculatingQuote,
@@ -110,15 +111,14 @@ function scrollToCalculator() {
       :formatted-remaining="formattedQuoteRemaining"
       :calculating="calculatingQuote"
       :holding="holdingReservation"
-      :money="money"
-      :format-date="formatDate"
-      :format-time-slot="formatTimeSlot"
+      :price-change="priceChange"
       @update:selected-court-id="selectedCourtId = $event"
       @update:selected-date="selectedDate = $event"
       @update:selected-time-slot="selectedTimeSlot = $event"
       @calculate="calculateQuote"
       @hold="holdReservation"
       @checkout="checkoutReservation"
+      @confirm-price="confirmPriceChange"
     />
 
     <!-- Reservations List Section -->

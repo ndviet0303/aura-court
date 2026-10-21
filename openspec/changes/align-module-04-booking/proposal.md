@@ -64,7 +64,7 @@ Người dùng chốt Q1 = A ngày 2026-10-21: theo report, lưới 30 phút.
   - Availability coi hold đã quá hạn là trống.
   - Giữ chỗ mới nhả các hold quá hạn chồng lấn trước khi chèn, không chờ job quét.
 - **Khách huỷ đơn chờ thanh toán (D1, D2; FR-76, BR-84, BR-85).**
-  - `POST reservations/{code}/cancel-payment` chuyển `held` → `cancelled`, nhả chỗ, voucher và điểm đúng một lần.
+  - `POST reservations/{code}/cancel-payment` chuyển `held` → `cancelled`, nhả chỗ và voucher đúng một lần.
   - Gọi lại khi đơn đã huỷ hoặc hết hạn → 200, không làm gì.
   - Đơn đã xác nhận → 409.
   - Tiền tới sau khi huỷ → thanh toán bất thường, đơn vẫn huỷ.

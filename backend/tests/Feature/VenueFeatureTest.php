@@ -67,7 +67,7 @@ class VenueFeatureTest extends TestCase
 
         $customer = User::factory()->create();
         $this->actingAs($customer)->withHeader('Idempotency-Key', 'inactive-venue-checkout')
-            ->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [now()->addDay()->setTime(10, 0)->toIso8601String()]])
+            ->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [now()->addDay()->setTime(10, 0)->toIso8601String()], 'expected_total' => 100000])
             ->assertNotFound()->assertJsonPath('message', 'Sân không tồn tại hoặc đã ngừng hoạt động.');
         $this->assertDatabaseMissing('reservations', ['court_id' => $court->id]);
     }

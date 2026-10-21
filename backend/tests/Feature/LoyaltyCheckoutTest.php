@@ -127,6 +127,7 @@ class LoyaltyCheckoutTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
                 'slots' => [$date->toIso8601String()],
+                'expected_total' => 195000,
                 'loyalty_points' => 100,
                 'loyalty_policy_version' => 1,
             ]);
@@ -191,6 +192,7 @@ class LoyaltyCheckoutTest extends TestCase
             ->withHeader('Idempotency-Key', 'v2-checkout-key-1')
             ->postJson('/api/reservations/checkout', [
                 'quote_token' => $quoteToken,
+                'expected_total' => 195000,
                 'loyalty_points' => 100,
                 'loyalty_policy_version' => 1,
             ]);
@@ -236,6 +238,7 @@ class LoyaltyCheckoutTest extends TestCase
             ->withHeader('Idempotency-Key', 'zero-payable-key')
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
+                'expected_total' => 0,
                 'slots' => [$date->toIso8601String()],
                 'loyalty_points' => 4000,
             ]);
@@ -273,6 +276,7 @@ class LoyaltyCheckoutTest extends TestCase
             ->withHeader('Idempotency-Key', 'fail-wallet-key')
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
+                'expected_total' => 195000,
                 'slots' => [$date->toIso8601String()],
                 'loyalty_points' => 100,
             ]);
@@ -320,6 +324,7 @@ class LoyaltyCheckoutTest extends TestCase
             ->withHeader('Idempotency-Key', 'conflict-key')
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
+                'expected_total' => 195000,
                 'slots' => [$date->toIso8601String()],
                 'loyalty_points' => 100,
             ]);
@@ -347,6 +352,7 @@ class LoyaltyCheckoutTest extends TestCase
             ->withHeader('Idempotency-Key', 'compete-key-1')
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
+                'expected_total' => 195000,
                 'slots' => [$date1->toIso8601String()],
                 'loyalty_points' => 100,
             ]);
@@ -360,6 +366,7 @@ class LoyaltyCheckoutTest extends TestCase
             ->withHeader('Idempotency-Key', 'compete-key-2')
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
+                'expected_total' => 195000,
                 'slots' => [$date2->toIso8601String()],
                 'loyalty_points' => 100,
             ]);
@@ -377,6 +384,7 @@ class LoyaltyCheckoutTest extends TestCase
         $payload = [
             'court_id' => $court->id,
             'slots' => [$date->toIso8601String()],
+            'expected_total' => 195000,
             'loyalty_points' => 100,
             'loyalty_policy_version' => 1,
         ];
@@ -416,6 +424,7 @@ class LoyaltyCheckoutTest extends TestCase
         // Ordinary checkout without points continues to work 100% normally
         $res = $this->actingAs($user)->withHeader('Idempotency-Key', 'no-points-key')->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
+            'expected_total' => 200000,
             'slots' => [$date->toIso8601String()],
         ]);
         $res->assertCreated();

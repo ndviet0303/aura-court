@@ -19,10 +19,10 @@ class ReservationPaymentService
     /**
      * Create (or return the live) pending owner-payment attempt for a reservation-bound obligation.
      *
-     * Defaults model a single 'booking' obligation keyed by the reservation code with the
-     * 15-minute-capped hold TTL. Recurring flows pass an explicit $purpose ('recurring_period'),
-     * a period/series $purposeId, the aggregate $amountOverride, and the period-deadline
-     * $expiresAtOverride (which bypasses the 15-minute cap).
+     * Defaults model a single 'booking' obligation keyed by the reservation code that expires
+     * exactly at the reservation's payment deadline, so reopening payment never extends it.
+     * Recurring flows pass an explicit $purpose ('recurring_period'), a period/series $purposeId,
+     * the aggregate $amountOverride, and the period-deadline $expiresAtOverride.
      */
     public function initiate(
         Reservation $reservation,
@@ -81,9 +81,7 @@ class ReservationPaymentService
                 $expiresAt = Carbon::parse($expiresAtOverride);
                 abort_unless($expiresAt->isFuture(), 409, 'The payment deadline has already passed.');
             } else {
-                $holdExpiresAt = Carbon::parse($lockedReservation->hold_expires_at);
-                $defaultExpiry = now()->addMinutes(15);
-                $expiresAt = $holdExpiresAt->lessThan($defaultExpiry) ? $holdExpiresAt : $defaultExpiry;
+                $expiresAt = Carbon::parse($lockedReservation->hold_expires_at);
             }
             $reference = 'AC'.Str::upper(Str::random(18));
 

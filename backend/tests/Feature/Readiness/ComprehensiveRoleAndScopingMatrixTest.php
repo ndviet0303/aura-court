@@ -258,6 +258,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         ])->postJson('/api/reservations/checkout', [
             'court_id' => $this->courtAlpha->id,
             'slots' => [$slotTime],
+            'expected_total' => 120000,
         ]);
 
         $checkoutResponse->assertStatus(403);
@@ -270,6 +271,7 @@ class ComprehensiveRoleAndScopingMatrixTest extends TestCase
         ])->postJson('/api/reservations', [
             'court_id' => $this->courtAlpha->id,
             'slots' => [$slotTime],
+            'expected_total' => 120000,
         ]);
 
         $holdResponse->assertStatus(403);

@@ -24,6 +24,7 @@ class ReservationSlot extends Model
         ];
     }
 
+    /** @return BelongsTo<Reservation, $this> */
     public function reservation(): BelongsTo
     {
         return $this->belongsTo(Reservation::class);

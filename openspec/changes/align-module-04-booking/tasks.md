@@ -24,38 +24,38 @@
 
 Điều kiện: Pha 0 của module 2 đã merge (`9dddc773`).
 
-- [ ] 2.1 Tách `releaseHeld(Reservation $locked, string $status, string $reason)` từ `ExpirePendingBookings` (D2).
+- [x] 2.1 Tách `releaseHeld(Reservation $locked, string $status, string $reason)` từ `ExpirePendingBookings` (D2).
   - Nhả slot, entitlement, lượt voucher, điểm; cho attempt đang chờ hết hạn; ghi `metadata.release_reason`.
   - Không làm gì khi đơn không còn `held`.
   - `ExpirePendingBookings` gọi hàm này với `('expired', 'payment_deadline')`.
-  - Test: `HeldReservationReleaseTest`. Nhả hai lần chỉ hoàn điểm và nhả voucher một lần; đơn `confirmed` không đổi.
-- [ ] 2.2 Helper dùng chung trước khi chèn (`ReservationIntake`), gọi từ `OrdinaryCheckoutService::checkout` và `ReservationService::hold`. Thứ tự:
+  - Test: `HeldReservationReleaseTest`. Nhả hai lần chỉ nhả voucher (và hoàn điểm của đơn cũ có giữ điểm) một lần; đơn `confirmed` không đổi.
+- [x] 2.2 Helper dùng chung trước khi chèn (`ReservationIntake`), gọi từ `OrdinaryCheckoutService::checkout` và `ReservationService::hold`. Thứ tự:
   - Kiểm SĐT bằng `User::PHONE_PATTERN` → 422 `PHONE_REQUIRED` trước khi khoá.
   - Khoá; nhả các đơn `held` quá hạn chồng lấn trên sân đó (theo id) bằng `releaseHeld(…, 'expired', 'payment_deadline')` (D7).
   - Tính tiền; nếu cao hơn `expected_total` → 409 `PRICE_CHANGED` kèm `{rental, discount, total}` (D5).
   - Tính `hold_expires_at = min(now + 10 phút, giờ bắt đầu, hạn voucher)` khi tiền phải trả > 0; hạn ≤ now → 422 `PAYMENT_WINDOW_CLOSED` (D3).
   - Ghi `metadata.booker = {name, phone, email}` (D4).
   - Bỏ đọc `booking.hold_ttl_minutes` ở `OrdinaryCheckoutService.php:333` và `ReservationService.php:273`.
-- [ ] 2.3 Request checkout và hold: `expected_total` bắt buộc, số nguyên ≥ 0; thiếu → 422.
-- [ ] 2.4 `SlotSelectionPolicy` (D6, D7):
+- [x] 2.3 Request checkout và hold: `expected_total` bắt buộc, số nguyên ≥ 0; thiếu → 422.
+- [x] 2.4 `SlotSelectionPolicy` (D6, D7):
   - Luôn kiểm tính liên tục, bỏ đọc `require_continuity`.
   - Truy vấn chồng lấn bỏ qua `held` có `hold_expires_at ≤ now`.
   - Bỏ `require_continuity` khỏi `E2ESeedFixturesCommand`.
-- [ ] 2.5 `ReservationPaymentService::initiate` (D3): attempt dùng `expires_at = hold_expires_at`, bỏ `now()->addMinutes(15)`. Attempt còn chờ thì trả lại đúng attempt đó.
-- [ ] 2.6 Migration backfill `metadata.booker` cho reservation chưa có, lấy từ hồ sơ lúc chạy, ghi `metadata.booker_backfilled = true`.
-- [ ] 2.7 Màn danh sách đơn của chủ sân và tra mã ở quầy đọc người đặt từ `metadata.booker`, không đọc hồ sơ hiện tại.
-- [ ] 2.8 Frontend `BookingView.vue`, `QuoteCalculatorCard.vue`, `ReservationPaymentModal.vue`:
+- [x] 2.5 `ReservationPaymentService::initiate` (D3): attempt dùng `expires_at = hold_expires_at`, bỏ `now()->addMinutes(15)`. Attempt còn chờ thì trả lại đúng attempt đó.
+- [x] 2.6 Migration backfill `metadata.booker` cho reservation chưa có, lấy từ hồ sơ lúc chạy, ghi `metadata.booker_backfilled = true`.
+- [x] 2.7 Màn danh sách đơn của chủ sân và tra mã ở quầy đọc người đặt từ `metadata.booker`, không đọc hồ sơ hiện tại.
+- [x] 2.8 Frontend `BookingView.vue`, `QuoteCalculatorCard.vue`, `ReservationPaymentModal.vue`:
   - Khối người đặt (tên, SĐT, email). Thiếu SĐT thì hiện link "Cập nhật số điện thoại" và khoá nút gửi.
   - Dòng tiền thuê, voucher, tiền giảm, tổng phải trả; gửi `expected_total` bằng tổng đang hiển thị.
   - `PRICE_CHANGED`: hiện số mới, khách bấm xác nhận lại mới gửi tiếp.
   - Thông báo cho `PHONE_REQUIRED` và `PAYMENT_WINDOW_CLOSED` (vi/en).
   - Đếm ngược theo `hold_expires_at`.
   - Vitest đi kèm.
-- [ ] 2.9 Test backend (`PaymentDeadlineTest`, `BookerSnapshotTest`, `AgreedAmountTest`, `OverdueHoldTest`):
+- [x] 2.9 Test backend (`PaymentDeadlineTest`, `BookerSnapshotTest`, `AgreedAmountTest`, `OverdueHoldTest`):
   - Scenario "Start time caps the deadline" (14:58 → 15:00; tiền tới 15:01 là ngoại lệ `transfer_after_expiry`).
   - Scenario "Voucher end caps the deadline", "Ten-minute cap" (chính sách 30 phút bị bỏ qua), "Reopening the payment information", "No payment window left".
   - Scenario "Missing phone number", "Profile edited after booking".
-  - Scenario "Price rose before submission" (không có dòng reservation, slot, entitlement, coupon usage, point ledger, attempt nào), "Price fell before submission", "Amount not sent".
+  - Scenario "Price rose before submission" (không có dòng reservation, slot, entitlement, coupon usage, attempt nào), "Price fell before submission", "Amount not sent".
   - Scenario "Overdue hold does not block", "Live hold blocks".
   - Scenario "Configured booking window": hai slot không liền nhau → 422 dù cơ sở từng đặt `require_continuity = false`.
   - Cập nhật các test đang gửi checkout không có `expected_total` hoặc dựa vào `hold_ttl_minutes`.
@@ -78,7 +78,7 @@
   - Không có nút check-in hay check-out cho khách.
   - Vitest đi kèm.
 - [ ] 3.5 Test backend `CustomerPaymentCancelTest`:
-  - Scenario "Cancel a pending booking" (chỗ, voucher, điểm nhả đúng một lần; hạn voucher không đổi).
+  - Scenario "Cancel a pending booking" (chỗ và voucher nhả đúng một lần; hạn voucher không đổi).
   - Scenario "Repeated cancellation", "Confirmed booking" (409), "Another customer's booking".
   - Scenario "Transfer arrives after cancellation" (một `FinanceException`, đơn vẫn `cancelled`).
   - Scenario "Customer cancels a booking still pending payment" (không có refund quote hay refund obligation).

@@ -70,6 +70,7 @@ class BlockedCommandsInvariantsTest extends TestCase
         ])->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$date->toIso8601String()],
+            'expected_total' => 150000,
         ])->assertCreated();
 
         $code = $checkoutRes->json('reservation.code');

@@ -84,6 +84,7 @@ class UnifiedBookingEligibilityTest extends TestCase
         $bookRes = $this->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slotTime],
+            'expected_total' => 100000,
         ]);
         $bookRes->assertStatus(404);
         $this->assertDatabaseMissing('reservations', ['court_id' => $court->id]);
@@ -153,6 +154,7 @@ class UnifiedBookingEligibilityTest extends TestCase
         $bookRes = $this->withHeader('Idempotency-Key', uniqid('checkout-'))->postJson('/api/reservations/checkout', [
             'court_id' => $court->id,
             'slots' => [$slotTime],
+            'expected_total' => 100000,
         ]);
 
         // Must be rejected!

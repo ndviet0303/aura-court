@@ -4,12 +4,17 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
 import { isUnverifiedEmailError } from '@/core/utils/errorMessage'
-import { useAuthStore } from '@/stores/auth'
-import { useBookingStore } from '@/stores/booking'
+import { useAuthStore } from '@/features/auth/stores/authStore'
+import { useBookingStore } from '@/features/booking/stores/bookingStore'
 import LoyaltyPointSelector from '@/features/booking/components/LoyaltyPointSelector.vue'
 import CouponCodeField from '@/features/booking/components/CouponCodeField.vue'
+import BookingAgreement from '@/features/booking/components/BookingAgreement.vue'
 import { useCheckoutCoupon } from '@/features/booking/composables/useCheckoutCoupon'
-import type { LoyaltySelection } from '@/features/booking/utils/reservation'
+import {
+  amountPayable,
+  validBookerPhone,
+  type LoyaltySelection,
+} from '@/features/booking/utils/reservation'
 import type { Court, AvailabilitySlot } from '../../types/court'
 const { locale } = useI18n()
 const auth = useAuthStore()
@@ -28,7 +33,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'checkout', loyalty?: LoyaltySelection, couponCode?: string | null): void
+  (e: 'checkout', loyalty: LoyaltySelection, couponCode: string | null, expectedTotal: number): void
   (e: 'removeSlot', slot: AvailabilitySlot): void
   (e: 'resendVerification'): void
   (e: 'clearError'): void
@@ -36,6 +41,11 @@ const emit = defineEmits<{
 
 const loyaltyPayload = ref<LoyaltySelection>(null)
 const isUnverified = computed(() => isUnverifiedEmailError(props.error))
+// The amount payable shown is the expected_total the checkout sends.
+const payable = computed(() => amountPayable(coupon.total, loyaltyPayload.value))
+const blocked = computed(
+  () => !!auth.user && (!validBookerPhone(auth.user.phone) || !!bookingStore.priceChange),
+)
 
 const formattedDate = computed(() => {
   try {
@@ -222,10 +232,6 @@ const formattedDate = computed(() => {
             </RouterLink>
           </div>
         </div>
-        <div class="breakdown-row total-row">
-          <span>{{ $t('schedule.totalPayment') }}</span>
-          <strong class="total-num font-mono">{{ formatCurrency(coupon.total) }}</strong>
-        </div>
       </div>
 
       <LoyaltyPointSelector
@@ -236,11 +242,21 @@ const formattedDate = computed(() => {
         @change="loyaltyPayload = $event"
       />
 
+      <BookingAgreement
+        v-if="selectedSlots.length > 0"
+        :rental="coupon.rental"
+        :coupon-code="coupon.appliedCode"
+        :payable="payable"
+        :price-change="bookingStore.priceChange"
+        :busy="loading"
+        @confirm-price="bookingStore.confirmPrice"
+      />
+
       <button
         type="button"
         class="btn-checkout"
-        :disabled="selectedSlots.length === 0 || loading || coupon.loading"
-        @click="emit('checkout', loyaltyPayload, coupon.appliedCode)"
+        :disabled="selectedSlots.length === 0 || loading || coupon.loading || blocked"
+        @click="emit('checkout', loyaltyPayload, coupon.appliedCode, payable)"
       >
         <span v-if="loading" class="material-symbols-outlined spinner-icon">progress_activity</span>
         <span v-else class="material-symbols-outlined btn-icon">payments</span>
@@ -622,23 +638,6 @@ const formattedDate = computed(() => {
 .badge-topup-link:hover {
   opacity: 0.92;
   transform: translateY(-1px);
-}
-
-.total-row {
-  padding-top: 4px;
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.total-num {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--primary);
-}
-
-:global(html.dark) .total-num {
-  color: #f7a8b8;
 }
 
 .btn-checkout {

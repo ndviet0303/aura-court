@@ -85,6 +85,59 @@ describe('ReservationPaymentModal', () => {
     wrapper.unmount()
   })
 
+  it('counts down to the booking payment deadline while the transfer is pending', async () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] })
+    vi.setSystemTime(new Date('2026-09-25T12:20:00Z'))
+    // The status poll keeps reporting the pending transfer while the clock runs.
+    vi.mocked(bookingApi.getReservationPayment).mockResolvedValue({
+      reservation: { code: 'RSV-PAY-43', status: 'held' },
+      payment_attempt: pendingPayment,
+    })
+    try {
+      const wrapper = mount(ReservationPaymentModal, {
+        props: {
+          show: true,
+          reservation: {
+            id: 43,
+            code: 'RSV-PAY-43',
+            status: 'held',
+            total_amount: 100000,
+            hold_expires_at: '2026-09-25T12:30:00Z',
+          } as Reservation,
+        },
+        global: { plugins: [i18n] },
+      })
+      await flushPromises()
+
+      expect(wrapper.get('[data-testid="payment-countdown"]').text()).toBe(
+        'Time left to pay: 10:00',
+      )
+      vi.advanceTimersByTime(61_000)
+      await flushPromises()
+      expect(wrapper.get('[data-testid="payment-countdown"]').text()).toBe(
+        'Time left to pay: 08:59',
+      )
+      wrapper.unmount()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('shows no countdown for a booking without a payment deadline', async () => {
+    const wrapper = mount(ReservationPaymentModal, {
+      props: {
+        show: true,
+        reservation: { id: 44, code: 'RSV-PAY-44', status: 'held' } as Reservation,
+      },
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="reservation-payment-qr"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="payment-countdown"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
   it('does not show a bank QR when the server cannot start a verified payment', async () => {
     vi.mocked(bookingApi.createReservationPayment).mockRejectedValueOnce(
       new Error('No selected verified account.'),

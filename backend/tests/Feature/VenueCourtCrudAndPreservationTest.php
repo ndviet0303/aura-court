@@ -408,6 +408,7 @@ class VenueCourtCrudAndPreservationTest extends TestCase
             ->postJson('/api/reservations/checkout', [
                 'court_id' => $court->id,
                 'slots' => [now()->addDay()->setTime(10, 0, 0)->toIso8601String()],
+                'expected_total' => 100000,
             ]);
         $newBookingAttempt->assertNotFound();
 

@@ -26,6 +26,25 @@ describe('posApi.getActiveReservations', () => {
 
     expect(reservation!.time_slot).toBe('10:00 - 12:00')
   })
+
+  it('names the customer from the booker recorded on the booking, never the account', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [
+        {
+          id: 8,
+          status: 'confirmed',
+          booker: { name: 'Người Đặt', phone: '0912345678', email: 'booker@example.test' },
+          user: { name: 'Tên Hồ Sơ Mới', phone: '0999999999' },
+        },
+        { id: 9, status: 'confirmed', booker: null, user: { name: 'Tài khoản', phone: '0988' } },
+      ],
+    })
+
+    const [recorded, none] = await posApi.getActiveReservations()
+
+    expect(recorded).toMatchObject({ customer_name: 'Người Đặt', phone: '0912345678' })
+    expect(none).toMatchObject({ customer_name: 'Khách vãng lai', phone: '' })
+  })
 })
 
 describe('posApi.getVenues', () => {

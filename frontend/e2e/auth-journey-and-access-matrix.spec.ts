@@ -131,15 +131,21 @@ test.describe('P0: Xác thực, Vòng đời tài khoản & Phân quyền đặt
       headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfCookie.value)
     }
 
+    const slots = [
+      new Date(Date.now() + 86400000 * 3).toISOString().replace(/T.*/, 'T14:00:00.000Z'),
+    ]
+    // A checkout carries the amount payable the customer was shown, so price the selection first.
+    const quoteRes = await page.request.post(`${manifest.backend.url}/api/price-quotes`, {
+      data: { court_id: courtId, slots },
+      headers: { ...headers, 'Idempotency-Key': randomUUID() },
+    })
+    expect(quoteRes.ok()).toBe(true)
+    const { quote } = (await quoteRes.json()) as { quote: { total_amount: number } }
+
     const checkoutRes = await page.request.post(
       `${manifest.backend.url}/api/reservations/checkout`,
       {
-        data: {
-          court_id: courtId,
-          slots: [
-            new Date(Date.now() + 86400000 * 3).toISOString().replace(/T.*/, 'T14:00:00.000Z'),
-          ],
-        },
+        data: { court_id: courtId, slots, expected_total: quote.total_amount },
         headers,
       },
     )
