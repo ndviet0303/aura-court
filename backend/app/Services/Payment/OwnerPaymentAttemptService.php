@@ -9,6 +9,7 @@ use App\Models\ReceivingConnection;
 use App\Models\ReceivingConnectionEvidence;
 use App\Models\Reservation;
 use App\Models\User;
+use App\Models\Venue;
 use App\Services\Booking\RecurringSeriesService;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\POS\PosQrPaymentService;
@@ -269,11 +270,10 @@ class OwnerPaymentAttemptService
             $attempt = null;
             $purposeSnapshot = null;
             if ($receiverMatches && $paymentCode !== '') {
-                $attempt = OwnerPaymentAttempt::query()
-                    ->where('receiving_connection_id', $connection->id)
-                    ->where('reference', strtoupper($paymentCode))
-                    ->lockForUpdate()
-                    ->first();
+                $attemptQuery = OwnerPaymentAttempt::query()->where('receiving_connection_id', $connection->id)->where('reference', strtoupper($paymentCode));
+                // The allocation insert key-locks the venue; take it before the attempt, in checkout's order (D12).
+                Venue::query()->whereKey((clone $attemptQuery)->value('venue_id'))->lock('for key share')->first(['id']);
+                $attempt = $attemptQuery->lockForUpdate()->first();
                 $purposeSnapshot = $attempt?->purposeSnapshot();
             }
 

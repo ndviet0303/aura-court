@@ -121,13 +121,14 @@
   - `AvailabilityController` (bản Pha 2 của module 3) đổi bước lưới từ `slot_duration` sang 30 phút cho mọi sân; panel trang chủ theo đó. Test: đơn 19:00–21:00 làm bốn mốc 19:00, 19:30, 20:00, 20:30 không trống (scenario "One court is booked from 19 to 21" của module 3).
 - [ ] 5.2 Đơn mới tạo đúng một `ReservationSlot` và một `ReservationEntitlement` phủ cả khoảng; `unit_price` là tiền thuê do engine tính.
 - [ ] 5.3 Bán lại: đơn mới bán nguyên đơn qua entitlement duy nhất; đơn cũ bán từng slot như cũ. Chữ tiếng Việt ghi khoảng giờ, ví dụ "Pass lại đơn 15:30–17:00", không dùng chữ "slot".
-- [ ] 5.4 `Court::SLOT_DURATIONS = [30, 60, 90, 120]`. Migration đổi `slot_duration` 45 → 60 và in số dòng đã đổi. Đặt định kỳ vẫn dùng `slot_duration`.
+- [x] 5.4 `Court::SLOT_DURATIONS = [30, 60, 90, 120]`. Migration đổi `slot_duration` 45 → 60 và in số dòng đã đổi. Đặt định kỳ vẫn dùng `slot_duration`. (test: chưa làm)
 - [ ] 5.5 D12: nối `VoucherUsageService`.
   - `consume`: `processReceipt` (với `$receipt->event_at`), `SplitPaymentService::confirmPaidAttempt` (với `$paidAt`), `ReservationService::confirm` (với `now()`). Đơn 0đ và đơn xác nhận ngay khi tạo do module 3 gọi.
   - `release`: `releaseHeld` và `ReservationService::release`.
   - `VoucherNoLongerApplies` xử lý theo từng đường như D12, nhả bằng `releaseHeld(…, 'expired', 'voucher_changed')` và báo khách. `ReservationController::confirm` trả 422 `VOUCHER_INVALID` kèm lý do.
   - `processReceipt` khoá cơ sở `FOR KEY SHARE` trước khi khoá attempt. `confirmPaidAttempt` khoá đơn bằng `HeldReservationRelease::lock` trước khi đánh dấu nhóm `confirmed`.
   - Nhánh hỏng của `confirmPaidAttempt` và `SplitPaymentService::expire` hết hạn attempt `split_share` còn chờ bằng `DB::afterCommit`, trong một transaction riêng, không làm trong transaction đang giữ nhóm. Phải xong trước khi module 3 merge task 5.4 của họ.
+  - Đã làm trước (2026-10-22, chưa có test): `processReceipt` khoá cơ sở `FOR KEY SHARE` trước attempt; `SplitPaymentService::expire` hết hạn attempt `split_share` sau commit. Còn lại chờ `VoucherUsageService` (task 5.1–5.3 của module 3): `consume`, `release`, `VoucherNoLongerApplies`, khoá đơn trước khi nhóm `confirmed` và nhánh hỏng của `confirmPaidAttempt` (dùng cùng cách hết hạn sau commit như `expire`).
 - [ ] 5.6 D11: listener `CourtPricesTookEffect(courtIds, effectiveAt)`.
   - Tìm đơn `held` trên `courtIds` có giờ kết thúc sau `effectiveAt`.
   - Mỗi đơn một transaction: khoá qua `HeldReservationRelease::lock`, đơn không còn `held` thì bỏ qua, tính lại bằng `RentalPriceCalculator::quote` với voucher đơn đang giữ và `$heldBy` là chính đơn đó.
@@ -139,6 +140,7 @@
   - Không gửi `coupon_code` hay `loyalty_points`. Chừa chỗ cho phần chọn voucher; task 5.5 của module 3 thêm phần chọn và gửi `voucher_program_id` hoặc `voucher_code`.
   - Rà chữ "slot" trong `vi.ts` cho đặt sân, lỗi, thông báo chờ và bán lại.
   - Vitest đi kèm.
+  - Quyết định (2026-10-22): chưa làm phần nào trước khi merge Pha 2 của module 3. Task 2.8 và 2.10 của họ (đang làm, chưa commit) đã sửa chính các file của task này: `ScheduleBookingSummary`, `useCourtSchedule`, `bookingStore`, `BookingAgreement`, `HomeBookingDock`, `HomeView`, `vi.ts`; họ cũng xoá `LoyaltyPointSelector` và `CouponCodeField`, và đổi `useCheckoutCoupon` thành `useSelectionQuote`. Việc bỏ `coupon_code` và `loyalty_points` vì thế thuộc task 2.10 của họ. Các phương án đã cân nhắc: (a) làm form 30 phút ngay trên file cũ, loại vì chắc chắn xung đột khi merge và form vẫn phải gửi `slots` tới khi xong task 5.1; (b) viết sẵn helper chưa có chỗ dùng, loại vì là code để dành. Chọn (c): làm cả task sau khi merge `feat/module03-price-tables`, cùng với task 5.1.
 - [ ] 5.8 Test backend (`ThirtyMinuteBookingIntervalTest`, `PendingPriceChangeTest`, `VoucherConsumeOnConfirmTest`):
   - Scenario "Half-hour boundaries" (15:30–17:00 theo ví dụ report), "Thirty-minute minimum", "Off-grid time", "Gapped selection", "Past start", "Court interval length does not apply", "Resale of a new booking".
   - Scenario "Unsupported interval length", "Interval length does not shape customer bookings", "Existing 45-minute courts".

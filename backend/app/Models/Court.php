@@ -17,7 +17,7 @@ class Court extends Model
 
     public const SPORT_TYPES = ['badminton', 'football_5v5', 'football_7v7', 'tennis', 'pickleball', 'basketball', 'volleyball', 'table_tennis'];
 
-    public const SLOT_DURATIONS = [30, 45, 60, 90, 120];
+    public const SLOT_DURATIONS = [30, 60, 90, 120];
 
     public array $translatable = ['name', 'description'];
 
