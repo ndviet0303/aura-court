@@ -1251,7 +1251,7 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     await summary.locator('.coupon-text-input').fill(coupon.code)
     await summary.locator('.btn-apply-coupon').click()
     await expect(summary.locator('.coupon-discount')).toContainText(/20\.000/, { timeout: 15000 })
-    await expect(summary.locator('.total-num')).toContainText(/80\.000/)
+    await expect(summary.locator('[data-testid="agreement-payable"]')).toContainText(/80\.000/)
 
     await summary.locator('.btn-checkout').click()
     await expect(page).toHaveURL(/\/reservations\/RSV[A-Z0-9]+/, { timeout: 20000 })
@@ -1409,5 +1409,150 @@ test.describe('P0: Hành trình đặt sân, Thanh toán & Vòng đời giao d�
     expect(state.loyalty_points_redeemed).toBe(100)
     expect(state.attempt_count).toBe(0)
     expect(state.debit_count).toBe(1)
+  })
+
+  test('4.6: Hủy thanh toán trả khung giờ ngay, tiền chuyển sau khi hủy hiện ở màn Thanh toán bất thường của chủ sân khi tắt payout', async ({
+    page,
+    browser,
+  }) => {
+    // Three sessions: the customer, a visitor watching the schedule, and the owner
+    test.slow()
+    const manifest = getTestManifest()
+    const customer = getActorCredentials(manifest, 'customer')
+    const owner = getActorCredentials(manifest, 'owner1')
+    const venue1A = manifest.fixtures?.organizations.org1?.venue1A
+    if (!venue1A?.routingId) {
+      throw new Error('E2E fixture missing: venue1A routingId')
+    }
+    const court = arrangeCourt(manifest, { testKey: '4_6_cancel_payment', venueId: venue1A.id })
+
+    // The schedule of a future date (card index 4), as every viewer opens it
+    async function openSchedule(target: typeof page) {
+      await target.goto(`/courts/${court.court_id}/schedule`, { waitUntil: 'domcontentloaded' })
+      const card = target.locator('.date-carousel .date-card-btn').nth(4)
+      await card.waitFor({ state: 'visible', timeout: 15000 })
+      await card.click()
+      await expect(card).toHaveClass(/active/, { timeout: 10000 })
+      await expect(target.locator('.slots-grid .slot-cell-btn').first()).toBeVisible({
+        timeout: 25000,
+      })
+      return target.locator('.slots-grid .slot-cell-btn')
+    }
+
+    // 1. Customer holds the first free slot
+    await page.goto('/login', { waitUntil: 'domcontentloaded' })
+    await page.locator('input[type="email"], input[name="email"]').fill(customer.email)
+    await page.locator('input[type="password"], input[name="password"]').fill(customer.password)
+    await page.locator('button[type="submit"]').click()
+    await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
+
+    const slots = await openSchedule(page)
+    await expect(page.locator('.slots-grid .slot-cell-btn.is-available').first()).toBeVisible({
+      timeout: 25000,
+    })
+    const slotIndex = await slots.evaluateAll((cells) =>
+      cells.findIndex((cell) => cell.classList.contains('is-available')),
+    )
+    await slots.nth(slotIndex).click()
+
+    const checkoutBtn = page.locator('.schedule-summary-card .btn-checkout')
+    await expect(checkoutBtn).toBeEnabled({ timeout: 10000 })
+    const paymentResponsePromise = page.waitForResponse(
+      (res) =>
+        res.url().includes('/payment') &&
+        res.request().method() === 'POST' &&
+        (res.status() === 200 || res.status() === 201),
+      { timeout: 25000 },
+    )
+    await checkoutBtn.click()
+    await expect(page).toHaveURL(/\/reservations\/RSV[A-Z0-9]+/, { timeout: 25000 })
+    const paymentBody = (await (await paymentResponsePromise).json()) as {
+      reservation: { code: string; status: string }
+      payment_attempt: {
+        amount: number
+        transfer_content: string
+        receiver: { account_number: string }
+      }
+    }
+    const reservationCode = paymentBody.reservation.code
+    const attempt = paymentBody.payment_attempt
+    expect(paymentBody.reservation.status).toBe('held')
+
+    // 2. Another visitor sees the held slot taken
+    const visitorContext = await browser.newContext()
+    try {
+      const visitor = await visitorContext.newPage()
+      await visitor.addInitScript(() => sessionStorage.setItem('aura_demo_warned', 'true'))
+      await expect((await openSchedule(visitor)).nth(slotIndex)).toHaveClass(/is-occupied/, {
+        timeout: 15000,
+      })
+
+      // 3. Customer cancels the payment after confirming
+      const modal = page.locator('[data-testid="reservation-payment-modal"]')
+      await expect(modal).toBeVisible({ timeout: 20000 })
+      await modal.locator('[data-testid="cancel-payment"]').click()
+      const cancelResponsePromise = page.waitForResponse(
+        (res) =>
+          res.url().includes(`/reservations/${reservationCode}/cancel-payment`) &&
+          res.request().method() === 'POST',
+        { timeout: 15000 },
+      )
+      await modal.locator('[data-testid="confirm-cancel-payment"]').click()
+      const cancelResponse = await cancelResponsePromise
+      expect(cancelResponse.status()).toBe(200)
+      await expect(page.locator('.alert-pill-success')).toBeVisible({ timeout: 10000 })
+
+      await page.reload({ waitUntil: 'domcontentloaded' })
+      await expect(page.locator('.status-badge.cancelled')).toBeVisible({ timeout: 15000 })
+      await expect(page.locator('[data-testid="reservation-payment-modal"]')).toHaveCount(0)
+
+      // 4. The slot is free again at once, with no expiry sweep
+      await expect((await openSchedule(visitor)).nth(slotIndex)).toHaveClass(/is-available/, {
+        timeout: 15000,
+      })
+    } finally {
+      await visitorContext.close()
+    }
+
+    // 5. Money for the cancelled request arrives before its original deadline
+    const webhookRes = await sendSyntheticPaymentWebhook(manifest, {
+      routingId: venue1A.routingId,
+      secret: `whsec_e2e_1a_${manifest.runId}`,
+      accountNumber: attempt.receiver.account_number,
+      amount: attempt.amount,
+      code: attempt.transfer_content,
+      referenceCode: attempt.transfer_content,
+      transactionId: `TXN-46-${Date.now()}`,
+      transactionDate: formatVietnamDate(new Date(Date.now() + 10000)),
+    })
+    expect(webhookRes.statusCode).toBe(200)
+
+    // 6. Payouts are off: the owner finds it under "Thanh toán bất thường", not the payout queues
+    const ownerContext = await browser.newContext()
+    try {
+      const ownerPage = await ownerContext.newPage()
+      await ownerPage.addInitScript(() => sessionStorage.setItem('aura_demo_warned', 'true'))
+      await ownerPage.goto('/login', { waitUntil: 'domcontentloaded' })
+      await ownerPage.locator('input[type="email"], input[name="email"]').fill(owner.email)
+      await ownerPage.locator('input[type="password"], input[name="password"]').fill(owner.password)
+      await ownerPage.locator('button[type="submit"]').click()
+      await expect(ownerPage).not.toHaveURL(/\/login/, { timeout: 15000 })
+
+      await ownerPage.goto('/admin/payment-exceptions', { waitUntil: 'domcontentloaded' })
+      await expect(ownerPage.locator('a[href="/admin/payment-exceptions"]').first()).toBeVisible({
+        timeout: 15000,
+      })
+      await expect(ownerPage.locator('a[href="/admin/financial-exceptions"]')).toHaveCount(0)
+
+      const row = ownerPage
+        .locator('[data-testid="owner-payment-exceptions"] tbody tr')
+        .filter({ hasText: reservationCode })
+      await expect(row).toHaveCount(1, { timeout: 15000 })
+      await expect(row).toContainText('Chuyển sau khi đơn hết hạn hoặc đã hủy')
+      await expect(row).toContainText(attempt.transfer_content)
+      await expect(row).toContainText('Chưa xử lý')
+    } finally {
+      await ownerContext.close()
+    }
   })
 })

@@ -160,12 +160,19 @@
   - phpunit trên DB `*_test` bằng phpunit config tạm; PHPStan với `.env` tạm; không chạy artisan hay test vào DB prod.
   - Vitest chạy riêng với `--maxWorkers=1`, không chạy cùng lúc với phpunit.
   - Lint và build frontend.
+  - Đã đạt ở Pha 0, 2, 3, 4. Còn Pha 5.
 - [ ] 6.2 Playwright:
-  - Đặt 15:30–17:00 → thanh toán → đã xác nhận.
-  - Giữ chỗ → hủy thanh toán → khung giờ trống lại.
-  - Giá tăng giữa chừng → `PRICE_CHANGED` → xác nhận lại.
-  - Owner thấy dòng thanh toán bất thường khi tắt payout.
+  - Đặt 15:30–17:00 → thanh toán → đã xác nhận. Chờ lưới 30 phút (Pha 5).
+  - Giữ chỗ → hủy thanh toán → khung giờ trống lại. Đã có: test 4.6 trong `p0-booking-payment-journey.spec.ts`.
+  - Giá tăng giữa chừng → `PRICE_CHANGED` → xác nhận lại. Viết sau Pha 5, xem ghi chú dưới.
+  - Owner thấy dòng thanh toán bất thường khi tắt payout. Đã có: cùng test 4.6.
+  - Ghi chú (2026-10-21):
+    - Kịch bản huỷ thanh toán và kịch bản của owner gộp vào một hành trình 4.6 cho đỡ dựng lại đơn: khách giữ chỗ, người xem khác thấy khung bận, khách huỷ, khung trống lại không cần quét hết hạn; tiền tới sau khi huỷ, owner thấy dòng "Chuyển sau khi đơn hết hạn hoặc đã hủy" ở `/admin/payment-exceptions`, không thấy mục ngoại lệ tài chính cũ. Môi trường e2e không bật `FEATURE_MARKETPLACE_PAYOUTS` nên đúng ca tắt payout.
+    - Pha 2 bỏ `.total-num` ở thẻ tóm tắt lịch sân nhưng quên test 4.5.2. Test này nay đọc tổng phải trả từ `[data-testid="agreement-payable"]`, như vitest `ScheduleView`.
+    - Chạy lại Khu 2, 3, 4 (57 test) trên một lane cô lập: đạt cả. Sáu test lần đầu dừng ở `/login` vì throttle `auth-login` khi mọi lần đăng nhập dồn vào một backend; chạy lại riêng trên lane mới thì đạt. Cấu hình chuẩn bốn lane không gặp.
+    - `PRICE_CHANGED` đã có ở backend và frontend từ Pha 2 nhưng chưa viết Playwright. Phương án: (a) viết ngay, đổi giá bằng cách sửa `PriceRule` và `CourtPriceSlot` của sân e2e; (b) viết sau Pha 5, đổi giá qua bảng giá của module 3. Chọn (b): engine `RentalPriceCalculator` và bảng giá của module 3 thay nguồn giá đó, nên test viết theo (a) phải viết lại ở Pha 5. Trong lúc chờ, hành vi được giữ bởi `AgreedAmountTest` và vitest `ScheduleView` ("resubmits at a changed price only after the customer confirms it").
 - [ ] 6.3 Cập nhật `report-traceability.md`: trạng thái từng mã sau mỗi pha, ghi commit và test thật.
+  - Đã cập nhật tới Pha 4 (mục "Nghiệm thu theo pha"). Cập nhật lại sau Pha 5.
 - [ ] 6.4 Kiểm lại D13 sau khi các pha của module 2 và module 3 xong: BR-76, giá "từ" của FR-69, tài khoản nhận tiền.
 - [ ] 6.5 Trước khi archive: dựng lại các khối MODIFIED ("Active inventory exclusivity", "Final bookings and released availability", "Courts carry their own sport and booking interval", "Settlement and payout lifecycle") từ text đang có ở spec chính, chỉ giữ phần sửa của change này; chạy lại `openspec validate --strict`.
 - [ ] 6.6 Archive sau `direct-owner-cutover`, `align-module-02-venue-court` và `align-module-03-pricing-promotions`, ngay sau change của module 3.
