@@ -113,7 +113,7 @@
     - Scenario `realtime-updates` "Court is marked for emergency maintenance": stop hẹn sau phát khi sân chuyển `paused`, resume phát khi sân về `active`.
     - Chạy lệnh hai lần không đổi gì thêm và không phát sự kiện thứ hai.
 - [ ] 1.13 Bỏ duyệt công khai (D1):
-  - Xoá `SubmitVenueForPublication`, `ReviewVenuePublication`, `EvaluateVenueReadiness`.
+  - Xoá `SubmitVenueForPublication`, `ReviewVenuePublication`, `EvaluateVenueReadiness`. Nếu Pha 2 của module 3 merge trước task này, họ đã đổi `EvaluateVenueReadiness` và `SubmitVenueForPublication` sang liên kết; task này vẫn xoá chúng.
   - Xoá route `submit-publication`, `readiness`, `publication-queue`, `revisions/*`.
   - Xoá overlay snapshot trong `Venue::toArray`. API công khai đọc giá trị đang lưu.
   - Requirement bị bỏ: "Report-aligned draft venue readiness", "Independent publication review".
@@ -267,16 +267,18 @@
   - bỏ `CourtPriceSlot`, viết lại availability;
   - service, endpoint và mã lỗi 422 của độ phủ.
   - Change này không làm phần nào trong số đó.
-  - Gửi module 3 yêu cầu phối hợp (design Q1): bỏ delta `venue-court-operations` "độ phủ giá là điều kiện mở sân" và task `OpenCourt`/resume của họ; change này làm 3.3–3.5.
+  - Module 3 đã nhận yêu cầu phối hợp (design Q1; D3 và task 1.4 của họ): họ bỏ delta `venue-court-operations` và task `OpenCourt`/resume; change này làm 3.3–3.5.
 - [ ] 3.2 Form sân chọn bảng giá cùng cơ sở, đọc và ghi đúng liên kết mà module 3 định nghĩa, qua API của module 3. Không tự thêm cột liên kết trên `courts`.
+  - Gọi cùng action áp liên kết của module 3 (task 2.5 của họ, test `PriceTableLinkActionTest`). Đổi liên kết làm hở giá một sân `active` hoặc `paused` nhận 422 `PRICE_COVERAGE_INCOMPLETE` của họ; màn sân hiện các khoảng thiếu.
+  - Vitest `CourtFormModal.spec.ts`: chọn bảng giá cùng cơ sở, hiện giá đã resolve và đánh dấu khoảng hở, hiện `missing_items` của 422 `PRICE_COVERAGE_INCOMPLETE` khi đổi liên kết. Thay `PricingCalendarGrid.spec.ts` mà module 3 xoá.
   - Bảng giá của cơ sở hoặc tổ chức khác thì trả 422 và liên kết cũ giữ nguyên.
   - Chỉ owner đổi được liên kết; người khác nhận 403.
   - Màn sân không nhận giá trực tiếp. Màn hiện giá do module 3 resolve và đánh dấu khoảng hở.
   - Test: `CourtPriceTableLinkTest`.
     - Scenario: "Link a price table of the same venue", "Price table of another venue".
     - Scenario "Confirmed booking after a price change": đơn giữ đơn giá và tổng tiền đã ghi.
-- [ ] 3.3 `OpenCourt` gọi service độ phủ của module 3.
-  - Giá chưa phủ kín thì trả 422 và liệt kê từng khoảng hở.
+- [ ] 3.3 `OpenCourt` gọi `PriceCoverageService` của module 3.
+  - Giá chưa phủ kín thì trả 422 gộp: mỗi khoảng hở (sân, thứ hoặc ngày, giờ bắt đầu, giờ kết thúc) là một mục trong `missing_items`, cùng các điều kiện khác. Không trả `PRICE_COVERAGE_INCOMPLETE` riêng (D3 của module 3).
   - Test: `CourtOpeningConditionsTest`.
     - Scenario "Price gap": hở khung 21:00–22:00.
     - Scenario "All conditions met": độ phủ đủ.
@@ -284,6 +286,9 @@
   - Test: `CourtOpeningConditionsTest`, scenario "Court resume with a price gap".
 - [ ] 3.5 Độ phủ kín là điều kiện nhận đặt (design Q1, BR-41, BR-47):
   - `VerifyEffectiveBookingEligibility` thêm điều kiện: lịch phục vụ hiệu lực của sân được phủ giá kín, gọi cùng service độ phủ. Áp cho public list, chi tiết, availability và mọi đường đặt mới.
+  - Pha 2 của module 3 đã đổi `CourtPriceRuleService::isPriced` (trong `VerifyEffectiveBookingEligibility`) và `pricedCourtIds` (danh sách công khai trong `CourtController::index`) thành "sân có liên kết thường đang hiệu lực". Thêm kiểm độ phủ trên cả hai, vì danh sách công khai không đi qua `execute` cho từng sân.
+  - Trong `pricedCourtIds`, kiểm độ phủ một lần theo lô cho cả danh sách, không gọi theo từng sân. Cần một entry point nhiều sân của `PriceCoverageService` (đã nhờ module 3 thêm ở task 2.4 của họ).
+  - Test: giữ xanh `PricedCourtVisibilityTest::test_public_list_query_count_does_not_grow_with_courts`.
   - Bỏ ghi chú `ponytail:` ở 1.10.
   - Trước khi bật trên prod: pre-check đếm sân `active` có lịch phục vụ hở giá (Migration Plan bước 2).
   - Test: `UnifiedBookingEligibilityTest`. Scenario "Active court with partial price coverage".
@@ -311,7 +316,7 @@
   - Test: `AffectedReservationsListTest`. Scenario: "Deleted special-hours exception", phần xem trước.
 - [ ] 4.4 Lưu kèm xác nhận:
   - Danh sách ảnh hưởng không rỗng thì cần `acknowledge_affected: true`. Thiếu thì trả 409 kèm danh sách và không lưu.
-  - Khi lưu: khoá dòng cơ sở hoặc sân, tính lại danh sách dưới lock, lưu thay đổi, rồi mở case.
+  - Khi lưu: khoá các sân bị ảnh hưởng (id tăng dần) rồi cơ sở, theo thứ tự toàn cục (design "Kiểm eligibility dưới lock"); tính lại danh sách dưới lock, lưu thay đổi, rồi mở case. `SaveVenueOperatingSchedule` và `SaveVenueScheduleException` bỏ thứ tự cơ sở → sân hiện có.
   - Lưu lại cùng thay đổi không tạo case thứ hai.
   - Bỏ 409 từ chối của `CourtCommitmentConflictService`, gồm cả đường tạm ở 1.7.
   - Test:
@@ -353,17 +358,19 @@
     - Scenario: "Owner moves an affected booking to another court", "Move to a court of another sport", "Concurrent moves into the same court-time".
     - Scenario "Checked-in booking during an incident stop": chuyển đơn đang sử dụng.
     - Scenario "Move a booking in use mid-slot": slot đang diễn ra và ngắn hơn mức tối thiểu vẫn chuyển được; slot đã kết thúc ở lại sân gốc.
+  - Đơn `held` đang giữ lượt voucher → 409, không đổi gì (design D8); 4.9 dùng cùng kiểm tra. Làm khi task 5.1–5.3 của module 3 đã có trên main; trước đó ghi `ponytail:` ở lệnh. Test scenario "Held booking with a voucher".
 - [ ] 4.9 Lệnh `change-time`: giữ sân và tổng thời lượng. Khác thời lượng trả 422.
   - Thêm lại tham số loại trừ slot của chính đơn cho `SlotSelectionPolicy::assertAllowed`.
   - Test: `AffectedBookingCommandsTest`. Scenario: "Time change on the same court", "Time change with a different duration".
 - [ ] 4.10 Lệnh `cancel`:
   - Giải phóng slot chưa kết thúc, đúng một lần.
-  - Đơn chờ thanh toán: kết thúc nghĩa vụ thanh toán, trả coupon và điểm đã giữ, đúng một lần. Chuyển khoản tới sau thành finance exception.
-    - Dùng `releaseHeld(Reservation $locked, 'cancelled')` của module 4 (D2) khi module 4 merge, ghi `cancel_reason=operator_affected_booking`. Trước đó dùng đường nhả hiện có, ghi `ponytail:` để đổi.
-    - Khách thấy nhãn "cơ sở huỷ do thay đổi vận hành", không phải "Đã hủy thanh toán".
+  - Đơn chờ thanh toán: gọi `releaseHeld($locked, 'cancelled', 'operator_affected_booking')` của module 4 (design D8). Hàm này kết thúc nghĩa vụ thanh toán và nhả lượt voucher đang giữ đúng một lần. Chuyển khoản tới sau thành finance exception.
+  - Đơn đã trả hoặc đang sử dụng: tự đặt `cancelled` và ghi cùng `metadata.release_reason = operator_affected_booking`.
+  - Khách thấy nhãn "cơ sở huỷ do thay đổi vận hành", không phải "Đã hủy thanh toán": thêm nhánh `release_reason = operator_affected_booking` trong `statusLabel` (`frontend/src/features/booking/utils/reservation.ts`) và key i18n vi/en; vitest cho cả đơn chờ và đơn đã trả.
   - Chỉ owner gắn được ghi chú hoàn tiền.
   - Test: `AffectedBookingCommandsTest`.
     - Scenario: "Cancel a paid affected booking", "Cancel an affected booking that is still awaiting payment", "Refund note".
+    - Với đơn chờ, assert việc `releaseHeld` làm: đơn `cancelled`, `release_reason`, slot nhả một lần, attempt chờ hết hạn, chuyển khoản tới sau thành ngoại lệ. Seed dòng `voucher_uses` `held` và assert nhả một lần chỉ khi task 5.5 của module 4 đã merge; trước đó dựa vào `HeldReservationReleaseTest` của module 4. Không seed coupon.
     - Scenario "Final bookings and released availability": "Operator cancels an affected booking".
 - [ ] 4.11 `markNoShow` trả 409 khi đơn còn case mở, kể cả case `unreachable`.
   - Test: `AffectedBookingCommandsTest`. Scenario "No-show on an open case" (`venue-court-operations`); `on-site-attendance` "Booking attendance lifecycle" trỏ về quy tắc này.

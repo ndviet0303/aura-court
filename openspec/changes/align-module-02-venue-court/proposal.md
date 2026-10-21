@@ -114,7 +114,7 @@ Tên requirement ADDED dùng chung giữa các file: "Venue suspension and remed
   - Không sửa scenario "Multilingual Content Storage" của `localization/database-i18n` (actor còn là admin); để change sau nếu cần.
 - **Chồng lấn module 4 (`align-module-04-booking`):**
   - `reservations-and-pricing`: module 4 mở lại khách huỷ đơn chờ thanh toán. Nếu hai change cùng sửa "Final bookings and released availability" hoặc "Unversioned reservation API", change archive sau dựng khối MODIFIED từ text của change archive trước. Lệnh cấm khách huỷ ở đây giữ nguyên; module 4 thu hẹp khi rebase.
-  - Lệnh huỷ của owner/staff với đơn chờ thanh toán dùng `releaseHeld` của module 4 (D2) khi module 4 merge, ghi `cancel_reason=operator_affected_booking`. Khách thấy "cơ sở huỷ do thay đổi vận hành", không phải nhãn "Đã hủy thanh toán" (D10 của module 4).
+  - Lệnh huỷ của owner/staff với đơn chờ thanh toán gọi `releaseHeld($locked, 'cancelled', 'operator_affected_booking')` của module 4 (D2), lý do nằm ở `metadata.release_reason`; đơn đã trả bị huỷ ghi cùng lý do. Khách thấy "cơ sở huỷ do thay đổi vận hành", không phải nhãn "Đã hủy thanh toán" (D10 của module 4).
   - Module 4 nhờ module 2 bỏ `hold_ttl_minutes` và `require_continuity` khỏi form và request chính sách cơ sở. Change này nhận việc đó (task 2.16), làm sau khi module 4 bỏ việc đọc hai trường.
   - Module 4 giao lại hai việc về eligibility: mua lại slot kiểm lại eligibility dưới lock (task 1.11a) và deadlock `40P01` trả 409 (task 1.11b). Hai scenario nằm trong "Unified public and new-booking eligibility".
   - Lệnh cấm khách huỷ trong `api-alignment`, `wallet-payment`, `owner-hosted-drop-in-sessions` và `platform-readiness` giữ nguyên ở change này; module 4 thu hẹp khi rebase, như với `reservations-and-pricing`.

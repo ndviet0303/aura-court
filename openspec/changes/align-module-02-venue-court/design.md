@@ -142,10 +142,15 @@
 - Lệnh đóng mọi case mở của đơn với cùng kết quả. Lịch sử đơn ghi nguồn case làm lý do.
 - Không mở case mới sau khi chuyển hay đổi giờ: kiểm dưới lock đã loại khung trùng stop, đình chỉ hoặc ngoài giờ phục vụ. Phương án mở lại case cho khung mới bị loại vì không có khung đích nào lọt qua kiểm tra mà vẫn bị ảnh hưởng.
 - `move-court`: giữ giờ, cùng tổ chức, cùng môn; khác môn → 422. `change-time`: giữ sân và tổng thời lượng; khác thời lượng → 422.
+- Đơn `held` đang giữ lượt voucher: `move-court` và `change-time` trả 409, đơn, lượt và case giữ nguyên; operator huỷ đơn thay thế.
+  - Lý do: `consume` của module 3 (D11 của họ) kiểm lại voucher theo sân và giờ của đơn lúc xác nhận. Đơn chuyển sang sân ngoài tập sân của chương trình, hoặc sang giờ có mức giảm khác, sẽ hết hạn với lý do `voucher_changed` và chuyển khoản thành ngoại lệ, dù khách đã đồng ý.
+  - Phương án khác: kiểm lại voucher cho khung đích bằng engine của module 3 dưới lock. Loại: thêm khoá chương trình và phụ thuộc engine vào lệnh D8 cho một trường hợp hiếm (đơn chờ chỉ sống vài phút).
+  - Trước task 5.1–5.3 của module 3 chưa đơn nào giữ lượt, nên quy tắc chưa có hiệu lực.
 - Đổi giờ cần loại trừ slot của chính đơn khỏi kiểm chồng. Thêm lại tham số loại trừ cho `SlotSelectionPolicy::assertAllowed`, mà cutover Decision 7 đã bỏ. Lệnh D8 truyền chính sách đã ghi của đơn thay cho chính sách đang hiệu lực, và áp các ngoại lệ ở trên.
-- `cancel` giải phóng slot chưa kết thúc một lần; đơn chờ thanh toán thì kết thúc nghĩa vụ thanh toán, trả coupon và điểm đã giữ.
-  - Đơn `held` đi qua `releaseHeld(Reservation $locked, 'cancelled')` của module 4 (D2) khi module 4 merge, với `cancel_reason=operator_affected_booking`. Trước đó dùng đường nhả hiện có trong cùng thứ tự lock, ghi chú `ponytail:` để đổi sang `releaseHeld`.
-  - Khách thấy nhãn riêng "cơ sở huỷ do thay đổi vận hành", không dùng "Đã hủy thanh toán" của module 4 (D10).
+- `cancel` giải phóng slot chưa kết thúc một lần; đơn chờ thanh toán thì kết thúc nghĩa vụ thanh toán và nhả lượt voucher đang giữ đúng một lần.
+  - Đơn `held`: gọi `releaseHeld($locked, 'cancelled', 'operator_affected_booking')` của module 4 (D2 của họ, đã có trên main), trong thứ tự lock ở mục "Kiểm eligibility dưới lock". Hàm này nhả slot, attempt chờ và lượt giữ, ghi lý do vào `metadata.release_reason`. Lệnh D8 không gọi `release` của voucher riêng: từ task 5.5 của module 4, `releaseHeld` gọi `VoucherUsageService::release` của module 3 (D11 của họ).
+  - Đơn `confirmed` hoặc đang sử dụng: `releaseHeld` trả false, nên lệnh tự đặt `cancelled`, nhả slot chưa kết thúc và ghi cùng `metadata.release_reason = operator_affected_booking` trong transaction đó.
+  - Khách thấy nhãn riêng "cơ sở huỷ do thay đổi vận hành", theo `release_reason = operator_affected_booking`, qua một nhánh mới trong `statusLabel` (`frontend/src/features/booking/utils/reservation.ts`). Không dùng "Đã hủy thanh toán" của module 4 (D10 của họ).
 - Không tạo quote, payment, journal, refund. Giữ số tiền đã ghi. Chỉ owner ghi chú hoàn tiền ngoài nền tảng; staff → 403.
 - `markNoShow` trả 409 khi đơn còn case mở.
 - `attendance/reassign-court` gộp vào `move-court`. Đổi sân do sự cố đi qua stop `maintenance` rồi `move-court`.
@@ -218,7 +223,10 @@
 - Phân việc cổng độ phủ:
   - Chọn: change này giữ requirement "Court opening conditions" và việc gọi service độ phủ trong `OpenCourt`, `ResumeCourt` và eligibility (task 3.3, 3.4, 3.5). Module 3 giữ service, endpoint và mã lỗi.
   - Phương án khác: module 3 làm cả wiring và delta `venue-court-operations` riêng. Loại: mở và resume sân là action của module 2; hai delta cùng ý trên một capability sẽ trùng header khi archive.
-  - Yêu cầu phối hợp gửi module 3: bỏ delta "độ phủ giá là điều kiện mở sân" và task `OpenCourt`/resume của họ, chỉ cung cấp service.
+  - Module 3 đã nhận (D3 và task 1.4 của họ): bỏ delta "độ phủ giá là điều kiện mở sân" và task `OpenCourt`/resume, chỉ cung cấp `PriceCoverageService`, dạng kết quả (mỗi mục: sân, thứ hoặc ngày, giờ bắt đầu, giờ kết thúc) và mã `PRICE_COVERAGE_INCOMPLETE` cho công bố giá và đổi liên kết.
+  - Mở và resume sân đưa khoảng thiếu vào `missing_items` của 422 gộp cùng các điều kiện khác, không trả `PRICE_COVERAGE_INCOMPLETE` riêng.
+  - Pha 2 của module 3 giữ tên `CourtPriceRuleService` và đổi `isPriced` (trong `VerifyEffectiveBookingEligibility`) và `pricedCourtIds` (danh sách công khai trong `CourtController::index`) thành "sân có liên kết thường đang hiệu lực" (D28 của module 3). Task 3.5 thêm kiểm độ phủ trên cả hai.
+  - Màn sân gọi cùng action áp liên kết của module 3 (task 2.5 của họ), nên đổi liên kết làm hở giá một sân `active` hoặc `paused` nhận 422 `PRICE_COVERAGE_INCOMPLETE` của họ.
 - Ngày lễ (thoả thuận với module 3): MODIFIED "Catalog and operational calendar" ghi holidays là ngày nghỉ của lịch phục vụ, không đặt giá. Bảng giá ngày lễ (BR-51) thuộc delta `reservations-and-pricing` của module 3.
 - Độ phủ kín là điều kiện nhận đặt (BR-41, BR-47, FR-43):
   - Chọn: "Unified public and new-booking eligibility" thêm điều kiện lịch phục vụ hiệu lực của sân được phủ giá kín, cùng service độ phủ. Một predicate fail-closed, giống D6; public dùng cùng eligibility.
@@ -232,6 +240,7 @@
 ### Thứ tự archive với `direct-owner-cutover`
 - Chọn: archive cutover trước, rồi change này.
 - Thứ tự đã thống nhất với các session module 3 và 4: `direct-owner-cutover` → `align-module-02-venue-court` → change của module 3 → `align-module-04-booking`. Mỗi change archive sau dựng khối MODIFIED trùng header từ spec chính mà change trước để lại.
+- Module 3 dựng khối MODIFIED "Role-based owner operations" trên text của change này (commit `92021735`). Sửa requirement đó thì báo module 3 để họ dựng lại.
 - Thứ tự archive khác thứ tự code: code Pha 2 của module 3 (service độ phủ) phải merge trước task 3.3–3.5 của change này, còn delta của module 3 archive sau change này.
 - Cutover chỉ còn task vận hành. Delta của nó MODIFY cùng header: "Catalog and operational calendar", "Unified public and new-booking eligibility", "Venue lifecycle and captured policy continuity", "Report-aligned draft venue readiness", "Verified owner collection connection", "Role-based owner operations", "On-site changes and incident handling", "Trigger real-time status hooks", "Versioned reservation API compatibility" (rebase sang "Unversioned reservation API"), "Policy-aware changes and truthful finance interfaces", "Truthful payment acceptance boundaries", "Persisted and authorized browser journeys" và "Legacy wallet conservation during booking changes".
 - "Report-aligned draft venue readiness" đã có trên spec chính; cutover chỉ MODIFY nó. Khối REMOVED ở đây hợp lệ với cả hai thứ tự archive. Chỉ "Final bookings and released availability" là requirement cutover thêm mới, nên chỉ có trên spec chính sau khi cutover archive.
@@ -259,7 +268,9 @@
   - không có stop của sân hoặc cơ sở chồng thời gian yêu cầu, kiểm trong `SlotSelectionPolicy` dưới cùng lock.
 - Stop và đình chỉ đọc sau khi đã có lock cơ sở. Ở READ COMMITTED, câu đọc sau lock thấy dòng vừa commit.
 - Lệnh stop sân khoá dòng sân; stop cơ sở, đình chỉ, gửi và duyệt khắc phục khoá dòng cơ sở trước. Không lệnh nào khoá sân sau cơ sở, nên không có vòng chờ với đường đặt.
-- Lưu thay đổi D7 khoá dòng cơ sở hoặc sân trước khi tính lại danh sách ảnh hưởng.
+- Lưu thay đổi D7 khoá theo thứ tự toàn cục trước khi ghi và tính lại danh sách ảnh hưởng: các sân bị ảnh hưởng trước (thay đổi cấp sân: sân đó; cấp cơ sở: mọi sân của cơ sở, id tăng dần), rồi cơ sở.
+  - Trên main, `SaveVenueOperatingSchedule` và `SaveVenueScheduleException` khoá cơ sở `FOR UPDATE` rồi khoá ngầm sân khi ghi dòng có `court_id`, ngược đường đặt (D11 của module 3 cũng ghi nhận). Task 4.4 đổi sang thứ tự trên.
+  - Phương án khác: giữ thứ tự cũ và để 40P01 về 409. Loại: lưu giờ hoạt động lúc đông khách sẽ bị huỷ ngẫu nhiên, trong khi hai action này đằng nào cũng được viết lại ở task 4.4.
 - Lệnh D8 đọc đơn không lock để lấy sân gốc, rồi khoá sân gốc và sân đích theo id tăng dần, cơ sở, đình chỉ, attempt đang mở (khi huỷ đơn `held`), đơn, rồi các case. Đọc lại đơn dưới lock; sân, giờ hoặc trạng thái đổi → 409. Không khoá gói: lệnh không tạo đặt mới.
 - Pre-check ở controller chỉ để ghi gói hết hạn, không quyết định.
 - Mua lại slot (module 4 giao lại): người mua khoá listing là một đường nhận đặt mới. Đọc listing không lock để lấy sân, rồi khoá gói → sân → cơ sở → `venue_suspensions` → kết nối nhận tiền theo thứ tự trên, kiểm trạng thái cơ sở và sân, đình chỉ, stop chồng slot, đối tác, gói và kết nối, rồi mới khoá listing, entitlement và đơn. Không kiểm lại giá: slot giữ giá đã ghi. Hỏng → 409, không tạo lock người mua và không lộ tài khoản người bán.
@@ -282,7 +293,7 @@
 - **[Hai pipeline `main` chạy cùng lúc]** → Kiểm không có pipeline nào đang chạy trước khi bấm.
 - **[Phụ thuộc module 3]** → Q1: cổng độ phủ làm sau Pha 2 của module 3; change không archive trước đó. Kiểm module 3 đã bỏ delta và task `OpenCourt` trùng (task 6.10).
 - **[Sân `active` đã migrate có giá hở bị khoá đặt]** Khi eligibility kiểm độ phủ kín, sân `active` có khoảng chưa giá sẽ không nhận đặt và ẩn khỏi public. → Pre-check đếm sân `active` hở giá trước khi bật cổng; chủ bổ sung giá hoặc sân chờ tới khi đủ.
-- **[Chồng lấn module 4 ngoài "Final bookings"]** `releaseHeld`, `cancel_reason` và nhãn huỷ, form chính sách (`hold_ttl_minutes`, `require_continuity`). → Task 4.10, 2.16; kiểm lại khi module 4 merge.
+- **[Chồng lấn module 4 ngoài "Final bookings"]** `releaseHeld`, `release_reason` và nhãn huỷ, form chính sách (`hold_ttl_minutes`, `require_continuity`). → Task 4.10, 2.16; kiểm lại khi task 5.5 của module 4 merge.
 - **[Delta ngoài module 2 trùng header với change khác]** `api-alignment`, `platform-readiness`, `wallet-payment` dựng từ text cutover; module 4 có thể sửa cùng header khi mở lại khách huỷ đơn chờ thanh toán. → Change archive sau dựng khối MODIFIED từ spec chính change trước để lại (task 6.10).
 - **[Chồng lấn module 4 trên "Final bookings and released availability"]** → Change archive sau rebase khối MODIFIED. Kiểm trùng header `on-site-attendance` trước khi archive.
 - **[Tranh chấp lock giữa stop sự cố và đường đặt]** → Thứ tự lock toàn cục; transaction ngắn; `lock_timeout` trên SQL tay.
