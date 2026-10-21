@@ -3,37 +3,30 @@
 namespace Tests\Feature\Booking;
 
 use App\Domain\Booking\Actions\ExpirePendingBookings;
-use App\Models\Coupon;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\Reservation;
 use App\Notifications\AuraBookingNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\Concerns\BooksDirectOwnerCourt;
+use Tests\Concerns\HoldsLegacyCoupon;
 use Tests\TestCase;
 
 /** BR-77, BR-73: only live holds block the court, and one booking is one continuous interval. */
 class OverdueHoldTest extends TestCase
 {
     use BooksDirectOwnerCourt;
+    use HoldsLegacyCoupon;
     use RefreshDatabase;
 
     public function test_overdue_hold_does_not_block_and_is_released_once_by_the_new_booking(): void
     {
         Notification::fake();
         $fixture = $this->directOwnerCourt();
-        $voucher = Coupon::create([
-            'organization_id' => $fixture['organization']->id,
-            'code' => 'SAVE20K',
-            'discount_type' => 'fixed',
-            'discount_value' => 20000,
-            'is_active' => true,
-            'status' => Coupon::STATUS_ACTIVE,
-        ]);
         $start = now()->addDays(2)->setTime(15, 0);
-        $overdueCode = $this->checkoutFor($fixture['payer'], $fixture['organization'], $fixture['court'], [$start], ['coupon_code' => 'SAVE20K'])
+        $overdueCode = $this->checkoutFor($fixture['payer'], $fixture['organization'], $fixture['court'], [$start])
             ->assertCreated()->json('reservation.code');
-        $this->assertSame(1, $voucher->fresh()->usage_count);
+        $voucher = $this->holdLegacyCoupon(Reservation::where('code', $overdueCode)->firstOrFail());
 
         $this->travel(11)->minutes();
         $other = $this->bookingCustomer($fixture['organization']);

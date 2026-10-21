@@ -27,14 +27,14 @@ describe('HomeAvailability (Phase 8: Tasks 8.1, 8.2, 8.3)', () => {
     name: 'Court A',
     slug: 'court-a',
     description: 'Badminton Court A',
-    price_slots: [{ id: 1, price: 120000, start_time: '19:00', end_time: '21:00' }],
+    from_price: 120000,
   }
   const courtB = {
     id: 2,
     name: 'Court B',
     slug: 'court-b',
     description: 'Badminton Court B',
-    price_slots: [{ id: 2, price: 120000, start_time: '19:00', end_time: '21:00' }],
+    from_price: 120000,
   }
 
   const courtASlotsDate1 = [

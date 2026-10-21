@@ -9,7 +9,6 @@ use App\Models\Court;
 use App\Models\CourtBlock;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
@@ -23,10 +22,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class AttendanceOperationsAndReadinessTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private function tenant(): array
@@ -67,8 +68,7 @@ class AttendanceOperationsAndReadinessTest extends TestCase
         $court1 = $venue->courts()->create(['name' => 'Court 1', 'is_active' => true]);
         $court2 = $venue->courts()->create(['name' => 'Court 2', 'is_active' => true]);
 
-        PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court1->id, 'type' => 'base', 'price' => 200000]);
-        PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court2->id, 'type' => 'base', 'price' => 200000]);
+        $this->priceCourt([$court1, $court2], 200000);
 
         VenueBookingPolicy::create([
             'venue_id' => $venue->id,

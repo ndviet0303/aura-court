@@ -3,7 +3,6 @@
 namespace Tests\Feature\Venue;
 
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
@@ -17,10 +16,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class VenueReadinessChecklistTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private function addBookingPolicy(Venue $venue, int $ownerId): void
@@ -163,7 +164,7 @@ class VenueReadinessChecklistTest extends TestCase
             'is_active' => false,
         ]);
 
-        // Create active court without price slots!
+        // Create active court without a price table!
         Court::create([
             'venue_id' => $venue->id,
             'name' => 'Sân 1',
@@ -219,15 +220,7 @@ class VenueReadinessChecklistTest extends TestCase
             'is_active' => true,
         ]);
 
-        // Add active price slot
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => 1,
-            'starts_at' => '06:00',
-            'ends_at' => '22:00',
-            'price' => 120000,
-            'is_active' => true,
-        ]);
+        $this->priceCourtWith($court, [['06:00', '22:00', 120000]]);
         $this->addBookingPolicy($venue, $owner->id);
         $this->addOperatingSchedule($venue, $owner->id);
         $this->selectVerifiedReceiver($venue, $owner);

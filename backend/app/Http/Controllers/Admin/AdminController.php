@@ -8,14 +8,12 @@ use App\Contracts\Repositories\VenueRepositoryInterface;
 use App\Contracts\Storage\FileStorageServiceInterface;
 use App\Domain\Admin\Actions\CreateVenue;
 use App\Domain\Admin\Actions\ManageCourtBlocks;
-use App\Domain\Admin\Actions\ManageCourtPrices;
 use App\Domain\Admin\Actions\ReviewPayment;
 use App\Domain\Admin\Actions\UpdateVenue;
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Http\Controllers\Controller;
 use App\Models\Court;
 use App\Models\CourtBlock;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\OwnerRefundObligation;
@@ -26,8 +24,8 @@ use App\Models\Reservation;
 use App\Models\ReservationSlot;
 use App\Models\Venue;
 use App\Services\Infrastructure\AuditLogger;
+use App\Services\Reservation\VenueOperatingCalendar;
 use Carbon\Carbon;
-use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
@@ -42,7 +40,6 @@ class AdminController extends Controller
         private readonly FileStorageServiceInterface $fileStorage,
         private readonly CreateVenue $createVenueAction,
         private readonly UpdateVenue $updateVenueAction,
-        private readonly ManageCourtPrices $manageCourtPricesAction,
         private readonly ManageCourtBlocks $manageCourtBlocksAction,
         private readonly ReviewPayment $reviewPaymentAction,
     ) {}
@@ -203,62 +200,6 @@ class AdminController extends Controller
             && (bool) preg_match('#^/maps(?:/|$)#', $path);
     }
 
-    public function pricesIndex(Request $request, Court $court)
-    {
-        $user = $request->user();
-        abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
-
-        return response()->json($court->priceSlots()->orderBy('weekday')->orderBy('starts_at')->get());
-    }
-
-    public function prices(Request $request, Court $court)
-    {
-        $user = $request->user();
-        abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
-
-        $data = $request->validate([
-            'weekday' => 'required|integer|min:1|max:7',
-            'starts_at' => 'required|date_format:H:i',
-            'ends_at' => 'required|date_format:H:i',
-            'price' => 'required|integer|min:0',
-            'is_active' => 'boolean',
-        ]);
-
-        $price = $this->manageCourtPricesAction->createOrUpdatePrice($court, $data);
-        $this->audits->record($request, 'price.updated', $price, ['court_id' => $court->id]);
-
-        return response()->json($price, 201);
-    }
-
-    public function bulkPrices(Request $request, Court $court)
-    {
-        $user = $request->user();
-        abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
-
-        $data = $request->validate([
-            'weekdays' => 'required|array|min:1',
-            'weekdays.*' => 'integer|min:1|max:7',
-            'start_hour' => 'required|integer|min:0|max:23',
-            'end_hour' => 'required|integer|gt:start_hour|max:24',
-            'price' => 'required|integer|min:0',
-        ]);
-
-        $result = $this->manageCourtPricesAction->bulkUpdate($court, $data);
-        $this->audits->record($request, 'price.bulk_updated', null, [
-            'court_id' => $court->id,
-            'weekdays' => $data['weekdays'],
-            'start_hour' => $data['start_hour'],
-            'end_hour' => $data['end_hour'],
-            'price' => $data['price'],
-            'count' => $result['count'],
-        ]);
-
-        return response()->json([
-            'message' => 'Đã cập nhật khung giá hàng loạt.',
-            'slots' => $result['slots'],
-        ]);
-    }
-
     public function blocks(Request $request, Court $court)
     {
         $user = $request->user();
@@ -274,36 +215,6 @@ class AdminController extends Controller
         $this->audits->record($request, 'court_block.created', $block, ['court_id' => $court->id]);
 
         return response()->json($block, 201);
-    }
-
-    public function updatePrice(Request $request, Court $court, CourtPriceSlot $price)
-    {
-        $user = $request->user();
-        abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
-
-        $data = $request->validate([
-            'weekday' => 'sometimes|integer|min:1|max:7',
-            'starts_at' => 'sometimes|date_format:H:i',
-            'ends_at' => 'sometimes|date_format:H:i',
-            'price' => 'sometimes|integer|min:0',
-            'is_active' => 'boolean',
-        ]);
-
-        $updated = $this->manageCourtPricesAction->updatePrice($court, $price, $data);
-        $this->audits->record($request, 'price.updated', $updated, ['court_id' => $court->id, 'fields' => array_keys($data)]);
-
-        return $updated;
-    }
-
-    public function destroyPrice(Court $court, CourtPriceSlot $price)
-    {
-        $user = request()->user();
-        abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
-
-        $this->manageCourtPricesAction->deletePrice($court, $price);
-        $this->audits->record(request(), 'price.deleted', $price, ['court_id' => $court->id]);
-
-        return ['message' => 'Đã xóa khung giá.'];
     }
 
     public function blocksIndex(Court $court)
@@ -362,14 +273,11 @@ class AdminController extends Controller
             ->when($scopedVenueIds !== null, fn ($q) => $q->whereHas('court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds)))
             ->get(['reservation_slots.*']);
 
-        $capacity = 0;
-        foreach (CarbonPeriod::create($from->copy()->startOfDay(), '1 day', $to->copy()->startOfDay()) as $day) {
-            $capacity += CourtPriceSlot::query()
-                ->where('is_active', true)
-                ->where('weekday', $day->dayOfWeekIso)
-                ->when($scopedVenueIds !== null, fn ($q) => $q->whereHas('court', fn ($c) => $c->whereIn('venue_id', $scopedVenueIds)))
-                ->count();
-        }
+        $capacity = app(VenueOperatingCalendar::class)->slotCapacity(
+            Court::query()->where('is_active', true)->when($scopedVenueIds !== null, fn ($q) => $q->whereIn('venue_id', $scopedVenueIds))->get(),
+            $from,
+            $to,
+        );
 
         $byHour = $allConfirmedSlots
             ->groupBy(fn ($slot) => $slot->starts_at->setTimezone($timezone)->format('H:00'))

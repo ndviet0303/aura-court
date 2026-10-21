@@ -28,7 +28,7 @@ class EloquentVenueRepository implements VenueRepositoryInterface
             ->where('is_active', true)
             ->whereIn('status', ['published', 'active'])
             ->whereHas('organization', fn ($q) => $q->where('partner_status', 'approved')->where('status', 'active'))
-            ->with(['courts' => fn ($c) => $c->where('is_active', true)->with('priceSlots')])
+            ->with(['courts' => fn ($c) => $c->where('is_active', true)])
             ->first();
     }
 

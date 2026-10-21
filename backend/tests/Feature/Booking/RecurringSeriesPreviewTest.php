@@ -5,7 +5,6 @@ namespace Tests\Feature\Booking;
 use App\Models\Court;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\PriceRule;
 use App\Models\RecurringOccurrence;
 use App\Models\RecurringSeries;
 use App\Models\Reservation;
@@ -15,10 +14,12 @@ use App\Services\Booking\RecurringSeriesService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class RecurringSeriesPreviewTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     /** @return array{0:Organization,1:User,2:Court} */
@@ -40,7 +41,7 @@ class RecurringSeriesPreviewTest extends TestCase
             'is_active' => true,
         ]);
         $court = $venue->courts()->create(['name' => 'Preview Court', 'is_active' => true]);
-        PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 150000]);
+        $this->priceCourt($court, 150000);
 
         return [$organization, $user, $court];
     }
@@ -286,7 +287,7 @@ class RecurringSeriesPreviewTest extends TestCase
         $this->assertSame($fmt($start->copy()->addHour()->utc()), $fmt($slots[0]->ends_at));
         $this->assertSame($fmt($start->copy()->addHour()->utc()), $fmt($slots[1]->starts_at));
         $this->assertSame($fmt($start->copy()->addHours(2)->utc()), $fmt($slots[1]->ends_at));
-        // Each hourly slot is priced at the base rule.
+        // Each hourly slot is priced by the court's price table.
         $this->assertSame(150000, (int) $slots[0]->unit_price);
         $this->assertSame(150000, (int) $slots[1]->unit_price);
     }

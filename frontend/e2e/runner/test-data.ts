@@ -376,6 +376,21 @@ export function arrangeCourt(
 }
 
 /**
+ * Inline backend PHP pricing `$court` all day at `pricePerHour`: a normal price table published and linked
+ * from a day ago, as `Tests\Concerns\PricesCourts::priceCourt` does. Splice it in after `$court` exists.
+ */
+export function priceCourtPhp(pricePerHour: number): string {
+  return `
+      $pricedFrom = now()->subDay();
+      $priceTable = \\App\\Models\\PriceTable::create(['venue_id' => $court->venue_id, 'name' => 'Bảng giá E2E', 'kind' => 'normal', 'status' => 'active']);
+      $priceTable->versions()->create(['published_at' => $pricedFrom, 'effective_at' => $pricedFrom])
+        ->intervals()->create(['weekdays' => [1, 2, 3, 4, 5, 6, 7], 'start_minute' => 0, 'end_minute' => 1440, 'price_per_hour' => ${pricePerHour}]);
+      \\App\\Models\\CourtPriceTableLink::create(['court_id' => $court->id, 'price_table_id' => $priceTable->id, 'kind' => 'normal', 'starts_at' => $pricedFrom]);
+      \\Illuminate\\Support\\Facades\\Cache::increment('courts_version');
+  `
+}
+
+/**
  * Creates an isolated dedicated coupon for a specific test scenario.
  */
 export function arrangeCoupon(

@@ -87,9 +87,9 @@ class MatchBillCalculationTest extends TestCase
         $this->assertSame(6, $result['divisor']);
     }
 
-    public function test_court_subtotal_rounds_half_up_to_nearest_whole_vnd(): void
+    public function test_court_subtotal_drops_the_fraction_of_a_vnd(): void
     {
-        // 1 phút @ 100,000 VND/h = 1666.6666... -> làm tròn half-up thành 1667
+        // 1 phút @ 100,000 VND/h = 1666.6666... -> bỏ phần thập phân thành 1666 (BR-67)
         $result = $this->matchService->calculateBill(
             headcount: 1,
             durationMinutes: 1,
@@ -98,7 +98,7 @@ class MatchBillCalculationTest extends TestCase
             shuttleUnitPrice: 0
         );
 
-        $this->assertSame(1667, $result['court_subtotal']);
+        $this->assertSame(1666, $result['court_subtotal']);
 
         // 3 phút @ 100,000 VND/h = 5000 VND
         $result2 = $this->matchService->calculateBill(

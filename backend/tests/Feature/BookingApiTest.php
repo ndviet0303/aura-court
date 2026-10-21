@@ -3,15 +3,16 @@
 namespace Tests\Feature;
 
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Payment\WalletPaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class BookingApiTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     public function test_customer_can_create_booking_with_wallet_balance(): void
@@ -21,7 +22,7 @@ class BookingApiTest extends TestCase
         $venue->organization->update(['partner_status' => 'approved']);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân A', 'is_active' => true]);
         $date = now(config('app.timezone'))->addDays(2)->setTime(10, 0);
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 120000, 'is_active' => true]);
+        $this->priceCourtWith($court, [['10:00', '11:00', 120000, [$date->dayOfWeekIso]]]);
 
         // Credit user wallet
         $walletService = app(WalletPaymentService::class);
@@ -49,7 +50,7 @@ class BookingApiTest extends TestCase
         $venue->organization->update(['partner_status' => 'approved']);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân No Balance', 'is_active' => true]);
         $date = now(config('app.timezone'))->addDays(2)->setTime(10, 0);
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 120000, 'is_active' => true]);
+        $this->priceCourtWith($court, [['10:00', '11:00', 120000, [$date->dayOfWeekIso]]]);
 
         $response = $this->actingAs($user)->withHeader('Idempotency-Key', 'wallet-insufficient')
             ->postJson('/api/reservations/checkout', ['court_id' => $court->id, 'slots' => [$date->toIso8601String()], 'expected_total' => 120000]);

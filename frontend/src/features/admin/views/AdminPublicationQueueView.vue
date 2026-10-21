@@ -188,9 +188,9 @@ async function handleDecision(decision: 'approve' | 'revision_required' | 'rejec
                 class="p-3 bg-gray-50 dark:bg-gray-900/40 rounded border border-gray-100 dark:border-gray-700 text-xs flex items-center justify-between"
               >
                 <span class="font-medium text-gray-900 dark:text-white">{{ court.name }}</span>
-                <span class="text-gray-500"
-                  >{{ court.price_slots?.length || 0 }} khung giờ giá</span
-                >
+                <span class="text-gray-500">{{
+                  court.price_table?.name ?? 'Chưa có bảng giá'
+                }}</span>
               </div>
             </div>
           </div>

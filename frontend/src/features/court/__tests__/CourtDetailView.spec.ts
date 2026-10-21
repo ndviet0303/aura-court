@@ -42,10 +42,7 @@ describe('CourtDetailView', () => {
         },
         description: 'Sân thi đấu chuyên nghiệp với mặt thảm cao cấp',
         image_url: '/aura/court-1.jpg',
-        price_slots: [
-          { id: 1, court_id: 1, weekday: 1, starts_at: '06:00', ends_at: '16:00', price: 120000 },
-          { id: 2, court_id: 1, weekday: 1, starts_at: '16:00', ends_at: '22:00', price: 180000 },
-        ],
+        from_price: 120000,
         reviews_count: 42,
         reviews_avg_rating: 4.8,
       },
@@ -68,7 +65,7 @@ describe('CourtDetailView', () => {
     expect(wrapper.find('.price-num').text()).toContain('120.000')
   })
 
-  it('allows changing duration and updating estimated total', async () => {
+  it('shows the from price per hour without a duration estimate', () => {
     const store = useBookingStore()
     store.courts = [
       {
@@ -86,9 +83,7 @@ describe('CourtDetailView', () => {
           is_active: true,
           share_url: '',
         },
-        price_slots: [
-          { id: 1, court_id: 1, weekday: 1, starts_at: '06:00', ends_at: '22:00', price: 100000 },
-        ],
+        from_price: 100000,
       },
     ]
 
@@ -98,17 +93,14 @@ describe('CourtDetailView', () => {
       },
     })
 
-    // Default is 1.0h -> 100.000
-    expect(wrapper.find('.estimate-amount').text()).toContain('100.000')
-
-    // Click 2.0h duration
-    const durationBtns = wrapper.findAll('.duration-btn')
-    expect(durationBtns.length).toBe(4)
-    await durationBtns[2]?.trigger('click') // 2.0h
-    expect(wrapper.find('.estimate-amount').text()).toContain('200.000')
+    expect(wrapper.find('.card-price-header').text()).toContain('Giá thuê từ')
+    expect(wrapper.find('.price-num').text()).toContain('100.000')
+    // The price of a booking comes only from the server quote on the schedule page.
+    expect(wrapper.find('.estimate-box').exists()).toBe(false)
+    expect(wrapper.find('.duration-btn').exists()).toBe(false)
   })
 
-  it('shows no invented price for a court without price slots', () => {
+  it('shows no invented price for a court without a price', () => {
     const store = useBookingStore()
     store.courts = [
       {
@@ -126,14 +118,14 @@ describe('CourtDetailView', () => {
           is_active: true,
           share_url: '',
         },
-        price_slots: [],
+        from_price: null,
       },
     ]
 
     const wrapper = mount(CourtDetailView, { global: { plugins: [i18n] } })
 
     expect(wrapper.find('.price-num').exists()).toBe(false)
-    expect(wrapper.find('.estimate-amount').exists()).toBe(false)
+    expect(wrapper.find('.estimate-box').exists()).toBe(false)
     expect(wrapper.find('.btn-book-now').exists()).toBe(true)
   })
 

@@ -8,7 +8,6 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PosOrder;
 use App\Models\PosProduct;
-use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\ReservationSlot;
 use App\Models\ServiceTab;
@@ -19,10 +18,12 @@ use App\Models\Venue;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class OnSiteAttendanceAndTabJourneyTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private Organization $tenant;
@@ -112,14 +113,8 @@ class OnSiteAttendanceAndTabJourneyTest extends TestCase
             'is_active' => true,
         ]);
 
-        // Base price rule for court bookings
-        PriceRule::create([
-            'organization_id' => $this->tenant->id,
-            'court_id' => $this->court->id,
-            'type' => 'base',
-            'price' => 200000,
-            'is_active' => true,
-        ]);
+        // Price table for court bookings
+        $this->priceCourt($this->court, 200000);
 
         // POS Products
         $this->drink = PosProduct::create([

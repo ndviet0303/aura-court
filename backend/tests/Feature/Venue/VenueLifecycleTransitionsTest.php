@@ -4,7 +4,6 @@ namespace Tests\Feature\Venue;
 
 use App\Models\Booking;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
@@ -13,10 +12,12 @@ use App\Models\User;
 use App\Models\Venue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class VenueLifecycleTransitionsTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private function createPublishedVenue(): array
@@ -70,14 +71,7 @@ class VenueLifecycleTransitionsTest extends TestCase
             'is_active' => true,
         ]);
 
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => 1,
-            'starts_at' => '06:00',
-            'ends_at' => '22:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourtWith($court, [['06:00', '22:00', 100000, [1]]]);
 
         $booking = Booking::create([
             'court_id' => $court->id,

@@ -4,10 +4,8 @@ namespace Database\Seeders;
 
 use App\Contracts\Repositories\DisputeRepositoryInterface;
 use App\Models\AuditLog;
-use App\Models\CourtPriceSlot;
 use App\Models\DisputeCase;
 use App\Models\HostKyc;
-use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\Reservation;
 use App\Models\TenantMembership;
@@ -485,31 +483,9 @@ class DisputeFinanceSeeder extends Seeder
                 'owner_user_id' => $kyc->user_id,
             ]);
         }
-
-        // Owners re-pricing their dearest slot (AdminController::updatePrice), logged at the slot's last change.
-        $owners = [
-            ['aura-badminton-club', 'owner@demo.auracourt.vn', '198.51.100.24', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36'],
-            ['hoang-gia-sports', 'owner.hoanggia@demo.auracourt.vn', '198.51.100.87', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Mobile/15E148 Safari/604.1'],
-        ];
-        foreach ($owners as [$slug, $email, $ip, $userAgent]) {
-            $owner = User::where('email', $email)->first();
-            $organizationId = Organization::where('slug', $slug)->value('id');
-            $slot = CourtPriceSlot::whereHas('court.venue', fn ($q) => $q->where('organization_id', $organizationId))
-                ->where('is_active', true)
-                ->orderByDesc('price')
-                ->orderBy('id')
-                ->first();
-            if (! $owner || ! $slot) {
-                continue;
-            }
-            $this->audit($owner, 'price.updated', $slot, $this->clamp($slot->updated_at, $slot->created_at, $this->now), [
-                'court_id' => $slot->court_id,
-                'fields' => ['price'],
-            ], $ip, $userAgent);
-        }
     }
 
-    private function audit(?User $user, string $action, $model, Carbon $at, array $metadata, string $ip = self::ADMIN_IP, string $userAgent = self::ADMIN_UA): void
+    private function audit(?User $user, string $action, $model, Carbon $at, array $metadata): void
     {
         AuditLog::firstOrNew([
             'action' => $action,
@@ -517,8 +493,8 @@ class DisputeFinanceSeeder extends Seeder
             'auditable_id' => $model->getKey(),
         ])->forceFill([
             'user_id' => $user?->id,
-            'ip_address' => $ip,
-            'user_agent' => $userAgent,
+            'ip_address' => self::ADMIN_IP,
+            'user_agent' => self::ADMIN_UA,
             'metadata' => $metadata,
             'created_at' => $at,
             'updated_at' => $at,
@@ -534,12 +510,6 @@ class DisputeFinanceSeeder extends Seeder
             ->where('ends_at', '>=', $at)
             ->orderByDesc('ends_at')
             ->first()?->plan?->name;
-    }
-
-    /** A copy of $time moved inside [$min, $max] (Carbon's min/max return one of the operands, not a copy). */
-    private function clamp(Carbon $time, Carbon $min, Carbon $max): Carbon
-    {
-        return ($time->lt($min) ? $min : ($time->gt($max) ? $max : $time))->copy();
     }
 
     private function initials(string $name): string

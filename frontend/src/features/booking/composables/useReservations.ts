@@ -5,14 +5,7 @@ import type { Court } from '@/features/court/types/court'
 import type { Reservation, PriceQuote } from '../types/reservation'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { i18n, formatCurrency, getCurrentLocale } from '@/i18n'
-import {
-  amountPayable,
-  bookingErrorMessage,
-  displayCode,
-  displayStatus,
-  loyaltyFields,
-  type LoyaltySelection,
-} from '../utils/reservation'
+import { bookingErrorMessage, displayCode, displayStatus } from '../utils/reservation'
 import { venueClock } from '@/core/utils/venueTime'
 import { usePriceChange } from './usePriceChange'
 
@@ -198,25 +191,19 @@ export function useReservations() {
     }
   }
 
-  // Sends the amount payable shown (quote total less the points discount). A resubmission at a confirmed
-  // new price (agreedTotal) has another body, so it goes under a fresh Idempotency-Key.
-  async function checkoutReservation(loyaltyPayload?: LoyaltySelection, agreedTotal?: number) {
+  // Sends the quote total shown, or the confirmed new price (agreedTotal) after PRICE_CHANGED.
+  async function checkoutReservation(agreedTotal?: number) {
     if (!activeQuote.value) return
     holdingReservation.value = true
     error.value = ''
     notice.value = ''
 
     try {
-      const { reservation } = await bookingApi.checkoutReservation(
-        {
-          quote_token: activeQuote.value.quote_token,
-          court_id: selectedCourtId.value ?? undefined,
-          expected_total:
-            agreedTotal ?? amountPayable(activeQuote.value.total_amount, loyaltyPayload),
-          ...loyaltyFields(loyaltyPayload),
-        },
-        agreedTotal === undefined ? loyaltyPayload?.idempotency_key : undefined,
-      )
+      const { reservation } = await bookingApi.checkoutReservation({
+        quote_token: activeQuote.value.quote_token,
+        court_id: selectedCourtId.value ?? undefined,
+        expected_total: agreedTotal ?? activeQuote.value.total_amount,
+      })
       const code = reservation.code
       activeQuote.value = null
       clearInterval(quoteTimerInterval)
@@ -230,7 +217,7 @@ export function useReservations() {
         activeTab.value = 'confirmed'
       }
     } catch (cause: unknown) {
-      const again = (total: number) => checkoutReservation(loyaltyPayload, total)
+      const again = (total: number) => checkoutReservation(total)
       if (!price.caught(cause, again)) {
         error.value = bookingErrorMessage(cause, t('reservations.messages.checkoutError'))
       }

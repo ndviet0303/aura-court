@@ -4,7 +4,6 @@ namespace Tests\Feature\Booking;
 
 use App\Models\Booking;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
@@ -17,10 +16,12 @@ use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class SuspendedPartnerObligationsAndAuthorizationTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     public function test_suspended_partner_stops_new_bookings_while_preserving_existing_obligations(): void
@@ -80,16 +81,9 @@ class SuspendedPartnerObligationsAndAuthorizationTest extends TestCase
             'is_active' => true,
         ]);
 
-        // Create price slot
+        // Price the court
         $targetSlot = Carbon::tomorrow()->setHour(14)->setMinute(0)->setSecond(0);
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => $targetSlot->dayOfWeekIso,
-            'starts_at' => '14:00',
-            'ends_at' => '15:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourt($court, 100000);
 
         // Customer has wallet balance
         $walletService = app(WalletPaymentService::class);

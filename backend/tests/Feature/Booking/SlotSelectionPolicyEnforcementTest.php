@@ -7,7 +7,6 @@ use App\Models\BookingSlot;
 use App\Models\Court;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\PriceRule;
 use App\Models\User;
 use App\Models\Venue;
 use App\Models\VenueBookingPolicy;
@@ -15,6 +14,7 @@ use App\Services\Payment\WalletPaymentService;
 use App\Services\Reservation\LegacyBookingBackfillService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 /**
@@ -26,6 +26,7 @@ use Tests\TestCase;
  */
 class SlotSelectionPolicyEnforcementTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     /** @return array{org: Organization, user: User, venue: Venue, court: Court} */
@@ -41,7 +42,8 @@ class SlotSelectionPolicyEnforcementTest extends TestCase
         OrganizationMember::create(['organization_id' => $org->id, 'user_id' => $user->id, 'role' => OrganizationMember::ROLE_CUSTOMER, 'status' => 'active']);
         $venue = Venue::create(['organization_id' => $org->id, 'name' => 'Slot Policy Venue', 'slug' => 'slot-policy-venue-'.uniqid(), 'is_active' => true]);
         $court = Court::create(['venue_id' => $venue->id, 'sport_type' => 'badminton', 'slot_duration' => $slotDuration, 'name' => 'Court', 'is_active' => true]);
-        PriceRule::create(['organization_id' => $org->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 150000, 'is_active' => true]);
+        // 150.000 ₫ per slot, which the helpers below send as the expected total.
+        $this->priceCourt($court, intdiv(150000 * 60, $slotDuration));
 
         if ($bookingPolicy !== null) {
             VenueBookingPolicy::create([

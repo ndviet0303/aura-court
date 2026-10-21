@@ -2,9 +2,7 @@
 
 namespace Tests\Feature\Booking;
 
-use App\Models\Coupon;
 use App\Models\FinanceException;
-use App\Models\Organization;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\Reservation;
 use Carbon\CarbonInterface;
@@ -14,7 +12,7 @@ use Illuminate\Support\Str;
 use Tests\Concerns\BooksDirectOwnerCourt;
 use Tests\TestCase;
 
-/** BR-79: a payable hold expires at the earliest of ten minutes, the booking start and the voucher end. */
+/** BR-79: a payable hold expires at the earlier of ten minutes and the booking start (the voucher end joins in task 5.4). */
 class PaymentDeadlineTest extends TestCase
 {
     use BooksDirectOwnerCourt;
@@ -49,21 +47,6 @@ class PaymentDeadlineTest extends TestCase
         $this->assertSame('transfer_after_expiry', $receipt->exception_code);
         $this->assertSame('held', $reservation->fresh()->status);
         $this->assertTrue(FinanceException::withoutGlobalScopes()->where('type', 'owner_payment_transfer_after_expiry')->exists());
-    }
-
-    public function test_voucher_end_caps_the_deadline(): void
-    {
-        $fixture = $this->directOwnerCourt();
-        $this->voucher($fixture['organization'], $this->at('14:59'));
-        $this->travelTo($this->at('14:50'));
-
-        $code = $this->checkoutFor($fixture['payer'], $fixture['organization'], $fixture['court'], [$this->at('16:00')], ['coupon_code' => 'ENDSOON'])
-            ->assertCreated()
-            ->assertJsonPath('reservation.total_amount', 180000)
-            ->json('reservation.code');
-
-        $this->assertTrue(Reservation::where('code', $code)->firstOrFail()->hold_expires_at->equalTo($this->at('14:59')));
-        $this->assertTrue(OwnerPaymentAttempt::where('purpose_id', $code)->firstOrFail()->expires_at->equalTo($this->at('14:59')));
     }
 
     public function test_ten_minute_cap_ignores_the_venue_hold_setting_and_reopening_keeps_the_same_request(): void
@@ -106,36 +89,9 @@ class PaymentDeadlineTest extends TestCase
         $this->assertNothingHeld();
     }
 
-    public function test_no_payment_window_when_the_voucher_ends_now_creates_nothing(): void
-    {
-        $fixture = $this->directOwnerCourt();
-        $voucher = $this->voucher($fixture['organization'], $this->at('14:50'));
-        $this->travelTo($this->at('14:50'));
-
-        $this->checkoutFor($fixture['payer'], $fixture['organization'], $fixture['court'], [$this->at('16:00')], ['coupon_code' => 'ENDSOON'])
-            ->assertUnprocessable()
-            ->assertJsonPath('code', 'PAYMENT_WINDOW_CLOSED');
-
-        $this->assertNothingHeld();
-        $this->assertSame(0, $voucher->fresh()->usage_count);
-    }
-
     private function at(string $time): CarbonInterface
     {
         return Date::parse($this->day.' '.$time, 'Asia/Ho_Chi_Minh');
-    }
-
-    private function voucher(Organization $organization, CarbonInterface $endsAt): Coupon
-    {
-        return Coupon::create([
-            'organization_id' => $organization->id,
-            'code' => 'ENDSOON',
-            'discount_type' => 'fixed',
-            'discount_value' => 20000,
-            'is_active' => true,
-            'status' => Coupon::STATUS_ACTIVE,
-            'ends_at' => $endsAt,
-        ]);
     }
 
     private function assertNothingHeld(): void

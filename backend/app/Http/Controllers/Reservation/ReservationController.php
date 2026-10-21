@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Reservation;
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
-use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\TenantCustomer;
 use App\Models\User;
@@ -21,6 +20,14 @@ use Illuminate\Http\Request;
 class ReservationController extends Controller
 {
     use ResolvesOrganization;
+
+    /** Court bookings take no coupon and no points (design D21, D28): naming one is refused, not ignored. */
+    private const NO_BENEFITS = ['coupon_code' => 'prohibited', 'loyalty_points' => 'prohibited'];
+
+    private const NO_BENEFIT_MESSAGES = [
+        'coupon_code.prohibited' => 'Mã coupon không còn áp dụng cho đặt sân.',
+        'loyalty_points.prohibited' => 'Đặt sân không còn dùng điểm tích lũy.',
+    ];
 
     public function __construct(
         private readonly PriceQuoteService $quotes,
@@ -105,11 +112,11 @@ class ReservationController extends Controller
             'court_id' => 'required|integer',
             'slots' => 'required|array|min:1|max:24',
             'slots.*' => 'required',
-            'coupon_code' => 'nullable|string|max:40',
-        ]);
+            ...self::NO_BENEFITS,
+        ], self::NO_BENEFIT_MESSAGES);
 
         return $this->idempotency->run($request, function () use ($request, $organization, $data) {
-            $quote = $this->quotes->create($request->user()->id, $organization->id, (int) $data['court_id'], $data['slots'], $data['coupon_code'] ?? null);
+            $quote = $this->quotes->create($request->user()->id, $organization->id, (int) $data['court_id'], $data['slots']);
 
             return response()->json(['quote' => $quote], 201);
         });
@@ -125,9 +132,9 @@ class ReservationController extends Controller
             'slots' => 'required_without_all:quote_id,quote_token|array|min:1|max:24',
             'slots.*' => 'required',
             'customer_id' => 'nullable|integer',
-            'coupon_code' => 'nullable|string|max:40',
             'expected_total' => 'required|integer|min:0',
-        ]);
+            ...self::NO_BENEFITS,
+        ], self::NO_BENEFIT_MESSAGES);
 
         return $this->idempotency->run($request, function () use ($request, $organization, $data) {
             $user = $request->user();
@@ -173,11 +180,9 @@ class ReservationController extends Controller
             'slots' => 'required_without_all:quote_id,quote_token|array|min:1|max:24',
             'slots.*' => 'required',
             'customer_id' => 'nullable|integer',
-            'coupon_code' => 'nullable|string|max:40',
             'expected_total' => 'required|integer|min:0',
-            'loyalty_points' => 'nullable|integer|min:1',
-            'loyalty_policy_version' => 'nullable|integer',
-        ]);
+            ...self::NO_BENEFITS,
+        ], self::NO_BENEFIT_MESSAGES);
         if (isset($data['court_id'])) {
             // Outside the idempotent transaction, so a request-time subscription expiry commits even though checkout is rejected.
             app(VerifyEffectiveBookingEligibility::class)->assertEligible((int) $data['court_id'], publicFacing: true);
@@ -220,20 +225,5 @@ class ReservationController extends Controller
         return $this->idempotency->run($request, function () use ($record) {
             return response()->json(['reservation' => $this->reservations->confirm($record)]);
         });
-    }
-
-    public function pricingCalendar(Request $request)
-    {
-        $organization = $this->organization($request);
-        // BR-49: pricing configuration belongs to the owner; a court_id must not open another tenant's rules.
-        abort_unless($this->isOrganizationOperator($request, $organization), 403);
-        $query = PriceRule::query()->where('organization_id', $organization->id)->where('is_active', true)->with(['venue', 'court']);
-        if ($request->filled('court_id')) {
-            $query->where(function ($rules) use ($request) {
-                $rules->whereNull('court_id')->orWhere('court_id', (int) $request->integer('court_id'));
-            });
-        }
-
-        return response()->json(['rules' => $query->orderBy('type')->orderBy('priority', 'desc')->get()]);
     }
 }

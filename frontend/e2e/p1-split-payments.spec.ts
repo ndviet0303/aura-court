@@ -1,4 +1,4 @@
-import { getCanonicalBackendEnv } from './runner/test-data.ts'
+import { getCanonicalBackendEnv, priceCourtPhp } from './runner/test-data.ts'
 import { test, expect } from '@playwright/test'
 import { getTestManifest } from './runner/test-data.ts'
 import { getActorCredentials } from './runner/auth.ts'
@@ -42,7 +42,6 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       $kernel->bootstrap();
 
       use App\\Models\\Court;
-      use App\\Models\\PriceRule;
       use App\\Models\\Reservation;
       use App\\Models\\ReservationSlot;
       use App\\Models\\User;
@@ -57,16 +56,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
         'is_active' => true,
       ]);
 
-      PriceRule::create([
-        'organization_id' => ${orgId},
-        'venue_id' => ${venue1Id},
-        'court_id' => $court->id,
-        'type' => 'base',
-        'price' => 100000,
-        'priority' => 1,
-        'is_active' => true,
-        'version' => 1,
-      ]);
+      ${priceCourtPhp(100000)}
 
       $user = User::where('email', '${customer.email}')->firstOrFail();
       $start = Carbon::now(config('app.timezone'))->addDays(4)->setTime(18, 0);
@@ -243,7 +233,6 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
 
       use App\\Models\\Court;
       use App\\Models\\OwnerPaymentAttempt;
-      use App\\Models\\PriceRule;
       use App\\Models\\ReceivingConnection;
       use App\\Models\\Reservation;
       use App\\Models\\ReservationSlot;
@@ -261,16 +250,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
         'is_active' => true,
       ]);
 
-      PriceRule::create([
-        'organization_id' => ${orgId},
-        'venue_id' => ${venue1Id},
-        'court_id' => $court->id,
-        'type' => 'base',
-        'price' => 100000,
-        'priority' => 1,
-        'is_active' => true,
-        'version' => 1,
-      ]);
+      ${priceCourtPhp(100000)}
 
       $user = User::where('email', '${customer.email}')->firstOrFail();
       $start = Carbon::now(config('app.timezone'))->addDays(5)->setTime(14, 0);
@@ -541,7 +521,6 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
 
       use App\\Models\\Court;
       use App\\Models\\OwnerPaymentAttempt;
-      use App\\Models\\PriceRule;
       use App\\Models\\ReceivingConnection;
       use App\\Models\\Reservation;
       use App\\Models\\ReservationSlot;
@@ -559,16 +538,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
         'is_active' => true,
       ]);
 
-      PriceRule::create([
-        'organization_id' => ${orgId},
-        'venue_id' => ${venue1Id},
-        'court_id' => $court->id,
-        'type' => 'base',
-        'price' => 100000,
-        'priority' => 1,
-        'is_active' => true,
-        'version' => 1,
-      ]);
+      ${priceCourtPhp(100000)}
 
       $user = User::where('email', '${customer.email}')->firstOrFail();
       $start = Carbon::now(config('app.timezone'))->addDays(6)->setTime(16, 0);
@@ -879,7 +849,6 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
 
       use App\\Models\\Court;
       use App\\Models\\OwnerPaymentAttempt;
-      use App\\Models\\PriceRule;
       use App\\Models\\ReceivingConnection;
       use App\\Models\\Reservation;
       use App\\Models\\ReservationSlot;
@@ -897,16 +866,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
         'is_active' => true,
       ]);
 
-      PriceRule::create([
-        'organization_id' => ${orgId},
-        'venue_id' => ${venue1Id},
-        'court_id' => $court->id,
-        'type' => 'base',
-        'price' => 100000,
-        'priority' => 1,
-        'is_active' => true,
-        'version' => 1,
-      ]);
+      ${priceCourtPhp(100000)}
 
       $user = User::where('email', '${customer.email}')->firstOrFail();
       $start = Carbon::now(config('app.timezone'))->addDays(7)->setTime(11, 0);
@@ -1142,7 +1102,6 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
       $kernel->bootstrap();
 
       use App\\Models\\Court;
-      use App\\Models\\PriceRule;
       use App\\Models\\Reservation;
       use App\\Models\\ReservationSlot;
       use App\\Models\\SplitGroup;
@@ -1159,16 +1118,7 @@ test.describe('P1: Vòng đời chia tiền đặt sân, Mã QR từng phần, T
         'is_active' => true,
       ]);
 
-      PriceRule::create([
-        'organization_id' => ${orgId},
-        'venue_id' => ${venue1Id},
-        'court_id' => $court->id,
-        'type' => 'base',
-        'price' => 100000,
-        'priority' => 1,
-        'is_active' => true,
-        'version' => 1,
-      ]);
+      ${priceCourtPhp(100000)}
 
       $user = User::where('email', '${customer.email}')->firstOrFail();
       $start = Carbon::now(config('app.timezone'))->addDays(8)->setTime(15, 0);

@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useAdminManageCourts } from '../composables/useAdminManageCourts'
-import { useAdminPricingMatrix } from '../composables/useAdminPricingMatrix'
 
 import ManageHeader from '../components/manage/ManageHeader.vue'
 import ManageKpiBar from '../components/manage/ManageKpiBar.vue'
 import AdminCourtsTable from '../components/manage/AdminCourtsTable.vue'
 import CourtFormModal from '../components/manage/CourtFormModal.vue'
-import CourtPricingModal from '../components/manage/CourtPricingModal.vue'
 import CourtBlockModal from '../components/manage/CourtBlockModal.vue'
 import CouponManagerModal from '../components/manage/CouponManagerModal.vue'
 
@@ -52,29 +50,6 @@ const {
   transitionCampaign,
 } = useAdminManageCourts()
 
-// Pricing Matrix Composable
-const {
-  selectedCourtForPrice,
-  showPriceModal,
-  selectedWeekdayTab,
-  bulkScope,
-  bulkStartHour,
-  bulkEndHour,
-  bulkPrice,
-  bulkSaving,
-  priceError,
-  priceNotice,
-  weekdayList,
-  morningSlots,
-  afternoonSlots,
-  peakSlots,
-  nightSlots,
-  modalPricingStats,
-  openPriceModal,
-  applyBulkPricing,
-  deletePriceSlot,
-} = useAdminPricingMatrix()
-
 onMounted(() => {
   load()
 })
@@ -112,7 +87,6 @@ onMounted(() => {
       @update:search-query="searchQuery = $event"
       @create-court="openCreateCourtModal"
       @edit-court="openEditCourtModal"
-      @open-price-modal="openPriceModal"
       @open-block-modal="openBlockModal"
       @toggle-status="toggleCourtStatus"
     />
@@ -132,33 +106,6 @@ onMounted(() => {
       :saving="saving"
       @close="showCourtModal = false"
       @save="saveCourt"
-    />
-
-    <CourtPricingModal
-      :show="showPriceModal"
-      :court="selectedCourtForPrice"
-      :selected-weekday-tab="selectedWeekdayTab"
-      :bulk-scope="bulkScope"
-      :bulk-start-hour="bulkStartHour"
-      :bulk-end-hour="bulkEndHour"
-      :bulk-price="bulkPrice"
-      :bulk-saving="bulkSaving"
-      :price-notice="priceNotice"
-      :price-error="priceError"
-      :weekday-list="weekdayList"
-      :morning-slots="morningSlots"
-      :afternoon-slots="afternoonSlots"
-      :peak-slots="peakSlots"
-      :night-slots="nightSlots"
-      :pricing-stats="modalPricingStats"
-      @close="showPriceModal = false"
-      @update:selected-weekday-tab="selectedWeekdayTab = $event"
-      @update:bulk-scope="bulkScope = $event"
-      @update:bulk-start-hour="bulkStartHour = $event"
-      @update:bulk-end-hour="bulkEndHour = $event"
-      @update:bulk-price="bulkPrice = $event"
-      @apply-bulk="applyBulkPricing(load)"
-      @delete-slot="deletePriceSlot($event, load)"
     />
 
     <CourtBlockModal

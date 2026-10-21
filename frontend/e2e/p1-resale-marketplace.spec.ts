@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { getCanonicalBackendEnv, getTestManifest } from './runner/test-data.ts'
+import { getCanonicalBackendEnv, getTestManifest, priceCourtPhp } from './runner/test-data.ts'
 import { getActorCredentials } from './runner/auth.ts'
 import { withE2EApi } from './runner/with-api.ts'
 import { execFileSync } from 'node:child_process'
@@ -97,7 +97,6 @@ test.describe('P1: Chợ nhượng sân P2P: Giữ chỗ, Chuyển tiền thẳn
   }) =>
     runPhp<Arranged>(`
       use App\\Models\\Court;
-      use App\\Models\\PriceRule;
       use App\\Models\\Reservation;
       use App\\Models\\ReservationEntitlement;
       use App\\Models\\ReservationSlot;
@@ -113,16 +112,7 @@ test.describe('P1: Chợ nhượng sân P2P: Giữ chỗ, Chuyển tiền thẳn
         'surface_type' => 'vinyl',
         'is_active' => true,
       ]);
-      PriceRule::create([
-        'organization_id' => ${orgId},
-        'venue_id' => ${venue1Id},
-        'court_id' => $court->id,
-        'type' => 'base',
-        'price' => 200000,
-        'priority' => 1,
-        'is_active' => true,
-        'version' => 1,
-      ]);
+      ${priceCourtPhp(200000)}
 
       $seller = ${opts.sellerEmail ? `User::where('email', '${opts.sellerEmail}')->firstOrFail()` : 'User::factory()->create()'};
       $start = Carbon::now(config('app.timezone'))->addDays(${opts.daysAhead})->setTime(19, 0);
@@ -216,7 +206,6 @@ test.describe('P1: Chợ nhượng sân P2P: Giữ chỗ, Chuyển tiền thẳn
       listing_id: number
     }>(`
       use App\\Models\\Court;
-      use App\\Models\\PriceRule;
       use App\\Models\\Reservation;
       use App\\Models\\ReservationEntitlement;
       use App\\Models\\ReservationSlot;
@@ -234,10 +223,7 @@ test.describe('P1: Chợ nhượng sân P2P: Giữ chỗ, Chuyển tiền thẳn
         'surface_type' => 'vinyl',
         'is_active' => true,
       ]);
-      PriceRule::create([
-        'organization_id' => ${orgId}, 'venue_id' => ${venue1Id}, 'court_id' => $court->id,
-        'type' => 'base', 'price' => 200000, 'priority' => 1, 'is_active' => true, 'version' => 1,
-      ]);
+      ${priceCourtPhp(200000)}
 
       $policy = VenueBookingPolicy::where('venue_id', ${venue1Id})->latest('version')->first();
       $settings = $policy ? $policy->settings : [];

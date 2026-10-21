@@ -2,15 +2,15 @@
 
 namespace App\Console\Commands;
 
+use App\Contracts\Repositories\PriceTableRepositoryInterface;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\HostKyc;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
 use App\Models\PlatformSubscription;
 use App\Models\PosProduct;
-use App\Models\PriceRule;
+use App\Models\PriceTable;
 use App\Models\ReceivingConnection;
 use App\Models\User;
 use App\Models\Venue;
@@ -541,39 +541,16 @@ class E2ESeedFixturesCommand extends Command
                 'slug' => "court-1a2-{$runId}",
                 'is_active' => true,
             ]);
-            // Price rules and CourtPriceSlots for Venue 1-A courts (Weekday 100,000 VND)
-            $seedCourtPriceSlots = function (Court $court, int $basePrice) {
-                $slots = [];
-                for ($weekday = 1; $weekday <= 7; $weekday++) {
-                    for ($hour = 6; $hour <= 22; $hour++) {
-                        $slots[] = [
-                            'court_id' => $court->id,
-                            'weekday' => $weekday,
-                            'starts_at' => sprintf('%02d:00', $hour),
-                            'ends_at' => sprintf('%02d:00', $hour + 1),
-                            'price' => $basePrice,
-                            'is_active' => true,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ];
-                    }
-                }
-                CourtPriceSlot::insert($slots);
-            };
-
-            foreach ([$court1A1, $court1A2] as $court) {
-                PriceRule::create([
-                    'organization_id' => $org1->id,
-                    'venue_id' => $venue1A->id,
-                    'court_id' => $court->id,
-                    'type' => 'regular',
-                    'price' => 100000,
-                    'version' => 1,
-                    'priority' => 10,
-                    'is_active' => true,
+            // A whole-day normal table per venue, linked from a day ago so it prices any booking a test makes.
+            $priceCourts = function (array $courts, int $pricePerHour) {
+                $tables = app(PriceTableRepositoryInterface::class);
+                $table = $tables->create(['venue_id' => $courts[0]->venue_id, 'name' => 'Bảng giá '.number_format($pricePerHour, 0, ',', '.').' ₫', 'kind' => PriceTable::KIND_NORMAL]);
+                $tables->publishVersion($table, now()->subDay(), now()->subDay(), [
+                    ['weekdays' => [1, 2, 3, 4, 5, 6, 7], 'dates' => null, 'start_minute' => 0, 'end_minute' => 1440, 'price_per_hour' => $pricePerHour],
                 ]);
-                $seedCourtPriceSlots($court, 100000);
-            }
+                $tables->createLinks($table, array_map(fn (Court $court): int => $court->id, $courts), now()->subDay());
+            };
+            $priceCourts([$court1A1, $court1A2], 100000);
             // Venue 1-B (Sibling Venue of Org 1)
             $venue1B = Venue::create([
                 'organization_id' => $org1->id,
@@ -632,17 +609,7 @@ class E2ESeedFixturesCommand extends Command
                 'is_active' => true,
             ]);
 
-            PriceRule::create([
-                'organization_id' => $org1->id,
-                'venue_id' => $venue1B->id,
-                'court_id' => $court1B1->id,
-                'type' => 'regular',
-                'price' => 110000,
-                'version' => 1,
-                'priority' => 10,
-                'is_active' => true,
-            ]);
-            $seedCourtPriceSlots($court1B1, 110000);
+            $priceCourts([$court1B1], 110000);
 
             // 3.5 POS Products for Org 1
             $prodDrink = PosProduct::create([
@@ -810,17 +777,7 @@ class E2ESeedFixturesCommand extends Command
                 'is_active' => true,
             ]);
 
-            PriceRule::create([
-                'organization_id' => $org2->id,
-                'venue_id' => $venue2->id,
-                'court_id' => $court2->id,
-                'type' => 'regular',
-                'price' => 150000,
-                'version' => 1,
-                'priority' => 10,
-                'is_active' => true,
-            ]);
-            $seedCourtPriceSlots($court2, 150000);
+            $priceCourts([$court2], 150000);
             // Output JSON payload for the runner
             $payload = [
                 'run_id' => $runId,

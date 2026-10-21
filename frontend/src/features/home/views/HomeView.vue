@@ -498,9 +498,8 @@ onMounted(async () => {
         >
           <div class="court-card-image">
             <img :src="image(index)" :alt="court.name" loading="lazy" decoding="async" />
-            <span v-if="court.price_slots?.[0]?.price != null" class="tag">
-              {{ t('courts.from') }} {{ formatCurrency(court.price_slots[0].price)
-              }}{{ t('common.perHour') }}
+            <span v-if="court.from_price != null" class="tag">
+              {{ t('courts.from') }} {{ formatCurrency(court.from_price) }}{{ t('common.perHour') }}
             </span>
           </div>
           <div class="court-info">

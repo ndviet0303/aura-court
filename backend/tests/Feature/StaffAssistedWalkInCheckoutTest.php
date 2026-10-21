@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Court;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\TenantCustomer;
 use App\Models\User;
@@ -14,10 +13,12 @@ use App\Models\WalletAccount;
 use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class StaffAssistedWalkInCheckoutTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private Organization $tenantA;
@@ -107,14 +108,7 @@ class StaffAssistedWalkInCheckoutTest extends TestCase
             'is_active' => true,
         ]);
 
-        // Base price rule
-        PriceRule::create([
-            'organization_id' => $this->tenantA->id,
-            'court_id' => $this->courtA->id,
-            'type' => 'base',
-            'price' => 150000,
-            'is_active' => true,
-        ]);
+        $this->priceCourt($this->courtA, 150000);
     }
 
     private function fundWallet(User $user, int $organizationId, int $amount = 500000): WalletAccount

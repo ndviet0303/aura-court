@@ -3,7 +3,6 @@
 namespace Tests\Feature\Venue;
 
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
@@ -17,10 +16,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class VenueProfilePersistenceTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     public function test_contact_description_location_and_images_round_trip_and_publish_from_reviewed_snapshot(): void
@@ -100,14 +101,7 @@ class VenueProfilePersistenceTest extends TestCase
         $venue = Venue::findOrFail($venueId);
         Court::create(['venue_id' => $venueId, 'name' => 'Court 1', 'slug' => 'profile-court-1', 'is_active' => true]);
         $court = Court::where('venue_id', $venueId)->firstOrFail();
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => 1,
-            'starts_at' => '06:00',
-            'ends_at' => '22:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourtWith($court, [['06:00', '22:00', 100000]]);
         VenueBookingPolicy::create([
             'venue_id' => $venueId,
             'version' => 1,

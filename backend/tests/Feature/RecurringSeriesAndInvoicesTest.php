@@ -6,16 +6,17 @@ use App\Models\Court;
 use App\Models\MonthlyInvoice;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\PriceRule;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Booking\RecurringSeriesService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class RecurringSeriesAndInvoicesTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -45,7 +46,7 @@ class RecurringSeriesAndInvoicesTest extends TestCase
             'is_active' => true,
         ]);
         $court = $venue->courts()->create(['name' => 'Series Court', 'is_active' => true]);
-        PriceRule::create(['organization_id' => $organization->id, 'court_id' => $court->id, 'type' => 'base', 'price' => 150000]);
+        $this->priceCourt($court, 150000);
 
         return [$organization, $user, $court];
     }

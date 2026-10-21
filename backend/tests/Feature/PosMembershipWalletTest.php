@@ -288,7 +288,7 @@ class PosMembershipWalletTest extends TestCase
         $this->assertSame(800000, $order->total_amount);
     }
 
-    public function test_loyalty_point_award_and_redemption_with_immutable_ledger(): void
+    public function test_loyalty_point_award_with_immutable_ledger(): void
     {
         [$organization, $cashier] = $this->tenant();
         $customer = User::factory()->create();
@@ -310,21 +310,7 @@ class PosMembershipWalletTest extends TestCase
         $this->assertSame(500, $entry1->delta);
         $this->assertSame(500, $entry1->balance_after);
 
-        // 2. Redeem points
-        $entry2 = $pos->redeemPoints($organization->id, $customer->id, 200, 'pos_discount', 102);
-        $this->assertSame(-200, $entry2->delta);
-        $this->assertSame(300, $entry2->balance_after);
-
-        // 3. Attempting to redeem more points than available is rejected with 409
-        try {
-            $pos->redeemPoints($organization->id, $customer->id, 500, 'pos_discount', 103);
-            $this->fail('Expected 409 exception for insufficient points.');
-        } catch (HttpException $e) {
-            $this->assertSame(409, $e->getStatusCode());
-            $this->assertStringContainsString('Insufficient loyalty points', $e->getMessage());
-        }
-
-        // 4. Point ledger entries are immutable (cannot update or delete)
+        // 2. Point ledger entries are immutable (cannot update or delete)
         try {
             $entry1->update(['delta' => 999]);
             $this->fail('Expected LogicException when updating immutable PointLedger.');

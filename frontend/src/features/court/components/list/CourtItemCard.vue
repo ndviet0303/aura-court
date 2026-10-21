@@ -10,8 +10,8 @@ const props = defineProps<{
   index: number
 }>()
 
-// No invented price: a court without a configured price shows none.
-const fromPrice = computed(() => props.court.price_slots?.[0]?.price ?? null)
+// No invented price: a court without a price shows none.
+const fromPrice = computed(() => props.court.from_price ?? null)
 
 const sportIcon = computed(() => {
   const type = props.court.sport_type

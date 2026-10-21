@@ -3,10 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\PriceRule;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Venue;
@@ -14,10 +12,12 @@ use App\Models\WalletAccount;
 use App\Services\Payment\WalletPaymentService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class OrdinaryWalletCheckoutTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private function fundUserWallet(User $user, int $organizationId, int $amount = 1000000): WalletAccount
@@ -52,14 +52,7 @@ class OrdinaryWalletCheckoutTest extends TestCase
         $wallet = $this->fundUserWallet($user, $organization->id, 500000);
 
         $date = Carbon::now()->addDays(2)->setTime(10, 0)->startOfHour();
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => $date->dayOfWeekIso,
-            'starts_at' => '10:00',
-            'ends_at' => '11:00',
-            'price' => 120000,
-            'is_active' => true,
-        ]);
+        $this->priceCourt($court, 120000);
 
         $response = $this->actingAs($user)->withHeader('Idempotency-Key', 'ordinary-slot-checkout')
             ->postJson('/api/reservations/checkout', [
@@ -102,12 +95,7 @@ class OrdinaryWalletCheckoutTest extends TestCase
         $wallet = $this->fundUserWallet($user, $organization->id, 600000);
 
         $date = Carbon::now(config('app.timezone'))->addDays(4)->setTime(14, 0)->startOfHour();
-        PriceRule::create([
-            'organization_id' => $organization->id,
-            'court_id' => $court->id,
-            'type' => 'base',
-            'price' => 200000,
-        ]);
+        $this->priceCourt($court, 200000);
 
         $headers = [
             'X-Organization-ID' => (string) $organization->id,
@@ -172,12 +160,7 @@ class OrdinaryWalletCheckoutTest extends TestCase
         $this->fundUserWallet($user, $organization->id, 50000); // Only 50k, rule price is 200k
 
         $date = Carbon::now(config('app.timezone'))->addDays(4)->setTime(15, 0)->startOfHour();
-        PriceRule::create([
-            'organization_id' => $organization->id,
-            'court_id' => $court->id,
-            'type' => 'base',
-            'price' => 200000,
-        ]);
+        $this->priceCourt($court, 200000);
 
         $checkoutRes = $this->actingAs($user)->withHeaders([
             'X-Organization-ID' => (string) $organization->id,
@@ -199,12 +182,7 @@ class OrdinaryWalletCheckoutTest extends TestCase
         $wallet = $this->fundUserWallet($user, $organization->id, 500000);
 
         $date = Carbon::now(config('app.timezone'))->addDays(4)->setTime(14, 0)->startOfHour();
-        PriceRule::create([
-            'organization_id' => $organization->id,
-            'court_id' => $court->id,
-            'type' => 'base',
-            'price' => 200000,
-        ]);
+        $this->priceCourt($court, 200000);
 
         // 1. Checkout reservation: costs 200k
         $res = $this->actingAs($user)->withHeaders([

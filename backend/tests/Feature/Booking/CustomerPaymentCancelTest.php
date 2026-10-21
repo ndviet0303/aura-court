@@ -4,7 +4,6 @@ namespace Tests\Feature\Booking;
 
 use App\Domain\Booking\Actions\ExpirePendingBookings;
 use App\Models\BookingAttendance;
-use App\Models\Coupon;
 use App\Models\FinanceException;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
@@ -19,12 +18,14 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Tests\Concerns\BooksDirectOwnerCourt;
+use Tests\Concerns\HoldsLegacyCoupon;
 use Tests\TestCase;
 
 /** BR-84 and FR-79: the customer cancels a booking still pending payment and reads its detail (design D1, D10). */
 class CustomerPaymentCancelTest extends TestCase
 {
     use BooksDirectOwnerCourt;
+    use HoldsLegacyCoupon;
     use RefreshDatabase;
 
     /** @var array<string, mixed> */
@@ -40,9 +41,8 @@ class CustomerPaymentCancelTest extends TestCase
     public function test_cancel_a_pending_booking_releases_its_court_time_and_voucher_once_without_a_refund(): void
     {
         $endsAt = now()->addDays(5)->startOfSecond();
-        $voucher = $this->voucher($endsAt);
-        $reservation = $this->held($this->start(), ['coupon_code' => 'SAVE20K']);
-        $this->assertSame(1, $voucher->fresh()->usage_count);
+        $reservation = $this->held($this->start());
+        $voucher = $this->holdLegacyCoupon($reservation, $endsAt);
         $waiting = WaitlistEntry::create([
             'user_id' => $this->bookingCustomer($this->fixture['organization'])->id,
             'court_id' => $this->fixture['court']->id,
@@ -71,8 +71,8 @@ class CustomerPaymentCancelTest extends TestCase
 
     public function test_repeated_cancellation_and_an_expired_booking_release_nothing_again(): void
     {
-        $voucher = $this->voucher(now()->addDays(5));
-        $reservation = $this->held($this->start(), ['coupon_code' => 'SAVE20K']);
+        $reservation = $this->held($this->start());
+        $voucher = $this->holdLegacyCoupon($reservation, now()->addDays(5));
         $this->cancel($reservation)->assertOk();
         $cancelledAt = $reservation->fresh()->cancelled_at;
 
@@ -179,26 +179,12 @@ class CustomerPaymentCancelTest extends TestCase
         return now()->addDays(2)->setTime(18, 0);
     }
 
-    /** @param  array<string, mixed>  $extra */
-    private function held(CarbonInterface $start, array $extra = []): Reservation
+    private function held(CarbonInterface $start): Reservation
     {
-        $code = $this->checkoutFor($this->fixture['payer'], $this->fixture['organization'], $this->fixture['court'], [$start], $extra)
+        $code = $this->checkoutFor($this->fixture['payer'], $this->fixture['organization'], $this->fixture['court'], [$start])
             ->assertCreated()->assertJsonPath('reservation.status', 'held')->json('reservation.code');
 
         return Reservation::where('code', $code)->firstOrFail();
-    }
-
-    private function voucher(CarbonInterface $endsAt): Coupon
-    {
-        return Coupon::create([
-            'organization_id' => $this->fixture['organization']->id,
-            'code' => 'SAVE20K',
-            'discount_type' => 'fixed',
-            'discount_value' => 20000,
-            'is_active' => true,
-            'status' => Coupon::STATUS_ACTIVE,
-            'ends_at' => $endsAt,
-        ]);
     }
 
     private function attempt(Reservation $reservation): OwnerPaymentAttempt

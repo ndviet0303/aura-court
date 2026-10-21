@@ -3,7 +3,6 @@
 namespace Tests\Feature\Policy;
 
 use App\Models\Booking;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\PlatformPlan;
@@ -22,10 +21,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class PolicyRetirementAndReadinessRegressionTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private function setupTenant(): array
@@ -134,14 +135,7 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
             'ends_at' => now()->addMonth(),
         ]);
 
-        CourtPriceSlot::create([
-            'court_id' => $court->id,
-            'weekday' => 1,
-            'starts_at' => '06:00',
-            'ends_at' => '22:00',
-            'price' => 100000,
-            'is_active' => true,
-        ]);
+        $this->priceCourtWith($court, [['06:00', '22:00', 100000]]);
 
         VenueBookingPolicy::create([
             'venue_id' => $venue->id,
@@ -215,7 +209,7 @@ class PolicyRetirementAndReadinessRegressionTest extends TestCase
         Carbon::setTestNow($baseDate);
         try {
             $date = $baseDate->copy()->setTime(20, 0);
-            CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '20:00', 'ends_at' => '21:00', 'price' => 100000, 'is_active' => true]);
+            $this->priceCourt($court);
             // 1. Preserved historical booking with old snapshot
             $historicalBooking = Booking::create([
                 'code' => 'BK-HIST-POLICY-01',

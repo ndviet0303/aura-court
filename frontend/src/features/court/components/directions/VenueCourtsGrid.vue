@@ -7,9 +7,9 @@ defineProps<{
   courts: Court[]
 }>()
 
-// No invented price: a court without a configured price shows none.
+// No invented price: a court without a price shows none.
 function getCourtPrice(c: Court): number | null {
-  return c.price_slots?.[0]?.price ?? null
+  return c.from_price ?? null
 }
 </script>
 

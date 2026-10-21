@@ -4,7 +4,6 @@ namespace Tests\Feature\Booking;
 
 use App\Domain\Booking\Actions\ExpirePendingBookings;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\OwnerPaymentAttempt;
@@ -18,12 +17,14 @@ use App\Models\Venue;
 use App\Models\VenueBookingPolicy;
 use App\Services\Payment\OwnerPaymentAttemptService;
 use App\Services\Reservation\SlotSelectionPolicy;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 /**
@@ -31,6 +32,7 @@ use Tests\TestCase;
  */
 class ReservationSlotOverlapExclusionTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     public function test_store_rejects_an_overlapping_slot_written_without_the_application_check(): void
@@ -145,11 +147,13 @@ class ReservationSlotOverlapExclusionTest extends TestCase
 
     private function quote(array $fixture, User $user, CarbonInterface $start, string $endTime, int $price, string $tag): array
     {
-        $this->priceSlot($fixture, $start, $endTime, $price);
-
-        return $this->actingAs($user)->withHeaders($this->headers($fixture, 'q-'.$tag))
+        $quote = $this->actingAs($user)->withHeaders($this->headers($fixture, 'q-'.$tag))
             ->postJson('/api/price-quotes', ['court_id' => $fixture['court']->id, 'slots' => [$start->toIso8601String()]])
             ->assertCreated()->json('quote');
+        $this->assertSame($endTime, CarbonImmutable::parse($quote['slot_snapshot'][0]['ends_at'])->setTimezone($start->getTimezone())->format('H:i'));
+        $this->assertSame($price, $quote['total_amount']);
+
+        return $quote;
     }
 
     private function checkout(array $fixture, User $user, array $quote, string $tag)
@@ -169,19 +173,6 @@ class ReservationSlotOverlapExclusionTest extends TestCase
         $this->assertSame('confirmed', $reservation->status);
 
         return $reservation;
-    }
-
-    private function priceSlot(array $fixture, CarbonInterface $start, string $endTime, int $price): void
-    {
-        CourtPriceSlot::firstOrCreate([
-            'court_id' => $fixture['court']->id,
-            'weekday' => $start->dayOfWeekIso,
-            'starts_at' => $start->format('H:i'),
-        ], [
-            'ends_at' => $endTime,
-            'price' => $price,
-            'is_active' => true,
-        ]);
     }
 
     private function tenant(int $slotDuration): array
@@ -219,6 +210,8 @@ class ReservationSlotOverlapExclusionTest extends TestCase
             'is_active' => true,
         ]);
         $court = Court::create(['venue_id' => $venue->id, 'sport_type' => 'badminton', 'slot_duration' => $slotDuration, 'name' => 'Overlap Court', 'is_active' => true]);
+        // 10:00-12:00 costs 200000 and 11:00-13:00 costs 300000.
+        $this->priceCourtWith($court, [['00:00', '12:00', 100000], ['12:00', '23:59', 200000]]);
         VenueBookingPolicy::create([
             'venue_id' => $venue->id,
             'version' => 1,

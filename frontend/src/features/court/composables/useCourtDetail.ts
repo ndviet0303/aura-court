@@ -8,7 +8,6 @@ export function useCourtDetail() {
   const route = useRoute()
   const bookingStore = useBookingStore()
 
-  const selectedDuration = ref<number>(1.0)
   const isGalleryOpen = ref(false)
   const loading = ref(false)
   const reviewsLoading = ref(false)
@@ -65,19 +64,8 @@ export function useCourtDetail() {
     { immediate: true },
   )
 
-  // No invented price: a court without a configured price shows none.
-  const basePrice = computed(() => court.value?.price_slots?.[0]?.price ?? null)
-
-  const estimatedTotal = computed(() =>
-    basePrice.value === null ? null : basePrice.value * selectedDuration.value,
-  )
-
-  const durationOptions = [
-    { value: 1.0, label: '1.0h' },
-    { value: 1.5, label: '1.5h' },
-    { value: 2.0, label: '2.0h' },
-    { value: 3.0, label: '3.0h' },
-  ]
+  // No invented price: a court without a price shows none.
+  const basePrice = computed(() => court.value?.from_price ?? null)
 
   onMounted(() => {
     loadCourt()
@@ -88,11 +76,8 @@ export function useCourtDetail() {
     court,
     reviews,
     reviewsLoading,
-    selectedDuration,
     isGalleryOpen,
     basePrice,
-    estimatedTotal,
-    durationOptions,
     loadCourt,
     loadReviews,
   }

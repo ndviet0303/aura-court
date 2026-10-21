@@ -1,25 +1,20 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
 import { isUnverifiedEmailError } from '@/core/utils/errorMessage'
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { useBookingStore } from '@/features/booking/stores/bookingStore'
-import LoyaltyPointSelector from '@/features/booking/components/LoyaltyPointSelector.vue'
-import CouponCodeField from '@/features/booking/components/CouponCodeField.vue'
 import BookingAgreement from '@/features/booking/components/BookingAgreement.vue'
-import { useCheckoutCoupon } from '@/features/booking/composables/useCheckoutCoupon'
-import {
-  amountPayable,
-  validBookerPhone,
-  type LoyaltySelection,
-} from '@/features/booking/utils/reservation'
+import { useSelectionQuote } from '@/features/booking/composables/useSelectionQuote'
+import { validBookerPhone } from '@/features/booking/utils/reservation'
 import type { Court, AvailabilitySlot } from '../../types/court'
 const { locale } = useI18n()
 const auth = useAuthStore()
 const bookingStore = useBookingStore()
-const coupon = reactive(useCheckoutCoupon())
+// The server quote total is the amount shown and the expected_total the checkout sends.
+const quote = reactive(useSelectionQuote())
 
 const props = defineProps<{
   court: Court
@@ -33,18 +28,18 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'checkout', loyalty: LoyaltySelection, couponCode: string | null, expectedTotal: number): void
+  (e: 'checkout', expectedTotal: number | null): void
   (e: 'removeSlot', slot: AvailabilitySlot): void
   (e: 'resendVerification'): void
   (e: 'clearError'): void
 }>()
 
-const loyaltyPayload = ref<LoyaltySelection>(null)
 const isUnverified = computed(() => isUnverifiedEmailError(props.error))
-// The amount payable shown is the expected_total the checkout sends.
-const payable = computed(() => amountPayable(coupon.total, loyaltyPayload.value))
+// A signed-in customer books only at a quoted total; a guest is sent to sign in.
 const blocked = computed(
-  () => !!auth.user && (!validBookerPhone(auth.user.phone) || !!bookingStore.priceChange),
+  () =>
+    !!auth.user &&
+    (!validBookerPhone(auth.user.phone) || !!bookingStore.priceChange || quote.total === null),
 )
 
 const formattedDate = computed(() => {
@@ -197,14 +192,6 @@ const formattedDate = computed(() => {
 
     <!-- Summary Total & Checkout -->
     <div class="summary-footer">
-      <CouponCodeField
-        v-if="auth.user && selectedSlots.length > 0"
-        v-model="coupon.code"
-        :loading="coupon.loading"
-        :error="coupon.error"
-        :discount="coupon.discount"
-        @apply="coupon.apply"
-      />
       <div class="price-breakdown">
         <div class="breakdown-row">
           <span>{{ $t('schedule.playDuration') }}</span>
@@ -218,12 +205,14 @@ const formattedDate = computed(() => {
           <div class="wallet-status-right">
             <strong
               class="font-mono"
-              :class="bookingStore.walletBalance >= coupon.total ? 'text-emerald' : 'text-danger'"
+              :class="
+                bookingStore.walletBalance >= (quote.total ?? 0) ? 'text-emerald' : 'text-danger'
+              "
             >
               {{ formatCurrency(bookingStore.walletBalance) }}
             </strong>
             <RouterLink
-              v-if="bookingStore.walletBalance < coupon.total && selectedSlots.length > 0"
+              v-if="quote.total !== null && bookingStore.walletBalance < quote.total"
               to="/wallet"
               class="badge-topup-link"
               :title="$t('payment.topupNowCta') || 'Nạp ví ngay'"
@@ -234,29 +223,22 @@ const formattedDate = computed(() => {
         </div>
       </div>
 
-      <LoyaltyPointSelector
-        v-if="auth.user && selectedSlots.length > 0 && court"
-        :court-id="court.id"
-        :slots="selectedSlots.map((s) => s.startsAt)"
-        :coupon-code="coupon.appliedCode ?? undefined"
-        @change="loyaltyPayload = $event"
-      />
-
       <BookingAgreement
-        v-if="selectedSlots.length > 0"
-        :rental="coupon.rental"
-        :coupon-code="coupon.appliedCode"
-        :payable="payable"
+        v-if="auth.user && selectedSlots.length > 0"
+        :rental="quote.rental"
+        :payable="quote.total"
+        :quote-error="quote.error"
         :price-change="bookingStore.priceChange"
         :busy="loading"
         @confirm-price="bookingStore.confirmPrice"
+        @retry-quote="quote.retry"
       />
 
       <button
         type="button"
         class="btn-checkout"
-        :disabled="selectedSlots.length === 0 || loading || coupon.loading || blocked"
-        @click="emit('checkout', loyaltyPayload, coupon.appliedCode, payable)"
+        :disabled="selectedSlots.length === 0 || loading || blocked"
+        @click="emit('checkout', quote.total)"
       >
         <span v-if="loading" class="material-symbols-outlined spinner-icon">progress_activity</span>
         <span v-else class="material-symbols-outlined btn-icon">payments</span>

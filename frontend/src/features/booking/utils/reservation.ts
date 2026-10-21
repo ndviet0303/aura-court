@@ -1,7 +1,7 @@
 import type { ApiError } from '@/core/types/api'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { i18n } from '@/i18n'
-import type { HoldReservationPayload, PriceQuote, Reservation } from '../types/reservation'
+import type { PriceQuote, Reservation } from '../types/reservation'
 
 type Displayable = Pick<Reservation, 'code' | 'status' | 'legacy_mapping' | 'metadata'>
 
@@ -51,31 +51,6 @@ export const quoteDiscounts = (snapshot?: PriceQuote['benefit_snapshot']) =>
       ['reservations.calculator.couponDiscount', snapshot?.coupon_discount_amount],
     ] as const
   ).flatMap(([label, amount]) => (amount ? [{ label, amount }] : []))
-
-export type LoyaltySelection = {
-  loyalty_points?: number
-  loyalty_policy_version?: number | null
-  // Stable per court/slots from LoyaltyPointSelector; sent as the Idempotency-Key so a retry replays.
-  idempotency_key?: string
-  discount_vnd?: number
-} | null
-
-// The checkout API rejects loyalty_points < 1, so loyalty fields are sent only for a real redemption.
-export function loyaltyFields(
-  selection?: LoyaltySelection,
-): Pick<HoldReservationPayload, 'loyalty_points' | 'loyalty_policy_version'> {
-  const points = selection?.loyalty_points ?? 0
-  if (points <= 0) return {}
-  return {
-    loyalty_points: points,
-    loyalty_policy_version: selection?.loyalty_policy_version ?? undefined,
-  }
-}
-
-// The amount payable shown before submitting and sent as expected_total: the priced total less the
-// loyalty discount of a real redemption.
-export const amountPayable = (total: number, loyalty?: LoyaltySelection): number =>
-  Math.max(0, total - ((loyalty?.loyalty_points ?? 0) > 0 ? (loyalty?.discount_vnd ?? 0) : 0))
 
 // Same rule as the backend User::PHONE_PATTERN; without it a booking is refused with PHONE_REQUIRED.
 export const validBookerPhone = (phone?: string | null): boolean =>

@@ -6,7 +6,6 @@ use App\Domain\Booking\Actions\ExpirePendingBookings;
 use App\Models\Booking;
 use App\Models\Coupon;
 use App\Models\Court;
-use App\Models\CourtPriceSlot;
 use App\Models\MembershipEntitlement;
 use App\Models\TenantMembership;
 use App\Models\TenantMembershipPlan;
@@ -20,10 +19,12 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
+use Tests\Concerns\PricesCourts;
 use Tests\TestCase;
 
 class GrowthFeaturesTest extends TestCase
 {
+    use PricesCourts;
     use RefreshDatabase;
 
     private function fundUserWallet(User $user, int $amount = 1000000): void
@@ -105,7 +106,7 @@ class GrowthFeaturesTest extends TestCase
         $venue->organization->update(['partner_status' => 'approved']);
         $court = Court::create(['venue_id' => $venue->id, 'name' => 'Sân Danh Sách Chờ', 'is_active' => true]);
         $date = now()->addDays(2)->setTime(10, 0);
-        CourtPriceSlot::create(['court_id' => $court->id, 'weekday' => $date->dayOfWeekIso, 'starts_at' => '10:00', 'ends_at' => '11:00', 'price' => 100000, 'is_active' => true]);
+        $this->priceCourtWith($court, [['10:00', '11:00', 100000, [$date->dayOfWeekIso]]]);
 
         // An unpaid hold occupies the slot
         $this->actingAs($owner)->withHeader('Idempotency-Key', 'waitlist-hold')

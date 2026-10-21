@@ -11,12 +11,14 @@ use App\Services\Reservation\HeldReservationRelease;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Concerns\BooksDirectOwnerCourt;
+use Tests\Concerns\HoldsLegacyCoupon;
 use Tests\TestCase;
 
 /** Design D2: one release of an unpaid hold, shared by expiry, cancellation, overdue release and price change. */
 class HeldReservationReleaseTest extends TestCase
 {
     use BooksDirectOwnerCourt;
+    use HoldsLegacyCoupon;
     use RefreshDatabase;
 
     public function test_releasing_twice_gives_back_the_voucher_and_reserved_points_once(): void
@@ -77,19 +79,11 @@ class HeldReservationReleaseTest extends TestCase
     private function heldWithVoucher(): array
     {
         $fixture = $this->directOwnerCourt();
-        $voucher = Coupon::create([
-            'organization_id' => $fixture['organization']->id,
-            'code' => 'SAVE20K',
-            'discount_type' => 'fixed',
-            'discount_value' => 20000,
-            'is_active' => true,
-            'status' => Coupon::STATUS_ACTIVE,
-        ]);
-        $code = $this->checkoutFor($fixture['payer'], $fixture['organization'], $fixture['court'], [now()->addDays(2)->setTime(18, 0)], ['coupon_code' => 'SAVE20K'])
+        $code = $this->checkoutFor($fixture['payer'], $fixture['organization'], $fixture['court'], [now()->addDays(2)->setTime(18, 0)])
             ->assertCreated()->json('reservation.code');
-        $this->assertSame(1, $voucher->fresh()->usage_count);
+        $reservation = Reservation::where('code', $code)->firstOrFail();
 
-        return [Reservation::where('code', $code)->firstOrFail(), $voucher];
+        return [$reservation, $this->holdLegacyCoupon($reservation)];
     }
 
     private function release(Reservation $reservation, string $status, string $reason): bool
