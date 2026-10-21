@@ -368,7 +368,7 @@ class CourtSeeder extends Seeder
                     'image_url' => $def['image_url'],
                     'venue_id' => $venue->id,
                     'sport_type' => $def['sport_type'],
-                    'is_active' => true,
+                    'status' => Court::STATUS_ACTIVE,
                 ]
             );
 

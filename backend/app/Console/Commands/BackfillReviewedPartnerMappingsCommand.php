@@ -201,15 +201,10 @@ class BackfillReviewedPartnerMappingsCommand extends Command
                                             ]);
                                         }
 
-                                        $venue->update([
-                                            'status' => 'published',
-                                            'is_active' => true,
-                                        ]);
+                                        $venue->update(['status' => Venue::STATUS_ACTIVE]);
                                     } else {
-                                        $venue->update([
-                                            'status' => 'draft',
-                                            'is_active' => false,
-                                        ]);
+                                        // ponytail: legacy one-off backfill writes the status directly, bypassing LifecycleGuard; retire with the publication revisions.
+                                        $venue->update(['status' => Venue::STATUS_INACTIVE]);
                                     }
                                 }
                             }

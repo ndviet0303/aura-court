@@ -121,7 +121,7 @@ class E2EArrangeTestDataCommand extends Command
             'venue_id' => $venue->id,
             'name' => $courtName,
             'slug' => $courtSlug,
-            'is_active' => true,
+            'status' => Court::STATUS_ACTIVE,
         ]);
 
         PriceRule::create([

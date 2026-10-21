@@ -98,7 +98,7 @@ class VenueOperatingCalendar
 
     public function configuredForVenue(int $venueId): bool
     {
-        $courts = Court::query()->with('venue')->where('venue_id', $venueId)->where('is_active', true)->get();
+        $courts = Court::query()->with('venue')->where('venue_id', $venueId)->where('status', Court::STATUS_ACTIVE)->get();
         if ($courts->isEmpty()) {
             return false;
         }

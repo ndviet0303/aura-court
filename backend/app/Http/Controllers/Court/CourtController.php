@@ -18,7 +18,7 @@ use Illuminate\Validation\Rule;
 class CourtController extends Controller
 {
     // Draft, paused and suspended venues still take court setup and fixes; only ended venues refuse it.
-    private const CLOSED_VENUE_STATUSES = ['closed', 'archived'];
+    private const CLOSED_VENUE_STATUSES = [Venue::STATUS_CLOSED];
 
     public function index(Request $request)
     {
@@ -29,8 +29,8 @@ class CourtController extends Controller
         $venuesVersion = Cache::get('venues_version', 1);
         $cacheKey = "courts:c{$courtsVersion}:v{$venuesVersion}:".md5(json_encode($request->only(['sport_type', 'venue_id'])));
         $courts = Cache::remember($cacheKey, 300, function () use ($request) {
-            $courtsQuery = Court::where('is_active', true)
-                ->whereHas('venue', fn ($query) => $query->where('is_active', true))
+            $courtsQuery = Court::where('status', Court::STATUS_ACTIVE)
+                ->whereHas('venue', fn ($query) => $query->where('status', Venue::STATUS_ACTIVE)->whereDoesntHave('activeSuspension'))
                 ->when($request->query('sport_type'), function ($q, $sportType) {
                     $q->where('sport_type', $sportType);
                 })
@@ -60,7 +60,7 @@ class CourtController extends Controller
                         : false;
                 }
 
-                if ($venueEligibilityCache[$venueId] && $court->is_active && isset($pricedCourtIds[$court->id])) {
+                if ($venueEligibilityCache[$venueId] && isset($pricedCourtIds[$court->id])) {
                     $courtArray = $court->toArray();
                     // The organization row carries tax and KYC fields that public readers must not see
                     unset($courtArray['venue']['organization']);

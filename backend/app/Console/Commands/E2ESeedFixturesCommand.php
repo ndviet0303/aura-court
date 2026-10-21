@@ -206,7 +206,7 @@ class E2ESeedFixturesCommand extends Command
                 User::whereIn('email', $emails)->update(['status' => 'suspended']);
                 OrganizationMember::where('organization_id', $organizationId)->update(['status' => 'inactive']);
                 PlatformSubscription::where('organization_id', $organizationId)->update(['status' => 'expired', 'ends_at' => now()]);
-                Venue::where('organization_id', $organizationId)->update(['is_active' => false]);
+                Venue::where('organization_id', $organizationId)->update(['status' => Venue::STATUS_CLOSED]);
                 PosProduct::where('organization_id', $organizationId)->update(['is_active' => false]);
             }
             $createOrganization = function (array $attributes, int $index) use ($organizationIds) {
@@ -439,8 +439,7 @@ class E2ESeedFixturesCommand extends Command
                 'district' => 'District 1',
                 'phone' => '0901000005',
                 'email' => "venue1a_{$runId}@auracourt.test",
-                'status' => 'published',
-                'is_active' => true,
+                'status' => Venue::STATUS_ACTIVE,
                 'published_at' => now(),
             ]);
             // BR-20: staff operate only assigned venues, so every org-1 staff fixture works at venue 1-A.
@@ -533,13 +532,13 @@ class E2ESeedFixturesCommand extends Command
                 'venue_id' => $venue1A->id,
                 'name' => "Court 1-A1 {$runId}",
                 'slug' => "court-1a1-{$runId}",
-                'is_active' => true,
+                'status' => Court::STATUS_ACTIVE,
             ]);
             $court1A2 = Court::create([
                 'venue_id' => $venue1A->id,
                 'name' => "Court 1-A2 {$runId}",
                 'slug' => "court-1a2-{$runId}",
-                'is_active' => true,
+                'status' => Court::STATUS_ACTIVE,
             ]);
             // Price rules and CourtPriceSlots for Venue 1-A courts (Weekday 100,000 VND)
             $seedCourtPriceSlots = function (Court $court, int $basePrice) {
@@ -584,8 +583,7 @@ class E2ESeedFixturesCommand extends Command
                 'district' => 'District 3',
                 'phone' => '0901000005',
                 'email' => "venue1b_{$runId}@auracourt.test",
-                'status' => 'published',
-                'is_active' => true,
+                'status' => Venue::STATUS_ACTIVE,
                 'published_at' => now(),
             ]);
 
@@ -629,7 +627,7 @@ class E2ESeedFixturesCommand extends Command
                 'venue_id' => $venue1B->id,
                 'name' => "Court 1-B1 {$runId}",
                 'slug' => "court-1b1-{$runId}",
-                'is_active' => true,
+                'status' => Court::STATUS_ACTIVE,
             ]);
 
             PriceRule::create([
@@ -762,8 +760,7 @@ class E2ESeedFixturesCommand extends Command
                 'district' => 'District 5',
                 'phone' => '0901000009',
                 'email' => "venue2_{$runId}@auracourt.test",
-                'status' => 'published',
-                'is_active' => true,
+                'status' => Venue::STATUS_ACTIVE,
                 'published_at' => now(),
             ]);
 
@@ -807,7 +804,7 @@ class E2ESeedFixturesCommand extends Command
                 'venue_id' => $venue2->id,
                 'name' => "Court 2-1 {$runId}",
                 'slug' => "court-21-{$runId}",
-                'is_active' => true,
+                'status' => Court::STATUS_ACTIVE,
             ]);
 
             PriceRule::create([

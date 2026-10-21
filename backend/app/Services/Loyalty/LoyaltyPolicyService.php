@@ -221,7 +221,7 @@ class LoyaltyPolicyService
                 ]);
             }
 
-            if (! $court->is_active || ! $court->venue || ! $court->venue->is_active || ! $court->venue->organization) {
+            if ($court->status !== Court::STATUS_ACTIVE || ! $court->venue?->isActive() || $court->venue->isSuspended() || ! $court->venue->organization) {
                 throw ValidationException::withMessages([
                     'court_id' => 'Sân hoặc cơ sở hiện không khả dụng.',
                 ]);
