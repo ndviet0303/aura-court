@@ -53,6 +53,15 @@ class RentalPriceTest extends TestCase
         $this->assertSame([[30, 100000], [60, 140000]], $parts);
     }
 
+    public function test_br_55_a_booking_starts_and_ends_on_the_30_minute_grid(): void
+    {
+        $this->priceCourt($this->court, 100000);
+
+        $this->quote('2026-10-26 10:15', '2026-10-26 11:15')->assertUnprocessable();
+        $this->checkout($this->customer, $this->court, '2026-10-26 10:00', '2026-10-26 10:45', 75000)->assertUnprocessable();
+        $this->assertSame(0, Reservation::count());
+    }
+
     public function test_br_54_an_interval_end_belongs_to_the_next_interval(): void
     {
         $this->priceCourtWith($this->court, [['06:00', '16:00', 100000], ['16:00', '22:00', 140000]]);
