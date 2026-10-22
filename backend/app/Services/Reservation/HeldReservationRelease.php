@@ -6,7 +6,6 @@ use App\Models\OwnerPaymentAttempt;
 use App\Models\PointLedger;
 use App\Models\Reservation;
 use App\Notifications\AuraBookingNotification;
-use App\Services\Booking\QuoteCouponService;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -16,8 +15,6 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class HeldReservationRelease
 {
-    public function __construct(private readonly QuoteCouponService $quoteCoupons) {}
-
     /** Lock the reservation's pending payment attempts, then the reservation. */
     public function lock(Reservation $candidate): ?Reservation
     {
@@ -31,7 +28,7 @@ class HeldReservationRelease
     }
 
     /**
-     * Release court-time, voucher use, reserved points and the pending payment attempt of a locked held
+     * Release court-time, reserved points and the pending payment attempt of a locked held
      * reservation, each once. A reservation that is no longer held is left as it is.
      */
     public function releaseHeld(Reservation $locked, string $status, string $reason): bool
@@ -40,7 +37,6 @@ class HeldReservationRelease
             return false;
         }
 
-        $this->quoteCoupons->release($locked);
         $locked->forceFill([
             'status' => $status,
             'cancelled_at' => $status === 'cancelled' ? now() : $locked->cancelled_at,

@@ -2,12 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
 
-defineProps<{
-  couponsCount: number
-}>()
-
 const emit = defineEmits<{
-  (e: 'open-coupons'): void
   (e: 'refresh'): void
 }>()
 
@@ -25,10 +20,6 @@ const { t } = useI18n()
     </div>
 
     <div class="header-right">
-      <AuraButton variant="secondary" size="sm" @click="emit('open-coupons')">
-        <span class="material-symbols-outlined icon-18">confirmation_number</span>
-        <span>{{ t('admin.manage.couponsCount', { count: couponsCount }) }}</span>
-      </AuraButton>
       <AuraButton variant="outline" size="sm" @click="emit('refresh')">
         <span class="material-symbols-outlined icon-18">refresh</span>
         <span>{{ t('admin.manage.refresh') }}</span>

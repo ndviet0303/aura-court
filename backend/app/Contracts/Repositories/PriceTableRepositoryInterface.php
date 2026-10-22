@@ -47,7 +47,7 @@ interface PriceTableRepositoryInterface
      *
      * @return list<int>
      */
-    public function courtIdsLinkedFrom(PriceTable $table, CarbonInterface $at): array;
+    public function courtIdsLinkedFrom(int $tableId, CarbonInterface $at): array;
 
     /**
      * The courts that exist among $courtIds, locked in id order so link changes of one court run one at a time.

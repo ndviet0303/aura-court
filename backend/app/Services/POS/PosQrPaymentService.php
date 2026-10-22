@@ -98,7 +98,7 @@ class PosQrPaymentService
             && $order->payment_reference === $attempt->reference;
     }
 
-    /** Completes the order once: stock, QR payment row, coupon, loyalty. Revenue for the QR portion is the owner receipt journal. */
+    /** Completes the order once: stock, QR payment row, loyalty. Revenue for the QR portion is the owner receipt journal. */
     public function confirmPaidAttempt(OwnerPaymentAllocation $allocation, CarbonInterface $paidAt): void
     {
         $order = $this->lockOrder((int) $allocation->purpose_id);
@@ -131,10 +131,6 @@ class PosQrPaymentService
             $meta['receipt']['status'] = 'completed';
             $meta['receipt']['is_paid'] = true;
             $meta['receipt']['verified_at'] = $paidAt->toIso8601String();
-        }
-        if (($meta['coupon_usage']['status'] ?? null) === 'reserved') {
-            $meta['coupon_usage']['status'] = 'consumed';
-            $meta['coupon_usage']['consumed_at'] = now()->toIso8601String();
         }
         // A payment that lands after the shift closed is tagged; the closed shift's figures stay as reconciled.
         if ($order->shift?->status === 'closed') {

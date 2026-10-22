@@ -36,7 +36,8 @@ use App\Http\Controllers\POS\PosController;
 use App\Http\Controllers\POS\ServiceTabController;
 use App\Http\Controllers\Pricing\CourtPricingController;
 use App\Http\Controllers\Pricing\PriceTableController;
-use App\Http\Controllers\Promotion\PromotionController;
+use App\Http\Controllers\Promotion\PromotionProgramController;
+use App\Http\Controllers\Promotion\VoucherChoiceController;
 use App\Http\Controllers\Reservation\AdminReservationController;
 use App\Http\Controllers\Reservation\CancelReservationPaymentController;
 use App\Http\Controllers\Reservation\MyReservationController;
@@ -109,6 +110,9 @@ Route::get('courts/{court}/reviews', [ReviewController::class, 'index']);
 Route::get('venues', [AdminController::class, 'venues']);
 Route::get('venues/{slug}', [AdminController::class, 'showVenue']);
 Route::get('availability', AvailabilityController::class);
+// D10, D20: what a booking form offers before checkout; neither route holds or consumes a voucher use.
+Route::get('venues/{venue}/vouchers', [VoucherChoiceController::class, 'index'])->whereNumber('venue');
+Route::get('venues/{venue}/vouchers/check', [VoucherChoiceController::class, 'check'])->whereNumber('venue')->middleware('throttle:voucher-check');
 // Google, Facebook and SePay consoles have these URLs registered, so they keep their pre-unversioning v1 paths.
 Route::prefix('v1')->group(function () {
     Route::get('auth/{provider}/callback', [AuthController::class, 'handleProviderCallback'])->middleware('web');
@@ -277,8 +281,7 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
     Route::get('waitlist', [WaitlistController::class, 'index']);
     Route::post('waitlist', [WaitlistController::class, 'store'])->middleware('verified');
     Route::delete('waitlist/{waitlist}', [WaitlistController::class, 'destroy']);
-    Route::post('coupons/preview', [PromotionController::class, 'preview']);
-    Route::get('membership', [PromotionController::class, 'membership']);
+    Route::get('membership', [LoyaltyController::class, 'membership']);
     Route::post('reviews', [ReviewController::class, 'store'])->middleware('verified');
 
     // Organizations endpoints
@@ -353,18 +356,6 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             Route::post('courts/{court}/blocks', [AdminController::class, 'blocks']);
             Route::get('courts/{court}/blocks', [AdminController::class, 'blocksIndex']);
             Route::delete('courts/{court}/blocks/{block}', [AdminController::class, 'destroyBlock']);
-            Route::get('coupons', [PromotionController::class, 'coupons']);
-            Route::post('coupons', [PromotionController::class, 'storeCoupon']);
-            Route::patch('coupons/{coupon}', [PromotionController::class, 'updateCoupon']);
-            Route::post('coupons/{coupon}/activate', [PromotionController::class, 'activateCoupon']);
-            Route::post('coupons/{coupon}/suspend', [PromotionController::class, 'suspendCoupon']);
-            Route::post('coupons/{coupon}/retire', [PromotionController::class, 'retireCoupon']);
-            Route::get('promotions', [PromotionController::class, 'campaigns']);
-            Route::post('promotions', [PromotionController::class, 'storeCampaign']);
-            Route::patch('promotions/{campaign}', [PromotionController::class, 'updateCampaign']);
-            Route::post('promotions/{campaign}/activate', [PromotionController::class, 'activateCampaign']);
-            Route::post('promotions/{campaign}/suspend', [PromotionController::class, 'suspendCampaign']);
-            Route::post('promotions/{campaign}/retire', [PromotionController::class, 'retireCampaign']);
             Route::get('contracts', [AdminContractController::class, 'index']);
             Route::get('contracts/{id}', [AdminContractController::class, 'show']);
             Route::post('contracts/{id}/cancel', [AdminContractController::class, 'cancel']);
@@ -598,7 +589,7 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::get('admin/memberships/stats', [AdminMembershipController::class, 'stats']);
         });
 
-        // D25: price tables, their court links and price coverage belong to the owner; demo owners only simulate changes.
+        // D25: price tables, their court links, price coverage and promotion programs belong to the owner; demo owners only simulate changes.
         Route::middleware([RequireOrganizationRole::class.':organization_owner', SimulateDemoMutations::class])->prefix('admin')->group(function () {
             Route::get('venues/{venue}/price-tables', [PriceTableController::class, 'index']);
             Route::post('venues/{venue}/price-tables', [PriceTableController::class, 'store']);
@@ -608,6 +599,13 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::post('price-tables/{table}/retire', [PriceTableController::class, 'retire']);
             Route::post('courts/{court}/price-table-links/end', [CourtPricingController::class, 'endLink']);
             Route::get('courts/{court}/price-coverage', [CourtPricingController::class, 'coverage']);
+            // Promotion programs and their codes (D7, D8, D14); programs are never deleted.
+            Route::get('venues/{venue}/promotion-programs', [PromotionProgramController::class, 'index']);
+            Route::post('venues/{venue}/promotion-programs', [PromotionProgramController::class, 'store']);
+            Route::get('promotion-programs/{program}', [PromotionProgramController::class, 'show']);
+            Route::patch('promotion-programs/{program}', [PromotionProgramController::class, 'update']);
+            Route::post('promotion-programs/{program}/stop', [PromotionProgramController::class, 'stop']);
+            Route::get('promotion-programs/{program}/codes', [PromotionProgramController::class, 'codes']);
         });
     });
 

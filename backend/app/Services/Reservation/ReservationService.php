@@ -10,7 +10,6 @@ use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
 use App\Models\User;
 use App\Models\Venue;
-use App\Services\Booking\QuoteCouponService;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\ObservabilityService;
@@ -28,7 +27,6 @@ class ReservationService
         private readonly PriceQuoteService $quotes,
         private readonly VenueOperatingCalendar $operatingCalendar,
         private readonly SlotSelectionPolicy $slotPolicy,
-        private readonly QuoteCouponService $quoteCoupons,
         private readonly ReservationIntake $intake,
     ) {}
 
@@ -223,9 +221,6 @@ class ReservationService
 
     public function release(Reservation $reservation, string $status): void
     {
-        if ($reservation->status === 'held') {
-            $this->quoteCoupons->release($reservation);
-        }
         $reservation->update([
             'status' => $status,
             'cancelled_at' => $status === 'cancelled' ? now() : $reservation->cancelled_at,

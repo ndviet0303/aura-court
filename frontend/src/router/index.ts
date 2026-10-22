@@ -375,6 +375,16 @@ const router = createRouter({
           },
         },
         {
+          path: 'promotions',
+          name: 'admin-promotions',
+          component: () => import('@/features/admin/views/AdminPromotionProgramsView.vue'),
+          meta: {
+            orgRoles: ['organization_owner'],
+            titleKey: 'seo.adminPromotionsTitle',
+            indexable: false,
+          },
+        },
+        {
           path: 'contracts',
           name: 'admin-contracts',
           component: () => import('@/features/admin/views/AdminRecurringContractsView.vue'),

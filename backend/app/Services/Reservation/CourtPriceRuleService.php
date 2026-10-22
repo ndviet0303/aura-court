@@ -53,7 +53,7 @@ class CourtPriceRuleService
     /**
      * The lowest price per hour a booking confirmed now could pay on each court (design D18): over its links in
      * effect now or later, each version that still prices some play time from now on (D6), and holiday prices of
-     * dates from today. Courts with none are left out. Courts need `venue` loaded for their local date.
+     * the dates that version still prices. Courts with none are left out. Courts need `venue` loaded for their local date.
      *
      * @param  iterable<Court>  $courts
      * @return array<int, int>
@@ -61,11 +61,11 @@ class CourtPriceRuleService
     public function fromPrices(iterable $courts): array
     {
         $now = CarbonImmutable::now();
-        $todayOf = collect($courts)->mapWithKeys(fn (Court $court): array => [
-            (int) $court->id => $now->setTimezone($court->venue?->timezone ?: config('app.timezone'))->toDateString(),
+        $timezoneOf = collect($courts)->mapWithKeys(fn (Court $court): array => [
+            (int) $court->id => $court->venue?->timezone ?: config('app.timezone'),
         ]);
         $prices = [];
-        foreach ($this->priceTables->linksForCourts($todayOf->keys()->all(), $now) as $link) {
+        foreach ($this->priceTables->linksForCourts($timezoneOf->keys()->all(), $now) as $link) {
             $courtId = (int) $link->court_id;
             $versions = $link->priceTable->versions
                 ->filter(fn (PriceTableVersion $version): bool => $version->published_at <= $now)
@@ -74,13 +74,21 @@ class CourtPriceRuleService
             foreach ($versions as $index => $version) {
                 // The first play time this version could price; a later publication in effect by then replaces it.
                 $playFrom = max($now, $link->starts_at, $version->effective_at);
+                $laterVersions = $versions->slice($index + 1);
                 if (($link->ends_at !== null && $link->ends_at <= $playFrom)
-                    || $versions->slice($index + 1)->contains(fn (PriceTableVersion $later): bool => $later->effective_at <= $playFrom)) {
+                    || $laterVersions->contains(fn (PriceTableVersion $later): bool => $later->effective_at <= $playFrom)) {
                     continue;
                 }
+                // It prices until the link ends or the next publication takes effect, whichever comes first.
+                // ponytail: holiday dates are matched by local date, so a date the window only partly covers still counts.
+                $until = $laterVersions->pluck('effective_at')->push($link->ends_at)->filter()->min();
+                $timezone = $timezoneOf[$courtId];
+                $fromDate = CarbonImmutable::instance($playFrom)->setTimezone($timezone)->toDateString();
+                $untilDate = $until ? CarbonImmutable::instance($until)->subSecond()->setTimezone($timezone)->toDateString() : null;
                 foreach ($version->intervals as $interval) {
-                    if ($link->kind === PriceTable::KIND_HOLIDAY
-                        && ! collect($interval->dates)->contains(fn (string $date): bool => $date >= $todayOf[$courtId])) {
+                    if ($link->kind === PriceTable::KIND_HOLIDAY && ! collect($interval->dates)->contains(
+                        fn (string $date): bool => $date >= $fromDate && ($untilDate === null || $date <= $untilDate),
+                    )) {
                         continue;
                     }
                     $prices[$courtId] = min($prices[$courtId] ?? PHP_INT_MAX, (int) $interval->price_per_hour);

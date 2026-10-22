@@ -4,7 +4,6 @@ namespace App\Domain\Pricing\Actions;
 
 use App\Contracts\Repositories\PriceTableRepositoryInterface;
 use App\Domain\Pricing\DTOs\CreatePriceTableData;
-use App\Domain\Subscription\Actions\EvaluatePlatformEntitlement;
 use App\Models\PriceTable;
 use Illuminate\Support\Facades\DB;
 
@@ -17,19 +16,10 @@ class CreatePriceTable
 {
     public function __construct(
         private readonly PriceTableRepositoryInterface $priceTables,
-        private readonly EvaluatePlatformEntitlement $entitlement,
     ) {}
 
     public function execute(CreatePriceTableData $data): PriceTable
     {
-        $entitlement = $this->entitlement->execute($data->organizationId);
-        if (! $entitlement['is_valid']) {
-            abort(response()->json([
-                'message' => 'Cần gói dịch vụ nền tảng còn hạn để tạo bảng giá.',
-                'code' => $entitlement['reason'] ?? 'SUBSCRIPTION_REQUIRED',
-            ], 403));
-        }
-
         return DB::transaction(function () use ($data): PriceTable {
             $table = $this->priceTables->create(['venue_id' => $data->venueId, 'name' => $data->name, 'kind' => $data->kind]);
             $publishedAt = now();
