@@ -36,7 +36,7 @@ class VoucherUseResource extends JsonResource
                 'status' => (string) $reservation->status,
                 // The contact recorded at booking, so a later resale of the slot does not rename the voucher's user.
                 'customer_name' => $reservation->booker['name'] ?? $reservation->user?->name,
-                'court' => $reservation->court === null ? null : ['id' => (int) $reservation->court->id, 'name' => (string) $reservation->court->name],
+                'court' => $reservation->court === null ? null : ['id' => (int) $reservation->court->id, 'name' => (string) $reservation->court->code],
                 'starts_at' => self::utc($reservation->starts_at),
                 'ends_at' => self::utc($reservation->ends_at),
             ],

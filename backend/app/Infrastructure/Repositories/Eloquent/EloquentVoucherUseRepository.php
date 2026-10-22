@@ -76,7 +76,7 @@ class EloquentVoucherUseRepository implements VoucherUseRepositoryInterface
     private function withBooking(int $programId, string $status): Builder
     {
         return VoucherUse::query()
-            ->with(['voucherCode:id,code', 'reservation.user:id,name', 'reservation.court:id,name', 'reservation.slots'])
+            ->with(['voucherCode:id,code', 'reservation.user:id,name', 'reservation.court:id,code', 'reservation.slots'])
             ->where('program_id', $programId)
             ->where('status', $status);
     }

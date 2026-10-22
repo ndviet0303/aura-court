@@ -40,10 +40,10 @@ class PromotionProgramResource extends JsonResource
             'status' => $this->statusAt(),
             'max_uses' => $this->max_uses,
             'code_count' => $this->code_count,
+            // Module 2 D9: a court's code is its display name and its id its address; name and slug are no longer kept.
             'courts' => $this->whenLoaded('courts', fn (): array => $this->courts->map(fn (Court $court): array => [
                 'id' => (int) $court->id,
-                'name' => (string) $court->name,
-                'slug' => (string) $court->slug,
+                'name' => (string) $court->code,
             ])->all()),
             'usage' => [
                 'held' => $held,
