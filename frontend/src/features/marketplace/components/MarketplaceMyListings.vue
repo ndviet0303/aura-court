@@ -47,7 +47,7 @@ function formatMoney(amount: number): string {
       </div>
 
       <AuraButton variant="primary" size="sm" icon="add" @click="emit('create-new')">
-        Pass Thêm 1h Mới
+        Pass Thêm Giờ Chơi
       </AuraButton>
     </div>
 

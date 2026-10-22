@@ -13,26 +13,33 @@ export function useApiCall<T, Args extends unknown[]>(
   const loading = ref(options.initialLoading ?? false)
   const error = ref<string | null>(null)
   const data = ref<T | null>(null)
+  // Only the newest call may write state; an older answer belongs to arguments no longer shown.
+  let latest = 0
 
   async function execute(...args: Args): Promise<T | null> {
+    const request = ++latest
     loading.value = true
     error.value = null
     try {
       const result = await apiFn(...args)
-      data.value = result as any
-      options.onSuccess?.(result)
+      if (request === latest) {
+        data.value = result as any
+        options.onSuccess?.(result)
+      }
       return result
     } catch (e) {
-      const msg = errorMessage(e, options.defaultErrorMessage)
-      error.value = msg
-      options.onError?.(e)
+      if (request === latest) {
+        error.value = errorMessage(e, options.defaultErrorMessage)
+        options.onError?.(e)
+      }
       throw e
     } finally {
-      loading.value = false
+      if (request === latest) loading.value = false
     }
   }
 
   function reset() {
+    latest++
     loading.value = false
     error.value = null
     data.value = null

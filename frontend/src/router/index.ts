@@ -92,16 +92,10 @@ const router = createRouter({
       },
     },
     {
+      // Kept for notification links (package paid, price scheduled); the page lives in the admin shell.
       path: '/partner/subscription',
-      name: 'partner-subscription',
-      component: () =>
-        import('@/features/platform-subscriptions/views/PlatformSubscriptionView.vue'),
-      meta: {
-        auth: true,
-        titleKey: 'seo.partnerSubscriptionTitle',
-        descriptionKey: 'seo.partnerSubscriptionDesc',
-        indexable: false,
-      },
+      redirect: '/admin/packages',
+      meta: { indexable: false },
     },
     {
       path: '/forgot-password',
@@ -365,12 +359,34 @@ const router = createRouter({
           },
         },
         {
+          path: 'packages',
+          name: 'admin-packages',
+          component: () =>
+            import('@/features/platform-subscriptions/views/PlatformSubscriptionView.vue'),
+          meta: {
+            orgRoles: ['organization_owner'],
+            titleKey: 'seo.partnerSubscriptionTitle',
+            descriptionKey: 'seo.partnerSubscriptionDesc',
+            indexable: false,
+          },
+        },
+        {
           path: 'pricing',
           name: 'admin-pricing',
-          component: () => import('@/features/admin/views/PricingCalendarView.vue'),
+          component: () => import('@/features/admin/views/AdminPriceTablesView.vue'),
           meta: {
             orgRoles: ['organization_owner'],
             titleKey: 'seo.adminPricingTitle',
+            indexable: false,
+          },
+        },
+        {
+          path: 'promotions',
+          name: 'admin-promotions',
+          component: () => import('@/features/admin/views/AdminPromotionProgramsView.vue'),
+          meta: {
+            orgRoles: ['organization_owner'],
+            titleKey: 'seo.adminPromotionsTitle',
             indexable: false,
           },
         },
@@ -489,6 +505,16 @@ const router = createRouter({
           },
         },
         {
+          path: 'finance',
+          name: 'admin-finance',
+          component: () => import('@/features/owner-finance/views/OwnerFinanceView.vue'),
+          meta: {
+            orgRoles: ['organization_owner'],
+            titleKey: 'seo.ownerFinanceTitle',
+            indexable: false,
+          },
+        },
+        {
           path: 'reconciliation',
           name: 'admin-reconciliation',
           component: () => import('@/features/admin/views/AdminFinancialReconciliationView.vue'),
@@ -510,6 +536,12 @@ const router = createRouter({
           name: 'admin-users',
           component: () => import('@/features/admin/views/AdminUsersView.vue'),
           meta: { platformAdmin: true, titleKey: 'seo.adminUsersTitle', indexable: false },
+        },
+        {
+          path: 'platform-fees',
+          name: 'admin-platform-fees',
+          component: () => import('@/features/platform-fees/views/PlatformFeesView.vue'),
+          meta: { platformAdmin: true, titleKey: 'seo.adminPlatformFeesTitle', indexable: false },
         },
         {
           path: 'disputes',

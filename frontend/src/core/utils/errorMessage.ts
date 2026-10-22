@@ -139,6 +139,42 @@ export const ERROR_CODE_MAP: Record<string, { vi: string; en: string; key: strin
     en: 'The server encountered an issue. Please try again later.',
     key: 'errors.serverError',
   },
+  // Module 05 venue packages (D4, D8).
+  PACKAGE_REQUEST_PENDING: {
+    vi: 'Cơ sở đang có yêu cầu thanh toán gói khác chưa hết hạn. Hãy thanh toán yêu cầu đó hoặc chờ nó hết hạn.',
+    en: 'This venue has another package payment request that has not expired. Pay it or wait until it expires.',
+    key: 'errors.packageRequestPending',
+  },
+  PACKAGE_TERM_LOCKED: {
+    vi: 'Gia hạn phải cùng kỳ hạn với gói đang dùng.',
+    en: 'A renewal must use the term of the active package.',
+    key: 'errors.packageTermLocked',
+  },
+  PACKAGE_PRICE_UNAVAILABLE: {
+    vi: 'Kỳ hạn này chưa có giá áp dụng.',
+    en: 'This term has no applicable price yet.',
+    key: 'errors.packagePriceUnavailable',
+  },
+  PACKAGE_NOT_ACTIVE: {
+    vi: 'Cơ sở không có gói đang hoạt động để chấm dứt.',
+    en: 'This venue has no active package to terminate.',
+    key: 'errors.packageNotActive',
+  },
+  TERMINATION_NOT_CONFIRMED: {
+    vi: 'Vui lòng xác nhận mất thời gian còn lại và không được hoàn tiền trước khi chấm dứt gói.',
+    en: 'Confirm that the remaining time is lost and nothing is refunded before terminating the package.',
+    key: 'errors.terminationNotConfirmed',
+  },
+  VENUE_CLOSED: {
+    vi: 'Cơ sở này đã đóng vĩnh viễn.',
+    en: 'This venue is permanently closed.',
+    key: 'errors.venueClosed',
+  },
+  PACKAGE_PAYMENT_UNAVAILABLE: {
+    vi: 'Chưa thể nhận phí gói lúc này. Vui lòng thử lại sau.',
+    en: 'Package fees cannot be received right now. Please try again later.',
+    key: 'errors.packagePaymentUnavailable',
+  },
 }
 
 export function isRawInfrastructureMessage(msg: string): boolean {

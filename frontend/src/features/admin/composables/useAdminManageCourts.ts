@@ -3,10 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { resolveLocalizedText } from '@/i18n'
-import { useAuthStore } from '@/stores/auth'
 import type { Court, Venue, SportType } from '@/features/court/types/court'
-import type { Coupon } from '@/features/booking/types/booking'
-export type { Coupon }
 
 export type CourtForm = {
   name: string
@@ -23,26 +20,9 @@ export type CourtForm = {
 
 export function useAdminManageCourts() {
   const { t } = useI18n()
-  const auth = useAuthStore()
-
-  function activeOrganizationId(): number | undefined {
-    const user = auth.user
-    if (!user) return undefined
-    if (
-      user.capabilities &&
-      typeof user.capabilities === 'object' &&
-      !Array.isArray(user.capabilities)
-    ) {
-      const activeOrgId = user.capabilities.active_organization_id
-      if (typeof activeOrgId === 'number') return activeOrgId
-    }
-    const firstOrgId = user.organizations?.[0]?.organization_id ?? user.organizations?.[0]?.id
-    return typeof firstOrgId === 'number' ? firstOrgId : undefined
-  }
 
   const courts = ref<Court[]>([])
   const venues = ref<Venue[]>([])
-  const coupons = ref<Coupon[]>([])
   const error = ref('')
   const notice = ref('')
   const saving = ref(false)
@@ -71,9 +51,6 @@ export function useAdminManageCourts() {
   const showBlockModal = ref(false)
   const selectedCourtForBlock = ref<Court | null>(null)
   const blockSaving = ref(false)
-
-  const showCouponModal = ref(false)
-  const couponSaving = ref(false)
 
   const activeVenues = computed(() => venues.value.filter((venue) => venue.is_active))
 
@@ -129,16 +106,12 @@ export function useAdminManageCourts() {
     loading.value = true
     clearAlerts()
     try {
-      const [loadedCourts, loadedVenues, loadedCoupons] = await Promise.all([
+      const [loadedCourts, loadedVenues] = await Promise.all([
         adminApi.getCourts(),
         adminApi.getVenues(),
-        adminApi.getCoupons<{ data: Coupon[] } | Coupon[]>(activeOrganizationId()),
       ])
       courts.value = loadedCourts || []
       venues.value = loadedVenues || []
-      coupons.value = Array.isArray(loadedCoupons)
-        ? loadedCoupons
-        : (loadedCoupons as { data: Coupon[] })?.data || []
     } catch (cause: unknown) {
       error.value = errorMessage(cause, t('admin.manage.loadDataError'))
     } finally {
@@ -281,72 +254,9 @@ export function useAdminManageCourts() {
     }
   }
 
-  function openCouponModal() {
-    showCouponModal.value = true
-  }
-
-  async function createCoupon(payload: Record<string, unknown>) {
-    couponSaving.value = true
-    clearAlerts()
-    try {
-      await adminApi.createCoupon({ ...payload, organization_id: activeOrganizationId() })
-      notice.value = t('admin.manage.createCouponSuccess')
-      await load()
-    } catch (cause: unknown) {
-      error.value = errorMessage(cause, t('admin.manage.createCouponError'))
-    } finally {
-      couponSaving.value = false
-    }
-  }
-
-  async function updateCoupon(id: number, payload: Record<string, unknown>) {
-    couponSaving.value = true
-    clearAlerts()
-    try {
-      await adminApi.updateCoupon(id, { ...payload, organization_id: activeOrganizationId() })
-      notice.value = t('admin.manage.updateCouponSuccess')
-      await load()
-    } catch (cause: unknown) {
-      error.value = errorMessage(cause, t('admin.manage.updateCouponError'))
-    } finally {
-      couponSaving.value = false
-    }
-  }
-
-  async function transitionCoupon(coupon: Coupon, action: 'activate' | 'suspend' | 'retire') {
-    couponSaving.value = true
-    clearAlerts()
-    try {
-      const organizationId = activeOrganizationId()
-      if (action === 'activate' && coupon.campaign && coupon.campaign.status !== 'active') {
-        await adminApi.transitionPromotionCampaign(coupon.campaign.id, 'activate', organizationId)
-      }
-      await adminApi.transitionCoupon(coupon.id, action, organizationId)
-      await load()
-    } catch (cause: unknown) {
-      error.value = errorMessage(cause, t('admin.manage.updateCouponError'))
-    } finally {
-      couponSaving.value = false
-    }
-  }
-
-  async function transitionCampaign(campaignId: number, action: 'activate' | 'suspend' | 'retire') {
-    couponSaving.value = true
-    clearAlerts()
-    try {
-      await adminApi.transitionPromotionCampaign(campaignId, action, activeOrganizationId())
-      await load()
-    } catch (cause: unknown) {
-      error.value = errorMessage(cause, t('admin.manage.updateCouponError'))
-    } finally {
-      couponSaving.value = false
-    }
-  }
-
   return {
     courts,
     venues,
-    coupons,
     error,
     notice,
     saving,
@@ -360,8 +270,6 @@ export function useAdminManageCourts() {
     showBlockModal,
     selectedCourtForBlock,
     blockSaving,
-    showCouponModal,
-    couponSaving,
     activeVenues,
     filteredCourts,
     totalCourtsCount,
@@ -377,10 +285,5 @@ export function useAdminManageCourts() {
     openBlockModal,
     addBlock,
     deleteBlock,
-    openCouponModal,
-    createCoupon,
-    updateCoupon,
-    transitionCoupon,
-    transitionCampaign,
   }
 }

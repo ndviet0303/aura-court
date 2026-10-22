@@ -1,4 +1,74 @@
 {
+  "e2e/p0-booking-payment-journey.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "e2e/p0-pos-shift-service.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 6
+    }
+  },
+  "e2e/p1-community-feed-moderation.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 14
+    }
+  },
+  "e2e/p1-pricing-promotions-loyalty.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 4
+    }
+  },
+  "e2e/p1-receiving-connections.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    }
+  },
+  "e2e/p1-recurring-series.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 6
+    }
+  },
+  "e2e/p1-social-matchmaking-activity.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 8
+    }
+  },
+  "e2e/p1-staff-management.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 9
+    }
+  },
+  "e2e/p1-venue-lifecycle.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 13
+    }
+  },
+  "e2e/runner/api-client.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 6
+    }
+  },
+  "e2e/runner/environment.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "e2e/runner/environment.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "e2e/runner/sanitize-traces.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "playwright.config.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
   "src/core/composables/useApiCall.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
@@ -14,9 +84,34 @@
       "count": 2
     }
   },
+  "src/features/admin/__tests__/AdminKycVerificationView.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/features/admin/__tests__/AdminMembershipView.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 4
+    }
+  },
+  "src/features/admin/__tests__/AdminPayoutsView.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/features/admin/__tests__/AdminScheduleView.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 4
+    }
+  },
+  "src/features/admin/__tests__/VenuePublicationReviewViews.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 9
+    }
+  },
   "src/features/admin/api/adminApi.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 24
+      "count": 14
     }
   },
   "src/features/admin/api/contractsApi.ts": {
@@ -47,11 +142,6 @@
   "src/features/admin/components/manage/AdminCourtsTable.vue": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
-    }
-  },
-  "src/features/admin/components/manage/CourtPricingModal.vue": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
     }
   },
   "src/features/admin/components/reconciliation/ShiftHistoryTable.vue": {
@@ -139,11 +229,6 @@
       "count": 1
     }
   },
-  "src/features/admin/types/pricing.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
   "src/features/admin/views/AdminPublicationQueueView.vue": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
@@ -152,6 +237,26 @@
   "src/features/admin/views/AdminTournamentBracketView.vue": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
+    }
+  },
+  "src/features/auth/__tests__/OnboardingView.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/features/auth/__tests__/guestNavigation.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 4
+    }
+  },
+  "src/features/booking/__tests__/BookingDetailLoyalty.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/features/booking/__tests__/BookingView.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 6
     }
   },
   "src/features/booking/composables/useRecurringBooking.ts": {
@@ -184,14 +289,34 @@
       "count": 5
     }
   },
+  "src/features/home/__tests__/HomeAvailability.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "src/features/home/__tests__/HomeView.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "src/features/partner-registration/__tests__/PartnerApplicationStatusView.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 14
+    }
+  },
+  "src/features/partner-registration/__tests__/PartnerWizardComponents.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
   "src/features/partner-registration/components/BusinessInfoStep.vue": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
     }
   },
-  "src/features/platform-subscriptions/views/PlatformSubscriptionView.vue": {
+  "src/features/pos/__tests__/PosScopedAccessAndCapabilities.spec.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 1
+      "count": 4
     }
   },
   "src/features/pos/api/posApi.ts": {
@@ -224,6 +349,11 @@
       "count": 9
     }
   },
+  "src/features/social/__tests__/CommunityFeedAndConnections.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 7
+    }
+  },
   "src/features/social/api/socialApi.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 10
@@ -247,6 +377,11 @@
   "src/features/social/composables/useCreateMatch.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 5
+    }
+  },
+  "src/features/tournament/__tests__/tournament-regressions.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
     }
   },
   "src/features/tournament/api/tournamentApi.ts": {
@@ -290,6 +425,11 @@
     }
   },
   "src/i18n/index.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/lib/__tests__/seo.spec.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
     }

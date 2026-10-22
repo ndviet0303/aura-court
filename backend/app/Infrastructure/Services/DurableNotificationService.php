@@ -8,9 +8,6 @@ use App\Models\AuditLog;
 use App\Models\Booking;
 use App\Models\HostKyc;
 use App\Models\OutboxMessage;
-use App\Models\PlatformPaymentAttempt;
-use App\Models\PlatformSubscription;
-use App\Models\User;
 use App\Models\VenuePublicationRevision;
 use App\Services\Infrastructure\OutboxService;
 use Illuminate\Database\Eloquent\Model;
@@ -28,7 +25,8 @@ class DurableNotificationService implements DurableNotificationServiceInterface
         int $userId,
         string $eventType,
         array $payload,
-        ?int $orgId = null
+        ?int $orgId = null,
+        array $channels = ['database']
     ): OutboxMessage {
         return $this->outbox->enqueue([
             'message_key' => $key,
@@ -37,7 +35,7 @@ class DurableNotificationService implements DurableNotificationServiceInterface
             'organization_id' => $orgId,
             'aggregate_type' => $payload['aggregate_type'] ?? null,
             'aggregate_id' => isset($payload['aggregate_id']) ? (int) $payload['aggregate_id'] : null,
-        ], array_merge($payload, ['user_id' => $userId]));
+        ], array_merge($payload, ['user_id' => $userId, 'channels' => $channels]));
     }
 
     public function recordAudit(
@@ -113,51 +111,6 @@ class DurableNotificationService implements DurableNotificationServiceInterface
         );
     }
 
-    public function notifySubscriptionActivated(PlatformSubscription $subscription): OutboxMessage
-    {
-        $key = "subscription.activated.{$subscription->id}.v{$subscription->plan_version}";
-        $org = $subscription->organization;
-        $ownerMember = $org?->members()->where('role', 'organization_owner')->first() ?? $org?->members()->first();
-        $userId = (int) ($ownerMember?->user_id ?? $org?->sourceKyc?->user_id ?? User::query()->value('id') ?? 1);
-
-        return $this->recordOutboxNotification(
-            key: $key,
-            userId: $userId,
-            eventType: 'platform.subscription.activated',
-            payload: [
-                'title' => 'Gói dịch vụ nền tảng đã được kích hoạt',
-                'status' => $subscription->status,
-                'plan_id' => $subscription->plan_id,
-                'aggregate_type' => PlatformSubscription::class,
-                'aggregate_id' => $subscription->id,
-            ],
-            orgId: $subscription->organization_id
-        );
-    }
-
-    public function notifyPaymentFailed(PlatformPaymentAttempt $attempt): OutboxMessage
-    {
-        $key = "payment.failed.{$attempt->reference_code}";
-        $org = $attempt->organization;
-        $ownerMember = $org?->members()->where('role', 'organization_owner')->first() ?? $org?->members()->first();
-        $userId = (int) ($ownerMember?->user_id ?? $org?->sourceKyc?->user_id ?? User::query()->value('id') ?? 1);
-
-        return $this->recordOutboxNotification(
-            key: $key,
-            userId: $userId,
-            eventType: 'platform.payment.failed',
-            payload: [
-                'title' => 'Thanh toán gói dịch vụ thất bại',
-                'reference_code' => $attempt->reference_code,
-                'amount' => $attempt->amount,
-                'reason' => $attempt->failure_reason,
-                'aggregate_type' => PlatformPaymentAttempt::class,
-                'aggregate_id' => $attempt->id,
-            ],
-            orgId: $attempt->organization_id
-        );
-    }
-
     public function notifyPublicationReviewed(
         VenuePublicationRevision $revision,
         string $decision,
@@ -209,13 +162,13 @@ class DurableNotificationService implements DurableNotificationServiceInterface
                     'title' => $title,
                     'body' => $body,
                     'action_url' => $actionUrl,
-                    'channels' => ['database', 'mail'],
                     'delivered_channels' => [],
                     'mail_view' => 'emails.booking-notification',
                     'aggregate_type' => Booking::class,
                     'aggregate_id' => $booking->id,
                 ],
-                orgId: $orgId
+                orgId: $orgId,
+                channels: ['database', 'mail']
             );
         } catch (\Throwable $secondaryException) {
             Log::warning("Secondary booking notification delivery failed immediately for booking {$booking->code}: {$secondaryException->getMessage()}", [

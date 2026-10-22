@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAdminDashboard, type ReviewPayment } from '../composables/useAdminDashboard'
 
-import AdminKpiCards from '../components/dashboard/AdminKpiCards.vue'
-import AdminDateRangeFilter from '../components/dashboard/AdminDateRangeFilter.vue'
-import AdminAnalyticsCharts from '../components/dashboard/AdminAnalyticsCharts.vue'
+import PlatformFeeSummary from '@/features/platform-fees/components/PlatformFeeSummary.vue'
 import AdminRecentBookingsTable from '../components/dashboard/AdminRecentBookingsTable.vue'
 import AdminPendingPaymentsCard from '../components/dashboard/AdminPendingPaymentsCard.vue'
 import AdminQuickNav from '../components/dashboard/AdminQuickNav.vue'
@@ -16,18 +13,10 @@ const {
   loading,
   notice,
   error,
-  report,
   payments,
-  datePreset,
-  from,
-  to,
   searchFilter,
   statusFilter,
-  chartTab,
-  csvUrl,
   filteredBookings,
-  applyPreset,
-  loadData,
   showNotice,
 } = useAdminDashboard()
 
@@ -38,10 +27,6 @@ function handleVerifyPayment(p: ReviewPayment) {
   }
   showNotice(t('admin.dashboard.verifySuccess', { code: p.transfer_code }))
 }
-
-onMounted(() => {
-  loadData()
-})
 </script>
 
 <template>
@@ -61,28 +46,8 @@ onMounted(() => {
     <div v-if="notice" class="alert-pill">{{ notice }}</div>
     <div v-if="error" class="alert-pill-error">{{ error }}</div>
 
-    <!-- Date Range Preset & Filter Bar -->
-    <AdminDateRangeFilter
-      :date-preset="datePreset"
-      :from="from"
-      :to="to"
-      :csv-url="csvUrl"
-      @preset="applyPreset"
-      @update:from="from = $event"
-      @update:to="to = $event"
-      @filter="loadData"
-    />
-
-    <!-- Executive KPI Cards Grid -->
-    <AdminKpiCards :report="report" :loading="loading" />
-
-    <!-- Analytics Charts (Hourly vs Court) -->
-    <AdminAnalyticsCharts
-      :report="report"
-      :chart-tab="chartTab"
-      :loading="loading"
-      @update:chart-tab="chartTab = $event"
-    />
+    <!-- D15: platform fees collected this month and venues expiring within 7 days -->
+    <PlatformFeeSummary />
 
     <!-- Operational Split Grid (Bookings vs Pending Payments) -->
     <div class="dashboard-split-grid">

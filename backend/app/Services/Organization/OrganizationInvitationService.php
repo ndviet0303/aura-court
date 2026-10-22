@@ -2,7 +2,6 @@
 
 namespace App\Services\Organization;
 
-use App\Domain\Subscription\Actions\EnforcePlanQuota;
 use App\Models\ElevatedAuditLog;
 use App\Models\Organization;
 use App\Models\OrganizationInvitation;
@@ -23,10 +22,6 @@ class OrganizationInvitationService
         $email = Str::lower(trim($data['email']));
         $invitee = User::whereRaw('lower(email) = ?', [$email])->first();
         $this->assertInvitable($organization, $inviter, $invitee);
-
-        if ($organization->hasActiveSubscription()) {
-            app(EnforcePlanQuota::class)->execute($organization->id, 'staff', 1);
-        }
 
         // BR-17/23: an invitation only ever grants staff; ownership comes from partner approval.
         $permissions = StaffMembershipService::venuePermissions($data['venue_ids'] ?? [(int) $data['venue_id']]);
@@ -90,10 +85,6 @@ class OrganizationInvitationService
             }
             $this->assertAnswerable($invitation);
             abort_if($this->holdsOperatorRole($invitation->organization_id, $user->id), 422, 'Bạn đã là chủ hoặc nhân viên của tổ chức này.');
-
-            if ($invitation->organization->hasActiveSubscription()) {
-                app(EnforcePlanQuota::class)->execute($invitation->organization_id, 'staff', 1);
-            }
 
             $invitation->update(['status' => OrganizationInvitation::STATUS_ACCEPTED, 'accepted_at' => now()]);
             $member = OrganizationMember::updateOrCreate(

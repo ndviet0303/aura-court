@@ -63,6 +63,12 @@ export const navGroups: NavGroup[] = [
         labelKey: 'admin.nav.pricingMatrix',
         icon: 'price_change',
       },
+      {
+        id: 'courts-promotions',
+        path: '/admin/promotions',
+        labelKey: 'admin.nav.promotionPrograms',
+        icon: 'sell',
+      },
     ],
   },
   {
@@ -129,6 +135,13 @@ export const navGroups: NavGroup[] = [
         icon: 'report',
         capability: 'direct_owner_payments',
       },
+      // No capability: AdminLayout shows unlisted paths to platform admins only.
+      {
+        id: 'finance-platform-fees',
+        path: '/admin/platform-fees',
+        labelKey: 'admin.nav.platformFees',
+        icon: 'sell',
+      },
     ],
   },
   {
@@ -157,6 +170,18 @@ export const navGroups: NavGroup[] = [
       },
       { id: 'org-staff', path: '/admin/staff', labelKey: 'admin.nav.staffManage', icon: 'badge' },
       {
+        id: 'org-packages',
+        path: '/admin/packages',
+        labelKey: 'admin.nav.packages',
+        icon: 'workspace_premium',
+      },
+      {
+        id: 'org-finance',
+        path: '/admin/finance',
+        labelKey: 'admin.nav.ownerFinance',
+        icon: 'monitoring',
+      },
+      {
         id: 'org-kyc',
         path: '/admin/kyc',
         labelKey: 'admin.nav.kycVerification',
@@ -171,4 +196,30 @@ export const navGroups: NavGroup[] = [
       },
     ],
   },
+]
+
+// Owner-only: courts, contracts, venues, pricing, promotions, membership, organization profile & staff,
+// payment exceptions, venue packages, finance
+export const OWNER_ONLY_PATHS = [
+  '/admin/manage',
+  '/admin/contracts',
+  '/admin/venues',
+  '/admin/pricing',
+  '/admin/promotions',
+  '/admin/membership',
+  '/admin/organization',
+  '/admin/staff',
+  '/admin/payment-exceptions',
+  '/admin/packages',
+  '/admin/finance',
+]
+
+// Owner or staff: schedule, POS, shifts, inventory, tournaments
+export const OWNER_OR_STAFF_PATHS = [
+  '/admin/schedule',
+  '/admin/pos',
+  '/pos',
+  '/admin/shifts',
+  '/admin/inventory',
+  '/admin/tournaments',
 ]

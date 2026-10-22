@@ -63,27 +63,26 @@ Quy tắc cho mọi lần merge của Pha 2–6 (danh sách file trong từng ta
 
 Điều kiện: Pha 1 đã merge; Pha 2 của module 4 (`Reservation::scopeBlocksInventory()`, `ReservationIntake`) đã merge (đạt từ `851c173e`).
 
-- [ ] 2.1 Migration và model: `price_tables`, `price_table_versions`, `price_table_intervals`, `court_price_table_links` (D1, D2).
+- [x] 2.1 Migration và model: `price_tables`, `price_table_versions`, `price_table_intervals`, `court_price_table_links` (D1, D2).
   - Ràng buộc exclusion (gist) trên `court_price_table_links`: mỗi sân, mỗi `kind`, không chồng thời gian.
   - Repository theo `backend-architecture.md`.
   - Test: `PriceTableSchemaTest`. Hai liên kết thường chồng thời gian trên cùng sân bị DB từ chối.
-- [ ] 2.2 Tạo bảng giá = công bố phiên bản 1 (D1, D15).
+- [x] 2.2 Tạo bảng giá = công bố phiên bản 1 (D1, D15).
   - Bắt buộc tên, loại, `weekdays` (thường) hoặc `dates` (lễ), ít nhất một khoảng, `effective_at`. `effective_at` ở quá khứ hoặc bằng bây giờ thì phiên bản hiệu lực lúc công bố.
   - Khoảng `[start, end)` trong ngày, `23:59` = 1440, không chồng lấn trong cùng ngày; đơn giá nguyên > 0.
-  - Cần quyền kinh doanh còn hạn (`EvaluatePlatformEntitlement`).
   - Route owner `GET/POST /admin/venues/{venue}/price-tables`, `GET /admin/price-tables/{table}` (danh sách sân đang áp dụng đọc từ liên kết).
-  - Test: `PriceTableManagementTest`. Chồng lấn, đơn giá 0, thiếu ngày → 422; owner tổ chức khác → 403; staff → 403; gói hết hạn → không tạo; `effective_at` quá khứ → hiệu lực lúc công bố.
-- [ ] 2.3 Engine `RentalPriceCalculator::quote(Court, startsAt, endsAt, ?VoucherChoice, ?Reservation $heldBy = null)` (D5, D6, D17, D29).
+  - Test: `PriceTableManagementTest`. Chồng lấn, đơn giá 0, thiếu ngày → 422; owner tổ chức khác → 403; staff → 403; `effective_at` quá khứ → hiệu lực lúc công bố.
+- [x] 2.3 Engine `RentalPriceCalculator::quote(Court, startsAt, endsAt, ?VoucherChoice, ?Reservation $heldBy = null)` (D5, D6, D17, D29).
   - Chia tại biên khoảng giờ, `effective_at` và thời điểm chuyển liên kết; chọn phiên bản theo D6; ngày lễ chỉ dùng bảng lễ (D4).
   - `T = intdiv(Σ dᵢ·pᵢ, 60)`. Phút không có giá → 422.
   - Pha này `VoucherChoice` và `$heldBy` luôn `null`; phần voucher ở task 5.1. Trong lúc hợp đồng `slots` còn chạy (D29), mỗi slot được tính là `[start, start + slot_duration)`.
   - Test: `RentalPriceCalculatorTest`. 15:30–17:00 với 100.000/140.000 = 190.000; 80 phút × 100.000 = 133.333; ngày lễ thiếu giờ → 422; phiên bản công bố sau lúc xác nhận không áp dụng; khoảng giá và ngày phục vụ kết thúc 23:59 tính đủ 23:00–24:00 (60 phút, D15); đoạn qua nửa đêm → 422.
-- [ ] 2.4 `PriceCoverageService` và `GET /admin/courts/{court}/price-coverage` (D3, D4).
+- [x] 2.4 `PriceCoverageService` và `GET /admin/courts/{court}/price-coverage` (D3, D4).
   - Duyệt theo mẫu thứ của từng đoạn (phiên bản × liên kết) và từng ngày cụ thể của bảng lễ hoặc ngoại lệ lịch phục vụ.
   - Công bố và đổi liên kết thiếu giá → 422 `PRICE_COVERAGE_INCOMPLETE` với `missing_items` (sân, thứ hoặc ngày, giờ bắt đầu, giờ kết thúc). Mở và resume sân do module 2 nối (task 3.3–3.5 của họ).
   - Entry point theo lô `uncoveredCourtIds(array $courtIds, CarbonInterface $from): list<int>` cho danh sách công khai (task 3.5 của module 2); số query không tăng theo số sân.
   - Test: `PriceCoverageTest`. Sân mở 06:00–23:59 mỗi ngày, bảng thường thiếu 22:00–23:59 → 7 mục thiếu, mỗi thứ một mục; ngày lễ thiếu giờ → mục thiếu theo ngày; staff hoặc owner tổ chức khác gọi `GET /admin/courts/{court}/price-coverage` → 403; `uncoveredCourtIds` cho tập sân vừa đủ vừa hở trả đúng id các sân hở, khớp kết quả kiểm từng sân, và số query với 1 sân bằng với 5 sân.
-- [ ] 2.5 Áp, thay, kết thúc liên kết; ngừng bảng (D2).
+- [x] 2.5 Áp, thay, kết thúc liên kết; ngừng bảng (D2). (test: chưa chạy lại sau sửa lỗi thời điểm mặc định)
   - Áp nhiều sân một lần với thời điểm chuyển `s` (mặc định bây giờ, không ở quá khứ). Liên kết cùng loại đang hiệu lực tại `s` kết thúc ở `s`; liên kết cùng loại lên lịch sau `s` bị xoá. Kết thúc liên kết cũng xoá liên kết cùng loại lên lịch sau đó.
   - Bảng khác cơ sở → 422. Bảng đã ngừng → 422 khi gán mới (công bố phiên bản cho bảng đã ngừng: task 3.1).
   - Mọi thay đổi chạy kiểm độ phủ trên bộ liên kết sau thay đổi, trong cùng transaction.
@@ -91,24 +90,25 @@ Quy tắc cho mọi lần merge của Pha 2–6 (danh sách file trong từng ta
   - Sau commit, gọi `Cache::increment('courts_version')`: danh sách sân công khai (`CourtController::index`) cache 300 giây theo khoá này và ẩn sân không có liên kết thường đang hiệu lực. Danh sách mang `from_price` của task 2.8, nên công bố phiên bản (task 3.1) cũng tăng khoá này; tạo bảng (task 2.2) thì không, vì bảng mới chưa có liên kết. Liên kết hoặc phiên bản lên lịch tới hiệu lực ở `s` hiện trên danh sách chậm nhất 300 giây sau `s` (không có job lúc `s`, như D16).
   - `PricedCourtVisibilityTest` (chuyển sang helper ở task 2.13): `test_new_price_rule_refreshes_the_cached_public_list` đổi thành `test_new_price_table_link_refreshes_the_cached_public_list`: đọc danh sách, áp liên kết qua action, đọc lại thấy sân, không xoá cache giữa hai lần đọc.
   - Test: `PriceTableLinkActionTest` (`CourtPriceTableLinkTest` là tên test của module 2). Kết thúc liên kết làm thiếu giá → 422, không đổi gì; sân đang dùng bảng đã ngừng vẫn có giá; áp bảng C trước liên kết B đã lên lịch → B bị xoá, C có hiệu lực từ `s`. Staff (kể cả quản lý cơ sở của chính sân) và owner tổ chức khác áp hoặc kết thúc liên kết → 403, không đổi gì.
-- [ ] 2.6 Chuyển dữ liệu giá (Migration Plan bước 1).
+- [x] 2.6 Chuyển dữ liệu giá (Migration Plan bước 1). (test: chưa làm)
   - Mỗi cơ sở gộp các sân có cùng nội dung giá thành một bảng thường; liên kết bắt đầu lúc chạy.
   - Ngày lễ theo Migration Plan bước 1: mỗi sân lấy các ngày mà rule `holiday/date_exception` chạm tới sau khi xếp hạng phạm vi cũ; mỗi ngày ghi cả ngày theo giá resolver cũ tính (giờ ngoài khung lễ giữ giá peak/weekly/base cũ); các sân cùng nội dung dùng chung một bảng lễ.
   - Script so sánh mọi sân × giờ × (14 ngày tới và mọi ngày có trong bảng lễ đã chuyển) giữa giá cũ và engine, trong transaction; kiểm độ phủ trên các liên kết đã chuyển; lệch hoặc thiếu thì rollback và in danh sách.
   - Backup prod trước khi chạy trên prod; hẹn giờ với người dùng.
+  - Migration chuyển dữ liệu đọc dữ liệu bằng PHP, nên phải chạy qua `artisan migrate` (trong container hoặc trên bản restore), không áp SQL lấy từ `--pretend`: khi pretend mọi truy vấn đọc trả rỗng, nên migration dừng với lỗi. Migration xoá `price_rules`, `court_price_slots` dừng nếu còn giá cũ đang bật mà chưa sân nào có liên kết bảng giá; kiểm tra và lệnh xoá nằm trong một câu lệnh PostgreSQL, nên áp qua psql cũng an toàn.
   - Test: `PriceTableConversionTest` với fixture có `CourtPriceSlot`, rule weekly cấp cơ sở, rule lễ chỉ phủ một phần ngày, và một sân bị hai rule lễ ở hai phạm vi khác nhau chạm tới.
-- [ ] 2.7 Viết lại `AvailabilityController` (D18).
+- [x] 2.7 Viết lại `AvailabilityController` (D18).
   - Mốc từ lịch phục vụ, bước lưới nằm ở một chỗ: Pha 2 dùng `slot_duration` của sân vì đầu vào vẫn là `slots` (D29); giá từ engine; so chồng lấn nửa mở; dùng `Reservation::scopeBlocksInventory()`; giờ không có giá thì không mở.
   - Không thuộc 2.7: module 4 đổi bước sang 30 phút cho mọi sân và panel trang chủ ("Home availability identifies its selected court and date") trong merge task 5.1 của họ, kèm test bốn mốc 30 phút (task 1.3, D29). 2.7 đóng ở merge Pha 2.
   - Sau khi viết lại, chỉnh hoặc bỏ mục `architecture-allowlist.json` (`inline-validation`, `model-query`) và mục `phpstan-baseline.neon` của `AvailabilityController` không còn khớp.
   - Test: `AvailabilityFromPriceTablesTest`. Sân mở tới 23:59 có mốc 23:00 trống và đặt được; lịch phục vụ kéo dài thêm 22:00–23:59 sau khi gán bảng thường chỉ phủ tới 22:00 → các mốc từ 22:00 không có trong `GET /api/availability`, mốc trước đó trả giá của engine (thay `ReservationsAndPricingTest::test_unmatched_legacy_time_is_rejected_until_an_explicit_base_rule_exists`); Sân chỉ có bảng giá (không có `CourtPriceSlot`) vẫn có giờ trống; hold quá hạn là trống; sân 60 phút có đơn 19:00–21:00 thì mốc 19:00 và 20:00 không trống; sân 60 phút có lịch mở cửa 06:30 thì có mốc 17:30, và slot 17:30–18:30 đi qua mốc đổi giá 18:00 được tính theo phút.
-- [ ] 2.8 Giá "từ" và giá công khai (D18, D28).
+- [x] 2.8 Giá "từ" và giá công khai (D18, D28).
   - Giá "từ" của cơ sở hoặc sân = đơn giá thấp nhất một đơn xác nhận bây giờ có thể trả trên các sân `active`; không có giá thì không hiển thị.
   - API: mỗi sân trong `GET /courts` (cache 300 giây theo `courts_version`) và chi tiết sân (`CourtController::show`, không cache) có `from_price` (số nguyên hoặc null), tính theo lô cho cả danh sách, không truy vấn theo từng sân (`test_public_list_query_count_does_not_grow_with_courts` của `PricedCourtVisibilityTest` vẫn đạt). Giá "từ" của cơ sở là `from_price` nhỏ nhất trong các sân của nó, FE tính từ cùng danh sách. Payload `/venues` (cache theo `venues_version`) không mang giá, nên không cần tăng `venues_version`.
   - Thay mọi nơi đọc `price_slots` công khai: `useCourtsList`, `useCourtDetail`, `HomeView.vue:501-502`, `VenueCourtsGrid`, `CourtItemCard`.
   - Bỏ ước tính làm tròn lên, giá dự phòng trên trang sân và giá mặc định 120000 trong `useRecurringBooking`.
   - Test: `PublicPriceDisplayTest`; vitest danh mục và trang sân. `PublicPriceDisplayTest` có ca: đọc danh sách, công bố phiên bản rẻ hơn hiệu lực ngay, đọc lại không xoá cache thấy giá mới.
-- [ ] 2.9 Gỡ mô hình giá cũ (D28).
+- [x] 2.9 Gỡ mô hình giá cũ (D28). (test: chưa làm)
   - Phần tính tiền chuyển sang engine: `AvailabilityController` (2.7), `PriceQuoteService::create` và `reprice` (dùng ở `ReservationController` quote và hold, `OrdinaryCheckoutService`, `ReservationService`), `RecurringSeriesService`, seeder. `LoyaltyPolicyService` xoá ở 2.10.
   - `PriceQuoteService` giữ hợp đồng `slots` của `PriceQuote` (token, hạn 15 phút, `slot_snapshot`) và các kiểm tra điều kiện đặt, lịch, khoá sân, chồng lấn tới task 5.1 của module 4; từ đó module 4 đổi `PriceQuote` sang `starts_at/ends_at` hoặc bỏ nó (D29). Bỏ `PriceTierResolver`, lời gọi `DiscountService` và giảm hội viên trong đó. Tổng tiền tính bằng một lần gọi engine cho mỗi đoạn slot liền nhau (`SlotSelectionPolicy` đã buộc slot liền nhau, nên một đơn là một đoạn); slot cuối của đoạn nhận phần chênh. Test: `PriceQuoteFromPriceTablesTest` (sân 60 phút mở cửa 06:30, slot 17:30–18:30 đi qua mốc đổi giá được tính theo phút; hai slot liền nhau có phần lẻ chỉ bỏ phần thập phân một lần; báo giá vẫn có token và hạn; hai ca nửa đêm chuyển từ `PricingTenantAndBoundaryTest:77,79`: slot 23:00 khi mở tới 23:59 được báo giá đủ 60 phút, slot 23:30 qua nửa đêm → "ngoài lịch hoạt động").
   - `CourtPriceRuleService` giữ tên lớp: `isPriced` trong `VerifyEffectiveBookingEligibility` và `pricedCourtIds` trong `CourtController` đổi thành "sân có liên kết thường đang hiệu lực". Báo module 2: task 3.5 của họ dựng trên cả hai.
@@ -128,7 +128,7 @@ Quy tắc cho mọi lần merge của Pha 2–6 (danh sách file trong từng ta
     - `DatabaseSeederTest:92`: thay `court_price_slots` bằng kiểm sân seed có liên kết thường đang hiệu lực.
   - E2E: xoá test 7.7.1 và 7.7.2 của `e2e/p1-pricing-promotions-loyalty.spec.ts` (dùng `PriceRule` và màn `/admin/pricing` cũ); task 7.2 phủ màn bảng giá mới.
   - Test: chạy lại toàn bộ suite backend và vitest, không chỉ booking, POS, recurring.
-- [ ] 2.10 Bỏ coupon, giảm hội viên và điểm khỏi đặt sân (D12, D21, D28).
+- [x] 2.10 Bỏ coupon, giảm hội viên và điểm khỏi đặt sân (D12, D21, D28).
   - Checkout (`ReservationController:174-177`), hold (`store`, dòng 126), quote (dòng 106), tạo đặt định kỳ (`AdvancedBookingController.php:67`) và xem trước đặt định kỳ (`RecurringSeriesPreviewRequest`): `coupon_code` hoặc `loyalty_points` không rỗng → 422, không tạo gì.
   - `OrdinaryCheckoutService` chỉ còn tiền thuê từ engine; tới task 5.4 thì `P = T`. Ví legacy trả P.
   - Giảm hội viên trên đơn đặt sân, kể cả `RecurringSeriesService`, dừng. Gỡ `LoyaltyPolicyService` (dòng 37), `QuoteCouponService $quoteCoupons` (dòng 35, chỉ dùng cho giữ coupon) và `LoyaltyPointService $loyaltyPointService` (dòng 38, chỉ dùng cho phần điểm) khỏi constructor `OrdinaryCheckoutService`; giữ lại sẽ thành lỗi PHPStan `property.onlyWritten`. Bỏ khoá `User::whereKey(...)->lockForUpdate()` ở dòng 82 (chỉ để tuần tự hoá điểm; ví vẫn khoá riêng ở dòng 150): giữ lại thì sau task 5.4 nó nằm sau khoá chương trình và deadlock với `ReservationService::confirm` của cùng người dùng (D11).
@@ -154,16 +154,16 @@ Quy tắc cho mọi lần merge của Pha 2–6 (danh sách file trong từng ta
     - `TenantMembershipCheckoutBenefitsTest`: phần báo giá và đơn đặt sân (dòng 122-134) đổi sang không giảm hội viên (tổng 100000, `membership_discount_amount` 0); giữ phần giảm hội viên ở POS (dòng 136-141).
     - File test của module 4 trong danh sách này đã báo ở task 1.3.
   - Test: `CheckoutWithoutLoyaltyTest`. Hội viên có điểm đặt sân: không giảm, không giữ hay trừ điểm, không tích điểm; đơn cũ có điểm vẫn hiện đúng. `RecurringVoucherRejectedTest`: tạo và xem trước đặt định kỳ có mã → 422.
-- [ ] 2.11 `MatchService` (D24).
+- [x] 2.11 `MatchService` (D24).
   - `getDefaultRates` lấy đơn giá theo bảng giá tại giờ bắt đầu buổi qua engine; không có giá thì không gợi ý.
   - Tiền sân `intdiv(phút × giá, 60)` thay `round(…, PHP_ROUND_HALF_UP)` ở `MatchService.php:972`.
   - Bỏ import `CourtPriceSlot` (dòng 8). Khi `getDefaultRates` không còn đọc `$court->venue?->timezone` (dòng 1058), bỏ mục `nullsafe.neverNull` (`?->timezone`) của `MatchService.php` trong `phpstan-baseline.neon`.
   - FE xem trước hoá đơn buổi chơi: `useDropInSessionBill.ts:29-31` đổi `Math.round` sang `Math.floor`, để khớp tiền sân server lưu. Vitest: 1 phút × 100.000 → 1666.
   - FE `useDropInSessionBill`: khi buổi chưa có hoá đơn đã lưu, lấy giá sân từ `socialApi.getDefaultRates` (`/social/matches/{id}/rates`) thay giá cứng 150000 (dòng 24); endpoint trả null thì để trống ô giá và chặn chốt hoá đơn tới khi chủ nhập; hoá đơn đã lưu vẫn ưu tiên. Vitest: buổi 17:00, bảng 140.000 từ 16:00 → ô giá 140.000; sân không có giá → ô trống, không chốt được.
   - Test: `DropInDefaultRateTest`. 17:00 → 140.000; 80 phút × 100.000 → 133.333. Đổi tên và sửa `MatchBillCalculationTest::test_court_subtotal_rounds_half_up_to_nearest_whole_vnd`: 1 phút × 100.000 → 1666.
-- [ ] 2.12 FE quản lý bảng giá: danh sách, chi tiết, tạo, áp sân, ngừng; dialog `PRICE_COVERAGE_INCOMPLETE` liệt kê mục thiếu và giữ dữ liệu form; bản dịch vi/en; chỉ owner thấy menu.
+- [x] 2.12 FE quản lý bảng giá: danh sách, chi tiết, tạo, áp sân, ngừng; dialog `PRICE_COVERAGE_INCOMPLETE` liệt kê mục thiếu và giữ dữ liệu form; bản dịch vi/en; chỉ owner thấy menu.
   - Test: vitest màn bảng giá và dialog độ phủ.
-- [ ] 2.13 Seeder và fixture.
+- [x] 2.13 Seeder và fixture. (test: E2E chưa chạy)
   - Bảng giá thường và lễ cho cơ sở demo.
   - Bỏ `PriceRule`/`CourtPriceSlot` khỏi các seeder `RecurringSeries`, `BookingPayment`, `Marketplace`, `DisputeFinance`, `CourtSeeder.php:405-409`, và khỏi `E2ESeedFixturesCommand`, `E2EArrangeTestDataCommand`. `E2EArrangeTestDataCommand` tạo liên kết rồi vẫn gọi `Cache::increment('courts_version')` (dòng 154).
   - Thêm một helper fixture dùng chung cho test tạo bảng giá và liên kết; chuyển 56 file test đang tạo `PriceRule`/`CourtPriceSlot` sang helper này. Helper gọi `Cache::increment('courts_version')` như action của task 2.5. E2E có PHP nội tuyến tạo `PriceRule`/`CourtPriceSlot` (`p1-attendance-walkin-waitlist`, `p1-legacy-wallet-direct-cohort`, `p1-recurring-series`, `p1-resale-marketplace`, `p1-split-payments`, `p1-venue-lifecycle`) chuyển sang tạo bảng giá và liên kết thường.
@@ -172,44 +172,42 @@ Quy tắc cho mọi lần merge của Pha 2–6 (danh sách file trong từng ta
 
 Điều kiện: Pha 2 đã merge.
 
-- [ ] 3.1 Công bố phiên bản mới với `effective_at` (mặc định bây giờ; quá khứ hoặc bằng bây giờ thì hiệu lực lúc công bố); phiên bản cũ giữ nguyên để tra cứu; công bố cần quyền kinh doanh còn hạn và qua kiểm độ phủ cho mọi sân `active` hoặc `paused` có liên kết đang hoặc sẽ hiệu lực tới bảng (D3). Bảng đã ngừng → 422, không tạo phiên bản (D2).
+- [x] 3.1 Công bố phiên bản mới với `effective_at` (mặc định bây giờ; quá khứ hoặc bằng bây giờ thì hiệu lực lúc công bố); phiên bản cũ giữ nguyên để tra cứu; công bố phải qua kiểm độ phủ cho mọi sân `active` hoặc `paused` có liên kết đang hoặc sẽ hiệu lực tới bảng (D3). Bảng đã ngừng → 422, không tạo phiên bản (D2). (test: chưa làm)
   - Sau commit, gọi `Cache::increment('courts_version')` như task 2.5, vì danh sách sân công khai mang `from_price` (task 2.8).
   - Route owner `POST /admin/price-tables/{table}/versions`.
-  - Test: `PriceTableVersionTest`. Ba trường hợp công bố/hiệu lực của report; phiên bản mới thay phiên bản lên lịch chưa tới hiệu lực; `effective_at` quá khứ → hiệu lực lúc công bố; gói hết hạn → không công bố; bảng đã ngừng → 422; sân chỉ có liên kết lên lịch tới bảng và phiên bản mới bỏ một khoảng giờ → 422 `PRICE_COVERAGE_INCOMPLETE`; staff hoặc owner tổ chức khác công bố → 403, không tạo phiên bản.
-- [ ] 3.2 Sự kiện `CourtPricesTookEffect(courtIds, effectiveAt)` (D16).
+  - Test: `PriceTableVersionTest`. Ba trường hợp công bố/hiệu lực của report; phiên bản mới thay phiên bản lên lịch chưa tới hiệu lực; `effective_at` quá khứ → hiệu lực lúc công bố; bảng đã ngừng → 422; sân chỉ có liên kết lên lịch tới bảng và phiên bản mới bỏ một khoảng giờ → 422 `PRICE_COVERAGE_INCOMPLETE`; staff hoặc owner tổ chức khác công bố → 403, không tạo phiên bản.
+- [x] 3.2 Sự kiện `CourtPricesTookEffect(courtIds, effectiveAt)` (D16). (test: chưa làm)
   - Phát sau commit khi công bố (`effectiveAt = max(effective_at, now)`, các sân đang hoặc sẽ dùng bảng) và khi áp, thay, kết thúc liên kết.
   - Không phát khi tới `effective_at`.
   - Test: `CourtPricesTookEffectTest`. Rollback không phát; tới `effective_at` không phát.
-- [ ] 3.3 FE: tạo phiên bản mới, xem lịch sử phiên bản.
+- [x] 3.3 FE: tạo phiên bản mới, xem lịch sử phiên bản. (test: chưa làm)
 
 ## 4. Pha 4 – Chương trình khuyến mãi và gỡ coupon (D7, D8, D9, D12, D13, D14, D22, D25, D27, D28)
 
 Điều kiện: Pha 2 đã merge (đơn giá và engine dùng cho tiền thuê tối thiểu).
 
-- [ ] 4.1 Migration và model: `promotion_programs` (cast `AppTimezoneDateTime`; phần trăm lưu `percent_bp` nguyên, D27), `promotion_program_courts`, `voucher_codes` (`code` unique toàn nền tảng), `voucher_uses` (D11: `reservation_id` unique, `program_id`, `voucher_code_id` null, `status` held/used/released, `discount`, `held_at`, `used_at`, `released_at`; unique một phần trên `voucher_code_id` khi `status` là held hoặc used).
-- [ ] 4.2 Tạo chương trình (D8, D9, D14, D27).
+- [x] 4.1 Migration và model: `promotion_programs` (cast `AppTimezoneDateTime`; phần trăm lưu `percent_bp` nguyên, D27), `promotion_program_courts`, `voucher_codes` (`code` unique toàn nền tảng), `voucher_uses` (D11: `reservation_id` unique, `program_id`, `voucher_code_id` null, `status` held/used/released, `discount`, `held_at`, `used_at`, `released_at`; unique một phần trên `voucher_code_id` khi `status` là held hoặc used).
+- [x] 4.2 Tạo chương trình (D8, D9, D14, D27). (test: chưa làm)
   - Bắt buộc tên, loại, hình thức giảm, giá trị giảm (phần trăm > 0 và ≤ 100 với tối đa hai chữ số thập phân, hoặc số tiền nguyên > 0), bắt đầu, kết thúc sau bắt đầu, tập sân cùng cơ sở không rỗng, tổng lượt (công khai) hoặc số mã (riêng) nguyên > 0.
   - Mức giảm tối đa chỉ cho phần trăm; tiền thuê tối thiểu tuỳ chọn.
-  - Cần quyền kinh doanh còn hạn (`EvaluatePlatformEntitlement`).
   - Riêng: sinh N mã, thử lại khi va chạm unique. QR là deep link `/courts/{court_slug}/schedule?voucher=<code>`, sân là sân có id nhỏ nhất trong tập sân lúc mở danh sách mã (D9).
   - Khoá mọi sân trong tập sân gửi lên `FOR SHARE` theo thứ tự id trước khi chèn chương trình (D11): chèn chương trình khoá ngầm cơ sở, chèn liên kết khoá ngầm sân, nên không khoá trước sẽ ngược thứ tự sân → cơ sở của checkout.
   - Chạy trong `DB::transaction(…, 3)` ở cấp ngoài cùng, để Laravel thử lại khi deadlock với `ManageCourtBlocks::createBlock`, `SaveVenueScheduleException`, `SaveVenueOperatingSchedule` (cơ sở → sân trên main, D11).
-  - Test: `PromotionProgramManagementTest`. Kết thúc bằng bắt đầu → 422, không tạo gì; Query log của lệnh tạo: khoá `courts` trước khi chèn `promotion_programs`; 500 mã không trùng; mức giảm tối đa cho số tiền cố định → 422; sân cơ sở khác → 422; 12,5% hợp lệ, 12,345% → 422; gói hết hạn → không tạo; staff → 403; owner tổ chức khác → 403, không tạo gì.
-- [ ] 4.3 Danh sách, chi tiết, trạng thái ("Sắp diễn ra / Đang diễn ra / Đã kết thúc / Đã dừng"), danh sách mã và URL deep link của từng mã.
+  - Test: `PromotionProgramManagementTest`. Kết thúc bằng bắt đầu → 422, không tạo gì; Query log của lệnh tạo: khoá `courts` trước khi chèn `promotion_programs`; 500 mã không trùng; mức giảm tối đa cho số tiền cố định → 422; sân cơ sở khác → 422; 12,5% hợp lệ, 12,345% → 422; staff → 403; owner tổ chức khác → 403, không tạo gì.
+- [x] 4.3 Danh sách, chi tiết, trạng thái ("Sắp diễn ra / Đang diễn ra / Đã kết thúc / Đã dừng"), danh sách mã và URL deep link của từng mã. (test: chưa làm)
   - Mọi route có `{program}` kiểm chương trình thuộc tổ chức trong `X-Organization-ID`, vì middleware vai trò chỉ kiểm vai trò trong tổ chức đó (D25).
   - Test (trong `PromotionProgramManagementTest`): staff hoặc owner tổ chức khác mở danh sách, chi tiết, danh sách mã → 403, không lộ chương trình hay mã.
-- [ ] 4.4 Cập nhật và dừng (D14).
+- [x] 4.4 Cập nhật và dừng (D14). (test: chưa làm)
   - Không đổi được loại, hình thức giảm, mã, số mã → 422. Tổng lượt không nhỏ hơn `held + used`.
-  - Cập nhật cần quyền kinh doanh còn hạn; dừng thì không cần.
   - Dừng có bước xác nhận, không mở lại được; giữ thông tin và lịch sử.
   - Cập nhật và dừng khoá dòng chương trình `FOR UPDATE` trước khi ghi, kể cả khi chỉ đổi tập sân, để chờ checkout đang giữ khoá (D17).
   - Cập nhật có gửi tập sân: khoá mọi sân trong tập đó `FOR SHARE` theo thứ tự id trước khi khoá chương trình (không chỉ phần chênh đọc trước khoá), và ghi tập sân bằng phần chênh (`sync`), không xoá rồi chèn lại. Khoá ngoại của dòng `promotion_program_courts` mới khoá dòng sân, nên khoá chương trình trước sẽ ngược thứ tự sân → chương trình của checkout (D11).
-  - Test: `PromotionProgramUpdateTest`. Staff hoặc owner tổ chức khác cập nhật hoặc dừng → 403, không đổi gì. Đổi loại hoặc hình thức giảm của chương trình đã phát hành → 422, đổi tên vẫn lưu; bắt đầu `2026-10-20T03:00:00Z` lưu và trả về 10:00, lưu lại không xê dịch (`AppTimezoneDateTime`, D13; trước đây do `PromotionScheduleAndLockTest` phủ). Gói hết hạn: cập nhật → không lưu, dừng → được. Cập nhật cũng chạy `DB::transaction(…, 3)` như task 4.2. Query log của cập nhật thêm sân: khoá `courts` trước `promotion_programs`; lệnh gửi lại một sân vừa bị lệnh khác gỡ cũng khoá sân đó trước.
-- [ ] 4.5 POS: `coupon_code`, `voucher_code` hoặc `voucher_program_id` không rỗng → 422, không tạo đơn, giữ giỏ (D12).
+  - Test: `PromotionProgramUpdateTest`. Staff hoặc owner tổ chức khác cập nhật hoặc dừng → 403, không đổi gì. Đổi loại hoặc hình thức giảm của chương trình đã phát hành → 422, đổi tên vẫn lưu; bắt đầu `2026-10-20T03:00:00Z` lưu và trả về 10:00, lưu lại không xê dịch (`AppTimezoneDateTime`, D13; trước đây do `PromotionScheduleAndLockTest` phủ). Cập nhật cũng chạy `DB::transaction(…, 3)` như task 4.2. Query log của cập nhật thêm sân: khoá `courts` trước `promotion_programs`; lệnh gửi lại một sân vừa bị lệnh khác gỡ cũng khoá sân đó trước.
+- [x] 4.5 POS: `coupon_code`, `voucher_code` hoặc `voucher_program_id` không rỗng → 422, không tạo đơn, giữ giỏ (D12). (test: chưa làm)
   - Xoá các chỗ coupon ở `PosService` (dòng 227-233, 287, 342-344, 463-468, 536, 659-662, 1152), `PosQrPaymentService:135-137`, tham số `coupon_code` trong `posApi`. Bỏ luôn tham số constructor `DiscountService $discounts` (dòng 42) và import `DiscountService` (dòng 26), `Coupon` (dòng 6) của `PosService`: mọi chỗ đọc `$discounts` nằm trong các dòng trên, giữ lại sẽ thành lỗi PHPStan `property.onlyWritten`. Không thêm mục baseline.
   - Đơn QR POS đang chờ mà đã giữ coupon: cho hết hạn và nhả coupon trước task 4.6.
   - Test: `PosVoucherRejectedTest`. Test POS cũ gửi `coupon_code` (`PosMembershipWalletTest`, `PosIdentifiedCustomerWalletCashSaleTest`) đổi phần coupon sang khẳng định 422: gửi chuỗi `coupon_code`, bỏ `Coupon::create` và khẳng định `usage_count`, khẳng định không tạo đơn.
-- [ ] 4.6 Gỡ campaign và coupon (D22, D28).
+- [x] 4.6 Gỡ campaign và coupon (D22, D28). (test, E2E, `eslint --prune-suppressions` và cổng: chưa làm; migration xoá bảng trên prod: chờ backup và xác nhận)
   - Chuyển `GET /membership` (`api.php:278`, `PromotionController::membership`) sang controller hội viên trước khi xoá `PromotionController`.
   - Bỏ nhánh nhả coupon ở `releaseHeld` và `ReservationService::release` (phối hợp module 4); cho hết hạn các đơn chờ còn giữ coupon trước đó. Xoá phần coupon trong `HeldReservationReleaseTest`, `OverdueHoldTest`, `AutomaticUnpaidExpiryTest`, `CustomerPaymentCancelTest` (task 2.10). Xoá `PromotionCampaignAndCouponLifecycleTest`, `PromotionScheduleAndLockTest` (chỉ gọi `/api/admin/coupons` và `Coupon`; ý lịch và khoá của nó do `PromotionProgramUpdateTest` phủ cho chương trình) và hai test coupon qua `DiscountService` trong `GrowthFeaturesTest`.
   - Xoá `PromotionCampaign`, `Coupon`, `PromotionController`, `QuoteCouponService`, phần coupon của `DiscountService`, quan hệ `Booking::coupon` và route đi kèm. Xoá `releaseReservedPoints` nếu không còn đơn chờ giữ điểm.
@@ -219,10 +217,10 @@ Quy tắc cho mọi lần merge của Pha 2–6 (danh sách file trong từng ta
   - FE: xoá `CouponManagerModal`, các lời gọi coupon/promotion trong `adminApi`, nút ở `ManageHeader`, phần coupon của `useAdminManageCourts.ts` và `AdminManageView.vue`.
   - Kiểm khoá ngoại tới bảng cũ; snapshot coupon trong đơn cũ giữ nguyên.
   - Backup prod; người dùng xác nhận trước khi chạy migration xoá bảng trên prod.
-- [ ] 4.7 FE màn chương trình: danh sách, chi tiết, tạo có bước xem lại và xác nhận phát hành (tóm tắt loại voucher, hình thức và giá trị giảm, thời hạn, sân, số lượt hoặc số mã; nhắc rằng loại, hình thức và mã không đổi được sau khi phát hành), sửa, dừng có xác nhận, mã và QR (vẽ bằng gói `qrcode` đã cài); chỉ owner thấy menu; bản dịch vi/en.
+- [x] 4.7 FE màn chương trình: danh sách, chi tiết, tạo có bước xem lại và xác nhận phát hành (tóm tắt loại voucher, hình thức và giá trị giảm, thời hạn, sân, số lượt hoặc số mã; nhắc rằng loại, hình thức và mã không đổi được sau khi phát hành), sửa, dừng có xác nhận, mã và QR (vẽ bằng gói `qrcode` đã cài); chỉ owner thấy menu; bản dịch vi/en. (test: chưa làm)
   - Menu: `AdminLayout.vue` đang đúng trần `component-lines` 1353. Tách `dashboardItem` và `navGroups` (`AdminLayout.vue:60-203`) cùng danh sách đường dẫn chỉ owner trong `isItemPermitted` (từ dòng 211) sang `shared/layouts/admin/adminNav.ts`, thêm mục chương trình ở đó, rồi hạ trần của `AdminLayout.vue` trong allowlist xuống số dòng mới.
   - Test: vitest màn chương trình (bước xác nhận phát hành, dừng) và menu ẩn với staff. Cổng: `frontend/src/__tests__/architecture.spec.ts` đạt.
-- [ ] 4.8 Seeder voucher demo: một chương trình công khai và một chương trình riêng cho cơ sở demo.
+- [x] 4.8 Seeder voucher demo: một chương trình công khai và một chương trình riêng cho cơ sở demo.
 
 ## 5. Pha 5 – Áp voucher khi đặt sân (D10, D11, D12, D17, D19, D20, D27, D29)
 
@@ -231,14 +229,14 @@ Quy tắc cho mọi lần merge của Pha 2–6 (danh sách file trong từng ta
 - Task 5.4–5.5 merge sau task 5.1, 5.5 và 5.7 của module 4 (hợp đồng `starts_at/ends_at`, nối `consume` và `release`, form mới). Không gọi `hold` khi chưa có ai nhả và tiêu lượt.
 - Trước khi merge task 5.4: nếu lệnh `move-court`/`change-time` của module 2 (task 4.8–4.9 của họ) đã có trên main thì chúng phải trả 409 qua `holdsVoucher` cho đơn `held` giữ lượt (scenario "Held booking with a voucher"). Còn `ponytail:` ở đó thì task 5.4 thay nó bằng kiểm này và test scenario đó (D11). `attendance/reassign-court` còn trên main (chưa có task 4.12 của module 2) thì task 5.4 thêm cùng kiểm 409 cho route đó. Test của hai trường hợp này nằm trong `HeldVoucherMoveBlockedTest`; task 4.12 của module 2 xoá ca `reassign-court` cùng route (task 1.7). Nhánh hỏng của `confirmPaidAttempt` ở module 4 hết hạn attempt `split_share` còn chờ bằng `DB::afterCommit`, không trong transaction giữ nhóm (task 1.6).
 
-- [ ] 5.1 Phần voucher của engine (D17, D27): điều kiện hợp lệ theo thời điểm gọi, `D` theo BR-66 tính bằng `intdiv` với `percent_bp`, snapshot voucher kèm `ends_at`. Với `$heldBy`, lượt hoặc mã chính đơn đó đang giữ không bị tính là giữ cho đơn khác hay hết lượt.
+- [x] 5.1 Phần voucher của engine (D17, D27): điều kiện hợp lệ theo thời điểm gọi, `D` theo BR-66 tính bằng `intdiv` với `percent_bp`, snapshot voucher kèm `ends_at`. Với `$heldBy`, lượt hoặc mã chính đơn đó đang giữ không bị tính là giữ cho đơn khác hay hết lượt. (test: chưa làm)
   - Test: `VoucherDiscountTest`. Phần trăm có trần, không trần, 12,5% của 190.000 = 23.750, cố định lớn hơn T; tiền thuê tối thiểu so với T trước giảm; đơn đang giữ lượt cuối tính lại với `$heldBy` vẫn được giảm.
-- [ ] 5.2 `VoucherUsageService` (D11).
+- [x] 5.2 `VoucherUsageService` (D11). (test: chưa làm)
   - `hold`: dưới khoá chương trình `FOR UPDATE`, kiểm lại voucher còn áp được (hỏng → `VoucherNoLongerApplies` kèm lý do của D20); thêm dòng `voucher_uses` trạng thái `held` kèm D và mã nếu có; không trả gì; idempotent theo reservation. `release`: dòng lượt `held → released` đúng một lần, không khoá chương trình hay mã; không làm gì với đơn đã xác nhận. `consume` và `release` không làm gì khi đơn không giữ voucher. `holdsVoucher(Reservation): bool` đúng khi đơn có dòng `voucher_uses` `held` (module 2 dùng để chặn chuyển sân hoặc đổi giờ đơn `held`, D11).
   - `consume(Reservation, CarbonInterface $confirmedAt)`: khoá chương trình `FOR SHARE` (không khoá cơ sở; nơi gọi lo, D11), kiểm lại như D19 (voucher còn áp được theo sân và giờ hiện tại của đơn, tức `court_id` và các slot chưa nhả, `held` hoặc `confirmed`; tính cả lượt đơn đang giữ; D bằng tiền giảm đã ghi; thời hạn xét tại `$confirmedAt`; chương trình đã dừng thì hỏng), rồi `held → used`, idempotent. Kiểm lại hỏng → ném `VoucherNoLongerApplies`, không đổi bộ đếm.
   - Số đang giữ và đã dùng đếm từ `voucher_uses`. Luôn `held + used ≤ max_uses`; mỗi mã riêng có nhiều nhất một dòng `held` hoặc `used`.
   - Test: `VoucherUsageServiceTest`. Hai đơn đồng thời tranh lượt cuối: một đơn thắng; `holdsVoucher` đúng sau `hold`, sai sau `release` và sau `consume`; hold hai lần cho cùng đơn chỉ giữ một lượt; consume hai lần chỉ tính một lượt; release hai lần chỉ nhả một lượt; consume sau khi chương trình dừng → `VoucherNoLongerApplies`, bộ đếm không đổi; consume với `$confirmedAt` trước thời điểm kết thúc, chạy sau thời điểm đó → thành công; query log của `release` không chạm `promotion_programs` hay `voucher_codes`; query log của `consume` không khoá `venues`.
-- [ ] 5.3 `GET /venues/{venue}/vouchers?court_id&starts_at&ends_at` và kiểm mã riêng (D10, D20).
+- [x] 5.3 `GET /venues/{venue}/vouchers?court_id&starts_at&ends_at` và kiểm mã riêng (D10, D20). (test: chưa làm)
   - Chỉ trả voucher công khai áp được, kèm D; mặc định D lớn nhất, hoà thì `ends_at` sớm hơn, rồi `created_at` sớm hơn.
   - Kiểm mã trả lý do khi không hợp lệ (`not_found`, `not_started`, `expired`, `used`, `held_elsewhere`, `stopped`, `exhausted`, `court_not_covered`, `minimum_not_met`).
   - Test: `VoucherChoiceTest`.

@@ -9,7 +9,6 @@ export interface VenueReadinessChecklist {
   }>
   checklist: {
     partner_active: boolean
-    subscription_entitled: boolean
     venue_metadata: boolean
     active_courts: boolean
     court_pricing: boolean
@@ -36,12 +35,7 @@ export interface VenuePublicationRevision {
     courts: Array<{
       id: number
       name: string
-      price_slots: Array<{
-        weekday: number
-        starts_at: string
-        ends_at: string
-        price: number
-      }>
+      price_table: { id: number; name: string } | null
     }>
     organization?: {
       id: number

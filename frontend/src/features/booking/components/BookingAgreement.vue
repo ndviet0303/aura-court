@@ -9,15 +9,16 @@ import { validBookerPhone } from '../utils/reservation'
 
 // What the customer agrees to before submitting: the booker contact the booking will record (once
 // signed in), the amounts (payable is the expected_total sent) and a PRICE_CHANGED awaiting confirmation.
+// A null payable is a server quote still pending or failed (quoteError): no amount is shown then.
 defineProps<{
-  rental: number
-  couponCode?: string | null
-  payable: number
+  rental: number | null
+  payable: number | null
+  quoteError?: string
   priceChange?: PriceChange | null
   busy?: boolean
 }>()
 
-const emit = defineEmits<{ (e: 'confirmPrice'): void }>()
+const emit = defineEmits<{ (e: 'confirmPrice'): void; (e: 'retryQuote'): void }>()
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -42,16 +43,12 @@ const phoneMissing = computed(() => !validBookerPhone(auth.user?.phone))
       </RouterLink>
     </div>
 
-    <dl class="agreement-amounts">
+    <dl v-if="payable !== null" class="agreement-amounts">
       <div>
         <dt>{{ t('reservations.agreement.rental') }}</dt>
-        <dd>{{ formatCurrency(rental) }}</dd>
+        <dd>{{ formatCurrency(rental ?? payable) }}</dd>
       </div>
-      <div v-if="couponCode">
-        <dt>{{ t('reservations.agreement.voucher') }}</dt>
-        <dd>{{ couponCode }}</dd>
-      </div>
-      <div v-if="rental > payable">
+      <div v-if="rental !== null && rental > payable">
         <dt>{{ t('reservations.agreement.discount') }}</dt>
         <dd>-{{ formatCurrency(rental - payable) }}</dd>
       </div>
@@ -60,6 +57,25 @@ const phoneMissing = computed(() => !validBookerPhone(auth.user?.phone))
         <dd data-testid="agreement-payable">{{ formatCurrency(payable) }}</dd>
       </div>
     </dl>
+    <div
+      v-else-if="quoteError"
+      class="agreement-quote-error"
+      role="alert"
+      data-testid="quote-error"
+    >
+      <span>{{ quoteError }}</span>
+      <button
+        type="button"
+        class="agreement-confirm"
+        data-testid="retry-quote"
+        @click="emit('retryQuote')"
+      >
+        {{ t('reservations.agreement.retryQuote') }}
+      </button>
+    </div>
+    <p v-else class="agreement-quoting" data-testid="quote-pending">
+      {{ t('reservations.agreement.quoting') }}
+    </p>
 
     <div v-if="priceChange" class="agreement-price-change" role="alert" data-testid="price-changed">
       <strong>{{ t('reservations.agreement.priceChanged') }}</strong>
@@ -137,6 +153,17 @@ const phoneMissing = computed(() => !validBookerPhone(auth.user?.phone))
 .agreement-total dd {
   color: var(--ink);
   font-weight: 800;
+}
+.agreement-quoting {
+  margin: 0;
+  color: var(--muted);
+}
+.agreement-quote-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--error-text, #c62828);
 }
 .agreement-price-change {
   display: flex;

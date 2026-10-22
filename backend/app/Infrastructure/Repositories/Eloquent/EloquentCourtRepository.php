@@ -4,6 +4,7 @@ namespace App\Infrastructure\Repositories\Eloquent;
 
 use App\Contracts\Repositories\CourtRepositoryInterface;
 use App\Models\Court;
+use App\Models\Venue;
 use Illuminate\Database\Eloquent\Collection;
 
 class EloquentCourtRepository implements CourtRepositoryInterface
@@ -17,8 +18,8 @@ class EloquentCourtRepository implements CourtRepositoryInterface
     {
         return Court::query()
             ->whereKey($id)
-            ->where('is_active', true)
-            ->whereHas('venue', fn ($query) => $query->where('is_active', true))
+            ->where('status', Court::STATUS_ACTIVE)
+            ->whereHas('venue', fn ($query) => $query->where('status', Venue::STATUS_ACTIVE)->whereDoesntHave('activeSuspension'))
             ->first();
     }
 

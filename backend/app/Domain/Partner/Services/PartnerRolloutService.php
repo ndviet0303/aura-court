@@ -5,16 +5,14 @@ declare(strict_types=1);
 namespace App\Domain\Partner\Services;
 
 use App\Models\Organization;
-use App\Models\Venue;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Log;
 
 class PartnerRolloutService
 {
     /**
      * Check if a specific v2 enforcement aspect applies to this organization.
      *
-     * @param  string  $aspect  'registration' | 'publication' | 'subscription' | 'all'
+     * @param  string  $aspect  'registration' | 'publication' | 'all'
      */
     public function shouldEnforce(int|Organization $organization, string $aspect = 'all'): bool
     {
@@ -31,46 +29,9 @@ class PartnerRolloutService
         return match ($aspect) {
             'registration' => (bool) Config::get('partner.enforce_v2_registration', true),
             'publication' => (bool) Config::get('partner.enforce_publication_check', false),
-            'subscription' => (bool) Config::get('partner.enforce_subscription_check', false),
             default => (bool) Config::get('partner.enforce_v2_registration', true)
-                || (bool) Config::get('partner.enforce_publication_check', false)
-                || (bool) Config::get('partner.enforce_subscription_check', false),
+                || (bool) Config::get('partner.enforce_publication_check', false),
         };
-    }
-
-    /**
-     * Record shadow comparison between legacy and v2 eligibility decisions.
-     */
-    public function recordShadowComparison(
-        Venue $venue,
-        string $action,
-        bool $legacyAllowed,
-        bool $v2Allowed,
-        array $context = []
-    ): void {
-        if (! Config::get('partner.shadow_mode', false)) {
-            return;
-        }
-
-        $discrepancy = $legacyAllowed !== $v2Allowed;
-
-        if ($discrepancy) {
-            Log::warning('partner_rollout.shadow_discrepancy', [
-                'venue_id' => $venue->id,
-                'organization_id' => $venue->organization_id,
-                'action' => $action,
-                'legacy_allowed' => $legacyAllowed,
-                'v2_allowed' => $v2Allowed,
-                'context' => $context,
-                'occurred_at' => now()->toIso8601String(),
-            ]);
-        } else {
-            Log::debug('partner_rollout.shadow_concordance', [
-                'venue_id' => $venue->id,
-                'action' => $action,
-                'allowed' => $legacyAllowed,
-            ]);
-        }
     }
 
     /**

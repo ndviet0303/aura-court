@@ -61,7 +61,6 @@ export interface CreateRecurringSeriesPayload {
   ends_at?: string
   until?: string
   occurrences?: number
-  coupon_code?: string
   weekdays?: number[]
   accepted?: AcceptedPreview
   accept_partial?: boolean

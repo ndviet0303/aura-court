@@ -6,6 +6,7 @@ use App\Models\Court;
 use App\Models\VenueOperatingSchedule;
 use App\Models\VenueScheduleException;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 class VenueOperatingCalendar
 {
@@ -30,33 +31,39 @@ class VenueOperatingCalendar
             return false;
         }
 
-        $exception = $this->exceptionFor($court, $start->toDateString());
-        if ($exception) {
-            $intervals = $exception->intervals ?? [];
-            if ($exception->type === 'closed' || ($exception->type === 'holiday' && $intervals === [])) {
-                return false;
-            }
-        } else {
-            $day = $schedule->weekly_hours[(string) $start->dayOfWeekIso]
-                ?? $schedule->weekly_hours[$start->dayOfWeekIso]
-                ?? null;
-            if (! $day || ($day['closed'] ?? true)) {
-                return false;
-            }
-            $intervals = $day['intervals'] ?? [];
-        }
+        $intervals = self::openMinutes($schedule, $this->exceptionFor($court, $start->toDateString()), $start->dayOfWeekIso);
 
         // Counted from the start, so a slot ending at midnight ends at minute 1440 rather than 0.
         $startMinute = $start->hour * 60 + $start->minute;
         $endMinute = $startMinute + (int) round($start->diffInMinutes($end));
 
-        foreach ($intervals as $interval) {
-            if ($startMinute >= self::minuteOfDay($interval['start']) && $endMinute <= self::minuteOfDay($interval['end'], true)) {
+        foreach ($intervals as [$from, $to]) {
+            if ($startMinute >= $from && $endMinute <= $to) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * Open [start, end) minute ranges of one local date. The date's exception replaces the weekly hours; a
+     * court with neither is open all day, its pre-calendar behavior.
+     *
+     * @return list<array{0: int, 1: int}>
+     */
+    public static function openMinutes(?VenueOperatingSchedule $schedule, ?VenueScheduleException $exception, int $weekday): array
+    {
+        if ($exception) {
+            $intervals = $exception->type === 'closed' ? [] : ($exception->intervals ?? []);
+        } elseif (! $schedule) {
+            return [[0, 1440]];
+        } else {
+            $day = $schedule->weekly_hours[$weekday] ?? null;
+            $intervals = ! $day || ($day['closed'] ?? true) ? [] : ($day['intervals'] ?? []);
+        }
+
+        return array_map(fn (array $interval): array => [self::minuteOfDay($interval['start']), self::minuteOfDay($interval['end'], true)], array_values($intervals));
     }
 
     /**
@@ -96,9 +103,37 @@ class VenueOperatingCalendar
                 ->first();
     }
 
+    /**
+     * Each court's schedule and its exceptions by date from a local date on, in two queries for any number of
+     * courts. The court's own row replaces the venue's, as scheduleFor() and exceptionFor() pick them.
+     *
+     * @param  Collection<int, Court>  $courts
+     * @return array<int, array{schedule: ?VenueOperatingSchedule, exceptions: array<string, VenueScheduleException>}>
+     */
+    public function calendarsFor(Collection $courts, string $fromDate): array
+    {
+        $venueIds = $courts->pluck('venue_id')->unique()->values();
+        $schedules = VenueOperatingSchedule::query()->whereIn('venue_id', $venueIds)->get();
+        $exceptions = VenueScheduleException::query()->whereIn('venue_id', $venueIds)->whereDate('exception_date', '>=', $fromDate)->get();
+
+        return $courts->mapWithKeys(function (Court $court) use ($schedules, $exceptions): array {
+            $ownScope = fn (VenueOperatingSchedule|VenueScheduleException $row): bool => (int) $row->venue_id === (int) $court->venue_id
+                && in_array($row->scope_key, ['venue', 'court:'.$court->id], true);
+            $byDate = [];
+            foreach ($exceptions->filter($ownScope)->sortBy(fn (VenueScheduleException $row): bool => $row->scope_key !== 'venue') as $exception) {
+                $byDate[$exception->exception_date->toDateString()] = $exception;
+            }
+
+            return [(int) $court->id => [
+                'schedule' => $schedules->filter($ownScope)->sortByDesc(fn (VenueOperatingSchedule $row): bool => $row->scope_key !== 'venue')->first(),
+                'exceptions' => $byDate,
+            ]];
+        })->all();
+    }
+
     public function configuredForVenue(int $venueId): bool
     {
-        $courts = Court::query()->with('venue')->where('venue_id', $venueId)->where('is_active', true)->get();
+        $courts = Court::query()->with('venue')->where('venue_id', $venueId)->where('status', Court::STATUS_ACTIVE)->get();
         if ($courts->isEmpty()) {
             return false;
         }

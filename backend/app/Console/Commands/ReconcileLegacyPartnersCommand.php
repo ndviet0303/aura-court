@@ -7,7 +7,7 @@ namespace App\Console\Commands;
 use App\Models\Booking;
 use App\Models\HostKyc;
 use App\Models\Organization;
-use App\Models\PlatformSubscription;
+use App\Models\Venue;
 use Illuminate\Console\Command;
 
 class ReconcileLegacyPartnersCommand extends Command
@@ -26,7 +26,7 @@ class ReconcileLegacyPartnersCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Audit legacy organizations, venues, and subscriptions without mutating production data';
+    protected $description = 'Audit legacy organizations and venues without mutating production data';
 
     /**
      * Execute the console command.
@@ -40,7 +40,6 @@ class ReconcileLegacyPartnersCommand extends Command
         $summary = [
             'total_organizations' => $organizations->count(),
             'missing_application_evidence' => 0,
-            'missing_platform_subscriptions' => 0,
             'venues_missing_publication_revisions' => 0,
             'total_outstanding_bookings' => 0,
         ];
@@ -49,10 +48,6 @@ class ReconcileLegacyPartnersCommand extends Command
             $hasApplication = HostKyc::query()
                 ->where('organization_id', $org->id)
                 ->where('status', 'approved')
-                ->exists();
-            $hasSubscription = PlatformSubscription::query()
-                ->where('organization_id', $org->id)
-                ->where('status', 'active')
                 ->exists();
 
             $venuesWithoutRevision = 0;
@@ -63,7 +58,7 @@ class ReconcileLegacyPartnersCommand extends Command
                     ->where('status', 'approved')
                     ->exists();
 
-                if (! $hasRevision && ($venue->is_active || $venue->status === 'published')) {
+                if (! $hasRevision && $venue->status === Venue::STATUS_ACTIVE) {
                     $venuesWithoutRevision++;
                 }
 
@@ -77,9 +72,6 @@ class ReconcileLegacyPartnersCommand extends Command
             if (! $hasApplication) {
                 $summary['missing_application_evidence']++;
             }
-            if (! $hasSubscription) {
-                $summary['missing_platform_subscriptions']++;
-            }
             $summary['venues_missing_publication_revisions'] += $venuesWithoutRevision;
             $summary['total_outstanding_bookings'] += $orgBookingsCount;
 
@@ -88,7 +80,6 @@ class ReconcileLegacyPartnersCommand extends Command
                 'name' => $org->name,
                 'owner_id' => $org->owner?->id,
                 'has_approved_application' => $hasApplication ? 'YES' : 'NO',
-                'has_active_subscription' => $hasSubscription ? 'YES' : 'NO',
                 'venues_count' => $org->venues->count(),
                 'venues_unverified_published' => $venuesWithoutRevision,
                 'outstanding_future_bookings' => $orgBookingsCount,
@@ -113,7 +104,7 @@ class ReconcileLegacyPartnersCommand extends Command
             }
         } else {
             $this->table(
-                ['Org ID', 'Name', 'Owner ID', 'Approved App', 'Active Sub', 'Venues', 'Unverified Published', 'Future Bookings'],
+                ['Org ID', 'Name', 'Owner ID', 'Approved App', 'Venues', 'Unverified Published', 'Future Bookings'],
                 $records
             );
 
@@ -121,7 +112,6 @@ class ReconcileLegacyPartnersCommand extends Command
             $this->info('Reconciliation Summary:');
             $this->line("- Total Organizations: {$summary['total_organizations']}");
             $this->line("- Missing Approved Application: {$summary['missing_application_evidence']}");
-            $this->line("- Missing Platform Subscription: {$summary['missing_platform_subscriptions']}");
             $this->line("- Venues Missing Approved Publication Revision: {$summary['venues_missing_publication_revisions']}");
             $this->line("- Outstanding Future Bookings to Protect: {$summary['total_outstanding_bookings']}");
         }

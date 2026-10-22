@@ -5,9 +5,11 @@ namespace App\Domain\Venue\Actions;
 use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Contracts\Repositories\OrganizationLockRepositoryInterface;
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
+use App\Models\PriceTable;
 use App\Models\VenueOperatingSchedule;
 use App\Models\VenuePublicationRevision;
 use App\Models\VenueScheduleException;
+use App\Services\Reservation\CourtPriceRuleService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -18,6 +20,7 @@ class SubmitVenueForPublication
         private readonly OrganizationLockRepositoryInterface $orgLocks,
         private readonly EvaluateVenueReadiness $readiness,
         private readonly DurableNotificationServiceInterface $notif,
+        private readonly CourtPriceRuleService $priceRules,
     ) {}
 
     public function execute(int $venueId, int $actorId): VenuePublicationRevision
@@ -68,7 +71,8 @@ class SubmitVenueForPublication
             }
 
             // Build configuration snapshot
-            $venue->loadMissing(['courts.priceSlots']);
+            $priceTables = collect($this->priceRules->normalTables($venue->courts))
+                ->map(fn (PriceTable $table): array => ['id' => $table->id, 'name' => $table->name]);
             $hasOperatingSchedule = VenueOperatingSchedule::query()->where('venue_id', $venue->id)->exists();
             $snapshot = [
                 'venue' => [
@@ -91,12 +95,7 @@ class SubmitVenueForPublication
                     'id' => $court->id,
                     'name' => (string) $court->name,
                     'slug' => $court->slug,
-                    'price_slots' => $court->priceSlots->where('is_active', true)->map(fn ($slot) => [
-                        'weekday' => $slot->weekday,
-                        'starts_at' => $slot->starts_at,
-                        'ends_at' => $slot->ends_at,
-                        'price' => (int) $slot->price,
-                    ])->values()->all(),
+                    'price_table' => $priceTables->get($court->getKey()),
                 ])->values()->all(),
                 'organization' => [
                     'id' => $venue->organization_id,

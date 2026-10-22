@@ -3,7 +3,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useBookingStore } from '@/stores/booking'
 import { useAuthStore } from '@/stores/auth'
 import { authApi } from '@/features/auth/api/authApi'
-import { bookingErrorMessage, type LoyaltySelection } from '@/features/booking/utils/reservation'
+import { bookingErrorMessage } from '@/features/booking/utils/reservation'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type { Court, AvailabilitySlot, Venue } from '../types/court'
 import { courtApi } from '../api/courtApi'
@@ -114,7 +114,7 @@ export function useCourtSchedule() {
 
   const totalSlotsCount = computed(() => store.slots.length)
 
-  const totalHours = computed(() => store.selectedSlots.length)
+  const totalHours = computed(() => (store.selection?.minutes ?? 0) / 60)
 
   async function fetchAvailability() {
     if (!court.value) return
@@ -206,34 +206,27 @@ export function useCourtSchedule() {
     store.toggle(slot)
   }
 
-  function removeSlot(slot: AvailabilitySlot) {
-    store.toggle(slot)
-  }
-
   function clearSelectedSlots() {
     store.selectedSlots = []
   }
 
+  // The first free run of `count` hours, two 30-minute times per hour, within the time filter.
   function quickSelectAvailableHours(count: number = 1) {
     if (loading.value || !court.value) return
     clearSelectedSlots()
-    const available = filteredSlots.value.filter((s) => s.available)
-    for (let i = 0; i < Math.min(count, available.length); i++) {
-      const slot = available[i]
-      if (slot) {
-        store.toggle(slot)
+    const times = filteredSlots.value
+    for (let i = 0; i + count * 2 <= times.length; i++) {
+      const run = store.freeRun(times[i]!, times[i + count * 2 - 1]!)
+      if (run?.length === count * 2) {
+        store.selectedSlots = run
+        return
       }
     }
   }
 
-  // expectedTotal is the amount payable shown; confirmedPrice marks a resubmission at a new price the
-  // customer confirmed after a PRICE_CHANGED.
-  async function proceedToBooking(
-    loyaltyPayload: LoyaltySelection | undefined,
-    couponCode: string | null | undefined,
-    expectedTotal: number,
-    confirmedPrice = false,
-  ) {
+  // expectedTotal is the quote total shown, or the new price confirmed after a PRICE_CHANGED; it is
+  // null until a signed-in customer's quote is in.
+  async function proceedToBooking(expectedTotal: number | null) {
     if (
       loading.value ||
       !court.value ||
@@ -245,19 +238,15 @@ export function useCourtSchedule() {
       router.push({ name: 'login', query: { redirect: route.fullPath } })
       return
     }
+    if (expectedTotal === null) return
 
     checkoutLoading.value = true
     error.value = ''
     try {
-      const reservation = await store.checkoutReservation(
-        loyaltyPayload,
-        couponCode,
-        expectedTotal,
-        confirmedPrice,
-      )
+      const reservation = await store.checkoutReservation(expectedTotal)
       router.push({ name: 'reservations', params: { code: reservation.code } })
     } catch (cause) {
-      const again = (total: number) => proceedToBooking(loyaltyPayload, couponCode, total, true)
+      const again = (total: number) => proceedToBooking(total)
       if (!store.catchPriceChange(cause, again)) {
         error.value = bookingErrorMessage(
           cause,
@@ -318,7 +307,8 @@ export function useCourtSchedule() {
     selectCourt,
     selectVenue,
     toggleSlot,
-    removeSlot,
+    // The summary shows one interval, so removing it clears the selection.
+    removeSlot: clearSelectedSlots,
     clearSelectedSlots,
     quickSelectAvailableHours,
     proceedToBooking,

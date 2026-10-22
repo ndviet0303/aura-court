@@ -2,11 +2,13 @@
 
 namespace App\Services\Social;
 
+use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Models\Court;
 use App\Models\EntitlementTransfer;
 use App\Models\MarketplaceListing;
 use App\Models\ReservationEntitlement;
 use App\Models\User;
+use App\Models\Venue;
 use App\Notifications\AuraBookingNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -33,6 +35,12 @@ class PeerToPeerResaleService
         }
 
         $listing = DB::transaction(function () use ($listing, $buyer, $acceptFree): MarketplaceListing {
+            // A purchase is a new booking: lock the court, then the venue, and recheck eligibility with the package (D9) before the listing.
+            $court = Court::query()->whereKey($listing->entitlement()->withoutGlobalScope('tenant_isolation')->value('court_id'))->lockForUpdate()->firstOrFail();
+            $venue = Venue::query()->whereKey($court->venue_id)->lockForUpdate()->firstOrFail();
+            $eligibility = app(VerifyEffectiveBookingEligibility::class)->execute($court->setRelation('venue', $venue));
+            // The slot keeps its recorded price, so an unpriced court does not block the purchase.
+            abort_unless($eligibility['eligible'] || $eligibility['reason'] === 'COURT_UNPRICED', 409, $eligibility['message'] ?? '');
             $listing = $this->locked($listing->id);
             if ($listing->lockedBy() === $buyer->id) {
                 return $listing;
