@@ -17,10 +17,6 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .slot-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
   .detail-hero {
     grid-template-columns: 1fr;
   }
@@ -147,10 +143,6 @@
     margin-top: 4px;
   }
 
-  .slot-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .not-found {
     min-height: calc(100vh - 120px);
   }
@@ -212,11 +204,6 @@
     font-size: 14px !important;
   }
 
-  /* The card's top row also holds the actions; drop the clock so the time range fits. */
-  .floating-booking.with-agreement .dock-badge .material-symbols-outlined {
-    display: none !important;
-  }
-
   .floating-booking .dock-total-box {
     display: inline-flex !important;
     align-items: baseline !important;
@@ -260,6 +247,25 @@
 
   .floating-booking .btn-floating-proceed .material-symbols-outlined:last-child {
     display: none !important;
+  }
+  /* One row cannot hold the time badge, clear and proceed: proceed takes its own row. */
+  .floating-booking {
+    flex-wrap: wrap !important;
+    border-radius: 20px !important;
+  }
+
+  .floating-booking .dock-actions {
+    display: contents !important;
+  }
+
+  .floating-booking .dock-btn-clear {
+    order: 2;
+  }
+
+  .floating-booking .btn-floating-proceed {
+    order: 4;
+    flex: 1 0 100% !important;
+    justify-content: center;
   }
 }
 

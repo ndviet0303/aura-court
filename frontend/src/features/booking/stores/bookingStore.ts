@@ -75,28 +75,6 @@ export const useBookingStore = defineStore('booking', () => {
     }
   }
 
-  // The times from `from` to `to` when all are free and adjacent, else null.
-  function freeRun(from: AvailabilitySlot, to: AvailabilitySlot): AvailabilitySlot[] | null {
-    const ordered = [...slots.value].sort((a, b) => a.startsAt.localeCompare(b.startsAt))
-    const first = ordered.findIndex((item) => item.startsAt === from.startsAt)
-    const last = ordered.findIndex((item) => item.startsAt === to.startsAt)
-    const run = first >= 0 && last >= first ? ordered.slice(first, last + 1) : []
-    const free = run.every(
-      (item, i) =>
-        item.available && (i === 0 || Date.parse(run[i - 1]!.endsAt) === Date.parse(item.startsAt)),
-    )
-    return run.length && free ? run : null
-  }
-
-  // A booking is one interval on the 30-minute grid (design D14): the first tap picks its start, a
-  // later tap its end; any other tap starts again, and tapping a lone start clears it.
-  function toggle(slot: AvailabilitySlot) {
-    if (!slot.available) return
-    const start = selectedSlots.value.length === 1 ? selectedSlots.value[0] : undefined
-    if (start?.startsAt === slot.startsAt) selectedSlots.value = []
-    else selectedSlots.value = (start && freeRun(start, slot)) || [slot]
-  }
-
   // The interval sent to quote and checkout: first selected start to last selected end.
   const selection = computed(() => {
     const first = selectedSlots.value[0]
@@ -162,8 +140,6 @@ export const useBookingStore = defineStore('booking', () => {
     slotsLoading,
     loadCourts,
     loadAvailability,
-    toggle,
-    freeRun,
     checkoutReservation,
     priceChange: price.priceChange,
     catchPriceChange: price.caught,

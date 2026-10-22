@@ -8,8 +8,6 @@ import { errorMessage } from '@/core/utils/errorMessage'
 import type { Court, AvailabilitySlot, Venue } from '../types/court'
 import { courtApi } from '../api/courtApi'
 
-export type ScheduleTimeFilter = 'all' | 'morning' | 'afternoon' | 'evening' | 'peak'
-
 export function useCourtSchedule() {
   const route = useRoute()
   const router = useRouter()
@@ -31,7 +29,6 @@ export function useCourtSchedule() {
   const courtIdParam = computed(() => String(route.params.id || ''))
   const selectedCourtId = ref<number | null>(null)
   const selectedVenueId = ref<number | null>(null)
-  const timeFilter = ref<ScheduleTimeFilter>('all')
   const error = ref('')
   const notice = ref('')
   const loading = ref(false)
@@ -90,29 +87,6 @@ export function useCourtSchedule() {
       return date.value
     }
   })
-
-  const filteredSlots = computed<AvailabilitySlot[]>(() => {
-    return store.slots.filter((slot: AvailabilitySlot) => {
-      const hour = Number(
-        new Date(slot.startsAt).toLocaleTimeString('en-US', {
-          timeZone: 'Asia/Ho_Chi_Minh',
-          hour: '2-digit',
-          hour12: false,
-        }),
-      )
-      if (timeFilter.value === 'morning') return hour < 12
-      if (timeFilter.value === 'afternoon') return hour >= 12 && hour < 17
-      if (timeFilter.value === 'evening') return hour >= 17
-      if (timeFilter.value === 'peak') return hour >= 17 && hour <= 21
-      return true
-    })
-  })
-
-  const availableSlotsCount = computed(() => {
-    return store.slots.filter((s: AvailabilitySlot) => s.available).length
-  })
-
-  const totalSlotsCount = computed(() => store.slots.length)
 
   const totalHours = computed(() => (store.selection?.minutes ?? 0) / 60)
 
@@ -200,27 +174,14 @@ export function useCourtSchedule() {
     }
   }
 
-  function toggleSlot(slot: AvailabilitySlot) {
-    if (loading.value || !court.value || !slot.available) return
-    store.toggle(slot)
+  // One run from the start-time picker is the whole booking interval; an empty run clears it.
+  function pickSlots(run: AvailabilitySlot[]) {
+    if (loading.value || !court.value) return
+    store.selectedSlots = run
   }
 
   function clearSelectedSlots() {
     store.selectedSlots = []
-  }
-
-  // The first free run of `count` hours, two 30-minute times per hour, within the time filter.
-  function quickSelectAvailableHours(count: number = 1) {
-    if (loading.value || !court.value) return
-    clearSelectedSlots()
-    const times = filteredSlots.value
-    for (let i = 0; i + count * 2 <= times.length; i++) {
-      const run = store.freeRun(times[i]!, times[i + count * 2 - 1]!)
-      if (run?.length === count * 2) {
-        store.selectedSlots = run
-        return
-      }
-    }
   }
 
   // expectedTotal is the quote total shown, or the new price confirmed after a PRICE_CHANGED; it is
@@ -284,14 +245,10 @@ export function useCourtSchedule() {
     activeDateLabel,
     selectedCourtId,
     selectedVenueId,
-    timeFilter,
     court,
     directOwnerPayments,
     venuesList,
     filteredCourts,
-    filteredSlots,
-    availableSlotsCount,
-    totalSlotsCount,
     carouselDays,
     totalHours,
     error,
@@ -305,11 +262,9 @@ export function useCourtSchedule() {
     goToNextDay,
     selectCourt,
     selectVenue,
-    toggleSlot,
+    pickSlots,
     // The summary shows one interval, so removing it clears the selection.
     removeSlot: clearSelectedSlots,
-    clearSelectedSlots,
-    quickSelectAvailableHours,
     proceedToBooking,
     resendVerificationEmail,
     fetchAvailability,

@@ -3,21 +3,17 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useBookingStore } from '@/stores/booking'
-import type { AvailabilitySlot, Court } from '@/features/court/types/court'
+import type { Court } from '@/features/court/types/court'
 import { formatCurrency } from '@/i18n'
-import { DatePicker, SelectDropdown, SkeletonLoader } from '@/shared/components'
+import { DatePicker, SkeletonLoader } from '@/shared/components'
 import { resolveCourtImage } from '@/lib/courtImage'
-import {
-  getVenueLocalDate,
-  formatSlotRange,
-  formatAvailabilityDate,
-  getCourtIcon,
-} from '../utils/homeAvailability'
+import { getVenueLocalDate, formatAvailabilityDate, getCourtIcon } from '../utils/homeAvailability'
 import { describeCourtPlace } from '../utils/courtArea'
 import { useCourtAreaFilter } from '../composables/useCourtAreaFilter'
 import CourtAreaTabs from '../components/CourtAreaTabs.vue'
 import CourtSearchBox from '../components/CourtSearchBox.vue'
 import HomeBookingDock from '../components/HomeBookingDock.vue'
+import StartTimePicker from '@/features/booking/components/StartTimePicker.vue'
 const { t, locale } = useI18n()
 const store = useBookingStore()
 const selected = ref<number | null>(null)
@@ -31,7 +27,6 @@ const selectedTimezone = computed(
     'Asia/Ho_Chi_Minh',
 )
 const date = ref(getVenueLocalDate(new Date(), selectedTimezone.value))
-const timeFilter = ref('all')
 const sportTypeFilter = ref('all')
 
 const sportCategories = [
@@ -164,41 +159,14 @@ async function selectSportCategory(sportId: string) {
     /* store handles error */
   }
 }
-const timeOptions = computed(() => [
-  { value: 'all', label: t('home.search.allSlots') },
-  { value: 'morning', label: t('home.search.morning') },
-  { value: 'evening', label: t('home.search.evening') },
-])
-
 const image = (index: number) => resolveCourtImage(store.courts[index])
-const visibleSlots = computed(() =>
-  store.slots.filter((slot: AvailabilitySlot) => {
-    const hour = Number(
-      new Date(slot.startsAt).toLocaleTimeString('en-US', {
-        timeZone: selectedTimezone.value,
-        hour: '2-digit',
-        hour12: false,
-      }),
-    )
-    return timeFilter.value === 'morning'
-      ? hour < 17
-      : timeFilter.value === 'evening'
-        ? hour >= 17
-        : true
-  }),
-)
 const selectedCourtName = computed(
   () => selectedCourtObj.value?.code || (selected.value ? `Sân ${selected.value}` : ''),
 )
 const availabilitySummary = computed(() =>
   [
     selectedCourtObj.value?.venue?.name,
-    date.value
-      ? t('home.availability.summary', {
-          date: formatAvailabilityDate(date.value, locale.value),
-          count: visibleSlots.value.filter((slot: AvailabilitySlot) => slot.available).length,
-        })
-      : '',
+    date.value ? formatAvailabilityDate(date.value, locale.value) : '',
   ]
     .filter(Boolean)
     .join(' · '),
@@ -232,6 +200,12 @@ function clearCourt() {
   selected.value = null
   store.selectedSlots = []
   store.slots = []
+}
+
+// The picker's way out when today has nothing left: the same court, the next calendar day.
+function goToNextDay() {
+  date.value = new Date(Date.parse(date.value) + 86_400_000).toISOString().slice(0, 10)
+  loadAvailability()
 }
 
 async function handleSearch() {
@@ -309,15 +283,6 @@ onMounted(async () => {
         <div class="search-field">
           <label>{{ t('home.search.date') }}</label>
           <DatePicker v-model="date" @change="loadAvailability" />
-        </div>
-        <div class="search-field">
-          <label>{{ t('home.search.timeSlot') }}</label>
-          <SelectDropdown
-            v-model="timeFilter"
-            :options="timeOptions"
-            :placeholder="t('home.search.timeSlot')"
-            :aria-label="t('home.search.timeSlot')"
-          />
         </div>
         <button
           type="button"
@@ -436,31 +401,14 @@ onMounted(async () => {
     <p v-if="!selected" class="muted pick-court-hint">
       {{ t('home.availability.pickCourtHint') }}
     </p>
-    <div v-else-if="store.slotsLoading" class="slot-preview">
-      <SkeletonLoader type="slot" :count="8" />
-    </div>
-    <div v-else-if="visibleSlots.length" class="slot-preview">
-      <button
-        v-for="slot in visibleSlots"
-        :key="slot.startsAt"
-        class="slot"
-        :class="{
-          selected: store.selectedSlots.some(
-            (item: AvailabilitySlot) => item.startsAt === slot.startsAt,
-          ),
-          unavailable: !slot.available,
-        }"
-        :disabled="!slot.available"
-        @click="store.toggle(slot)"
-      >
-        <span class="slot-range font-mono">{{
-          formatSlotRange(slot, locale, selectedTimezone)
-        }}</span>
-        <small class="slot-price">{{ formatCurrency(slot.price) }}</small>
-      </button>
-    </div>
-    <div v-else class="muted" style="margin: 16px 0 28px">
-      {{ t('home.availability.noSlots') }}
+    <div v-else class="slot-preview">
+      <StartTimePicker
+        :slots="store.slots"
+        :selection="store.selection"
+        :loading="store.slotsLoading"
+        @pick="store.selectedSlots = $event"
+        @next-day="goToNextDay"
+      />
     </div>
 
     <!-- Courts Grid Loading / Loaded States -->
