@@ -259,19 +259,38 @@ Pha 2–6 làm trên nhánh `feat/module05-packages-finance` và chỉ vào main
 
 ## 6. Pha 6 – Quản trị phí nền tảng (D13, D15)
 
-- [ ] 6.1 `PlatformFeeRequestController` (`index`, `show`, `export`) trong nhóm `admin`.
-- [ ] 6.2 `PlatformFeeVenueController` (`index`, `show`, `export`).
-- [ ] 6.3 `PlatformFeeReportController` (`show`, `export`).
+- [ ] 6.1 `PlatformFeeRequestController` (`index`, `show`, `export`) trong nhóm `admin`. Đã làm `index`, `show`; `export` chờ 5.1.
+- [ ] 6.2 `PlatformFeeVenueController` (`index`, `show`, `export`). Đã làm `index`, `show`; `export` chờ 5.1.
+- [ ] 6.3 `PlatformFeeReportController` (`show`, `export`). Đã làm `show`; `export` chờ 5.1.
 - [ ] 6.4 Test: `PlatformFeeAdminTest`.
   - Scenario "Collected fees by term", "Expiring venues", "Request detail with an anomalous transfer", "Export matches the screen", "Non-administrator access".
   - Nhóm 7/3/1 ngày theo `0 < ends_at − now ≤ n ngày`; tổng đếm cơ sở duy nhất.
   - Giá đổi sau khi trả không đổi báo cáo. Gói đã chấm dứt vẫn tính phí.
-- [ ] 6.5 Frontend `/admin/platform-fees` thêm ba tab "Yêu cầu thanh toán", "Tình trạng gói", "Báo cáo thu phí", mỗi tab có nút xuất. Vitest đi kèm.
-- [ ] 6.6 Dashboard `/admin` của platform admin: thay số liệu từ `getReports` (`useAdminDashboard.ts:140`) bằng tóm tắt phí nền tảng (phí đã thu trong tháng, số cơ sở sắp hết hạn trong 7 ngày).
-- [ ] 6.7 Xoá báo cáo cũ (D13):
+- [ ] 6.5 Frontend `/admin/platform-fees` thêm ba tab "Yêu cầu thanh toán", "Tình trạng gói", "Báo cáo thu phí", mỗi tab có nút xuất. Vitest đi kèm. Đã làm ba tab; nút xuất chờ 5.1, Vitest chưa làm.
+- [x] 6.6 Dashboard `/admin` của platform admin: thay số liệu từ `getReports` (`useAdminDashboard.ts:140`) bằng tóm tắt phí nền tảng (phí đã thu trong tháng, số cơ sở sắp hết hạn trong 7 ngày). (test: chưa làm)
+- [x] 6.7 Xoá báo cáo cũ (D13): (test: chưa làm — xoá ba file test và sửa allowlist thuộc lane test)
   - Ba route `admin/reports*`; `AdminController::report`, `reportCsv`, `buildReportDataset`; `getReports` trong `adminApi.ts`.
   - Test `Admin/CanonicalReportingAndExportTest`, `Admin/ReportParityTest` và `AdminReportOwnerScopeTest` của Pha 0.
   - Allowlist chỉ giảm.
+
+- Ghi chú Pha 6 (2026-10-22, chỉ implement, chưa chạy test; SQL chưa chạy trên PostgreSQL):
+  - Endpoint (nhóm `admin`, chỉ platform admin, còn lại 403): `GET admin/platform-fees/requests` (lọc `status`, `venue_id`, `term`, `from`/`to` theo ngày tạo, phân trang), `requests/{code}`, `venues` (lọc `status`, `expiring_within` 1/3/7, `search`), `venues/{venueId}`, `report` (`from`, `to` bắt buộc; `venue_id`, `term`). Mỗi màn hình một repository để export sau này dùng lại đúng truy vấn.
+  - Trạng thái tính lúc xem: yêu cầu `pending` quá hạn hiện là `expired` (như `PackagePaymentRequest::statusAt`); GET không gọi `expireOverdue` vì đọc không được ghi. Gói hiện tại là dòng id lớn nhất của cơ sở (D1); cơ sở đóng hoặc tạm ngưng vẫn hiện, kèm trạng thái cơ sở.
+  - Nhóm sắp hết hạn: gói hiện tại chưa chấm dứt với `0 < ends_at − now ≤ n ngày`, đếm `count(distinct venue_id)` trên toàn bộ cơ sở, không theo bộ lọc của danh sách.
+  - Báo cáo thu phí: yêu cầu `paid` có `paid_at` trong khoảng UTC của các ngày VN, cộng `amount` của chính yêu cầu (đổi giá sau không ảnh hưởng), đếm mua mới và gia hạn theo `kind`, chia theo kỳ (đủ bốn kỳ, kể cả 0) và theo cơ sở. Gói đã chấm dứt vẫn tính; yêu cầu hết hạn, chuyển khoản muộn hoặc lệch tiền không bao giờ thành `paid` nên tự bị loại.
+  - Ngày tạo yêu cầu (`created_at`, cast mặc định) là giờ treo tường của app; `paid_at`, `expires_at`, `ends_at` là UTC (`UtcDateTime`). Mỗi bộ lọc đổi mốc theo đúng loại cột.
+  - Chi tiết yêu cầu trả mọi receipt kèm số tiền, thời điểm chuyển, thời điểm nhận và kết quả; không trả `content` và `raw`. Receipt `unknown_code` không gắn yêu cầu nên không hiện ở màn nào.
+  - "Chủ cơ sở" trong danh sách là owner hiện tại của tổ chức, không phải người tạo yêu cầu.
+  - Dashboard `/admin`: bỏ thẻ KPI, biểu đồ, bộ lọc ngày và link CSV của báo cáo cũ (xoá `AdminKpiCards`, `AdminAnalyticsCharts`, `AdminDateRangeFilter`); thêm hai thẻ "Phí đã thu tháng này" (từ `report` tháng VN hiện tại) và "Sắp hết hạn trong 7 ngày" (`expiring_counts[7]` của `venues`), dẫn tới tab tương ứng. Owner và staff đã bị router đưa khỏi `/admin` nên không đổi; owner dùng `/admin/finance`.
+  - Xoá (6.7): ba route `admin/reports*`, `AdminController::report`, `reportCsv`, `buildReportDataset` và import chỉ chúng dùng, `VenueOperatingCalendar::slotCapacity` (chỉ báo cáo cũ gọi), `adminApi.getReports`. `AdminController` còn 260 dòng.
+  - Bộ lọc cơ sở ở frontend lấy tối đa 100 cơ sở từ `venues?per_page=100` vì `/admin/venues` chặn platform admin (`venue_admin`); có comment `ponytail:` để đổi sang ô tìm kiếm khi vượt 100.
+  - Review (3 hướng, mỗi phát hiện 3 người phản biện): sửa focus khi đóng panel chi tiết bằng nút X. Để lại: id cơ sở vượt `PHP_INT_MAX` trả 500 thay vì 404 (cùng kiểu với các route admin khác, chỉ platform admin chạm được).
+  - Cho lane test:
+    - Viết mới `PlatformFeeAdminTest` (các scenario ở 6.4, cộng: biên nửa đêm VN, `pending` quá hạn nằm trong `expired`, gói chấm dứt và dòng cũ không vào nhóm hết hạn, 404 khi mã/id không có, 422 khi chỉ có một trong `from`/`to`, `term=45`, `expiring_within=5`).
+    - Xoá `Admin/AdminReportOwnerScopeTest`, `Admin/CanonicalReportingAndExportTest`, `Admin/ReportParityTest`. Sửa phần gọi `/api/admin/reports*` trong `Account/OwnerStaffGlobalAdminSeparationTest`, `BookingFlowsTest:58`, `Readiness/ComprehensiveRoleAndScopingMatrixTest`, `Readiness/SevenModulesContractAndE2EAcceptanceTest`.
+    - Allowlist backend: bỏ `class-lines` của `AdminController` (còn 260 < 300), hạ `controller-public-methods` 13 → 11, `model-query` 7 → 2; bỏ hai mục `model-query` của file Subscription đã xoá ở Pha 4. Allowlist frontend: bỏ `component-lines` của `AdminAnalyticsCharts.vue`.
+    - Vitest: sửa `AdminDashboardReservations.spec.ts` (bỏ stub ba component đã xoá, stub hoặc mock `PlatformFeeSummary`); viết mới cho `PlatformFeesView` (`?tab=`), ba tab, hai panel chi tiết, `FeeReportFilterBar`, `PlatformFeeSummary` và năm composable.
+    - E2E và tài liệu: `frontend/e2e/p1-revenue-reconciliation-reporting.spec.ts` (dòng 116, 123, 186, 279), `docs/testing/playwright-coverage.md` (120, 123, 124).
 
 ## 7. Pha 7 – Bật demo trên prod (D16)
 

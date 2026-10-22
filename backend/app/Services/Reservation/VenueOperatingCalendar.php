@@ -6,8 +6,6 @@ use App\Models\Court;
 use App\Models\VenueOperatingSchedule;
 use App\Models\VenueScheduleException;
 use Carbon\Carbon;
-use Carbon\CarbonInterface;
-use Carbon\CarbonPeriod;
 use Illuminate\Support\Collection;
 
 class VenueOperatingCalendar
@@ -131,28 +129,6 @@ class VenueOperatingCalendar
                 'exceptions' => $byDate,
             ]];
         })->all();
-    }
-
-    /**
-     * How many slots of their own length the courts can sell on the local dates from $from to $to, by their
-     * schedules and exceptions.
-     *
-     * @param  Collection<int, Court>  $courts
-     */
-    public function slotCapacity(Collection $courts, CarbonInterface $from, CarbonInterface $to): int
-    {
-        $calendars = $this->calendarsFor($courts, $from->toDateString());
-        $capacity = 0;
-        foreach (CarbonPeriod::create($from->copy()->startOfDay(), '1 day', $to->copy()->startOfDay()) as $day) {
-            foreach ($courts as $court) {
-                $calendar = $calendars[(int) $court->id];
-                foreach (self::openMinutes($calendar['schedule'], $calendar['exceptions'][$day->toDateString()] ?? null, $day->dayOfWeekIso) as [$open, $close]) {
-                    $capacity += intdiv($close - $open, (int) $court->slot_duration);
-                }
-            }
-        }
-
-        return $capacity;
     }
 
     public function configuredForVenue(int $venueId): bool

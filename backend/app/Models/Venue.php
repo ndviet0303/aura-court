@@ -119,6 +119,12 @@ class Venue extends Model
         return $this->hasOne(VenuePackage::class)->latestOfMany();
     }
 
+    /** @return HasMany<VenuePackage, $this> */
+    public function packages(): HasMany
+    {
+        return $this->hasMany(VenuePackage::class);
+    }
+
     /** @return HasMany<PackagePaymentRequest, $this> */
     public function packagePaymentRequests(): HasMany
     {

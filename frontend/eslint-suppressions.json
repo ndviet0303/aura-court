@@ -111,7 +111,7 @@
   },
   "src/features/admin/api/adminApi.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 15
+      "count": 14
     }
   },
   "src/features/admin/api/contractsApi.ts": {

@@ -1,13 +1,26 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
+import FeeReportTab from '../components/FeeReportTab.vue'
 import PackagePricesTab from '../components/PackagePricesTab.vue'
+import PaymentRequestsTab from '../components/PaymentRequestsTab.vue'
+import VenuePackagesTab from '../components/VenuePackagesTab.vue'
 
 const { t } = useI18n()
+const route = useRoute()
 
-// D15: payment requests, package status and the fee report join as tabs in Pha 6.
-const tabs = [{ id: 'prices', labelKey: 'admin.platformFees.tabs.prices' }] as const
-const activeTab = ref<(typeof tabs)[number]['id']>('prices')
+// D15: four tabs; export buttons wait for D14.
+const tabs = [
+  { id: 'prices', labelKey: 'admin.platformFees.tabs.prices' },
+  { id: 'requests', labelKey: 'admin.platformFees.tabs.requests' },
+  { id: 'venues', labelKey: 'admin.platformFees.tabs.venues' },
+  { id: 'report', labelKey: 'admin.platformFees.tabs.report' },
+] as const
+// The admin dashboard links straight to a tab with ?tab=.
+const activeTab = ref<(typeof tabs)[number]['id']>(
+  tabs.find((tab) => tab.id === route.query.tab)?.id ?? 'prices',
+)
 </script>
 
 <template>
@@ -23,12 +36,14 @@ const activeTab = ref<(typeof tabs)[number]['id']>('prices')
     <nav class="admin-tab-nav" role="tablist" :aria-label="t('admin.platformFees.title')">
       <button
         v-for="tab in tabs"
+        :id="`platform-fees-tab-${tab.id}`"
         :key="tab.id"
         type="button"
         role="tab"
         class="admin-nav-item"
         :class="{ active: activeTab === tab.id }"
         :aria-selected="activeTab === tab.id"
+        aria-controls="platform-fees-panel"
         :data-testid="`platform-fees-tab-${tab.id}`"
         @click="activeTab = tab.id"
       >
@@ -36,7 +51,16 @@ const activeTab = ref<(typeof tabs)[number]['id']>('prices')
       </button>
     </nav>
 
-    <PackagePricesTab v-if="activeTab === 'prices'" role="tabpanel" />
+    <div
+      id="platform-fees-panel"
+      role="tabpanel"
+      :aria-labelledby="`platform-fees-tab-${activeTab}`"
+    >
+      <PackagePricesTab v-if="activeTab === 'prices'" />
+      <PaymentRequestsTab v-else-if="activeTab === 'requests'" />
+      <VenuePackagesTab v-else-if="activeTab === 'venues'" />
+      <FeeReportTab v-else />
+    </div>
   </div>
 </template>
 

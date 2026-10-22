@@ -103,8 +103,7 @@ export const adminApi = {
     organizationId?: number,
   ) => api.post(`/admin/promotions/${id}/${action}`, { organization_id: organizationId }),
 
-  // Reports & Logs
-  getReports: <T = any>(query?: string) => api.get<T>(`/admin/reports${query ? `?${query}` : ''}`),
+  // Logs
   getAuditLogs: <T = unknown>() => api.get<T>('/admin/audit-logs'),
 
   // Organizations

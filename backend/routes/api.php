@@ -10,6 +10,9 @@ use App\Http\Controllers\Admin\AdminVenuePublicationController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\PartnerReviewController;
 use App\Http\Controllers\Admin\PlatformFeePriceController;
+use App\Http\Controllers\Admin\PlatformFeeReportController;
+use App\Http\Controllers\Admin\PlatformFeeRequestController;
+use App\Http\Controllers\Admin\PlatformFeeVenueController;
 use App\Http\Controllers\Attendance\AttendanceController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\SocialEmailController;
@@ -306,6 +309,11 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
         Route::middleware(['admin'])->group(function () {
             Route::get('platform-fees/prices', [PlatformFeePriceController::class, 'index']);
             Route::post('platform-fees/prices', [PlatformFeePriceController::class, 'store']);
+            Route::get('platform-fees/requests', [PlatformFeeRequestController::class, 'index']);
+            Route::get('platform-fees/requests/{code}', [PlatformFeeRequestController::class, 'show']);
+            Route::get('platform-fees/venues', [PlatformFeeVenueController::class, 'index']);
+            Route::get('platform-fees/venues/{venueId}', [PlatformFeeVenueController::class, 'show'])->whereNumber('venueId');
+            Route::get('platform-fees/report', [PlatformFeeReportController::class, 'show']);
             Route::prefix('venues')->group(function () {
                 Route::get('publication-queue', [AdminVenuePublicationController::class, 'queue']);
                 Route::get('revisions/{revisionId}', [AdminVenuePublicationController::class, 'show']);
@@ -329,11 +337,6 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
                 Route::post('{organizationId}/terminate', [PartnerReviewController::class, 'terminate']);
             });
         });
-
-        // Reports: platform-wide for a platform admin, otherwise owner-only and scoped to the organizations the caller owns (BR-89).
-        Route::get('reports', [AdminController::class, 'report']);
-        Route::get('reports.csv', [AdminController::class, 'reportCsv']);
-        Route::get('reports/csv', [AdminController::class, 'reportCsv']);
 
         // BR-23: organization operations need an owner or staff membership; platform admin rights do not stand in.
         Route::middleware(['venue_admin'])->group(function () {
