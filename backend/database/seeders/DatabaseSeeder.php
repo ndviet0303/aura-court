@@ -11,6 +11,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             OrganizationVenueSeeder::class,
             UserSeeder::class,
+            // Package prices need the platform admin from UserSeeder as their author.
+            VenuePackageSeeder::class,
             HostKycSeeder::class,
             CourtSeeder::class,
             CouponSeeder::class,

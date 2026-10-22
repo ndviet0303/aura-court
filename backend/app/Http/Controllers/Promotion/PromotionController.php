@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Promotion;
 
-use App\Domain\Subscription\Actions\EvaluatePlatformEntitlement;
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
 use App\Models\Court;
@@ -145,7 +144,7 @@ class PromotionController extends Controller
     public function storeCoupon(Request $request)
     {
         $organization = $this->selectedOrganization($request);
-        $this->authorizePromotionManager($request, $organization, requireEntitlement: true);
+        $this->authorizePromotionManager($request, $organization);
         $data = $this->validatedCoupon($request);
         if ($data['discount_type'] === 'percent' && $data['discount_value'] > 100) {
             abort(422, 'Giảm theo phần trăm không được vượt quá 100%.');
@@ -263,7 +262,7 @@ class PromotionController extends Controller
     public function storeCampaign(Request $request)
     {
         $organization = $this->selectedOrganization($request);
-        $this->authorizePromotionManager($request, $organization, requireEntitlement: true);
+        $this->authorizePromotionManager($request, $organization);
         $data = $this->validatedCampaign($request);
         $data['eligibility_group'] = $data['eligibility_group'] ?? Coupon::GROUP_ALL;
         $data['min_spend'] = $data['min_spend'] ?? 0;
@@ -294,7 +293,7 @@ class PromotionController extends Controller
     public function updateCampaign(Request $request, int $campaign)
     {
         $organization = $this->selectedOrganization($request);
-        $this->authorizePromotionManager($request, $organization, requireEntitlement: true);
+        $this->authorizePromotionManager($request, $organization);
         $record = PromotionCampaign::query()->where('organization_id', $organization->id)->whereKey($campaign)->firstOrFail();
         abort_unless($record->status !== PromotionCampaign::STATUS_RETIRED, 409, 'A retired campaign cannot be edited.');
         $data = $this->validatedCampaign($request, true);
@@ -347,7 +346,7 @@ class PromotionController extends Controller
     public function updateCoupon(Request $request, int $coupon)
     {
         $organization = $this->selectedOrganization($request);
-        $this->authorizePromotionManager($request, $organization, requireEntitlement: true);
+        $this->authorizePromotionManager($request, $organization);
         $record = Coupon::query()->where('organization_id', $organization->id)->with('campaign')->whereKey($coupon)->firstOrFail();
         abort_unless($record->status !== Coupon::STATUS_RETIRED, 409, 'A retired coupon cannot be edited.');
         $data = $this->validatedCoupon($request, true, $record);
@@ -499,7 +498,7 @@ class PromotionController extends Controller
     private function transitionCampaign(Request $request, int $id, string $target): mixed
     {
         $organization = $this->selectedOrganization($request);
-        $this->authorizePromotionManager($request, $organization, requireEntitlement: true);
+        $this->authorizePromotionManager($request, $organization);
 
         return DB::transaction(function () use ($request, $organization, $id, $target) {
             $campaign = PromotionCampaign::query()->where('organization_id', $organization->id)->whereKey($id)->lockForUpdate()->firstOrFail();
@@ -559,7 +558,7 @@ class PromotionController extends Controller
     private function transitionCoupon(Request $request, int $id, string $target): mixed
     {
         $organization = $this->selectedOrganization($request);
-        $this->authorizePromotionManager($request, $organization, requireEntitlement: true);
+        $this->authorizePromotionManager($request, $organization);
 
         return DB::transaction(function () use ($request, $organization, $id, $target) {
             $coupon = Coupon::query()->where('organization_id', $organization->id)->whereKey($id)->lockForUpdate()->firstOrFail();
@@ -719,16 +718,11 @@ class PromotionController extends Controller
         return $organization;
     }
 
-    private function authorizePromotionManager(Request $request, Organization $organization, bool $requireEntitlement = false): void
+    private function authorizePromotionManager(Request $request, Organization $organization): void
     {
         $user = $request->user();
         // BR-21: staff hold a fixed permission set without pricing, so promotions stay with the owner.
         abort_unless($user && $user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_ORGANIZATION_OWNER]), 403, 'Pricing permission is required to manage promotions.');
-
-        if ($requireEntitlement) {
-            $entitlement = app(EvaluatePlatformEntitlement::class)->execute((int) $organization->id);
-            abort_unless($entitlement['is_valid'] && $entitlement['can_take_bookings'], 403, 'An active platform subscription is required to manage promotions.');
-        }
     }
 
     private function assertRange(?string $startsAt, ?string $endsAt, string $field): void

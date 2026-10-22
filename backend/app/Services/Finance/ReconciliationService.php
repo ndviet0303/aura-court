@@ -10,8 +10,6 @@ use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
 use App\Models\OwnerRefundObligation;
 use App\Models\Payout;
-use App\Models\PlatformPaymentAttempt;
-use App\Models\PlatformProviderReceipt;
 use App\Models\ProviderEvent;
 use App\Models\ReconciliationRun;
 use App\Models\Settlement;
@@ -81,27 +79,7 @@ class ReconciliationService
                 })
                 ->get();
 
-            // 4. Platform Subscriptions (Platform entity)
-            $platformAttempts = PlatformPaymentAttempt::query()
-                ->where('organization_id', $organization->id)
-                ->where('status', 'succeeded')
-                ->where(function ($q) use ($from, $to) {
-                    $q->whereBetween('paid_at', [$from, $to])
-                        ->orWhereBetween('created_at', [$from, $to]);
-                })
-                ->with('receipt')
-                ->get();
-
-            $platformReceipts = PlatformProviderReceipt::query()
-                ->whereHas('paymentAttempt', fn ($q) => $q->where('organization_id', $organization->id))
-                ->where(function ($q) use ($from, $to) {
-                    $q->whereBetween('verified_at', [$from, $to])
-                        ->orWhereBetween('created_at', [$from, $to]);
-                })
-                ->with('paymentAttempt')
-                ->get();
-
-            // 5. Legacy (Wallet/Custody, Settlements, Payouts, Journals)
+            // 4. Legacy (Wallet/Custody, Settlements, Payouts, Journals)
             $journals = Journal::query()
                 ->where('organization_id', $organization->id)
                 ->whereBetween('posted_at', [$from, $to])
@@ -275,81 +253,7 @@ class ReconciliationService
                 }
             }
 
-            // Process Platform Subscriptions
-            $platformExpected = (int) $platformAttempts->sum('amount');
-            $platformVerified = (int) $platformReceipts->sum('amount');
-            $receiversBreakdown['platform'] = [
-                'entity' => 'platform',
-                'receiver' => 'platform',
-                'expected_total' => $platformExpected,
-                'verified_total' => $platformVerified,
-                'variance' => $platformExpected - $platformVerified,
-                'abs_variance' => abs($platformExpected - $platformVerified),
-            ];
-
-            foreach ($platformAttempts as $pAttempt) {
-                $pReceipt = $pAttempt->receipt ?? $platformReceipts->firstWhere('payment_attempt_id', $pAttempt->id);
-                $expectedAmount = (int) $pAttempt->amount;
-                $verifiedAmount = $pReceipt ? (int) $pReceipt->amount : 0;
-
-                if (! $pReceipt) {
-                    $variance = $expectedAmount;
-                    $mismatches[] = [
-                        'id' => "platform_attempt_no_receipt_{$pAttempt->id}",
-                        'entity' => 'platform',
-                        'receiver' => 'platform',
-                        'type' => 'platform_attempt_without_receipt',
-                        'reference' => "platform_attempt:{$pAttempt->id}",
-                        'source' => 'platform_subscriptions',
-                        'purpose_id' => (string) ($pAttempt->subscription_id ?? $pAttempt->id),
-                        'expected_amount' => $expectedAmount,
-                        'verified_amount' => 0,
-                        'variance' => $variance,
-                        'abs_variance' => abs($variance),
-                        'reason' => "Platform subscription attempt #{$pAttempt->id} has no verified provider receipt.",
-                    ];
-                } elseif ($expectedAmount !== $verifiedAmount) {
-                    $variance = $expectedAmount - $verifiedAmount;
-                    $mismatches[] = [
-                        'id' => "platform_variance_{$pAttempt->id}",
-                        'entity' => 'platform',
-                        'receiver' => 'platform',
-                        'type' => 'platform_amount_variance',
-                        'reference' => "platform_attempt:{$pAttempt->id}",
-                        'source' => 'platform_subscriptions',
-                        'purpose_id' => (string) ($pAttempt->subscription_id ?? $pAttempt->id),
-                        'expected_amount' => $expectedAmount,
-                        'verified_amount' => $verifiedAmount,
-                        'variance' => $variance,
-                        'abs_variance' => abs($variance),
-                        'reason' => "Platform subscription attempt #{$pAttempt->id} amount ({$expectedAmount}) differs from receipt ({$verifiedAmount}).",
-                    ];
-                }
-            }
-
-            foreach ($platformReceipts as $pReceipt) {
-                $hasSucceededAttempt = $pReceipt->paymentAttempt && $pReceipt->paymentAttempt->status === 'succeeded';
-                if (! $hasSucceededAttempt) {
-                    $verifiedAmount = (int) $pReceipt->amount;
-                    $variance = -$verifiedAmount;
-                    $mismatches[] = [
-                        'id' => "platform_receipt_unallocated_{$pReceipt->id}",
-                        'entity' => 'platform',
-                        'receiver' => 'platform',
-                        'type' => 'platform_receipt_unmatched',
-                        'reference' => "platform_receipt:{$pReceipt->id}",
-                        'source' => 'platform_subscriptions',
-                        'purpose_id' => (string) $pReceipt->provider_transaction_id,
-                        'expected_amount' => 0,
-                        'verified_amount' => $verifiedAmount,
-                        'variance' => $variance,
-                        'abs_variance' => abs($variance),
-                        'reason' => "Platform provider receipt #{$pReceipt->id} has no matching succeeded attempt.",
-                    ];
-                }
-            }
-
-            // Process Legacy Entity (ProviderEvents vs Journals not covered by direct owner/platform)
+            // Process Legacy Entity (ProviderEvents vs Journals not covered by direct owner receipts)
             $ownerReceiptEventIds = $ownerReceipts->pluck('provider_event_id')->filter()->all();
             $standaloneProviderEvents = $providerEvents->reject(fn ($pe) => in_array($pe->event_id, $ownerReceiptEventIds, true));
             $legacyProvSum = (int) $standaloneProviderEvents->sum('amount');
@@ -397,8 +301,8 @@ class ReconciliationService
             $totalMismatch = (int) array_sum(array_column($mismatches, 'abs_variance'));
 
             $verifiedOwnerReceiptsTotal = (int) $ownerReceipts->whereIn('status', [OwnerPaymentReceipt::STATUS_ALLOCATED, 'verified', 'paid'])->sum('amount');
-            $providerTotal = $verifiedOwnerReceiptsTotal + $legacyProvSum + $platformVerified;
-            $journalTotal = $legacyJournSum + (int) $allocations->sum('amount') + $platformExpected;
+            $providerTotal = $verifiedOwnerReceiptsTotal + $legacyProvSum;
+            $journalTotal = $legacyJournSum + (int) $allocations->sum('amount');
 
             $details = [
                 'breakdown' => [
@@ -414,14 +318,6 @@ class ReconciliationService
                         ],
                         'total_expected' => (int) $allocations->sum('amount'),
                         'total_verified' => $verifiedOwnerReceiptsTotal,
-                    ],
-                    'platform' => [
-                        'subscriptions' => [
-                            'count' => $platformAttempts->count(),
-                            'amount' => $platformExpected,
-                        ],
-                        'total_expected' => $platformExpected,
-                        'total_verified' => $platformVerified,
                     ],
                     'legacy' => [
                         'journals' => [
@@ -453,10 +349,6 @@ class ReconciliationService
                     'refunds' => [
                         'count' => $refunds->count(),
                         'amount' => (int) $refunds->sum('amount'),
-                    ],
-                    'platform_subscriptions' => [
-                        'count' => $platformAttempts->count(),
-                        'amount' => $platformExpected,
                     ],
                     'legacy' => [
                         'count' => $journals->count(),

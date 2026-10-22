@@ -15,6 +15,9 @@ interface VenuePackageRepositoryInterface
 
     public function statusAt(int $venueId, CarbonInterface $at): PackageStatus;
 
+    /** @return Collection<int, VenuePackage> D11: each venue's current package, not terminated, venue not closed, ending in (after, until], with its venue */
+    public function currentEndingBetween(CarbonInterface $after, CarbonInterface $until): Collection;
+
     /** Locks the venues row: the shared lock of every package change (D4, D6, D8), taken before any package row. */
     public function lockVenueForPackage(int $venueId): ?Venue;
 

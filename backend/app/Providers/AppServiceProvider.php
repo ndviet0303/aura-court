@@ -2,9 +2,7 @@
 
 namespace App\Providers;
 
-use App\Contracts\Infrastructure\SubscriptionPaymentAdapterInterface;
 use App\Contracts\Payment\PaymentProviderInterface;
-use App\Infrastructure\Payment\ProviderNeutralSubscriptionPaymentAdapter;
 use App\Services\Auth\EmailLinkThrottle;
 use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Infrastructure\TenantContext;
@@ -37,10 +35,6 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(PaymentProviderManager::class, fn ($app) => new PaymentProviderManager(
             $app->make(PayOsPaymentProvider::class),
         ));
-        $this->app->singleton(
-            SubscriptionPaymentAdapterInterface::class,
-            ProviderNeutralSubscriptionPaymentAdapter::class
-        );
     }
 
     /**

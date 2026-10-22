@@ -8,11 +8,11 @@ use Carbon\CarbonInterface;
 
 class EloquentPackagePaymentRequestRepository implements PackagePaymentRequestRepositoryInterface
 {
-    public function expireOverdueForVenue(int $venueId, CarbonInterface $now): int
+    public function expireOverdue(CarbonInterface $now, ?int $venueId = null): int
     {
         // The column holds UTC wall time and the grammar binds a Carbon without converting it.
         return PackagePaymentRequest::query()
-            ->where('venue_id', $venueId)
+            ->when($venueId !== null, fn ($query) => $query->where('venue_id', $venueId))
             ->where('status', PackagePaymentRequest::STATUS_PENDING)
             ->where('expires_at', '<=', $now->copy()->utc())
             ->update(['status' => PackagePaymentRequest::STATUS_EXPIRED]);

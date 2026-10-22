@@ -2,8 +2,9 @@
 
 namespace App\Domain\Venue\Actions;
 
+use App\Contracts\Repositories\VenuePackageRepositoryInterface;
+use App\Domain\Package\Enums\PackageStatus;
 use App\Domain\Partner\Services\PartnerRolloutService;
-use App\Domain\Subscription\Actions\EvaluatePlatformEntitlement;
 use App\Models\Court;
 use App\Models\Venue;
 use App\Services\Reservation\CourtPriceRuleService;
@@ -11,21 +12,10 @@ use Illuminate\Validation\ValidationException;
 
 class VerifyEffectiveBookingEligibility
 {
-    private array $entitlementCache = [];
-
     public function __construct(
-        private readonly EvaluatePlatformEntitlement $entitlementEvaluator,
+        private readonly VenuePackageRepositoryInterface $packages,
         private readonly CourtPriceRuleService $priceRules,
     ) {}
-
-    public function getEntitlement(int $orgId): array
-    {
-        if (! isset($this->entitlementCache[$orgId])) {
-            $this->entitlementCache[$orgId] = $this->entitlementEvaluator->execute($orgId);
-        }
-
-        return $this->entitlementCache[$orgId];
-    }
 
     public function execute(Court|int $court): array
     {
@@ -86,9 +76,7 @@ class VerifyEffectiveBookingEligibility
         }
 
         $org = $venueModel->organization;
-        $rollout = app(PartnerRolloutService::class);
-        $enforcePublication = $org ? $rollout->shouldEnforce($org, 'publication') : false;
-        $enforceSubscription = $org ? $rollout->shouldEnforce($org, 'subscription') : false;
+        $enforcePublication = $org ? app(PartnerRolloutService::class)->shouldEnforce($org, 'publication') : false;
 
         if (! $venueModel->isActive() || $venueModel->isSuspended()) {
             return [
@@ -123,18 +111,13 @@ class VerifyEffectiveBookingEligibility
             ];
         }
 
-        if ($enforceSubscription) {
-            $entitlement = $this->getEntitlement($org->id);
-            if (! $entitlement['can_take_bookings']) {
-                return [
-                    'eligible' => false,
-                    'reason' => 'SUBSCRIPTION_INELIGIBLE',
-                    'message' => 'Gói dịch vụ nền tảng của câu lạc bộ đã hết hạn hoặc chưa kích hoạt. Không thể nhận lịch đặt mới.',
-                ];
-            }
-        } elseif (config('partner.shadow_mode', false)) {
-            $entitlement = $this->getEntitlement($org->id);
-            $rollout->recordShadowComparison($venueModel, 'booking_eligibility', true, (bool) ($entitlement['can_take_bookings'] ?? false));
+        // D9: the venue's own package at now; booking paths call this after locking the venue row, which every package change locks first.
+        if ($this->packages->statusAt($venueModel->id, now()) !== PackageStatus::Active) {
+            return [
+                'eligible' => false,
+                'reason' => 'package_inactive',
+                'message' => 'Cơ sở chưa có gói nền tảng còn hiệu lực nên tạm thời không nhận lịch đặt mới.',
+            ];
         }
 
         return [
@@ -149,9 +132,9 @@ class VerifyEffectiveBookingEligibility
         $result = $this->execute($court);
 
         if (! $result['eligible']) {
-            if ($result['reason'] === 'SUBSCRIPTION_INELIGIBLE') {
+            if ($result['reason'] === 'package_inactive') {
                 throw ValidationException::withMessages([
-                    'subscription' => [$result['message']],
+                    'package' => [$result['message']],
                 ]);
             }
 

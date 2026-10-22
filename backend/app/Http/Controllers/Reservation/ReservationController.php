@@ -191,7 +191,7 @@ class ReservationController extends Controller
             ...self::NO_BENEFITS,
         ], self::NO_BENEFIT_MESSAGES);
         if (isset($data['court_id'])) {
-            // Outside the idempotent transaction, so a request-time subscription expiry commits even though checkout is rejected.
+            // Early public-facing rejection; checkout rechecks under the court and venue locks.
             app(VerifyEffectiveBookingEligibility::class)->assertEligible((int) $data['court_id'], publicFacing: true);
         }
 

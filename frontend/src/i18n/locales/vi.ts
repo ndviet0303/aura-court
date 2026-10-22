@@ -2102,7 +2102,6 @@ export default {
       endedNotice: 'Đã kết thúc bảng giá của sân.',
       retiredNotice: 'Đã ngừng bảng giá.',
       versionCreatedNotice: 'Đã công bố phiên bản mới.',
-      planRequired: 'Cần gói dịch vụ nền tảng còn hạn để tạo bảng giá hoặc công bố phiên bản mới.',
       form: {
         title: 'Tạo bảng giá',
         nameLabel: 'Tên bảng giá',

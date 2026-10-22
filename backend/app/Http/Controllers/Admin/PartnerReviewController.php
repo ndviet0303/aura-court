@@ -156,7 +156,7 @@ class PartnerReviewController extends Controller
             'notes' => 'nullable|string|max:500',
         ]);
 
-        $result = $action->execute(
+        $org = $action->execute(
             organizationId: $organizationId,
             actorId: $request->user()->id,
             notes: $request->input('notes')
@@ -164,11 +164,9 @@ class PartnerReviewController extends Controller
 
         return response()->json([
             'data' => [
-                'id' => $result['organization']->id,
-                'name' => $result['organization']->name,
-                'partner_status' => $result['organization']->partner_status,
-                'has_valid_entitlement' => $result['has_valid_entitlement'],
-                'new_bookings_enabled' => $result['new_bookings_enabled'],
+                'id' => $org->id,
+                'name' => $org->name,
+                'partner_status' => $org->partner_status,
             ],
             'message' => 'Đã khôi phục hoạt động đối tác.',
         ]);

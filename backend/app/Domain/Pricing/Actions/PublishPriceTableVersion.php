@@ -4,7 +4,6 @@ namespace App\Domain\Pricing\Actions;
 
 use App\Contracts\Repositories\PriceTableRepositoryInterface;
 use App\Domain\Pricing\DTOs\PublishPriceTableVersionData;
-use App\Domain\Subscription\Actions\EvaluatePlatformEntitlement;
 use App\Events\CourtPricesTookEffect;
 use App\Models\PriceTable;
 use App\Services\Pricing\PriceCoverageService;
@@ -24,19 +23,10 @@ class PublishPriceTableVersion
     public function __construct(
         private readonly PriceTableRepositoryInterface $priceTables,
         private readonly PriceCoverageService $coverage,
-        private readonly EvaluatePlatformEntitlement $entitlement,
     ) {}
 
     public function execute(PublishPriceTableVersionData $data): PriceTable
     {
-        $entitlement = $this->entitlement->execute($data->organizationId);
-        if (! $entitlement['is_valid']) {
-            abort(response()->json([
-                'message' => 'Cần gói dịch vụ nền tảng còn hạn để công bố bảng giá.',
-                'code' => $entitlement['reason'] ?? 'SUBSCRIPTION_REQUIRED',
-            ], 403));
-        }
-
         [$table, $effectiveAt, $courtIds] = DB::transaction(function () use ($data): array {
             // Only the table row: link changes lock their courts before this same row, so the order stays court first.
             $table = $this->priceTables->findForUpdate($data->priceTableId) ?? abort(404);

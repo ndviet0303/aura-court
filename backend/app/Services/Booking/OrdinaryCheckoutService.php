@@ -48,14 +48,12 @@ class OrdinaryCheckoutService
                 $quote = $this->resolveQuote($user->id, $organizationId, $data);
                 abort_if($quote->status !== 'open', 409, 'Price quote has already been accepted.');
                 abort_if((bool) $quote->expires_at?->isPast(), 409, 'Price quote has expired.');
-                // Step-14: re-check the quote on the locked rows; lock the subscription before the court, as quote creation does, so bookings cannot deadlock.
-                $verifier = app(VerifyEffectiveBookingEligibility::class);
-                $verifier->getEntitlement((int) $quote->organization_id);
+                // Step-14: re-check the quote on the locked rows: the court, then the venue, under whose lock the gate reads the package (D9).
                 $court = Court::query()->withoutGlobalScope('tenant_isolation')->whereKey($quote->court_id)->lockForUpdate()->firstOrFail();
                 $lockedVenue = Venue::query()->whereKey($court->venue_id)->lockForUpdate()->firstOrFail();
                 // BR-20/21: staff book for a customer only at a venue assigned to them.
                 abort_if($actor !== null && ! $actor->canOperateVenue($lockedVenue), 403, 'Bạn không được giao cơ sở này.');
-                $eligibility = $verifier->execute($court->setRelation('venue', $lockedVenue));
+                $eligibility = app(VerifyEffectiveBookingEligibility::class)->execute($court->setRelation('venue', $lockedVenue));
                 abort_unless($eligibility['eligible'], 409, $eligibility['message'] ?? '');
                 $this->intake->recheckBookingTime($court, $quote);
                 $intervals = fn (): array => collect((array) $quote->slot_snapshot)->map(fn (array $slotSnapshot): array => [

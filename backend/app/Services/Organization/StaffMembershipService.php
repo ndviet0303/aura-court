@@ -2,7 +2,6 @@
 
 namespace App\Services\Organization;
 
-use App\Domain\Subscription\Actions\EnforcePlanQuota;
 use App\Models\ElevatedAuditLog;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
@@ -22,10 +21,6 @@ class StaffMembershipService
             $before = $this->snapshot($member);
 
             $status = $data['status'] ?? $member->status;
-            if ($status === 'active' && $member->status !== 'active' && $organization->hasActiveSubscription()) {
-                app(EnforcePlanQuota::class)->execute($organization->id, 'staff', 1);
-            }
-
             $payload = ['status' => $status];
             if (array_key_exists('venue_ids', $data)) {
                 // An empty list leaves the staff member without any venue, so without venue access (BR-20).

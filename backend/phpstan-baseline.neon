@@ -211,116 +211,8 @@ parameters:
 			path: app/Domain/Social/Actions/CreateMatchPost.php
 
 		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:courts\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Domain/Subscription/Actions/ConfirmSubscriptionPayment.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:members\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Domain/Subscription/Actions/ConfirmSubscriptionPayment.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:venues\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Domain/Subscription/Actions/ConfirmSubscriptionPayment.php
-
-		-
-			message: '#^Method App\\Domain\\Subscription\\Actions\\ConfirmSubscriptionPayment\:\:execute\(\) should return array\{subscription\: App\\Models\\PlatformSubscription, attempt\: App\\Models\\PlatformPaymentAttempt, is_duplicate\: bool\} but returns array\{subscription\: Illuminate\\Database\\Eloquent\\Model\|null, attempt\: App\\Models\\PlatformPaymentAttempt, is_duplicate\: bool\}\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domain/Subscription/Actions/ConfirmSubscriptionPayment.php
-
-		-
-			message: '#^Strict comparison using \!\=\= between Carbon\\Carbon and null will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 1
-			path: app/Domain/Subscription/Actions/ConfirmSubscriptionPayment.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>day" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Domain/Subscription/Actions/ConfirmSubscriptionPayment.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>version" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Domain/Subscription/Actions/ConfirmSubscriptionPayment.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Domain/Subscription/Actions/EnforcePlanQuota.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:hasFeature\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Domain/Subscription/Actions/EnforcePlanQuota.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:members\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Domain/Subscription/Actions/EvaluatePlatformEntitlement.php
-
-		-
-			message: '#^Offset ''provider'' on array\{checkout_url\: string, provider\: string, provider_ref\: string, qr_code\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 1
-			path: app/Domain/Subscription/Actions/InitiateSubscriptionPayment.php
-
-		-
-			message: '#^Strict comparison using \=\=\= between int\<0, max\> and null will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 1
-			path: app/Domain/Subscription/Actions/InitiateSubscriptionPayment.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:members\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Domain/Subscription/Actions/ProcessExpiredSubscriptions.php
-
-		-
-			message: '#^Offset ''provider'' on array\{checkout_url\: string, provider\: string, provider_ref\: string, qr_code\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 1
-			path: app/Domain/Subscription/Actions/RenewPlatformSubscription.php
-
-		-
-			message: '#^Strict comparison using \=\=\= between int\<0, max\> and null will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 1
-			path: app/Domain/Subscription/Actions/SelectPlatformPlan.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$max_courts\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domain/Venue/Actions/EvaluateVenueReadiness.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Venue/Actions/EvaluateVenueReadiness.php
-
-		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:filter\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: bool\)\|null, Closure\(App\\Models\\Court\)\: bool given\.$#'
 			identifier: argument.type
-			count: 1
-			path: app/Domain/Venue/Actions/EvaluateVenueReadiness.php
-
-		-
-			message: '#^Right side of && is always true\.$#'
-			identifier: booleanAnd.rightAlwaysTrue
 			count: 1
 			path: app/Domain/Venue/Actions/EvaluateVenueReadiness.php
 
@@ -767,78 +659,6 @@ parameters:
 			identifier: return.type
 			count: 1
 			path: app/Http/Controllers/Social/FriendshipController.php
-
-		-
-			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\PlatformPlan\|null given\.$#'
-			identifier: argument.type
-			count: 4
-			path: app/Http/Controllers/Subscription/PlatformPlanController.php
-
-		-
-			message: '#^Strict comparison using \=\=\= between int\<0, max\> and null will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 1
-			path: app/Http/Controllers/Subscription/PlatformPlanController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$max_courts\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Subscription/PlatformSubscriptionController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$max_staff\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Subscription/PlatformSubscriptionController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$max_venues\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Subscription/PlatformSubscriptionController.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:courts\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Controllers/Subscription/PlatformSubscriptionController.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:members\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Controllers/Subscription/PlatformSubscriptionController.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:venues\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Controllers/Subscription/PlatformSubscriptionController.php
-
-		-
-			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, \(Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\)\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Subscription/PlatformSubscriptionController.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>max_courts" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Controllers/Subscription/PlatformSubscriptionController.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>max_staff" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Controllers/Subscription/PlatformSubscriptionController.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>max_venues" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Controllers/Subscription/PlatformSubscriptionController.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:active\(\)\.$#'
@@ -1423,66 +1243,6 @@ parameters:
 			path: app/Http/Resources/Partner/PartnerApplicationResource.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Platform/PlatformSubscriptionResource.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$features\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Platform/PlatformSubscriptionResource.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$max_courts\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Platform/PlatformSubscriptionResource.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$max_staff\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Platform/PlatformSubscriptionResource.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$max_venues\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Platform/PlatformSubscriptionResource.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/Platform/PlatformSubscriptionResource.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>features" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Resources/Platform/PlatformSubscriptionResource.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>max_courts" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Resources/Platform/PlatformSubscriptionResource.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>max_staff" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Resources/Platform/PlatformSubscriptionResource.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>max_venues" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Resources/Platform/PlatformSubscriptionResource.php
-
-		-
 			message: '#^Method App\\Infrastructure\\Repositories\\Eloquent\\EloquentCourtBlockRepository\:\:createForCourt\(\) should return App\\Models\\CourtBlock but returns Illuminate\\Database\\Eloquent\\Model\.$#'
 			identifier: return.type
 			count: 1
@@ -1549,33 +1309,15 @@ parameters:
 			path: app/Infrastructure/Services/DurableNotificationService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sourceKyc\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Infrastructure/Services/DurableNotificationService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Infrastructure/Services/DurableNotificationService.php
 
 		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:members\(\)\.$#'
-			identifier: method.notFound
-			count: 4
-			path: app/Infrastructure/Services/DurableNotificationService.php
-
-		-
 			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Http\\Request\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 2
-			path: app/Infrastructure/Services/DurableNotificationService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>user_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 4
 			path: app/Infrastructure/Services/DurableNotificationService.php
 
 		-
@@ -1619,12 +1361,6 @@ parameters:
 			identifier: return.type
 			count: 2
 			path: app/Models/Friendship.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:isValid\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Models/Organization.php
 
 		-
 			message: '#^Left side of && is always true\.$#'
@@ -1983,13 +1719,13 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 2
 			path: app/Services/Finance/FinancialPostingService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$currency\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: app/Services/Finance/FinancialPostingService.php
 
 		-
@@ -2001,7 +1737,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: app/Services/Finance/FinancialPostingService.php
 
 		-
@@ -2013,7 +1749,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$organization_id\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 1
 			path: app/Services/Finance/FinancialPostingService.php
 
 		-
@@ -2024,12 +1760,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$payment_attempt_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Finance/FinancialPostingService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$provider\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Services/Finance/FinancialPostingService.php
@@ -2059,12 +1789,6 @@ parameters:
 			path: app/Services/Finance/FinancialPostingService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$reference_code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Finance/FinancialPostingService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$side\.$#'
 			identifier: property.notFound
 			count: 1
@@ -2085,12 +1809,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
 			identifier: property.notFound
-			count: 2
-			path: app/Services/Finance/FinancialPostingService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$subscription_id\.$#'
-			identifier: property.notFound
 			count: 1
 			path: app/Services/Finance/FinancialPostingService.php
 
@@ -2103,12 +1821,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$venue_id\.$#'
 			identifier: property.notFound
-			count: 1
-			path: app/Services/Finance/FinancialPostingService.php
-
-		-
-			message: '#^Negated boolean expression is always false\.$#'
-			identifier: booleanNot.alwaysFalse
 			count: 1
 			path: app/Services/Finance/FinancialPostingService.php
 
@@ -2175,13 +1887,13 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: app/Services/Finance/ReconciliationService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 2
 			path: app/Services/Finance/ReconciliationService.php
 
 		-
@@ -2289,12 +2001,6 @@ parameters:
 		-
 			message: '#^Comparison operation "\>" between int\<1, max\> and 0 is always true\.$#'
 			identifier: greater.alwaysTrue
-			count: 1
-			path: app/Services/Payment/ProviderEventHandler.php
-
-		-
-			message: '#^Negated boolean expression is always false\.$#'
-			identifier: booleanNot.alwaysFalse
 			count: 1
 			path: app/Services/Payment/ProviderEventHandler.php
 

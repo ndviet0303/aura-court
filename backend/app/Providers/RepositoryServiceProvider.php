@@ -15,8 +15,6 @@ use App\Contracts\Repositories\PackagePaymentReceiptRepositoryInterface;
 use App\Contracts\Repositories\PackagePaymentRequestRepositoryInterface;
 use App\Contracts\Repositories\PackagePriceRepositoryInterface;
 use App\Contracts\Repositories\PaymentRepositoryInterface;
-use App\Contracts\Repositories\PlatformPlanRepositoryInterface;
-use App\Contracts\Repositories\PlatformSubscriptionRepositoryInterface;
 use App\Contracts\Repositories\PriceTableRepositoryInterface;
 use App\Contracts\Repositories\ReconciliationRepositoryInterface;
 use App\Contracts\Repositories\RecurringContractRepositoryInterface;
@@ -40,8 +38,6 @@ use App\Infrastructure\Repositories\Eloquent\EloquentPackagePaymentReceiptReposi
 use App\Infrastructure\Repositories\Eloquent\EloquentPackagePaymentRequestRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPackagePriceRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPaymentRepository;
-use App\Infrastructure\Repositories\Eloquent\EloquentPlatformPlanRepository;
-use App\Infrastructure\Repositories\Eloquent\EloquentPlatformSubscriptionRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPriceTableRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReconciliationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentRecurringContractRepository;
@@ -77,8 +73,6 @@ class RepositoryServiceProvider extends ServiceProvider
         TenantMembershipPlanRepositoryInterface::class => EloquentTenantMembershipPlanRepository::class,
         LoyaltyRuleRepositoryInterface::class => EloquentLoyaltyRuleRepository::class,
         FileStorageServiceInterface::class => FileStorageService::class,
-        PlatformPlanRepositoryInterface::class => EloquentPlatformPlanRepository::class,
-        PlatformSubscriptionRepositoryInterface::class => EloquentPlatformSubscriptionRepository::class,
         VenueLifecycleRepositoryInterface::class => EloquentVenueLifecycleRepository::class,
         OrganizationLockRepositoryInterface::class => EloquentOrganizationLockRepository::class,
         PartnerDocumentStorageInterface::class => PrivatePartnerDocumentStorage::class,

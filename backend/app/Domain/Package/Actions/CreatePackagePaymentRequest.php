@@ -41,7 +41,7 @@ class CreatePackagePaymentRequest
                 throw new PackageRuleException(422, 'VENUE_CLOSED', 'Cơ sở đã đóng vĩnh viễn nên không đăng ký gói được.');
             }
 
-            $this->requests->expireOverdueForVenue($venue->id, $now);
+            $this->requests->expireOverdue($now, $venue->id);
             $pending = $this->requests->findPendingForVenue($venue->id);
             if ($pending !== null) {
                 if ($pending->term_days === $data->term) {

@@ -3,12 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Contracts\Repositories\PriceTableRepositoryInterface;
+use App\Domain\Package\Enums\PackageTerm;
 use App\Models\Court;
 use App\Models\HostKyc;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
-use App\Models\PlatformPlan;
-use App\Models\PlatformSubscription;
 use App\Models\PosProduct;
 use App\Models\PriceTable;
 use App\Models\ReceivingConnection;
@@ -16,6 +15,7 @@ use App\Models\User;
 use App\Models\Venue;
 use App\Models\VenueBookingPolicy;
 use App\Models\VenueOperatingSchedule;
+use App\Models\VenuePackage;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -205,7 +205,6 @@ class E2ESeedFixturesCommand extends Command
                 ]);
                 User::whereIn('email', $emails)->update(['status' => 'suspended']);
                 OrganizationMember::where('organization_id', $organizationId)->update(['status' => 'inactive']);
-                PlatformSubscription::where('organization_id', $organizationId)->update(['status' => 'expired', 'ends_at' => now()]);
                 Venue::where('organization_id', $organizationId)->update(['status' => Venue::STATUS_CLOSED]);
                 PosProduct::where('organization_id', $organizationId)->update(['is_active' => false]);
             }
@@ -316,31 +315,7 @@ class E2ESeedFixturesCommand extends Command
             $unverifiedCustomer->forceFill(['email_verified_at' => null, 'phone_verified_at' => null])->save();
 
             // -------------------------------------------------------------
-            // 2. Platform Plan
-            // -------------------------------------------------------------
-            $plan = PlatformPlan::firstOrCreate(
-                ['code' => "plan-e2e-standard-{$runId}"],
-                [
-                    'name' => "Standard E2E Plan {$runId}",
-                    'version' => 1,
-                    'price' => 500000,
-                    'currency' => 'VND',
-                    'billing_cycle' => 'monthly',
-                    'max_venues' => 1000,
-                    'max_courts' => 10000,
-                    'max_staff' => 20,
-                    'trial_enabled' => true,
-                    'trial_days' => 14,
-                    'terms_version' => 'v1.0',
-                    'terms_text' => 'Điều khoản sử dụng gói dịch vụ nền tảng Aura Court.',
-                    'status' => 'published',
-                    'is_active' => true,
-                    'published_at' => now()->subDays(10),
-                ]
-            );
-
-            // -------------------------------------------------------------
-            // 3. Organization 1 (Primary Tenant with 2 sibling venues)
+            // 2. Organization 1 (Primary Tenant with 2 sibling venues)
             // -------------------------------------------------------------
             $org1 = $createOrganization([
                 'name' => "Aura Club Primary {$runId}",
@@ -415,20 +390,6 @@ class E2ESeedFixturesCommand extends Command
                 'submitted_at' => now()->subDay(),
                 'version' => 1,
             ]);
-            // Org 1 Subscription
-            PlatformSubscription::create([
-                'organization_id' => $org1->id,
-                'plan_id' => $plan->id,
-                'plan_version' => 1,
-                'status' => 'active',
-                'billing_cycle' => 'monthly',
-                'auto_renew' => true,
-                'starts_at' => now()->subDays(5),
-                'ends_at' => now()->addMonths(1),
-                'price_snapshot' => 500000,
-                'currency_snapshot' => 'VND',
-            ]);
-
             // Venue 1-A (Primary Venue of Org 1)
             $venue1A = Venue::create([
                 'organization_id' => $org1->id,
@@ -661,7 +622,7 @@ class E2ESeedFixturesCommand extends Command
             ]);
 
             // -------------------------------------------------------------
-            // 4. Organization 2 (Foreign Tenant)
+            // 3. Organization 2 (Foreign Tenant)
             // -------------------------------------------------------------
             $org2 = $createOrganization([
                 'name' => "Foreign Club {$runId}",
@@ -704,18 +665,6 @@ class E2ESeedFixturesCommand extends Command
                 'reviewed_at' => now(),
                 'submitted_at' => now()->subDay(),
                 'version' => 1,
-            ]);
-            PlatformSubscription::create([
-                'organization_id' => $org2->id,
-                'plan_id' => $plan->id,
-                'plan_version' => 1,
-                'status' => 'active',
-                'billing_cycle' => 'monthly',
-                'auto_renew' => true,
-                'starts_at' => now()->subDays(5),
-                'ends_at' => now()->addMonths(1),
-                'price_snapshot' => 500000,
-                'currency_snapshot' => 'VND',
             ]);
 
             $venue2 = Venue::create([
@@ -775,10 +724,13 @@ class E2ESeedFixturesCommand extends Command
             ]);
 
             $priceCourts([$court2], 150000);
+            // D9: a venue takes new bookings only while it has an active package.
+            foreach ([$venue1A, $venue1B, $venue2] as $venue) {
+                VenuePackage::create(['organization_id' => $venue->organization_id, 'venue_id' => $venue->id, 'term_days' => PackageTerm::Days360, 'starts_at' => now()->utc(), 'ends_at' => PackageTerm::Days360->endsAt(now())]);
+            }
             // Output JSON payload for the runner
             $payload = [
                 'run_id' => $runId,
-                'platform_plan' => ['id' => $plan->id, 'code' => $plan->code],
                 'users' => [
                     'admin' => ['id' => $admin->id, 'name' => $admin->name, 'email' => $admin->email, 'role' => 'admin', 'password' => $adminPassword],
                     'customer' => ['id' => $customer->id, 'name' => $customer->name, 'email' => $customer->email, 'role' => 'customer', 'password' => $customerPassword],

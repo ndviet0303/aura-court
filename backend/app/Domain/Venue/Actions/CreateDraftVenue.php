@@ -5,7 +5,6 @@ namespace App\Domain\Venue\Actions;
 use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Contracts\Repositories\OrganizationLockRepositoryInterface;
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
-use App\Domain\Subscription\Actions\EnforcePlanQuota;
 use App\Domain\Venue\DTOs\CreateDraftVenueData;
 use App\Models\Venue;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +15,6 @@ class CreateDraftVenue
     public function __construct(
         private readonly VenueLifecycleRepositoryInterface $venueRepo,
         private readonly OrganizationLockRepositoryInterface $orgLocks,
-        private readonly EnforcePlanQuota $quota,
         private readonly DurableNotificationServiceInterface $notif,
     ) {}
 
@@ -38,9 +36,6 @@ class CreateDraftVenue
             if (! $hasPermission) {
                 abort(403, 'Bạn không có quyền tạo cơ sở cho câu lạc bộ này.');
             }
-
-            // Enforce plan quota before creation
-            $this->quota->execute($data->organizationId, 'venues', 1);
 
             $baseSlug = Str::slug($data->name) ?: 'venue';
             $slug = $baseSlug.'-'.substr(uniqid(), -5);

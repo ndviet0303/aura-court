@@ -181,9 +181,6 @@ export function usePriceTables() {
         errorCode: error.code,
       }
     }
-    if (error?.code === 'SUBSCRIPTION_EXPIRED' || error?.code === 'NO_ACTIVE_SUBSCRIPTION') {
-      return { message: t('admin.priceTables.planRequired'), errorCode: error.code }
-    }
     return { error }
   })
 

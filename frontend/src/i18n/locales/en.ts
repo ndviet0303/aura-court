@@ -2102,8 +2102,6 @@ export default {
       endedNotice: "The court's price table link was ended.",
       retiredNotice: 'Price table retired.',
       versionCreatedNotice: 'New version published.',
-      planRequired:
-        'A current platform plan is required to create price tables or publish new versions.',
       form: {
         title: 'Create price table',
         nameLabel: 'Table name',

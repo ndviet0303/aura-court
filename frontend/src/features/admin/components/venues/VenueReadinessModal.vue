@@ -241,22 +241,6 @@ async function handleToggleOperational(targetStatus: 'published' | 'temporarily_
               <span
                 class="material-symbols-outlined text-sm"
                 :class="
-                  readinessData.checklist.subscription_entitled
-                    ? 'text-emerald-600'
-                    : 'text-red-500'
-                "
-              >
-                {{ readinessData.checklist.subscription_entitled ? 'check' : 'close' }}
-              </span>
-              <span>Gói dịch vụ nền tảng hợp lệ</span>
-            </div>
-
-            <div
-              class="flex items-center gap-2 p-2.5 rounded border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30"
-            >
-              <span
-                class="material-symbols-outlined text-sm"
-                :class="
                   readinessData.checklist.venue_metadata ? 'text-emerald-600' : 'text-red-500'
                 "
               >

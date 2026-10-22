@@ -2,7 +2,6 @@
 
 namespace App\Domain\Venue\Actions;
 
-use App\Contracts\Repositories\PlatformSubscriptionRepositoryInterface;
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
 use App\Models\Court;
 use App\Models\ReceivingConnection;
@@ -14,7 +13,6 @@ class EvaluateVenueReadiness
 {
     public function __construct(
         private readonly VenueLifecycleRepositoryInterface $venueRepo,
-        private readonly PlatformSubscriptionRepositoryInterface $subRepo,
         private readonly VenueOperatingCalendar $operatingCalendar,
         private readonly CourtPriceRuleService $priceRules,
     ) {}
@@ -50,19 +48,7 @@ class EvaluateVenueReadiness
             ];
         }
 
-        // 2. Check Subscription / Trial Entitlement
-        $sub = $org ? $this->subRepo->findActiveForOrganization($org->id) : null;
-        $subscriptionValid = $sub !== null && $sub->isValid();
-        $checklist['subscription_entitled'] = $subscriptionValid;
-        if (! $subscriptionValid) {
-            $missingItems[] = [
-                'code' => 'SUBSCRIPTION_REQUIRED',
-                'message' => 'Câu lạc bộ cần có gói dịch vụ nền tảng hoặc chương trình dùng thử đang hoạt động.',
-                'field' => 'subscription',
-            ];
-        }
-
-        // 3. Venue Identity (Name, Address)
+        // 2. Venue Identity (Name, Address)
         $hasName = ! empty($venue->name) && mb_strlen(trim((string) $venue->name)) >= 3;
         $checklist['venue_name'] = $hasName;
         if (! $hasName) {
@@ -83,7 +69,7 @@ class EvaluateVenueReadiness
             ];
         }
 
-        // 4. Active Courts (At least 1 active court)
+        // 3. Active Courts (At least 1 active court)
         $activeCourts = $venue->courts->filter(fn (Court $c) => (bool) $c->is_active);
         $hasActiveCourts = $activeCourts->isNotEmpty();
         $checklist['active_courts'] = $hasActiveCourts;
@@ -95,7 +81,7 @@ class EvaluateVenueReadiness
             ];
         }
 
-        // 5. Every active court has a normal price table link in effect
+        // 4. Every active court has a normal price table link in effect
         $courtsWithoutPrices = $activeCourts->count() - count($this->priceRules->pricedCourtIds($activeCourts));
         $pricingComplete = $hasActiveCourts && $courtsWithoutPrices === 0;
         $checklist['court_pricing'] = $pricingComplete;
@@ -148,21 +134,6 @@ class EvaluateVenueReadiness
                 'field' => 'receiving_connection',
             ];
         }
-
-        // 6. Quota Compliance (Venues and Courts within Plan Limits)
-        $quotaCompliant = true;
-        if ($sub && $sub->plan && $org) {
-            $totalCourts = $org->courts()->count();
-            if ($totalCourts > (int) $sub->plan->max_courts) {
-                $quotaCompliant = false;
-                $missingItems[] = [
-                    'code' => 'COURT_QUOTA_EXCEEDED',
-                    'message' => "Tổng số sân ({$totalCourts}) vượt quá giới hạn ({$sub->plan->max_courts}) của gói {$sub->plan->name}.",
-                    'field' => 'quotas.courts',
-                ];
-            }
-        }
-        $checklist['quota_compliant'] = $quotaCompliant;
 
         // Note: Optional staff and optional POS products MUST NOT block readiness!
         // Having 0 staff or 0 POS products is completely valid for readiness.

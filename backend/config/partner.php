@@ -27,17 +27,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Subscription Entitlement Enforcement
-    |--------------------------------------------------------------------------
-    |
-    | When enabled, venues are prevented from taking new bookings if the
-    | partner organization does not have an active platform subscription.
-    |
-    */
-    'enforce_subscription_check' => (bool) env('PARTNER_ENFORCE_SUBSCRIPTION_CHECK', false),
-
-    /*
-    |--------------------------------------------------------------------------
     | Enforced Organization Cohorts
     |--------------------------------------------------------------------------
     |
@@ -46,15 +35,4 @@ return [
     |
     */
     'enforce_cohorts' => array_filter(array_map('trim', explode(',', (string) env('PARTNER_ENFORCE_COHORTS', '*')))),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Shadow Comparison Mode
-    |--------------------------------------------------------------------------
-    |
-    | When true, calculates both legacy and v2 eligibility and logs any
-    | discrepancy without blocking customer operations in unenforced cohorts.
-    |
-    */
-    'shadow_mode' => (bool) env('PARTNER_SHADOW_MODE', true),
 ];

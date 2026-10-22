@@ -24,6 +24,24 @@ class EloquentVenuePackageRepository implements VenuePackageRepositoryInterface
         return $this->findCurrentForVenue($venueId)?->statusAt($at) ?? PackageStatus::None;
     }
 
+    public function currentEndingBetween(CarbonInterface $after, CarbonInterface $until): Collection
+    {
+        // The column holds UTC wall time and the grammar binds a Carbon without converting it.
+        return VenuePackage::query()
+            ->with('venue')
+            ->whereNull('terminated_at')
+            // D4: a closed venue can never renew or take bookings again, so it gets no reminder.
+            ->whereHas('venue', fn ($query) => $query->where('status', '!=', Venue::STATUS_CLOSED))
+            ->where('ends_at', '>', $after->copy()->utc())
+            ->where('ends_at', '<=', $until->copy()->utc())
+            // D1: a row that a newer purchase of the venue superseded is no longer its package.
+            ->whereNotExists(fn ($query) => $query->from('venue_packages as newer')
+                ->whereColumn('newer.venue_id', 'venue_packages.venue_id')
+                ->whereColumn('newer.id', '>', 'venue_packages.id'))
+            ->orderBy('id')
+            ->get();
+    }
+
     public function lockVenueForPackage(int $venueId): ?Venue
     {
         return Venue::query()->whereKey($venueId)->lockForUpdate()->first();

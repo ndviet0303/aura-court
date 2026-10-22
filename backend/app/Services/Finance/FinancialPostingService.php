@@ -10,7 +10,6 @@ use App\Models\OwnerPaymentReceipt;
 use App\Models\OwnerRefundObligation;
 use App\Models\PackagePaymentReceipt;
 use App\Models\Payment;
-use App\Models\PlatformProviderReceipt;
 use App\Models\ProviderEvent;
 use App\Models\Reservation;
 
@@ -117,45 +116,6 @@ class FinancialPostingService
         ], [
             ['account_id' => $accounts['owner_bank_cash']->id, 'side' => 'debit', 'amount' => (int) $receipt->amount, 'source_type' => OwnerPaymentReceipt::class, 'source_id' => $receipt->id],
             ['account_id' => $accounts['owner_direct_revenue']->id, 'side' => 'credit', 'amount' => (int) $receipt->amount, 'source_type' => OwnerPaymentReceipt::class, 'source_id' => $receipt->id],
-        ]);
-    }
-
-    public function postPlatformSubscriptionReceipt(PlatformProviderReceipt $receipt): Journal
-    {
-        if (! $receipt->verified_at || (int) $receipt->amount <= 0) {
-            throw new \InvalidArgumentException('Only a verified platform subscription receipt can be posted.');
-        }
-
-        $attempt = $receipt->paymentAttempt()->firstOrFail();
-        if (
-            $attempt->status !== 'succeeded'
-            || (int) $attempt->amount !== (int) $receipt->amount
-            || $attempt->currency !== $receipt->currency
-            || $attempt->provider !== $receipt->provider
-        ) {
-            throw new \InvalidArgumentException('Platform receipt does not match its verified payment attempt.');
-        }
-        $accounts = $this->ledger->systemAccounts((int) $attempt->organization_id);
-
-        return $this->ledger->postOnce([
-            'organization_id' => $attempt->organization_id,
-            'ledger_entity' => 'platform',
-            'payment_model' => 'platform_subscription_v1',
-            'event_type' => 'platform.subscription_receipt',
-            'event_id' => "platform-subscription-receipt:{$receipt->id}",
-            'reference' => $attempt->reference_code,
-            'currency' => $receipt->currency,
-            'description' => 'Verified platform subscription receipt',
-            'metadata' => [
-                'provider' => $receipt->provider,
-                'payment_attempt_id' => $attempt->id,
-                'subscription_id' => $attempt->subscription_id,
-                'receipt_id' => $receipt->id,
-                'commission' => 0,
-            ],
-        ], [
-            ['account_id' => $accounts['platform_bank_cash']->id, 'side' => 'debit', 'amount' => (int) $receipt->amount, 'source_type' => PlatformProviderReceipt::class, 'source_id' => $receipt->id],
-            ['account_id' => $accounts['platform_subscription_revenue']->id, 'side' => 'credit', 'amount' => (int) $receipt->amount, 'source_type' => PlatformProviderReceipt::class, 'source_id' => $receipt->id],
         ]);
     }
 

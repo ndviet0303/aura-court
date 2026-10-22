@@ -18,7 +18,6 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\OwnerRefundObligation;
 use App\Models\Payment;
-use App\Models\PlatformPaymentAttempt;
 use App\Models\PosOrder;
 use App\Models\Reservation;
 use App\Models\ReservationSlot;
@@ -327,7 +326,6 @@ class AdminController extends Controller
             'pos_revenue' => $data['pos_revenue'],
             'owner_refunds' => $data['owner_refunds'],
             'net_owner_revenue' => $data['net_owner_revenue'],
-            'platform_fees' => $data['platform_fees'],
             'occupancyRate' => $capacity > 0 ? round($allConfirmedSlots->count() / $capacity * 100, 1) : 0,
             'byHour' => $byHour,
             'byCourt' => $byCourt,
@@ -398,27 +396,6 @@ class AdminController extends Controller
                 'net_amount' => -((int) $ref->amount),
                 'created_at' => $ref->created_at?->toIso8601String(),
             ]);
-        }
-
-        // 4. Platform subscriptions (only if user is platform admin)
-        if ($data['is_platform_admin']) {
-            foreach ($data['platform_attempts'] as $pa) {
-                $code = $pa->reference_code ?: ('SUB-'.$pa->id);
-                $customer = $pa->organization?->name ?: ($pa->subscription?->organization?->name ?: 'Platform');
-
-                $csvRows->push([
-                    'code' => (string) $code,
-                    'source_type' => 'platform_subscription',
-                    'customer' => $customer,
-                    'venue_or_court' => 'Platform',
-                    'receiver_type' => 'platform',
-                    'status' => (string) $pa->status,
-                    'gross_amount' => (int) $pa->amount,
-                    'refund_amount' => 0,
-                    'net_amount' => (int) $pa->amount,
-                    'created_at' => $pa->created_at?->toIso8601String(),
-                ]);
-            }
         }
 
         $csvRows = $csvRows->sortByDesc('created_at')->values();
@@ -513,29 +490,6 @@ class AdminController extends Controller
 
         $ownerRefundsCollection = $ownerRefundsQuery->get();
 
-        // 4. Query Platform Subscriptions / Fees (only for platform admin)
-        $isPlatformAdmin = $user && $user->isPlatformAdmin();
-        $platformFees = 0;
-        $platformAttempts = collect();
-
-        if ($isPlatformAdmin) {
-            $platformAttemptsQuery = PlatformPaymentAttempt::query()
-                ->with(['organization', 'subscription.organization'])
-                ->where('status', 'succeeded')
-                ->where(function ($q) use ($from, $to) {
-                    $q->whereBetween('created_at', [$from, $to])
-                        ->orWhereBetween('paid_at', [$from, $to]);
-                });
-
-            if ($scopedVenueIds !== null) {
-                $scopedOrgIds = Venue::whereIn('id', $scopedVenueIds)->pluck('organization_id')->filter()->unique()->all();
-                $platformAttemptsQuery->whereIn('organization_id', $scopedOrgIds);
-            }
-
-            $platformAttempts = $platformAttemptsQuery->get();
-            $platformFees = (int) $platformAttempts->sum('amount');
-        }
-
         $bookingRevenue = (int) $canonicalBookings->sum('total_amount');
         $posRevenue = (int) $posOrders->sum('total_amount');
         $ownerRevenue = $bookingRevenue + $posRevenue;
@@ -547,18 +501,15 @@ class AdminController extends Controller
             'from' => $from,
             'to' => $to,
             'user' => $user,
-            'is_platform_admin' => $isPlatformAdmin,
             'scoped_venue_ids' => $scopedVenueIds,
             'canonical_bookings' => $canonicalBookings,
             'pos_orders' => $posOrders,
             'owner_refunds_collection' => $ownerRefundsCollection,
-            'platform_attempts' => $platformAttempts,
             'booking_revenue' => $bookingRevenue,
             'pos_revenue' => $posRevenue,
             'owner_revenue' => $ownerRevenue,
             'owner_refunds' => $ownerRefunds,
             'net_owner_revenue' => $netOwnerRevenue,
-            'platform_fees' => $platformFees,
         ];
     }
 

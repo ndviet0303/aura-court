@@ -8,9 +8,6 @@ use App\Models\AuditLog;
 use App\Models\Booking;
 use App\Models\HostKyc;
 use App\Models\OutboxMessage;
-use App\Models\PlatformPaymentAttempt;
-use App\Models\PlatformSubscription;
-use App\Models\User;
 use App\Models\VenuePublicationRevision;
 use App\Services\Infrastructure\OutboxService;
 use Illuminate\Database\Eloquent\Model;
@@ -111,51 +108,6 @@ class DurableNotificationService implements DurableNotificationServiceInterface
                 'aggregate_id' => $kyc->id,
             ],
             orgId: $kyc->organization_id
-        );
-    }
-
-    public function notifySubscriptionActivated(PlatformSubscription $subscription): OutboxMessage
-    {
-        $key = "subscription.activated.{$subscription->id}.v{$subscription->plan_version}";
-        $org = $subscription->organization;
-        $ownerMember = $org?->members()->where('role', 'organization_owner')->first() ?? $org?->members()->first();
-        $userId = (int) ($ownerMember?->user_id ?? $org?->sourceKyc?->user_id ?? User::query()->value('id') ?? 1);
-
-        return $this->recordOutboxNotification(
-            key: $key,
-            userId: $userId,
-            eventType: 'platform.subscription.activated',
-            payload: [
-                'title' => 'Gói dịch vụ nền tảng đã được kích hoạt',
-                'status' => $subscription->status,
-                'plan_id' => $subscription->plan_id,
-                'aggregate_type' => PlatformSubscription::class,
-                'aggregate_id' => $subscription->id,
-            ],
-            orgId: $subscription->organization_id
-        );
-    }
-
-    public function notifyPaymentFailed(PlatformPaymentAttempt $attempt): OutboxMessage
-    {
-        $key = "payment.failed.{$attempt->reference_code}";
-        $org = $attempt->organization;
-        $ownerMember = $org?->members()->where('role', 'organization_owner')->first() ?? $org?->members()->first();
-        $userId = (int) ($ownerMember?->user_id ?? $org?->sourceKyc?->user_id ?? User::query()->value('id') ?? 1);
-
-        return $this->recordOutboxNotification(
-            key: $key,
-            userId: $userId,
-            eventType: 'platform.payment.failed',
-            payload: [
-                'title' => 'Thanh toán gói dịch vụ thất bại',
-                'reference_code' => $attempt->reference_code,
-                'amount' => $attempt->amount,
-                'reason' => $attempt->failure_reason,
-                'aggregate_type' => PlatformPaymentAttempt::class,
-                'aggregate_id' => $attempt->id,
-            ],
-            orgId: $attempt->organization_id
         );
     }
 

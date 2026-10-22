@@ -87,7 +87,7 @@ class TransitionVenueLifecycle
             }
 
             if ($targetStatus === 'published') {
-                // Real-time readiness & entitlement re-check
+                // Real-time readiness re-check
                 $eval = $this->readiness->execute($venue);
                 if (! $eval['is_ready']) {
                     throw ValidationException::withMessages([

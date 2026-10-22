@@ -188,16 +188,17 @@ Lý do và phạm vi xem `proposal.md`. Bằng chứng từng mã xem `.claude/p
 
 ### D9. Cổng nhận đặt luôn bật
 - Chọn: `VerifyEffectiveBookingEligibility` kiểm gói của chính cơ sở của sân tại now.
-  - `getEntitlement(int $orgId)` đổi thành `lockVenuePackage(int $venueId)`: khoá dòng gói hiện tại của cơ sở (nếu có) và trả tình trạng.
+  - Bỏ `getEntitlement(int $orgId)`. Cổng đọc tình trạng gói của cơ sở tại now, sau khi đường đặt đã khoá dòng `venues`. Mọi thay đổi gói cũng khoá dòng `venues` trước (D4, D6, D8), nên đọc dưới lock này là đủ và không khoá `venue_packages`.
   - Bỏ `partner.enforce_subscription_check`, nhánh shadow và mọi test của cờ.
   - Lỗi khi không có gói `active`: giữ mã chặn eligibility hiện có, lý do `package_inactive`.
-  - Thứ tự lock toàn cục đổi bước đầu từ `platform_subscriptions` sang `venue_packages`, các bước sau giữ nguyên.
+  - Thứ tự lock toàn cục bỏ bước `platform_subscriptions`, các bước sau giữ nguyên: sân → cơ sở → … Gói chỉ được đọc sau bước cơ sở. Thao tác gói khoá cơ sở → yêu cầu → `venue_packages`.
   - `ReservationService::confirm` và luồng thanh toán đơn đang giữ không kiểm gói (BR-104). Thêm test khoá hành vi này.
   - Không giới hạn ngày chơi theo `ends_at` của gói.
   - `VenueFactory` mặc định tạo gói `active` 360 ngày, có state `withoutPackage()`. Test cũ của đường đặt không phải sửa từng file.
 - Phương án khác:
   - Giữ cờ và bật trên prod. Loại: vẫn còn hai đường code, và người dùng muốn bật hẳn.
   - Kiểm theo tổ chức. Loại: trái BR-91.
+  - Khoá `venue_packages` đầu tiên (bản trước của D9, đổi 2026-10-22 khi làm Pha 4). Loại: thao tác gói khoá `venues` rồi mới sửa `venue_packages`, còn đường đặt khoá sân → cơ sở. Hai thứ tự ngược nhau sẽ deadlock. Đọc gói dưới lock cơ sở cho cùng kết quả mà không cần thêm lock.
 - Lý do: BR-91, BR-103, BR-104, FR-92.
 
 ### D10. Gói chỉ chặn nhận đặt mới
@@ -214,10 +215,10 @@ Lý do và phạm vi xem `proposal.md`. Bằng chứng từng mã xem `.claude/p
 - Chọn: job mỗi phút `packages:send-expiry-reminders`.
   - Duyệt các gói chưa chấm dứt có `ends_at` trong khoảng `(now − 1 ngày, now + 7 ngày]`.
   - Mốc đã tới: `ends_at − 7 ngày`, `−3`, `−1` và `ends_at`. Chỉ gửi mốc nhỏ nhất đã tới, để gói tạo gần hạn không nhận dồn nhiều thông báo cũ.
-  - Ghi outbox key `package.reminder.{package_id}.{ends_at_unix}.{offset}`, kênh `database` + `mail`. Người nhận là các owner đang hoạt động của tổ chức.
+  - Ghi outbox key `package.reminder.{package_id}.{ends_at_unix}.{offset}.{user_id}`, kênh `database` + `mail`. Người nhận là các owner đang hoạt động của tổ chức. Key có `user_id` vì mỗi dòng outbox chỉ có một người nhận và key là unique (cùng mẫu `package.request.{id}.paid.{user_id}` của Pha 3).
   - Nội dung: cơ sở, kỳ hạn, thời điểm hết hạn theo giờ VN, đường dẫn `/partner/subscription`.
   - `recordOutboxNotification` nhận thêm tham số `channels`.
-  - Gia hạn đổi `ends_at`, nên key theo hạn cũ không bao giờ được tạo nữa. Gói `terminated` bị loại khỏi truy vấn.
+  - Gia hạn đổi `ends_at`, nên key theo hạn cũ không bao giờ được tạo nữa. Gói `terminated` và gói của cơ sở đã đóng hẳn bị loại khỏi truy vấn: cơ sở `closed` không mua hay gia hạn gói được nữa (D4).
 - Phương án khác: bảng `package_reminders`. Loại: outbox đã có `message_key` unique và đã gửi được in-app lẫn mail.
 - Lý do: BR-105, FR-93.
 
@@ -301,7 +302,7 @@ Lý do và phạm vi xem `proposal.md`. Bằng chứng từng mã xem `.claude/p
   - "Unified public and new-booking eligibility": "valid plan/trial" → "an active package for the court's venue", ở cả câu chính lẫn câu về mua lại slot.
   - "Venue opening conditions": "the platform plan or trial" → "the venue package".
   - Bỏ hạn mức cơ sở khỏi "Single organization-scoped venue write path" và khỏi task tạo cơ sở.
-  - Thứ tự lock: `venue_packages` thay `platform_subscriptions`.
+  - Thứ tự lock: bỏ `platform_subscriptions`; gói được đọc sau khi khoá cơ sở, không có bước khoá gói (D9).
 - Nhờ module 3:
   - Bỏ câu "SHALL require the organization's current business entitlement" ở "Price table versions and effective time" và "Venue promotion programs", cùng scenario "Expired business entitlement".
   - Bỏ ca "gói hết hạn → không tạo" ở `PriceTableManagementTest`, `PriceTableVersionTest` và `PromotionProgramManagementTest`.

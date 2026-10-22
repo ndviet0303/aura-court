@@ -8,8 +8,6 @@ use App\Models\AuditLog;
 use App\Models\HostKyc;
 use App\Models\Organization;
 use App\Models\PartnerReviewHistory;
-use App\Models\PlatformPlan;
-use App\Models\PlatformSubscription;
 use App\Models\Venue;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -143,29 +141,6 @@ class BackfillReviewedPartnerMappingsCommand extends Command
                         'entity_id' => $org->id,
                         'details' => ['notes' => $notes, 'source' => 'backfill_command'],
                     ]);
-
-                    // Entitlement / Platform plan
-                    $planCode = $mapping['plan_code'] ?? null;
-                    if ($planCode) {
-                        $plan = PlatformPlan::where('code', $planCode)->first();
-                        if ($plan) {
-                            $existingSub = PlatformSubscription::where('organization_id', $org->id)
-                                ->where('status', 'active')
-                                ->first();
-
-                            if (! $existingSub) {
-                                PlatformSubscription::create([
-                                    'organization_id' => $org->id,
-                                    'plan_id' => $plan->id,
-                                    'plan_version_id' => $plan->current_version_id ?? $plan->id,
-                                    'status' => 'active',
-                                    'starts_at' => now(),
-                                    'ends_at' => now()->addMonths(1),
-                                    'auto_renew' => true,
-                                ]);
-                            }
-                        }
-                    }
 
                     // Venues publication backfill
                     if (isset($mapping['venues']) && is_array($mapping['venues'])) {

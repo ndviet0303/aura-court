@@ -7,8 +7,8 @@ use Carbon\CarbonInterface;
 
 interface PackagePaymentRequestRepositoryInterface
 {
-    /** D4/D7: writes expired on the venue's pending requests whose deadline is at or before now; the caller holds the venue lock. */
-    public function expireOverdueForVenue(int $venueId, CarbonInterface $now): int;
+    /** D4/D7: writes expired on pending requests whose deadline is at or before now, of one venue whose lock the caller holds, or of every venue. */
+    public function expireOverdue(CarbonInterface $now, ?int $venueId = null): int;
 
     /** The venue's pending request; the partial unique index allows at most one. */
     public function findPendingForVenue(int $venueId): ?PackagePaymentRequest;

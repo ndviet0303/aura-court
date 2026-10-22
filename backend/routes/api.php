@@ -46,8 +46,6 @@ use App\Http\Controllers\Reservation\ReservationController;
 use App\Http\Controllers\Social\CommunityFeedController;
 use App\Http\Controllers\Social\FriendshipController;
 use App\Http\Controllers\Social\SocialController;
-use App\Http\Controllers\Subscription\PlatformPlanController;
-use App\Http\Controllers\Subscription\PlatformSubscriptionController;
 use App\Http\Controllers\Tournament\TournamentController;
 use App\Http\Controllers\Wallet\WalletController;
 use App\Http\Controllers\Wallet\WalletDepositController;
@@ -68,7 +66,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('auth/register', [AuthController::class, 'register'])->middleware('throttle:auth-register');
 Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:auth-login');
-Route::get('platform/plans', [PlatformPlanController::class, 'catalog']);
 Route::middleware('web')->group(function () {
     Route::get('auth/{provider}/redirect', [AuthController::class, 'redirectToProvider']);
 });
@@ -179,15 +176,6 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
         Route::post('application/{id}/submit', [PartnerApplicationController::class, 'submit']);
         Route::get('application/{id}/history', [PartnerApplicationController::class, 'history']);
     });
-    Route::prefix('partner/organizations/{organizationId}/subscription')->group(function () {
-        Route::get('current', [PlatformSubscriptionController::class, 'current']);
-        Route::post('select-plan', [PlatformSubscriptionController::class, 'selectPlan']);
-        Route::post('activate-trial', [PlatformSubscriptionController::class, 'activateTrial']);
-        Route::post('initiate-payment', [PlatformSubscriptionController::class, 'initiatePayment']);
-        Route::post('confirm-payment', [PlatformSubscriptionController::class, 'confirmPayment']);
-        Route::post('cancel-renewal', [PlatformSubscriptionController::class, 'cancelRenewal']);
-        Route::post('renew', [PlatformSubscriptionController::class, 'renew']);
-    });
     Route::prefix('partner/organizations/{organizationId}/venues')->group(function () {
         Route::get('', [PartnerVenueController::class, 'index']);
         Route::post('', [PartnerVenueController::class, 'store']);
@@ -217,7 +205,6 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
     Route::post('partner/organizations/{organizationId}/venues/{venueId}/receiving-connection/{connectionId}/query-credential', [ReceivingConnectionController::class, 'rotateApiToken']);
     Route::post('partner/organizations/{organizationId}/venues/{venueId}/receiving-connection/{connectionId}/transactions/sync', [ReceivingConnectionController::class, 'syncTransactions']);
     Route::post('partner/organizations/{organizationId}/venues/{venueId}/receiving-connection/{connectionId}/select', [ReceivingConnectionController::class, 'select']);
-    Route::post('partner/subscription/confirm-payment', [PlatformSubscriptionController::class, 'confirmPayment']);
     Route::patch('profile', function (Request $request) {
         $data = $request->validate([
             'name' => 'sometimes|string|min:2|max:100',
@@ -314,12 +301,6 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
     Route::prefix('admin')->middleware([SimulateDemoMutations::class])->group(function () {
         // Platform admin ONLY routes
         Route::middleware(['admin'])->group(function () {
-            Route::get('platform-plans', [PlatformPlanController::class, 'index']);
-            Route::post('platform-plans', [PlatformPlanController::class, 'store']);
-            Route::get('platform-plans/{id}', [PlatformPlanController::class, 'show']);
-            Route::patch('platform-plans/{id}', [PlatformPlanController::class, 'update']);
-            Route::post('platform-plans/{id}/publish', [PlatformPlanController::class, 'publish']);
-            Route::post('platform-plans/{id}/retire', [PlatformPlanController::class, 'retire']);
             Route::get('platform-fees/prices', [PlatformFeePriceController::class, 'index']);
             Route::post('platform-fees/prices', [PlatformFeePriceController::class, 'store']);
             Route::prefix('venues')->group(function () {

@@ -9,7 +9,6 @@ export interface VenueReadinessChecklist {
   }>
   checklist: {
     partner_active: boolean
-    subscription_entitled: boolean
     venue_metadata: boolean
     active_courts: boolean
     court_pricing: boolean

@@ -3,7 +3,6 @@
 namespace App\Domain\Admin\Actions;
 
 use App\Contracts\Repositories\VenueRepositoryInterface;
-use App\Domain\Subscription\Actions\EnforcePlanQuota;
 use App\Models\Organization;
 use App\Models\Venue;
 use Illuminate\Support\Facades\DB;
@@ -33,13 +32,6 @@ class CreateVenue
                     if ($org->partner_status !== 'approved') {
                         $org->update(['partner_status' => 'approved']);
                     }
-                }
-            }
-
-            if (isset($data['organization_id'])) {
-                $org = Organization::find($data['organization_id']);
-                if ($org && $org->hasActiveSubscription()) {
-                    app(EnforcePlanQuota::class)->execute($org->id, 'venues', 1);
                 }
             }
 

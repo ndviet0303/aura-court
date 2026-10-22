@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers\Court;
 
-use App\Domain\Subscription\Actions\EnforcePlanQuota;
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Http\Controllers\Controller;
 use App\Models\Court;
-use App\Models\Organization;
 use App\Models\Venue;
 use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Reservation\CourtPriceRuleService;
@@ -157,20 +155,8 @@ class CourtController extends Controller
             abort_unless($user->canManageVenue((int) $data['venue_id']), 403, 'Unauthorized venue.');
         }
 
-        $court = DB::transaction(function () use ($data) {
-            $venue = Venue::findOrFail($data['venue_id']);
-            if ($venue->organization_id) {
-                $org = Organization::find($venue->organization_id);
-                if ($org && $org->hasActiveSubscription()) {
-                    app(EnforcePlanQuota::class)->execute($org->id, 'courts', 1);
-                }
-            }
-
-            $court = Court::create($data)->load(['venue']);
-            Cache::increment('courts_version');
-
-            return $court;
-        });
+        $court = Court::create($data)->load(['venue']);
+        Cache::increment('courts_version');
 
         return response()->json($court, 201);
     }
@@ -210,16 +196,6 @@ class CourtController extends Controller
         }
 
         DB::transaction(function () use ($court, $data) {
-            if (isset($data['venue_id']) && (int) $data['venue_id'] !== (int) $court->venue_id) {
-                $newVenue = Venue::findOrFail($data['venue_id']);
-                if ($newVenue->organization_id) {
-                    $org = Organization::find($newVenue->organization_id);
-                    if ($org && $org->hasActiveSubscription()) {
-                        app(EnforcePlanQuota::class)->execute($org->id, 'courts', 1);
-                    }
-                }
-            }
-
             $court->update($data);
             abort_if($court->is_active && $court->venue()->whereIn('status', self::CLOSED_VENUE_STATUSES)->exists(), 422, 'Không thể mở sân tại cơ sở đã ngừng kinh doanh.');
             Cache::increment('courts_version');

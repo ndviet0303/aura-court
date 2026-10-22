@@ -182,6 +182,7 @@ The active owners of a venue's organization SHALL receive an in-app notification
 - When several reminders are due at once, only the latest due one SHALL be sent.
 - A renewal SHALL replace the pending reminders of the old end with the reminders of the new end.
 - A terminated package SHALL receive no further reminders.
+- A package of a permanently closed venue SHALL receive no reminders, because that venue can no longer renew.
 
 #### Scenario: Seven days before the end
 - **WHEN** a package reaches 7 days before its end

@@ -137,39 +137,39 @@ Pha 2–6 làm trên nhánh `feat/module05-packages-finance` và chỉ vào main
     - `RecheckHeldReservationsAtNewPrice` (module 4) truyền `channels` qua tham số; trước đó 2.4 ghi đè `payload.channels` nên mail đổi giá bị rơi.
     - `AdminController` rút về 575 dòng, dưới trần 578. Merge Pha 0 với module 4 từng đẩy file lên 582.
   - Cho Pha 4 và lane test:
-    - Thứ tự lock của Pha 3 là unique key của receipt → `venues` → yêu cầu → `venue_packages`. Chấm dứt khoá `venues` rồi sửa `venue_packages`. Task 4.1 (cổng D9 khoá `venue_packages` trước) phải chốt một thứ tự chung để tránh deadlock.
+    - Thứ tự lock của Pha 3 là unique key của receipt → `venues` → yêu cầu → `venue_packages`. Chấm dứt khoá `venues` rồi sửa `venue_packages`. Đã chốt ở D9 (2026-10-22): cổng đọc gói sau khi khoá `venues`, không khoá `venue_packages`.
     - `frontend/src/features/admin/composables/usePriceTables.ts:184` còn xử lý mã cũ `SUBSCRIPTION_EXPIRED`/`NO_ACTIVE_SUBSCRIPTION`.
     - `platformSubscriptionApi.spec.ts` và `PlatformSubscriptions.spec.ts` không còn compile vì import code plan/trial đã xoá; lane test viết lại.
     - Có thể hạ trần allowlist của `FinancialPostingService` từ 554 xuống 552.
 
 ## 4. Pha 4 – Cổng luôn bật, nhắc hạn và xoá gói cũ (D7, D9, D10, D11)
 
-- [ ] 4.1 `VerifyEffectiveBookingEligibility` (D9):
-  - `getEntitlement(int $orgId)` → `lockVenuePackage(int $venueId)`. Lý do chặn `package_inactive`, giữ mã chặn eligibility hiện có.
+- [x] 4.1 `VerifyEffectiveBookingEligibility` (D9):
+  - Bỏ `getEntitlement(int $orgId)`. Cổng đọc gói của cơ sở tại now sau khi đã khoá dòng `venues` (D9). Lý do chặn `package_inactive`, giữ mã chặn eligibility hiện có.
   - Sửa hai nơi gọi: `ReservationService:67` và `OrdinaryCheckoutService:58`.
   - Sau khi merge `feat/module02-venue-court-alignment`, sửa thêm `PeerToPeerResaleService::lock` (task 1.2).
-  - Thứ tự lock bắt đầu bằng `venue_packages`.
-- [ ] 4.2 Xoá cờ `partner.enforce_subscription_check` (`config/partner.php`, `PartnerRolloutService.php:34,37`) và nhánh shadow.
+  - Thứ tự lock: sân → cơ sở, rồi mới đọc gói; không khoá `venue_packages` (D9, đổi 2026-10-22).
+- [x] 4.2 Xoá cờ `partner.enforce_subscription_check` (`config/partner.php`, `PartnerRolloutService.php:34,37`) và nhánh shadow.
 - [ ] 4.3 Test: `VenuePackageBookingGateTest`.
   - Scenario "Hold after the package ended", "Hold placed before the package ended", "Play after the package end", "Owner works with an expired package".
   - Checkout và hold đều bị chặn với `package_inactive`.
   - `ReservationService::confirm` không kiểm gói (BR-104).
-  - Query log khoá `venue_packages` trước các bảng còn lại.
+  - Query log: khoá `venues` trước khi đọc gói, và không có `FOR UPDATE` trên `venue_packages`.
   - Sửa `InflightQuoteEligibilityTest` và `UnifiedBookingEligibilityTest`, bỏ phần cờ.
-- [ ] 4.4 Job `packages:expire-requests` mỗi phút trong `routes/console.php`, cùng mẫu `booking:expire-pending` (`name`, `withoutOverlapping`, `onFailure`).
+- [x] 4.4 Job `packages:expire-requests` mỗi phút trong `routes/console.php`, cùng mẫu `booking:expire-pending` (`name`, `withoutOverlapping`, `onFailure`). (test: chưa làm)
   - Test: `PackageRequestExpiryTest`. Yêu cầu quá hạn thành `expired`; yêu cầu còn hạn giữ nguyên.
-- [ ] 4.5 Job `packages:send-expiry-reminders` mỗi phút (D11).
+- [x] 4.5 Job `packages:send-expiry-reminders` mỗi phút (D11). (test: chưa làm)
   - Test: `PackageExpiryReminderTest`.
     - Scenario "Seven days before the end", "Renewal moves the reminders", "Terminated package", "Delayed scheduler".
     - Chạy hai lần không ghi thêm outbox.
     - Gói còn 2 ngày lúc job chạy lần đầu chỉ nhận mốc 3 ngày.
-- [ ] 4.6 `EvaluateVenueReadiness` và `RestorePartner:47` bỏ phần đọc gói (D10).
+- [x] 4.6 `EvaluateVenueReadiness` và `RestorePartner:47` bỏ phần đọc gói (D10). (test: chưa làm)
   - Frontend: sửa `VenueReadinessModal.vue`, `venuePublicationApi.ts` và `VenuePublicationReviewViews.spec.ts`.
-- [ ] 4.7 Migration xoá bảng gói cũ:
+- [x] 4.7 Migration xoá bảng gói cũ: (test: chưa làm)
   - Bỏ FK và check do `2026_10_11_000002_restrict_deletes_into_financial_tables.php:49-53` và `2026_10_11_000005_add_finance_status_checks.php:20-22` thêm vào.
   - Drop `platform_payment_attempts`, `platform_provider_receipts`, `platform_subscriptions`, `platform_plans`. Không sửa migration cũ.
   - `SchemaConformanceTest` không còn bảng cũ.
-- [ ] 4.8 Xoá code gói cũ:
+- [x] 4.8 Xoá code gói cũ: (test: chưa làm)
   - `app/Domain/Subscription/` (10 action) và `EvaluatePlatformEntitlement`.
   - Model `PlatformPlan`, `PlatformSubscription`, `PlatformPaymentAttempt`, `PlatformProviderReceipt`.
   - `PlatformSubscriptionRepositoryInterface`, repo Eloquent và binding.
@@ -195,7 +195,30 @@ Pha 2–6 làm trên nhánh `feat/module05-packages-finance` và chỉ vào main
     - `Readiness/ComprehensiveConcurrencyAndRetryInvariantsTest`, `Readiness/ProviderSandboxAndOperationalReadinessTest`, `Repositories/NewRepositoriesAndLocksIntegrationTest`.
     - `Venue/`: `BookingPolicySnapshotAndWalletRegressionTest`, `DraftVenueCourtSetupTest`, `DraftVenueCreationAndSetupTest`, `FinalMutationEligibilityAndCacheTest`, `VenueBookingPolicyVersioningTest`, `VenueLifecycleTransitionsTest`, `VenueOperatingCalendarTest`, `VenueProfilePersistenceTest`, `VenuePublicSnapshotAndOperationalClosureTest`, `VenuePublicationReviewTest`, `VenueReadinessChecklistTest`.
   - `tests/Unit/Architecture/architecture-allowlist.json` và `frontend/src/__tests__/architecture-allowlist.json`: chỉ xoá mục của file đã xoá, không nâng trần.
-- [ ] 4.10 `OrganizationVenueSeeder` (dòng 52-97): bỏ plan và gói theo tổ chức, gọi `VenuePackageSeeder` bản tối thiểu (bốn giá, mỗi cơ sở một gói `active` 360 ngày). Pha 7 thêm dữ liệu demo.
+- [x] 4.10 `OrganizationVenueSeeder` (dòng 52-97): bỏ plan và gói theo tổ chức, gọi `VenuePackageSeeder` bản tối thiểu (bốn giá, mỗi cơ sở một gói `active` 360 ngày). Pha 7 thêm dữ liệu demo.
+
+- Ghi chú Pha 4 (2026-10-22, chỉ implement, chưa chạy test, migrate hay seed):
+  - Cổng (4.1): `evaluateVenue` đọc `statusAt(venue, now)` qua `VenuePackageRepositoryInterface`, không khoá. Không `active` (chưa có gói, hết hạn, đã chấm dứt) → lý do `package_inactive`, giữ cách map cũ: 409 ở hold/checkout/mua lại slot, 422 ở `assertEligible` với key lỗi `package` (trước là `subscription`, frontend không đọc key này).
+    - Cơ sở hết gói bị ẩn khỏi danh sách và trang chi tiết công khai như mọi cơ sở không đủ điều kiện: spec gốc "Unified public and new-booking eligibility" dùng chung một điều kiện cho công khai và đặt mới.
+    - `PeerToPeerResaleService::lock` khoá sân → cơ sở rồi chạy `execute` trước khi khoá listing. Kiểm dừng vận hành chồng lấn và receiving connection vẫn là task 1.11a của module 2.
+    - `MatchService::assertCourtCanHostSession` giữ nguyên: đường này không khoá sân/cơ sở và file đã chạm trần 1.080 dòng. Gói vẫn được kiểm, chỉ không nằm dưới lock.
+    - Danh sách sân công khai cache 300 giây; đổi gói không bump `venues_version`, nên cơ sở có thể còn hiện hoặc còn ẩn tối đa 5 phút. Hold, checkout và mua lại slot kiểm lại dưới lock nên không lọt đơn.
+  - Cờ (4.2): xoá cả `partner.shadow_mode` vì chỉ nhánh shadow đọc nó, cùng `PartnerRolloutService::recordShadowComparison`.
+  - Hai job (4.4, 4.5) là `Schedule::call` gọi action `ExpirePackagePaymentRequests` và `SendPackageExpiryReminders`. `expireOverdueForVenue` của Pha 3 đổi thành `expireOverdue($now, ?$venueId)`.
+    - Key nhắc có thêm `.{user_id}` (D11 đã sửa). Truy vấn chỉ lấy gói hiện tại (id lớn nhất của cơ sở), bỏ gói đã chấm dứt và gói của cơ sở `closed` (review phát hiện; D11 và spec đã thêm).
+  - Xoá (4.6, 4.8): 33 file, kể cả `PlatformPlanRepositoryInterface`, `PlatformSubscriptionController`, `app/Http/Requests/Subscription/`, `ProcessExpiredSubscriptionsCommand` và lịch `platform:process-expired-subscriptions`, vì chúng chỉ phục vụ code đã xoá.
+    - Bỏ quota khỏi tạo/sửa sân, tạo cơ sở, tạo cơ sở nháp, mời và thêm nhân sự; bỏ kiểm entitlement ở khuyến mãi, tạo và công bố bảng giá (D10). DTO bảng giá bỏ `organizationId` vì chỉ phần kiểm này dùng.
+    - Báo cáo cũ bỏ `platform_fees`, `platform_attempts`, `is_platform_admin` thay vì trả 0; 6.7 xoá hẳn báo cáo. `RestorePartner` trả `Organization`.
+    - `phpstan-baseline.neon` sửa tay: bỏ 49 mục chết, hạ 7 số đếm.
+  - Migration (4.7) `2026_10_22_200001_drop_platform_subscription_tables`. Đã đọc catalog prod (chỉ đọc): đủ 5 FK và 3 check đúng tên, không bảng nào khác trỏ FK vào bốn bảng cũ; prod còn 2 plan và 2 subscription demo, sẽ mất khi migrate (D16 dump trước). `down()` dựng lại bảng rỗng theo tiền lệ `2026_10_21_100002`.
+  - Seeder (4.10): `VenuePackageSeeder` chạy trong `DatabaseSeeder` ngay sau `UserSeeder`, vì `package_prices.created_by` cần platform admin và `DatabaseSeederTest` chạy riêng `OrganizationVenueSeeder`. Chỉ `OrganizationVenueSeeder` tạo cơ sở. Giá dùng `firstOrCreate` theo kỳ; cơ sở chỉ nhận gói mới khi gói hiện tại không `active`. `E2ESeedFixturesCommand` tạo gói 360 ngày cho venue1A, venue1B, venue2.
+  - Cho lane test (4.3, 4.9):
+    - Gãy: `PartnerRolloutServiceTest:48-75`, `InflightQuoteEligibilityTest` (cờ, lock `platform_subscriptions`), `UnifiedBookingEligibilityTest` (cờ, key `subscription`), cả thư mục `tests/Feature/Subscription/`, các test liệt kê ở 4.9, cùng `Admin/CanonicalReportingAndExportTest`, `Admin/ReportParityTest`, `Finance/FinancialEntityPostingTest`, `Infrastructure/SchemaConformanceTest`, `Partner/PartnerLifecycleActionsTest` (`has_valid_entitlement`), `tests/Concerns/PricingRoles.php`.
+    - Mọi test đường đặt có cơ sở tạo bằng `Venue::create` (khoảng 105 file, kể cả `tests/TestCase.php:49` và `tests/Concerns/BooksDirectOwnerCourt.php:43`) sẽ bị chặn `package_inactive` cho tới khi fixture có gói.
+    - Mua lại slot giờ kiểm điều kiện: `AdvancedBookingMarketplaceTest`, `Booking/MarketplaceTransferVerificationTest`, `Readiness/ComprehensiveConcurrencyAndRetryInvariantsTest`.
+    - Frontend: `VenuePublicationReviewViews.spec.ts` (mock `subscription_entitled`), hai spec platform-subscriptions của Pha 3. E2E: `p1-platform-subscription.spec.ts`, quota nhân sự trong `p1-staff-management.spec.ts`, `p1-legacy-wallet-direct-cohort.spec.ts:340-362`, `p1-revenue-reconciliation-reporting.spec.ts:136-168`, `runner/environment.spec.ts:741-800`, `runner/types.ts:90`; tài liệu `docs/testing/playwright-coverage.md:59-62,116-117`.
+    - Allowlist backend phải xoá hai mục `model-query` của `ConfirmSubscriptionPayment` và `PlatformSubscriptionController`; có thể hạ trần `E2ESeedFixturesCommand` 773, `AdminController` 526, `PromotionController` 734, `FinancialPostingService` 512, `ReconciliationService` 427. Frontend: `VenueReadinessModal.vue` 425 → 409.
+  - Còn mở, không thuộc Pha 4: `VenueReadinessModal.vue:230,244` đọc `partner_active` và `venue_metadata`, còn backend trả `partner_approved`, `venue_name`, `venue_address`, nên hai dòng đó luôn hiện dấu đỏ. Lỗi có từ trước (HEAD cũng vậy), thuộc phần công bố cơ sở của module 2.
 
 ## 5. Pha 5 – Tài chính của chủ cơ sở (D12, D14)
 

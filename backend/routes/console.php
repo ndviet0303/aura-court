@@ -1,6 +1,8 @@
 <?php
 
 use App\Domain\Booking\Actions\ExpirePendingBookings;
+use App\Domain\Package\Actions\ExpirePackagePaymentRequests;
+use App\Domain\Package\Actions\SendPackageExpiryReminders;
 use App\Jobs\RunDailyReconciliation;
 use App\Models\Organization;
 use App\Services\Booking\RecurringSeriesService;
@@ -61,6 +63,19 @@ Schedule::call(fn () => app(PeerToPeerResaleService::class)->sweep())
     ->everyMinute()
     ->onFailure($reportScheduleFailure('marketplace:sweep-resale-locks'));
 
+// 1e. Venue packages: store expired on overdue payment requests (D7) and send expiry reminders (D11)
+Schedule::call(fn () => app(ExpirePackagePaymentRequests::class)->execute())
+    ->name('packages:expire-requests')
+    ->withoutOverlapping(10)
+    ->everyMinute()
+    ->onFailure($reportScheduleFailure('packages:expire-requests'));
+
+Schedule::call(fn () => app(SendPackageExpiryReminders::class)->execute())
+    ->name('packages:send-expiry-reminders')
+    ->withoutOverlapping(10)
+    ->everyMinute()
+    ->onFailure($reportScheduleFailure('packages:send-expiry-reminders'));
+
 // 2. Worker-free failure recovery for outbox and provider events
 Schedule::call(fn () => app(ScheduledRecoveryService::class)->recoverOutbox())
     ->name('recovery:outbox')
@@ -116,13 +131,6 @@ Schedule::command('loyalty:expire-points')
     ->withoutOverlapping(30)
     ->dailyAt('00:30')
     ->onFailure($reportScheduleFailure('loyalty:expire-points'));
-
-// 4c. Platform subscription lifecycle: expire active/trial subscriptions past their end date
-Schedule::command('platform:process-expired-subscriptions')
-    ->name('subscriptions:process-expired')
-    ->withoutOverlapping(30)
-    ->hourly()
-    ->onFailure($reportScheduleFailure('subscriptions:process-expired'));
 
 // 4d. V1 retirement evidence: trailing 30-day adoption snapshot for the retire-v1-booking gate
 Schedule::command('v1:adoption-snapshot --days=30')
