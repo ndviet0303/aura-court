@@ -129,7 +129,9 @@ class OpeningConditionsTest extends TestCase
         $this->assertSame([Court::STATUS_ACTIVE, Court::STATUS_PAUSED], [$court->fresh()->status, $paused->fresh()->status]);
         $stop = OperationalStop::query()->where('venue_id', $venue->id)->sole();
         $this->assertTrue($stop->ended_at->between(now()->subMinute(), now()), 'the stop ends when the owner confirms, not at the expected end');
-        $this->getJson('/api/courts')->assertJsonFragment(['id' => $court->id])->assertJsonMissing(['id' => $paused->id]);
+        $ids = $this->getJson('/api/courts')->json('*.id');
+        $this->assertContains($court->id, $ids);
+        $this->assertNotContains($paused->id, $ids);
     }
 
     public function test_br_47_only_an_active_court_with_service_time_and_full_prices_takes_bookings(): void

@@ -186,7 +186,7 @@ class SuspensionRemediationTest extends TestCase
         $court = $this->activeCourt($this->venue);
         $this->priceCourt($court);
         $this->submit()->assertCreated();
-        $this->getJson('/api/courts')->assertJsonMissing(['id' => $court->id]);
+        $this->assertNotContains($court->id, $this->getJson('/api/courts')->json('*.id'));
 
         $this->review(SuspensionRemediation::sole(), 'approve')->assertOk();
 

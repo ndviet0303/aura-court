@@ -112,7 +112,7 @@ class OperationalStopTest extends TestCase
         $this->venue($owner, $court->venue, 'pause', ['reason' => self::REASON, 'acknowledge_affected' => true])->assertOk();
         $this->assertSame([Venue::STATUS_PAUSED, Court::STATUS_PAUSED, Court::STATUS_ACTIVE], [$court->venue->fresh()->status, $court->fresh()->status, $sibling->fresh()->status]);
         $this->getJson("/api/availability?court_id={$sibling->id}&date={$this->tomorrowAt(0)->toDateString()}")->assertNotFound();
-        $this->getJson('/api/courts')->assertJsonMissing(['id' => $sibling->id]);
+        $this->assertNotContains($sibling->id, $this->getJson('/api/courts')->json('*.id'));
     }
 
     public function test_br_34_staff_record_and_end_only_maintenance_pauses(): void
@@ -175,6 +175,6 @@ class OperationalStopTest extends TestCase
         $this->venue($owner, $venue, 'resume')->assertStatus(422)->assertJsonValidationErrors('status');
         $this->venue($owner, $venue, 'open')->assertStatus(422)->assertJsonValidationErrors('status');
         $this->assertSame(Venue::STATUS_CLOSED, $venue->fresh()->status);
-        $this->getJson('/api/courts')->assertJsonMissing(['id' => $sibling->id]);
+        $this->assertNotContains($sibling->id, $this->getJson('/api/courts')->json('*.id'));
     }
 }

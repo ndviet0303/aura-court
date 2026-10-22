@@ -103,7 +103,7 @@ class VenueSuspensionTest extends TestCase
 
         $this->suspend($court->venue)->assertCreated();
 
-        $this->getJson('/api/courts')->assertOk()->assertJsonMissing(['id' => $court->id]);
+        $this->assertNotContains($court->id, $this->getJson('/api/courts')->assertOk()->json('*.id'));
     }
 
     public function test_br_42_a_quote_taken_before_the_suspension_cannot_become_a_booking(): void
