@@ -200,7 +200,8 @@ export default {
     availability: {
       eyebrow: 'Live Availability',
       summary: '{date} · {count} slots open',
-      fallbackTitle: 'Live Availability',
+      fallbackTitle: 'Pick a court to see open times',
+      pickCourtHint: 'Tap a court in the list above to see its open times.',
       nearbyCourts: 'Select Court',
       areaTabs: 'Areas',
       allAreas: 'All',
