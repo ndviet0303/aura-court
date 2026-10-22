@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
 import type { PromotionProgram } from '../../types/promotionProgram'
 import { usePromotionProgramLabels } from '../../composables/usePromotionProgramLabels'
+import PromotionProgramUsageList from './PromotionProgramUsageList.vue'
 
 const props = defineProps<{
   program: PromotionProgram
@@ -107,6 +108,7 @@ const total = computed(() => props.program.max_uses ?? props.program.code_count 
         <span class="usage-label">{{ t('admin.promotions.remainingLabel') }}</span>
       </div>
     </div>
+    <PromotionProgramUsageList :program="program" />
   </section>
 </template>
 

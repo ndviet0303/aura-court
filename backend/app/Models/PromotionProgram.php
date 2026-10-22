@@ -34,9 +34,6 @@ class PromotionProgram extends Model
 
     public const STATUS_STOPPED = 'stopped';
 
-    /** The columns that decide whether and how much a pending booking is discounted (D19); the court set counts too. */
-    public const PRICING_TERMS = ['percent_bp', 'amount', 'max_discount', 'min_rental', 'starts_at', 'ends_at'];
-
     protected function casts(): array
     {
         return [

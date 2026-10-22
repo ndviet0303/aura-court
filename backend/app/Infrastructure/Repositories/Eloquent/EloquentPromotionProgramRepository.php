@@ -39,7 +39,7 @@ class EloquentPromotionProgramRepository implements PromotionProgramRepositoryIn
 
     public function loadCodes(PromotionProgram $program): PromotionProgram
     {
-        return $program->load([...$this->courtsById(), 'codes' => fn ($query) => $query->orderBy('id'), 'codes.activeUse']);
+        return $program->load([...$this->courtsById(), 'codes' => fn ($query) => $query->orderBy('id'), 'codes.activeUse.reservation:id,code']);
     }
 
     public function lockCourts(array $courtIds): Collection

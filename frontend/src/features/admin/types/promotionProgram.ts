@@ -2,8 +2,11 @@ export type PromotionProgramType = 'public' | 'private'
 export type PromotionDiscountKind = 'percent' | 'fixed'
 /** Computed by the server at request time. */
 export type PromotionProgramStatus = 'upcoming' | 'running' | 'ended' | 'stopped'
-/** Read from the code's voucher use: none, held for a booking pending payment, or used. */
-export type VoucherCodeState = 'available' | 'held' | 'used'
+/**
+ * Read from the code's voucher use: none, held for a booking pending payment, or used.
+ * A free code of an ended or stopped program is unusable.
+ */
+export type VoucherCodeState = 'available' | 'unusable' | 'held' | 'used'
 
 export type PromotionProgramCourt = { id: number; name: string; slug: string }
 
@@ -58,6 +61,8 @@ export type VoucherCode = {
   id: number
   code: string
   state: VoucherCodeState
+  /** The booking holding or having used the code. */
+  reservation: { id: number; code: string } | null
   /** The booking page of `court` with the code filled in; null when the program has no court. */
   deep_link_url: string | null
 }
@@ -68,4 +73,33 @@ export type PromotionProgramCodes = {
   court: PromotionProgramCourt | null
   /** By id; empty for a public program. */
   codes: VoucherCode[]
+}
+
+/** One booking's use of a program; instants are ISO-8601 UTC. */
+export type VoucherUse = {
+  id: number
+  status: 'held' | 'used'
+  discount: number
+  /** Private programs only. */
+  code: string | null
+  held_at: string
+  /** The confirmation time; null while held. */
+  used_at: string | null
+  reservation: {
+    id: number
+    code: string
+    /** Stays `cancelled` on a booking cancelled after confirmation; its use still counts as used. */
+    status: string
+    customer_name: string | null
+    court: { id: number; name: string } | null
+    starts_at: string | null
+    ends_at: string | null
+  }
+}
+
+/** Used uses a page at a time, latest first, and every held use. */
+export type PromotionProgramUsage = {
+  data: VoucherUse[]
+  meta: { current_page: number; last_page: number; total: number }
+  held: VoucherUse[]
 }

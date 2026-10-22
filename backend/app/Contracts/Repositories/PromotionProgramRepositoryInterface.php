@@ -20,7 +20,7 @@ interface PromotionProgramRepositoryInterface
     /** Loads the program's courts by id and its held_uses_count and used_uses_count. */
     public function loadDetail(PromotionProgram $program): PromotionProgram;
 
-    /** Loads the program's courts by id and its codes by id, each with the use holding or having used it. */
+    /** Loads the program's courts by id and its codes by id, each with the use holding or having used it and that use's booking. */
     public function loadCodes(PromotionProgram $program): PromotionProgram;
 
     /**

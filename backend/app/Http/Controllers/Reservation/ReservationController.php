@@ -15,6 +15,7 @@ use App\Services\Payment\ReservationPaymentService;
 use App\Services\Reservation\PriceQuoteService;
 use App\Services\Reservation\ReservationService;
 use App\Services\Reservation\VisibleReservations;
+use App\Services\Social\ResalePriceCap;
 use Illuminate\Http\Request;
 
 class ReservationController extends Controller
@@ -37,7 +38,7 @@ class ReservationController extends Controller
         private readonly VisibleReservations $visible,
     ) {}
 
-    public function index(Request $request)
+    public function index(Request $request, ResalePriceCap $caps)
     {
         $organization = $this->organization($request);
         $query = Reservation::query()
@@ -46,7 +47,8 @@ class ReservationController extends Controller
             ->latest()
             ->where(fn ($q) => $this->visible->scope($q, $request->user(), $organization));
 
-        return $query->paginate(20);
+        // The sell tab offers each slot up to its max_resale_price (design D23).
+        return $caps->onPage($query->paginate(20));
     }
 
     public function show(Request $request, string $reservation, ReservationPaymentService $payments)

@@ -1,4 +1,5 @@
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type {
   ResaleListing,
   UserBookingSlot,
@@ -9,6 +10,7 @@ import { marketplaceApi } from '../api/marketplaceApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 
 export function useResaleMarketplace() {
+  const { t } = useI18n()
   const activeTab = ref<'buy' | 'sell' | 'my-listings'>('buy')
   const loading = ref(false)
   const processingAction = ref(false)
@@ -216,7 +218,7 @@ export function useResaleMarketplace() {
             venueName: court?.venue?.name ?? '',
             dateStr: formatDateStr(ent.starts_at),
             timeSlot: formatTimeSlot(ent.starts_at, ent.ends_at),
-            originalPrice: ent.amount ?? 0,
+            maxResalePrice: ent.max_resale_price ?? 0,
             startsAt: ent.starts_at,
             eligible: priced && early,
             ineligibleReason: !priced
@@ -270,7 +272,8 @@ export function useResaleMarketplace() {
 
   function openSellModal(slot: UserBookingSlot) {
     selectedSlotToSell.value = slot
-    askingPriceInput.value = Math.round((slot.originalPrice * 0.8) / 10000) * 10000
+    // Rounded down so the suggestion never passes the cap.
+    askingPriceInput.value = Math.floor((slot.maxResalePrice * 8) / 100000) * 10000
     isSellModalOpen.value = true
   }
 
@@ -284,8 +287,10 @@ export function useResaleMarketplace() {
     const slot = selectedSlotToSell.value
     if (!slot) return
     const asking = askingPriceInput.value
-    if (!Number.isInteger(asking) || asking < 0 || asking > slot.originalPrice) {
-      error.value = 'Giá pass phải từ 0 đến giá gốc.'
+    if (!Number.isInteger(asking) || asking < 0 || asking > slot.maxResalePrice) {
+      error.value = t('resale.p2p.priceAboveMax', {
+        amount: new Intl.NumberFormat('vi-VN').format(slot.maxResalePrice),
+      })
       return
     }
     if (asking > 0 && !receiver) {

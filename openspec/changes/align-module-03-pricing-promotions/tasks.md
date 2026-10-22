@@ -261,11 +261,11 @@ Quy tắc cho mọi lần merge của Pha 2–6 (danh sách file trong từng ta
 
 - [ ] 6.1 Đơn đã xác nhận bị huỷ, chuyển sân, đổi giờ không trả lượt (BR-70). Chuyển sân và đổi giờ đi qua lệnh `move-court`/`change-time` của module 2 (task 4.8–4.9 của họ); nếu lệnh chưa có trên main khi 6.1 merge thì 6.1 chỉ test ca huỷ, và module 2 thêm hai ca đó vào test của 4.8–4.9. Chuyển khoản tới sau khi chương trình dừng mà trước D19 → không xác nhận, nhả lượt, ngoại lệ thanh toán, báo khách. Khách ví legacy xác nhận sau khi chương trình dừng mà trước D19 → 422 `VOUCHER_INVALID`, ví không đổi, đơn `expired`, lượt nhả một lần.
   - Test: `VoucherNoRefundTest`; `VoucherConfirmRaceTest` (chuyển khoản và ví legacy).
-- [ ] 6.2 Cập nhật hoặc dừng chương trình khi có đơn chờ (D19): tính lại sau commit bằng engine với `$heldBy` là chính đơn đó, mỗi đơn một transaction (khoá qua `HeldReservationRelease::lock`, kiểm còn `held`); mất voucher, D đổi, hoặc hạn thanh toán sau thời điểm kết thúc mới → `releaseHeld(…, 'expired', 'voucher_changed')` và thông báo khách; còn lại thì giữ đơn.
+- [x] 6.2 Cập nhật hoặc dừng chương trình khi có đơn chờ (D19): tính lại sau commit bằng engine với `$heldBy` là chính đơn đó, mỗi đơn một transaction (khoá qua `HeldReservationRelease::lock`, kiểm còn `held`); mất voucher, D đổi, hoặc hạn thanh toán sau thời điểm kết thúc mới → `releaseHeld(…, 'expired', 'voucher_changed')` và thông báo khách; còn lại thì giữ đơn. (test: chưa làm)
   - Test: `PromotionProgramChangePendingTest`. Đơn giữ lượt công khai cuối cùng vẫn giữ nguyên khi chỉ đổi tên chương trình.
-- [ ] 6.3 Theo dõi sử dụng: tổng, đã dùng, đang giữ, còn lại; danh sách mã riêng và tình trạng; các đơn đã dùng, thời điểm dùng, tiền giảm; đơn huỷ sau xác nhận vẫn tính đã dùng.
+- [x] 6.3 Theo dõi sử dụng: tổng, đã dùng, đang giữ, còn lại; danh sách mã riêng và tình trạng; các đơn đã dùng, thời điểm dùng, tiền giảm; đơn huỷ sau xác nhận vẫn tính đã dùng. (test: chưa làm)
   - Test: `VoucherUsageTrackingTest` (staff hoặc owner tổ chức khác → 403); vitest màn theo dõi.
-- [ ] 6.4 Giá bán lại tối đa (D23).
+- [x] 6.4 Giá bán lại tối đa (D23). (test: chưa làm)
   - Số tiền phải trả sau mọi khoản giảm đã ghi; đơn nhiều slot cũ chia theo tỷ lệ tiền thuê, bỏ phần thập phân. Sửa `MarketplaceService.php:39` và metadata ở `PeerToPeerResaleService.php:256-257`. Mua lại không áp voucher.
   - API trả `max_resale_price`; `MarketplaceSellModal` và `useResaleMarketplace` dùng giá trị này. Metadata listing lưu trần đã dùng.
   - Test: `PeerToPeerResaleCapTest`. 200.000 với voucher 50.000 → trên 150.000 bị 422; ⌊240.000 × 200.000 / 300.000⌋ = 160.000. Vitest `MarketplaceSellModal`.

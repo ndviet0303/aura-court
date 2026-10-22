@@ -181,7 +181,7 @@ const {
               <div class="slot-card-head">
                 <strong class="slot-court-name">{{ slot.courtName }}</strong>
                 <span class="slot-paid-badge font-mono">{{
-                  formatCurrency(slot.originalPrice)
+                  formatCurrency(slot.maxResalePrice)
                 }}</span>
               </div>
 

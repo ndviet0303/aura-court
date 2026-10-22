@@ -6,6 +6,7 @@ use App\Contracts\Repositories\ReservationRepositoryInterface;
 use App\Models\Reservation;
 use App\Models\ReservationSlot;
 use App\Models\Review;
+use App\Models\VoucherUse;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -64,6 +65,15 @@ class EloquentReservationRepository implements ReservationRepositoryInterface
             ->whereIn('status', ['held', 'confirmed'])
             ->orderBy('starts_at')
             ->get();
+    }
+
+    public function heldWithVoucherOf(int $programId): Collection
+    {
+        return Reservation::query()->withoutGlobalScope(self::TENANT_SCOPE)
+            ->where('status', 'held')
+            ->whereIn('id', VoucherUse::query()->select('reservation_id')->where('program_id', $programId)->where('status', VoucherUse::STATUS_HELD))
+            ->orderBy('id')
+            ->get(['id', 'code']);
     }
 
     private function unscoped(): \Closure

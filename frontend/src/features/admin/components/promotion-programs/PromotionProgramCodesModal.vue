@@ -117,11 +117,17 @@ async function copy(text?: string | null) {
         <section class="code-list">
           <p class="form-hint">
             {{
-              t('admin.promotions.codes.summary', {
-                available: counts.available ?? 0,
-                held: counts.held ?? 0,
-                used: counts.used ?? 0,
-              })
+              t(
+                counts.unusable
+                  ? 'admin.promotions.codes.summaryClosed'
+                  : 'admin.promotions.codes.summary',
+                {
+                  available: counts.available ?? 0,
+                  unusable: counts.unusable ?? 0,
+                  held: counts.held ?? 0,
+                  used: counts.used ?? 0,
+                },
+              )
             }}
           </p>
           <p v-if="codes.codes.length === 0" class="form-hint">
@@ -137,6 +143,9 @@ async function copy(text?: string | null) {
                 @click="selected = code"
               >
                 <span class="code-text">{{ code.code }}</span>
+                <span v-if="code.reservation" class="code-booking">{{
+                  t('admin.promotions.codes.booking', { code: code.reservation.code })
+                }}</span>
                 <span class="badge" :class="`badge--${code.state}`">{{
                   codeState(code.state)
                 }}</span>
@@ -250,7 +259,14 @@ async function copy(text?: string | null) {
   background: rgba(245, 158, 11, 0.12);
 }
 
-.badge--used {
+.badge--used,
+.badge--unusable {
   color: var(--muted);
+}
+
+.code-booking {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 12px;
 }
 </style>

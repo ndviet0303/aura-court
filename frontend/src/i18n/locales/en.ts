@@ -1276,6 +1276,7 @@ export default {
       freeListingNote:
         'A price of 0 ₫ is a free transfer. The venue may not allow it; you will be told if so.',
       buyerPaysYou: 'The buyer pays you directly',
+      priceAboveMax: 'The price must be between 0 and {amount} ₫, what you paid for this hour.',
     },
   },
   splitBill: {
@@ -2112,6 +2113,21 @@ export default {
       usedLabel: 'Used',
       heldLabel: 'Held for bookings pending payment',
       remainingLabel: 'Left',
+      usage: {
+        heldTitle: 'Bookings pending payment holding a use ({count})',
+        usedTitle: 'Bookings that used the voucher ({count})',
+        empty: 'No bookings yet.',
+        colBooking: 'Booking',
+        colCustomer: 'Customer',
+        colCourtTime: 'Court and time',
+        colDiscount: 'Discount',
+        colAt: {
+          held: 'Held at',
+          used: 'Confirmed at',
+        },
+        cancelled: 'Cancelled after confirmation, still counted as used',
+        loadMore: 'Show more',
+      },
       createdNotice: 'Program "{name}" issued.',
       updatedNotice: 'Program changes saved.',
       stoppedNotice: 'Program stopped.',
@@ -2157,9 +2173,12 @@ export default {
         downloadQr: 'Download QR',
         copied: 'Copied.',
         summary: 'Available {available} · Held {held} · Used {used}',
+        summaryClosed: 'No longer usable {unusable} · Held {held} · Used {used}',
+        booking: 'Booking {code}',
         empty: 'This program has no codes.',
         state: {
           available: 'Available',
+          unusable: 'No longer usable',
           held: 'Held',
           used: 'Used',
         },

@@ -1278,6 +1278,7 @@ export default {
       freeListingNote:
         'Giá 0 ₫ là pass miễn phí. Sân có thể không cho phép; hệ thống sẽ báo nếu không hợp lệ.',
       buyerPaysYou: 'Người mua chuyển thẳng cho bạn',
+      priceAboveMax: 'Giá pass phải từ 0 đến {amount} ₫, bằng số tiền bạn đã trả cho giờ chơi này.',
     },
   },
   splitBill: {
@@ -2111,6 +2112,21 @@ export default {
       usedLabel: 'Đã dùng',
       heldLabel: 'Đang giữ cho đơn chờ thanh toán',
       remainingLabel: 'Còn lại',
+      usage: {
+        heldTitle: 'Đơn chờ thanh toán đang giữ lượt ({count})',
+        usedTitle: 'Đơn đã dùng voucher ({count})',
+        empty: 'Chưa có đơn nào.',
+        colBooking: 'Đơn',
+        colCustomer: 'Khách',
+        colCourtTime: 'Sân và giờ chơi',
+        colDiscount: 'Tiền giảm',
+        colAt: {
+          held: 'Giữ lúc',
+          used: 'Xác nhận lúc',
+        },
+        cancelled: 'Đã huỷ sau xác nhận, vẫn tính đã dùng',
+        loadMore: 'Xem thêm',
+      },
       createdNotice: 'Đã phát hành chương trình "{name}".',
       updatedNotice: 'Đã lưu thay đổi của chương trình.',
       stoppedNotice: 'Đã dừng chương trình.',
@@ -2155,9 +2171,12 @@ export default {
         downloadQr: 'Tải QR',
         copied: 'Đã sao chép.',
         summary: 'Còn trống {available} · Đang giữ {held} · Đã dùng {used}',
+        summaryClosed: 'Hết hiệu lực {unusable} · Đang giữ {held} · Đã dùng {used}',
+        booking: 'Đơn {code}',
         empty: 'Chương trình này không có mã.',
         state: {
           available: 'Còn trống',
+          unusable: 'Hết hiệu lực',
           held: 'Đang giữ',
           used: 'Đã dùng',
         },
