@@ -215,7 +215,7 @@
     - Chạy lại Khu 2, 3, 4 (57 test) trên một lane cô lập: đạt cả. Sáu test lần đầu dừng ở `/login` vì throttle `auth-login` khi mọi lần đăng nhập dồn vào một backend; chạy lại riêng trên lane mới thì đạt. Cấu hình chuẩn bốn lane không gặp.
     - `PRICE_CHANGED` đã có ở backend và frontend từ Pha 2 nhưng chưa viết Playwright. Phương án: (a) viết ngay, đổi giá bằng cách sửa `PriceRule` và `CourtPriceSlot` của sân e2e; (b) viết sau Pha 5, đổi giá qua bảng giá của module 3. Chọn (b): engine `RentalPriceCalculator` và bảng giá của module 3 thay nguồn giá đó, nên test viết theo (a) phải viết lại ở Pha 5. Trong lúc chờ, hành vi được giữ bởi `AgreedAmountTest` và vitest `ScheduleView` ("resubmits at a changed price only after the customer confirms it").
 - [ ] 6.3 Cập nhật `report-traceability.md`: trạng thái từng mã sau mỗi pha, ghi commit và test thật.
-  - Đã cập nhật tới Pha 4 (mục "Nghiệm thu theo pha"). Cập nhật lại sau Pha 5.
+  - Đã cập nhật tới Pha 4 (mục "Nghiệm thu theo pha") và sau Pha 5, 3.6 (mục "Sau Pha 5 và task 3.6", chỉ đọc code). Cập nhật lại khi có test thật của 5.8 và gate 6.1.
 - [ ] 6.4 Kiểm lại D13 sau khi các pha của module 2 và module 3 xong: BR-76, giá "từ" của FR-69, tài khoản nhận tiền.
 - [ ] 6.5 Trước khi archive: dựng lại các khối MODIFIED ("Active inventory exclusivity", "Final bookings and released availability", "Courts carry their own sport and booking interval", "Settlement and payout lifecycle") từ text đang có ở spec chính, chỉ giữ phần sửa của change này; chạy lại `openspec validate --strict`.
 - [ ] 6.6 Archive sau `direct-owner-cutover`, `align-module-02-venue-court` và `align-module-03-pricing-promotions`, ngay sau change của module 3.
