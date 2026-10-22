@@ -66,11 +66,7 @@ const {
 
 function selectArea(key: string | number | null) {
   selectedArea.value = key === null || key === '' || key === 'all' ? null : String(key)
-  const targetCourts = filteredCourts.value
-  const first = targetCourts[0]
-  if (first && !targetCourts.some((c: Court) => c.id === selected.value)) {
-    chooseCourt(first.id)
-  }
+  if (!filteredCourts.value.some((c: Court) => c.id === selected.value)) clearCourt()
   scrollToSelectedChip()
 }
 function resetFilters() {
@@ -162,9 +158,7 @@ async function selectSportCategory(sportId: string) {
   gridDisplayLimit.value = 6
   try {
     await store.loadCourts({ sport_type: sportId === 'all' ? undefined : sportId })
-    selected.value = store.courts[0]?.id || null
-    date.value = getVenueLocalDate(new Date(), selectedTimezone.value)
-    await loadAvailability()
+    if (!store.courts.some((c: Court) => c.id === selected.value)) clearCourt()
     scrollToSelectedChip()
   } catch {
     /* store handles error */
@@ -225,13 +219,19 @@ async function loadAvailability() {
   }
 }
 
+// Slots show only for a court the customer picked; the date stays as chosen in the search strip.
 async function chooseCourt(courtId?: string | number) {
   if (courtId !== undefined && courtId !== null) {
     selected.value = Number(courtId)
   }
-  date.value = getVenueLocalDate(new Date(), selectedTimezone.value)
   await loadAvailability()
   scrollToSelectedChip()
+}
+
+function clearCourt() {
+  selected.value = null
+  store.selectedSlots = []
+  store.slots = []
 }
 
 async function handleSearch() {
@@ -246,10 +246,6 @@ function scrollToAvailability() {
 onMounted(async () => {
   try {
     await store.loadCourts()
-    selected.value = store.courts[0]?.id || null
-    date.value = getVenueLocalDate(new Date(), selectedTimezone.value)
-    await loadAvailability()
-    scrollToSelectedChip()
   } catch {
     /* store exposes the user-facing error */
   }
@@ -437,7 +433,10 @@ onMounted(async () => {
     </div>
 
     <!-- Time Slots Loading / Loaded States -->
-    <div v-if="store.slotsLoading" class="slot-preview">
+    <p v-if="!selected" class="muted pick-court-hint">
+      {{ t('home.availability.pickCourtHint') }}
+    </p>
+    <div v-else-if="store.slotsLoading" class="slot-preview">
       <SkeletonLoader type="slot" :count="8" />
     </div>
     <div v-else-if="visibleSlots.length" class="slot-preview">
@@ -565,6 +564,10 @@ onMounted(async () => {
   font-size: 14px;
   font-weight: 500;
   color: var(--muted);
+}
+
+.pick-court-hint {
+  margin: 16px 0 28px;
 }
 
 .no-filtered-courts {

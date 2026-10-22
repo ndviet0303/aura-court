@@ -200,7 +200,8 @@ export default {
     availability: {
       eyebrow: 'Lịch sân trống trực quan',
       summary: '{date} · còn {count} khung trống',
-      fallbackTitle: 'Lịch sân trống trực quan',
+      fallbackTitle: 'Chọn sân để xem giờ trống',
+      pickCourtHint: 'Bấm vào một sân ở danh sách trên để xem các khung giờ còn trống.',
       nearbyCourts: 'Chọn sân',
       areaTabs: 'Khu vực',
       allAreas: 'Tất cả',
