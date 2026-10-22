@@ -372,6 +372,16 @@ const router = createRouter({
           },
         },
         {
+          path: 'organizations/:organizationId(\\d+)/venues/:venueId(\\d+)/suspensions/:suspensionId(\\d+)',
+          name: 'admin-venue-suspensions',
+          component: () => import('@/features/admin/views/AdminVenueSuspensionsView.vue'),
+          meta: {
+            orgRoles: ['organization_owner'],
+            titleKey: 'seo.adminVenueSuspensionsTitle',
+            indexable: false,
+          },
+        },
+        {
           path: 'organizations/:organizationId(\\d+)/venues/:venueId(\\d+)/courts/:courtId(\\d+)',
           name: 'admin-court-detail',
           component: () => import('@/features/admin/views/AdminCourtDetailView.vue'),
@@ -565,6 +575,34 @@ const router = createRouter({
           name: 'admin-platform-fees',
           component: () => import('@/features/platform-fees/views/PlatformFeesView.vue'),
           meta: { platformAdmin: true, titleKey: 'seo.adminPlatformFeesTitle', indexable: false },
+        },
+        {
+          path: 'monitoring/venues',
+          name: 'admin-monitoring-venues',
+          component: () => import('@/features/admin/views/AdminVenueMonitoringView.vue'),
+          meta: { platformAdmin: true, titleKey: 'seo.adminMonitoringTitle', indexable: false },
+        },
+        {
+          path: 'monitoring/venues/:venueId(\\d+)',
+          name: 'admin-monitoring-venue-detail',
+          component: () => import('@/features/admin/views/AdminMonitoredVenueDetailView.vue'),
+          meta: {
+            platformAdmin: true,
+            titleKey: 'seo.adminMonitoringDetailTitle',
+            indexable: false,
+          },
+        },
+        {
+          path: 'venue-remediations',
+          name: 'admin-venue-remediations',
+          component: () => import('@/features/admin/views/AdminRemediationQueueView.vue'),
+          meta: { platformAdmin: true, titleKey: 'seo.adminRemediationsTitle', indexable: false },
+        },
+        {
+          path: 'venue-remediations/:id(\\d+)',
+          name: 'admin-venue-remediation',
+          component: () => import('@/features/admin/views/AdminRemediationReviewView.vue'),
+          meta: { platformAdmin: true, titleKey: 'seo.adminRemediationTitle', indexable: false },
         },
         {
           path: 'disputes',

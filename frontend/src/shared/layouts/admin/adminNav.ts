@@ -195,6 +195,18 @@ export const navGroups: NavGroup[] = [
       },
       { id: 'org-users', path: '/admin/users', labelKey: 'admin.nav.users', icon: 'group' },
       {
+        id: 'org-monitoring',
+        path: '/admin/monitoring/venues',
+        labelKey: 'admin.nav.venueMonitoring',
+        icon: 'travel_explore',
+      },
+      {
+        id: 'org-remediations',
+        path: '/admin/venue-remediations',
+        labelKey: 'admin.nav.venueRemediations',
+        icon: 'fact_check',
+      },
+      {
         id: 'org-disputes',
         path: '/admin/disputes',
         labelKey: 'admin.nav.disputes',

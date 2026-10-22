@@ -7,10 +7,12 @@ import { AuraLoading, ErrorModal } from '@/shared/components'
 import type { Court } from '@/features/court/types/court'
 import { useAdminVenueDetail } from '../composables/useAdminVenueDetail'
 import { useLifecycleCommands } from '../composables/useLifecycleCommands'
+import { useActiveSuspension } from '../composables/useVenueSuspensions'
 import type { LifecycleCommand } from '../types/lifecycle'
 import OperatingStatusBadge from '../components/lifecycle/OperatingStatusBadge.vue'
 import OperationalStopDialog from '../components/lifecycle/OperationalStopDialog.vue'
 import AffectedBookingsDialog from '../components/affected/AffectedBookingsDialog.vue'
+import SuspensionBanner from '../components/suspension/SuspensionBanner.vue'
 import VenueInfoCard from '../components/detail/VenueInfoCard.vue'
 import WeeklyHoursList from '../components/detail/WeeklyHoursList.vue'
 import ScheduleExceptionsList from '../components/detail/ScheduleExceptionsList.vue'
@@ -25,6 +27,7 @@ const { loading, error, venue, hours, exceptions, courts, load } = useAdminVenue
   organizationId,
   venueId,
 )
+const { active: suspension, load: loadSuspension } = useActiveSuspension(organizationId, venueId)
 const notice = ref('')
 
 // Read-only page: the only actions are court open/pause/resume/close for the owner and the
@@ -40,7 +43,7 @@ function handleCommand(court: Court, command: LifecycleCommand) {
   void lifecycle.run({ type: 'court', id: court.id }, command)
 }
 
-onMounted(load)
+onMounted(() => Promise.all([load(), loadSuspension()]))
 </script>
 
 <template>
@@ -58,6 +61,12 @@ onMounted(load)
         <h1 class="page-title">{{ resolveLocalizedText(venue.name) }}</h1>
         <OperatingStatusBadge :status="venue.status" />
       </header>
+      <SuspensionBanner
+        v-if="suspension"
+        :suspension="suspension"
+        :organization-id="organizationId"
+        :venue-id="venueId"
+      />
       <div v-if="notice" class="alert-notice">{{ notice }}</div>
 
       <div class="detail-grid">

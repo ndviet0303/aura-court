@@ -186,3 +186,88 @@ html.dark .access-card span {
   color: #d8b46e;
   opacity: 0.95;
 }
+
+/* Admin read-only detail pages (suspension, remediation, monitoring) */
+.admin-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 20px;
+  color: var(--ink);
+}
+
+.admin-detail-back {
+  align-self: flex-start;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.admin-detail-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-detail-title {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.admin-detail-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.admin-detail-section-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.admin-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(110px, max-content) 1fr;
+  gap: 8px 16px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.admin-detail-grid dt {
+  color: var(--muted);
+}
+
+.admin-detail-grid dd {
+  margin: 0;
+  white-space: pre-line;
+}
+
+.admin-detail-muted {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.admin-detail-error {
+  margin: 0;
+  color: #dc2626;
+  font-size: 13px;
+}
+
+.admin-detail-notice {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+  font-size: 13px;
+}
