@@ -4,6 +4,8 @@ namespace App\Contracts\Repositories;
 
 use App\Models\Court;
 use App\Models\PromotionProgram;
+use App\Models\VoucherCode;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection;
 
 interface PromotionProgramRepositoryInterface
@@ -29,7 +31,24 @@ interface PromotionProgramRepositoryInterface
      */
     public function lockCourts(array $courtIds): Collection;
 
+    public function find(int $id): ?PromotionProgram;
+
     public function findForUpdate(int $id): ?PromotionProgram;
+
+    /** FOR SHARE: blocks the owner's update or stop until the caller commits (design D11). */
+    public function findForShare(int $id): ?PromotionProgram;
+
+    /** The code exactly as stored (upper case); codes are unique across the platform. */
+    public function findCode(string $code): ?VoucherCode;
+
+    public function coversCourt(PromotionProgram $program, int $courtId): bool;
+
+    /**
+     * Public programs covering the court that are not stopped and run at $at; usage is not checked here.
+     *
+     * @return Collection<int, PromotionProgram>
+     */
+    public function runningPublicForCourt(int $courtId, CarbonInterface $at): Collection;
 
     /**
      * @param  array<string, mixed>  $attributes

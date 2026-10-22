@@ -23,6 +23,7 @@ use App\Contracts\Repositories\TenantMembershipPlanRepositoryInterface;
 use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
 use App\Contracts\Repositories\VenueRepositoryInterface;
+use App\Contracts\Repositories\VoucherUseRepositoryInterface;
 use App\Contracts\Storage\FileStorageServiceInterface;
 use App\Contracts\Storage\PartnerDocumentStorageInterface;
 use App\Infrastructure\Repositories\Eloquent\EloquentAuditLogRepository;
@@ -45,6 +46,7 @@ use App\Infrastructure\Repositories\Eloquent\EloquentTenantMembershipPlanReposit
 use App\Infrastructure\Repositories\Eloquent\EloquentUserRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueLifecycleRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentVoucherUseRepository;
 use App\Infrastructure\Services\DurableNotificationService;
 use App\Infrastructure\Storage\FileStorageService;
 use App\Infrastructure\Storage\PrivatePartnerDocumentStorage;
@@ -60,6 +62,7 @@ class RepositoryServiceProvider extends ServiceProvider
         CourtRepositoryInterface::class => EloquentCourtRepository::class,
         PriceTableRepositoryInterface::class => EloquentPriceTableRepository::class,
         PromotionProgramRepositoryInterface::class => EloquentPromotionProgramRepository::class,
+        VoucherUseRepositoryInterface::class => EloquentVoucherUseRepository::class,
         CourtBlockRepositoryInterface::class => EloquentCourtBlockRepository::class,
         ReservationRepositoryInterface::class => EloquentReservationRepository::class,
         PaymentRepositoryInterface::class => EloquentPaymentRepository::class,

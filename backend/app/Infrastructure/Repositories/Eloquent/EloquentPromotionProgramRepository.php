@@ -7,6 +7,8 @@ use App\Models\Court;
 use App\Models\PromotionProgram;
 use App\Models\VoucherCode;
 use App\Models\VoucherUse;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -45,9 +47,43 @@ class EloquentPromotionProgramRepository implements PromotionProgramRepositoryIn
         return Court::query()->whereIn('id', $courtIds)->orderBy('id')->sharedLock()->get();
     }
 
+    public function find(int $id): ?PromotionProgram
+    {
+        return PromotionProgram::query()->find($id);
+    }
+
     public function findForUpdate(int $id): ?PromotionProgram
     {
         return PromotionProgram::query()->whereKey($id)->lockForUpdate()->first();
+    }
+
+    public function findForShare(int $id): ?PromotionProgram
+    {
+        return PromotionProgram::query()->whereKey($id)->sharedLock()->first();
+    }
+
+    public function findCode(string $code): ?VoucherCode
+    {
+        return VoucherCode::query()->where('code', $code)->first();
+    }
+
+    public function coversCourt(PromotionProgram $program, int $courtId): bool
+    {
+        return $program->courts()->whereKey($courtId)->exists();
+    }
+
+    public function runningPublicForCourt(int $courtId, CarbonInterface $at): Collection
+    {
+        // Program times are wall-clock on the application clock (D13), so $at is compared on that clock.
+        $at = CarbonImmutable::instance($at)->setTimezone(config('app.timezone'))->format('Y-m-d H:i:s');
+
+        return PromotionProgram::query()
+            ->where('type', PromotionProgram::TYPE_PUBLIC)
+            ->whereNull('stopped_at')
+            ->where('starts_at', '<=', $at)
+            ->where('ends_at', '>', $at)
+            ->whereHas('courts', fn ($query) => $query->whereKey($courtId))
+            ->get();
     }
 
     public function create(array $attributes, array $courtIds): PromotionProgram

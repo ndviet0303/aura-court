@@ -36,6 +36,7 @@ use App\Http\Controllers\POS\ServiceTabController;
 use App\Http\Controllers\Pricing\CourtPricingController;
 use App\Http\Controllers\Pricing\PriceTableController;
 use App\Http\Controllers\Promotion\PromotionProgramController;
+use App\Http\Controllers\Promotion\VoucherChoiceController;
 use App\Http\Controllers\Reservation\AdminReservationController;
 use App\Http\Controllers\Reservation\CancelReservationPaymentController;
 use App\Http\Controllers\Reservation\MyReservationController;
@@ -108,6 +109,9 @@ Route::get('courts/{court}/reviews', [ReviewController::class, 'index']);
 Route::get('venues', [AdminController::class, 'venues']);
 Route::get('venues/{slug}', [AdminController::class, 'showVenue']);
 Route::get('availability', AvailabilityController::class);
+// D10, D20: what a booking form offers before checkout; neither route holds or consumes a voucher use.
+Route::get('venues/{venue}/vouchers', [VoucherChoiceController::class, 'index'])->whereNumber('venue');
+Route::get('venues/{venue}/vouchers/check', [VoucherChoiceController::class, 'check'])->whereNumber('venue')->middleware('throttle:voucher-check');
 // Google, Facebook and SePay consoles have these URLs registered, so they keep their pre-unversioning v1 paths.
 Route::prefix('v1')->group(function () {
     Route::get('auth/{provider}/callback', [AuthController::class, 'handleProviderCallback'])->middleware('web');
