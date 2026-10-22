@@ -90,7 +90,7 @@ class PlatformFeeReportTest extends TestCase
         // Created in November: the pending, the expired and three paid requests (the 01/11 00:00 one was requested on 31/10, the 01/12 00:00 one on 30/11).
         $this->assertContains(['Đã thanh toán', 3, 1900000], $summary);
         $this->assertSame(5, $total[1]);
-        $this->assertEmpty($total[2] ?? null, "No amount is added across unpaid and paid requests.");
+        $this->assertEmpty($total[2] ?? null, 'No amount is added across unpaid and paid requests.');
         $this->assertCount(5, array_slice($sheets['Chi tiết'], 1));
     }
 

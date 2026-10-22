@@ -40,7 +40,6 @@ interface DurableNotificationServiceInterface
 
     public function notifyApplicationReviewed(HostKyc $kyc, string $decision, ?string $reason = null): OutboxMessage;
 
-
     public function notifyBooking(Booking $booking, string $event, string $title, string $body, ?string $actionUrl = '/booking'): OutboxMessage;
 
     /** D13/D14 notifications below go to every active owner of the venue's organization, or every platform admin. */

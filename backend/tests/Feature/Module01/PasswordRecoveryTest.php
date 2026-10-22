@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 /** FR-ACC-06, BR-ACC-10, BR-ACC-11: password recovery, set-up for linked accounts and change. */
@@ -22,7 +23,7 @@ class PasswordRecoveryTest extends TestCase
         config(['auth.defaults.guard' => 'web']);
     }
 
-    private function reset(User $user, string $token, string $password = 'NewSecret1'): \Illuminate\Testing\TestResponse
+    private function reset(User $user, string $token, string $password = 'NewSecret1'): TestResponse
     {
         return $this->postJson('/api/auth/reset-password', [
             'token' => $token, 'email' => $user->email, 'password' => $password, 'password_confirmation' => $password,

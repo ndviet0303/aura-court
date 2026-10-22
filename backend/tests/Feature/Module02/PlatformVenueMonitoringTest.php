@@ -3,6 +3,7 @@
 namespace Tests\Feature\Module02;
 
 use App\Models\AuditLog;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\BuildsVenues;
 use Tests\TestCase;
@@ -78,7 +79,7 @@ class PlatformVenueMonitoringTest extends TestCase
     {
         $venue = $this->openVenue();
 
-        foreach ([$this->ownerOf($venue->organization), $this->staffOf($venue), \App\Models\User::factory()->create()] as $user) {
+        foreach ([$this->ownerOf($venue->organization), $this->staffOf($venue), User::factory()->create()] as $user) {
             $this->actingAs($user)->getJson('/api/admin/monitoring/venues')->assertForbidden();
             $this->actingAs($user)->getJson("/api/admin/monitoring/venues/{$venue->id}")->assertForbidden();
         }

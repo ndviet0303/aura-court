@@ -62,7 +62,7 @@ return new class extends Migration
         foreach (array_unique([$disk, 'public']) as $name) {
             try {
                 $base = Storage::disk($name)->url('');
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 continue; // As isStoredUrl: a disk that cannot be built (no S3 adapter installed) holds no upload.
             }
             if (preg_match('#^https?://[^/]+/#', $base) === 1) {

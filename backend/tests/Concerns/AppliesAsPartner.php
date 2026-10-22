@@ -7,6 +7,7 @@ use App\Models\HostKyc;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Testing\TestResponse;
 
 /**
  * Partner applications driven through the real API (module 01). Fakes the private document disk.
@@ -45,7 +46,7 @@ trait AppliesAsPartner
         return $kyc->fresh();
     }
 
-    protected function attachDocument(HostKyc $kyc, string $type): \Illuminate\Testing\TestResponse
+    protected function attachDocument(HostKyc $kyc, string $type): TestResponse
     {
         return $this->actingAs($kyc->user)->post("/api/partner/application/{$kyc->id}/documents", [
             'document_type' => $type,
@@ -53,7 +54,7 @@ trait AppliesAsPartner
         ], ['Accept' => 'application/json']);
     }
 
-    protected function submitApplication(HostKyc $kyc): \Illuminate\Testing\TestResponse
+    protected function submitApplication(HostKyc $kyc): TestResponse
     {
         $kyc->refresh();
 
@@ -71,7 +72,7 @@ trait AppliesAsPartner
         return $kyc->fresh();
     }
 
-    protected function reviewApplication(HostKyc $kyc, string $decision, ?string $reason = null, ?User $reviewer = null): \Illuminate\Testing\TestResponse
+    protected function reviewApplication(HostKyc $kyc, string $decision, ?string $reason = null, ?User $reviewer = null): TestResponse
     {
         return $this->actingAs($reviewer ?? $this->platformAdmin())->postJson("/api/admin/partner/applications/{$kyc->id}/review", [
             'decision' => $decision,

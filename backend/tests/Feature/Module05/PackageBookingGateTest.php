@@ -74,7 +74,7 @@ class PackageBookingGateTest extends TestCase
 
         $this->travel(3)->minutes();
         $this->assertSame(0, VenuePackage::query()->where('venue_id', $court->venue_id)->where('ends_at', '>', now())->count());
-        $this->actingAs($player)->postJson("/api/reservations/{$held['id']}/confirm", ['court_id' => $court->id], $this->idempotent())->assertOk()->assertJsonPath("reservation.status", "confirmed");
+        $this->actingAs($player)->postJson("/api/reservations/{$held['id']}/confirm", ['court_id' => $court->id], $this->idempotent())->assertOk()->assertJsonPath('reservation.status', 'confirmed');
         $this->assertTrue(Reservation::query()->withoutGlobalScopes()->findOrFail($held['id'])->hold_expires_at->eq($deadline));
     }
 

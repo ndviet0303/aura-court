@@ -7,6 +7,7 @@ use App\Models\OrganizationMember;
 use App\Models\User;
 use App\Models\Venue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
 use Tests\Concerns\BuildsVenues;
 use Tests\TestCase;
 
@@ -36,14 +37,14 @@ class StaffManagementTest extends TestCase
     }
 
     /** @param  list<int>  $venueIds */
-    private function invite(User $invitee, array $venueIds, ?User $actor = null, array $extra = []): \Illuminate\Testing\TestResponse
+    private function invite(User $invitee, array $venueIds, ?User $actor = null, array $extra = []): TestResponse
     {
         return $this->actingAs($actor ?? $this->owner)->postJson("/api/organizations/{$this->orgId()}/invitations", $extra + [
             'email' => $invitee->email, 'venue_ids' => $venueIds,
         ]);
     }
 
-    private function venueRead(User $user, Venue $venue): \Illuminate\Testing\TestResponse
+    private function venueRead(User $user, Venue $venue): TestResponse
     {
         return $this->actingAs($user)->getJson("/api/partner/organizations/{$this->orgId()}/venues/{$venue->id}");
     }

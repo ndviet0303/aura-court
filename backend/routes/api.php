@@ -1,14 +1,14 @@
 <?php
 
-use App\Http\Controllers\Admin\AdminVenueMonitoringController;
-use App\Http\Controllers\Admin\AdminVenueRemediationController;
-use App\Http\Controllers\Admin\AdminVenueSuspensionController;
 use App\Http\Controllers\Admin\AdminContractController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminDisputeController;
 use App\Http\Controllers\Admin\AdminKycController;
 use App\Http\Controllers\Admin\AdminMembershipController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\AdminVenueMonitoringController;
+use App\Http\Controllers\Admin\AdminVenueRemediationController;
+use App\Http\Controllers\Admin\AdminVenueSuspensionController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\PartnerReviewController;
 use App\Http\Controllers\Admin\PlatformFeePriceController;
@@ -41,8 +41,8 @@ use App\Http\Controllers\Partner\PartnerVenueController;
 use App\Http\Controllers\Partner\PartnerVenueCourtController;
 use App\Http\Controllers\Partner\PartnerVenueScheduleController;
 use App\Http\Controllers\Partner\ReceivingConnectionController;
-use App\Http\Controllers\Partner\VenuePackageController;
 use App\Http\Controllers\Partner\VenueLifecycleController;
+use App\Http\Controllers\Partner\VenuePackageController;
 use App\Http\Controllers\Partner\VenueScheduleImpactController;
 use App\Http\Controllers\Partner\VenueSuspensionController;
 use App\Http\Controllers\POS\PosController;
