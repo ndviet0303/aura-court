@@ -5,6 +5,7 @@ namespace App\Domain\Pricing\Actions;
 use App\Contracts\Repositories\PriceTableRepositoryInterface;
 use App\Domain\Pricing\DTOs\PublishPriceTableVersionData;
 use App\Events\CourtPricesTookEffect;
+use App\Models\Court;
 use App\Models\PriceTable;
 use App\Services\Pricing\PriceCoverageService;
 use Carbon\CarbonImmutable;
@@ -31,7 +32,7 @@ class PublishPriceTableVersion
             // Courts before the table, the order link changes use, so a link change or a publish of a court's other
             // table waits for this one and each coverage check reads the other's commit (D3).
             $courtIds = $this->priceTables->courtIdsLinkedFrom($data->priceTableId, CarbonImmutable::now());
-            $this->priceTables->lockCourts($courtIds);
+            $courts = $this->priceTables->lockCourts($courtIds);
             $table = $this->priceTables->findForUpdate($data->priceTableId) ?? abort(404);
             if ($table->status === PriceTable::STATUS_RETIRED) {
                 throw ValidationException::withMessages(['price_table' => 'Bảng giá đã ngừng sử dụng nên không công bố được phiên bản mới.']);
@@ -40,12 +41,14 @@ class PublishPriceTableVersion
             // lock gets its court locked too (a deadlock here is retried).
             $now = CarbonImmutable::now();
             $linked = $this->priceTables->courtIdsLinkedFrom($data->priceTableId, $now);
-            $this->priceTables->lockCourts(array_values(array_diff($linked, $courtIds)));
+            $courts = $courts->merge($this->priceTables->lockCourts(array_values(array_diff($linked, $courtIds))))
+                ->filter(fn (Court $court): bool => in_array((int) $court->id, $linked, true));
             $courtIds = $linked;
 
             $version = $this->priceTables->publishVersion($table, $now, ($data->effectiveAt ?? $now)->max($now), $data->intervals);
-            // ponytail: every court counts until module 2 adds courts.status; inactive courts are then left out.
-            $this->coverage->assertCovered($courtIds, $now);
+            // BR-52: only courts that take bookings must be covered, as on a link change; an inactive or closed court may keep a gap.
+            $operating = $courts->filter(fn (Court $court): bool => in_array($court->status, [Court::STATUS_ACTIVE, Court::STATUS_PAUSED], true));
+            $this->coverage->assertCovered(array_values($operating->modelKeys()), $now);
 
             return [$table, CarbonImmutable::instance($version->effective_at), $courtIds];
         }, 3);

@@ -8,7 +8,8 @@ export type PromotionProgramStatus = 'upcoming' | 'running' | 'ended' | 'stopped
  */
 export type VoucherCodeState = 'available' | 'unusable' | 'held' | 'used'
 
-export type PromotionProgramCourt = { id: number; name: string; slug: string }
+/** A court of the program: `name` is its code (module 2 D9). */
+export type PromotionProgramCourt = { id: number; name: string }
 
 export type PromotionProgram = {
   id: number

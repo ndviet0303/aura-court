@@ -20,12 +20,13 @@ class PromotionProgramCodesResource extends JsonResource
     public function toArray(Request $request): array
     {
         $court = $this->courts->first();
-        $base = $court === null ? null : rtrim((string) config('app.frontend_url'), '/').'/courts/'.$court->slug.'/schedule?voucher=';
+        // Module 2 D9: the booking page is addressed by the court's id; a slug URL is a 404.
+        $base = $court === null ? null : rtrim((string) config('app.frontend_url'), '/').'/courts/'.$court->id.'/schedule?voucher=';
         $free = in_array($this->statusAt(), [PromotionProgram::STATUS_ENDED, PromotionProgram::STATUS_STOPPED], true) ? 'unusable' : 'available';
 
         return [
             'program_id' => (int) $this->id,
-            'court' => $court === null ? null : ['id' => (int) $court->id, 'name' => (string) $court->name, 'slug' => (string) $court->slug],
+            'court' => $court === null ? null : ['id' => (int) $court->id, 'name' => (string) $court->code],
             'codes' => $this->codes->map(fn (VoucherCode $code): array => [
                 'id' => (int) $code->id,
                 'code' => (string) $code->code,
