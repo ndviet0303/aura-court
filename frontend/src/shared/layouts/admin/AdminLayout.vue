@@ -7,7 +7,14 @@ import { setAppLocale, type AppLocale } from '@/i18n'
 import { applySeo } from '@/lib/seo'
 import { useTenantCapabilities } from '@/features/admin/composables/useTenantCapabilities'
 import CapabilityRouteView from './CapabilityRouteView.vue'
-import { dashboardItem, navGroups, ownerOnlyPaths, type NavGroup, type NavItem } from './adminNav'
+import {
+  dashboardItem,
+  navGroups,
+  OWNER_ONLY_PATHS,
+  OWNER_OR_STAFF_PATHS,
+  type NavGroup,
+  type NavItem,
+} from './adminNav'
 
 const { t, locale } = useI18n()
 const auth = useAuthStore()
@@ -54,20 +61,8 @@ function isItemPermitted(item: NavItem): boolean {
     userAny.capabilities?.can_manage_venues === true
   const isStaff = activeOrgs.some((o: any) => o.role === 'staff')
 
-  if (ownerOnlyPaths.includes(item.path)) return isOwner
-  // Owner or staff: schedule, POS, shifts, inventory, tournaments
-  if (
-    [
-      '/admin/schedule',
-      '/admin/pos',
-      '/pos',
-      '/admin/shifts',
-      '/admin/inventory',
-      '/admin/tournaments',
-    ].includes(item.path)
-  ) {
-    return isOwner || isStaff
-  }
+  if (OWNER_ONLY_PATHS.includes(item.path)) return isOwner
+  if (OWNER_OR_STAFF_PATHS.includes(item.path)) return isOwner || isStaff
   // Payouts finance and KYC/users/disputes stay platform admin only
   return !!isPlatformAdmin
 }

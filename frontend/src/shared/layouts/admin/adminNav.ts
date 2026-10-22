@@ -17,20 +17,6 @@ export interface NavGroup {
   items: NavItem[]
 }
 
-/** Sidebar paths only organization owners see; staff never see venue setup, packages, payment exceptions or finance. */
-export const ownerOnlyPaths = [
-  '/admin/manage',
-  '/admin/contracts',
-  '/admin/venues',
-  '/admin/pricing',
-  '/admin/membership',
-  '/admin/organization',
-  '/admin/staff',
-  '/admin/payment-exceptions',
-  '/admin/packages',
-  '/admin/finance',
-]
-
 // Standalone top item
 export const dashboardItem: NavItem = {
   id: 'dashboard',
@@ -76,6 +62,12 @@ export const navGroups: NavGroup[] = [
         path: '/admin/pricing',
         labelKey: 'admin.nav.pricingMatrix',
         icon: 'price_change',
+      },
+      {
+        id: 'courts-promotions',
+        path: '/admin/promotions',
+        labelKey: 'admin.nav.promotionPrograms',
+        icon: 'sell',
       },
     ],
   },
@@ -204,4 +196,30 @@ export const navGroups: NavGroup[] = [
       },
     ],
   },
+]
+
+// Owner-only: courts, contracts, venues, pricing, promotions, membership, organization profile & staff,
+// payment exceptions, venue packages, finance
+export const OWNER_ONLY_PATHS = [
+  '/admin/manage',
+  '/admin/contracts',
+  '/admin/venues',
+  '/admin/pricing',
+  '/admin/promotions',
+  '/admin/membership',
+  '/admin/organization',
+  '/admin/staff',
+  '/admin/payment-exceptions',
+  '/admin/packages',
+  '/admin/finance',
+]
+
+// Owner or staff: schedule, POS, shifts, inventory, tournaments
+export const OWNER_OR_STAFF_PATHS = [
+  '/admin/schedule',
+  '/admin/pos',
+  '/pos',
+  '/admin/shifts',
+  '/admin/inventory',
+  '/admin/tournaments',
 ]

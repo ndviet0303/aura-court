@@ -2,15 +2,17 @@
 
 namespace App\Listeners;
 
-use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Events\CourtPricesTookEffect;
+use App\Exceptions\VoucherNoLongerApplies;
 use App\Models\Court;
 use App\Models\Reservation;
 use App\Models\ReservationSlot;
 use App\Services\Booking\WaitlistService;
 use App\Services\Pricing\RentalPriceCalculator;
+use App\Services\Promotion\VoucherUsageService;
 use App\Services\Reservation\HeldReservationRelease;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -26,7 +28,7 @@ class RecheckHeldReservationsAtNewPrice
         private readonly HeldReservationRelease $release,
         private readonly RentalPriceCalculator $rentals,
         private readonly WaitlistService $waitlists,
-        private readonly DurableNotificationServiceInterface $notifications,
+        private readonly VoucherUsageService $vouchers,
     ) {}
 
     public function handle(CourtPricesTookEffect $event): void
@@ -52,51 +54,34 @@ class RecheckHeldReservationsAtNewPrice
         }
 
         $slots = ReservationSlot::query()->withoutGlobalScope('tenant_isolation')->where('reservation_id', $locked->id)->get();
-        if ($this->payable($locked, $slots->all()) === (int) $locked->total_amount
+        if ($this->payable($locked, $slots) === (int) $locked->total_amount
             || ! $this->release->releaseHeld($locked, 'expired', 'price_changed')) {
             return;
         }
 
-        $this->notifications->recordOutboxNotification(
-            key: "reservation.notification.{$locked->id}.price_changed",
-            userId: (int) $locked->user_id,
-            eventType: 'booking.price_changed',
-            payload: [
-                'booking_id' => $locked->id,
-                'booking_code' => $locked->code,
-                'event' => 'price_changed',
-                'title' => 'Giá sân đã thay đổi',
-                'body' => "Giá sân của đơn {$locked->code} đã thay đổi nên yêu cầu đặt sân này không còn hiệu lực. Vui lòng xem giá mới và gửi lại yêu cầu.",
-                'action_url' => '/booking',
-                'delivered_channels' => [],
-                'mail_view' => 'emails.booking-notification',
-                'aggregate_type' => Reservation::class,
-                'aggregate_id' => $locked->id,
-            ],
-            orgId: (int) $locked->organization_id,
-            channels: ['database', 'mail'],
-        );
+        $this->release->notifyReleased($locked, 'price_changed');
         DB::afterCommit(fn () => $slots->each(fn ($slot) => $this->waitlists->notifyForSlot((int) $slot->court_id, $slot->starts_at)));
     }
 
     /**
-     * What the booking would pay now, or null when one of its intervals has no price any more.
+     * What the booking would pay now with the voucher it holds, or null when its time has no price any more or the
+     * voucher no longer applies.
      *
-     * @param  list<ReservationSlot>  $slots
+     * @param  Collection<int, ReservationSlot>  $slots
      */
-    private function payable(Reservation $locked, array $slots): ?int
+    private function payable(Reservation $locked, Collection $slots): ?int
     {
         $court = Court::query()->withoutGlobalScope('tenant_isolation')->findOrFail($locked->court_id);
         try {
-            // ponytail: no voucher yet; task 5.5 passes the voucher use the booking holds once module 3 records it.
-            return array_sum(array_map(fn (ReservationSlot $slot): int => $this->rentals->quote(
+            // One quote for the whole booking, so the voucher's minimum and discount apply to it as at checkout (D19).
+            return $this->rentals->quote(
                 $court,
-                CarbonImmutable::parse($slot->starts_at),
-                CarbonImmutable::parse($slot->ends_at),
-                null,
+                CarbonImmutable::parse($slots->min('starts_at')),
+                CarbonImmutable::parse($slots->max('ends_at')),
+                $this->vouchers->choiceFor($locked),
                 $locked,
-            )->total, $slots));
-        } catch (ValidationException) {
+            )->total;
+        } catch (ValidationException|VoucherNoLongerApplies) {
             return null;
         }
     }

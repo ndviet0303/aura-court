@@ -8,7 +8,9 @@ use App\Domain\Pricing\DTOs\VoucherChoice;
 use App\Models\Court;
 use App\Models\PriceTable;
 use App\Models\Reservation;
+use App\Services\Promotion\VoucherEligibility;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -17,15 +19,28 @@ use Illuminate\Validation\ValidationException;
  */
 class RentalPriceCalculator
 {
-    public function __construct(private readonly PriceTableRepositoryInterface $priceTables) {}
+    public function __construct(
+        private readonly PriceTableRepositoryInterface $priceTables,
+        private readonly VoucherEligibility $vouchers,
+    ) {}
 
     /**
      * The amounts a booking confirmed now would pay. 422 when the interval leaves its local day or any of
-     * its minutes has no price; no other price stands in for it.
+     * its minutes has no price; no other price stands in for it. A voucher is judged now, as when it is listed,
+     * entered or submitted (D17), and one that does not apply throws VoucherNoLongerApplies with the voucher-less
+     * amounts; the use or code $heldBy holds is not counted against it.
      */
     public function quote(Court $court, CarbonImmutable $startsAt, CarbonImmutable $endsAt, ?VoucherChoice $voucher, ?Reservation $heldBy = null): RentalQuote
     {
-        return $this->price($court, $startsAt, $endsAt, $this->timeline($court, $startsAt, $endsAt));
+        $quote = $this->price($court, $startsAt, $endsAt, $this->timeline($court, $startsAt, $endsAt, now()));
+
+        return $voucher === null ? $quote : $this->vouchers->apply($court, $voucher, $quote, now(), $heldBy);
+    }
+
+    /** quote() without a voucher for a booking confirmed at $confirmedAt (D6): versions published later do not count. */
+    public function rentalConfirmedAt(Court $court, CarbonImmutable $startsAt, CarbonImmutable $endsAt, CarbonInterface $confirmedAt): RentalQuote
+    {
+        return $this->price($court, $startsAt, $endsAt, $this->timeline($court, $startsAt, $endsAt, $confirmedAt));
     }
 
     /**
@@ -40,7 +55,7 @@ class RentalPriceCalculator
         if ($intervals === []) {
             return [];
         }
-        $timeline = $this->timeline($court, min(array_column($intervals, 0)), max(array_column($intervals, 1)));
+        $timeline = $this->timeline($court, min(array_column($intervals, 0)), max(array_column($intervals, 1)), now());
         $quotes = [];
         foreach ($intervals as $key => [$startsAt, $endsAt]) {
             try {
@@ -53,9 +68,9 @@ class RentalPriceCalculator
         return $quotes;
     }
 
-    private function timeline(Court $court, CarbonImmutable $from, CarbonImmutable $until): CourtPriceTimeline
+    private function timeline(Court $court, CarbonImmutable $from, CarbonImmutable $until, CarbonInterface $confirmedAt): CourtPriceTimeline
     {
-        return new CourtPriceTimeline($this->priceTables->linksForCourts([(int) $court->id], $from, $until), now());
+        return new CourtPriceTimeline($this->priceTables->linksForCourts([(int) $court->id], $from, $until), $confirmedAt);
     }
 
     private function price(Court $court, CarbonImmutable $startsAt, CarbonImmutable $endsAt, CourtPriceTimeline $timeline): RentalQuote
@@ -104,7 +119,6 @@ class RentalPriceCalculator
         }
         $rental = intdiv($exact, 60);
 
-        // No voucher can apply before task 5.1, so a booking has no discount yet (design D28).
         return new RentalQuote(rental: $rental, discount: 0, total: $rental, snapshot: ['parts' => $parts, 'voucher' => null]);
     }
 }

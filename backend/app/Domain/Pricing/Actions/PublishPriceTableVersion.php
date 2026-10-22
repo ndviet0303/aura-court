@@ -28,15 +28,22 @@ class PublishPriceTableVersion
     public function execute(PublishPriceTableVersionData $data): PriceTable
     {
         [$table, $effectiveAt, $courtIds] = DB::transaction(function () use ($data): array {
-            // Only the table row: link changes lock their courts before this same row, so the order stays court first.
+            // Courts before the table, the order link changes use, so a link change or a publish of a court's other
+            // table waits for this one and each coverage check reads the other's commit (D3).
+            $courtIds = $this->priceTables->courtIdsLinkedFrom($data->priceTableId, CarbonImmutable::now());
+            $this->priceTables->lockCourts($courtIds);
             $table = $this->priceTables->findForUpdate($data->priceTableId) ?? abort(404);
             if ($table->status === PriceTable::STATUS_RETIRED) {
                 throw ValidationException::withMessages(['price_table' => 'Bảng giá đã ngừng sử dụng nên không công bố được phiên bản mới.']);
             }
-
+            // The time after the locks keeps publications of one table in order. A link committed before the table
+            // lock gets its court locked too (a deadlock here is retried).
             $now = CarbonImmutable::now();
+            $linked = $this->priceTables->courtIdsLinkedFrom($data->priceTableId, $now);
+            $this->priceTables->lockCourts(array_values(array_diff($linked, $courtIds)));
+            $courtIds = $linked;
+
             $version = $this->priceTables->publishVersion($table, $now, ($data->effectiveAt ?? $now)->max($now), $data->intervals);
-            $courtIds = $this->priceTables->courtIdsLinkedFrom($table, $now);
             // ponytail: every court counts until module 2 adds courts.status; inactive courts are then left out.
             $this->coverage->assertCovered($courtIds, $now);
 

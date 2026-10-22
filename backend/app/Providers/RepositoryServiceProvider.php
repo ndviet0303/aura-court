@@ -21,6 +21,7 @@ use App\Contracts\Repositories\PlatformFeeReportRepositoryInterface;
 use App\Contracts\Repositories\PlatformFeeRequestRepositoryInterface;
 use App\Contracts\Repositories\PlatformFeeVenueRepositoryInterface;
 use App\Contracts\Repositories\PriceTableRepositoryInterface;
+use App\Contracts\Repositories\PromotionProgramRepositoryInterface;
 use App\Contracts\Repositories\ReconciliationRepositoryInterface;
 use App\Contracts\Repositories\RecurringContractRepositoryInterface;
 use App\Contracts\Repositories\ReservationRepositoryInterface;
@@ -29,6 +30,7 @@ use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
 use App\Contracts\Repositories\VenuePackageRepositoryInterface;
 use App\Contracts\Repositories\VenueRepositoryInterface;
+use App\Contracts\Repositories\VoucherUseRepositoryInterface;
 use App\Contracts\Storage\FileStorageServiceInterface;
 use App\Contracts\Storage\PartnerDocumentStorageInterface;
 use App\Infrastructure\Repositories\Eloquent\EloquentAuditLogRepository;
@@ -49,6 +51,7 @@ use App\Infrastructure\Repositories\Eloquent\EloquentPlatformFeeReportRepository
 use App\Infrastructure\Repositories\Eloquent\EloquentPlatformFeeRequestRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPlatformFeeVenueRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPriceTableRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentPromotionProgramRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReconciliationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentRecurringContractRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReservationRepository;
@@ -57,6 +60,7 @@ use App\Infrastructure\Repositories\Eloquent\EloquentUserRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueLifecycleRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenuePackageRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentVoucherUseRepository;
 use App\Infrastructure\Services\DurableNotificationService;
 use App\Infrastructure\Storage\FileStorageService;
 use App\Infrastructure\Storage\PrivatePartnerDocumentStorage;
@@ -71,6 +75,8 @@ class RepositoryServiceProvider extends ServiceProvider
         VenueRepositoryInterface::class => EloquentVenueRepository::class,
         CourtRepositoryInterface::class => EloquentCourtRepository::class,
         PriceTableRepositoryInterface::class => EloquentPriceTableRepository::class,
+        PromotionProgramRepositoryInterface::class => EloquentPromotionProgramRepository::class,
+        VoucherUseRepositoryInterface::class => EloquentVoucherUseRepository::class,
         CourtBlockRepositoryInterface::class => EloquentCourtBlockRepository::class,
         ReservationRepositoryInterface::class => EloquentReservationRepository::class,
         PaymentRepositoryInterface::class => EloquentPaymentRepository::class,

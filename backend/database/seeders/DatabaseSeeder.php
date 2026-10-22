@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
             VenuePackageSeeder::class,
             HostKycSeeder::class,
             CourtSeeder::class,
-            CouponSeeder::class,
+            PromotionProgramSeeder::class,
             CourtBlockSeeder::class,
             BookingPaymentSeeder::class,
             PosProductSeeder::class,

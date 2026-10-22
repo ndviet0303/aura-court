@@ -134,13 +134,27 @@
 - [x] 5.2 Đơn mới tạo đúng một `ReservationSlot` và một `ReservationEntitlement` phủ cả khoảng; `unit_price` là tiền thuê do engine tính. Có sẵn khi báo giá chỉ có một mốc bắt đầu với độ dài cả khoảng: `priceSnapshots` trả một phần tử, giá là tiền thuê engine tính cho cả khoảng, và hold/checkout tạo một slot, một entitlement cho mỗi phần tử.
 - [x] 5.3 Bán lại: đơn mới bán nguyên đơn qua entitlement duy nhất; đơn cũ bán từng slot như cũ. Chữ tiếng Việt ghi khoảng giờ, ví dụ "Pass lại đơn 15:30–17:00", không dùng chữ "slot". Backend không đổi: tin bán gắn với một entitlement, và đơn mới chỉ có một entitlement phủ cả khoảng. Frontend: nút "Pass lại đơn {khoảng giờ}", bỏ "1h"/"1 giờ" ở thông báo đăng tin, nút "Pass Thêm" và tiêu đề mua.
 - [x] 5.4 `Court::SLOT_DURATIONS = [30, 60, 90, 120]`. Migration đổi `slot_duration` 45 → 60 và in số dòng đã đổi. Đặt định kỳ vẫn dùng `slot_duration`. (test: chưa làm)
-- [ ] 5.5 D12: nối `VoucherUsageService`.
+- [x] 5.5 D12: nối `VoucherUsageService`. (test: chưa làm)
   - `consume`: `processReceipt` (với `$receipt->event_at`), `SplitPaymentService::confirmPaidAttempt` (với `$paidAt`), `ReservationService::confirm` (với `now()`). Đơn 0đ và đơn xác nhận ngay khi tạo do module 3 gọi.
   - `release`: `releaseHeld` và `ReservationService::release`.
   - `VoucherNoLongerApplies` xử lý theo từng đường như D12, nhả bằng `releaseHeld(…, 'expired', 'voucher_changed')` và báo khách. `ReservationController::confirm` trả 422 `VOUCHER_INVALID` kèm lý do.
   - `processReceipt` khoá cơ sở `FOR KEY SHARE` trước khi khoá attempt. `confirmPaidAttempt` khoá đơn bằng `HeldReservationRelease::lock` trước khi đánh dấu nhóm `confirmed`.
   - Nhánh hỏng của `confirmPaidAttempt` và `SplitPaymentService::expire` hết hạn attempt `split_share` còn chờ bằng `DB::afterCommit`, trong một transaction riêng, không làm trong transaction đang giữ nhóm. Phải xong trước khi module 3 merge task 5.4 của họ.
   - Đã làm trước (2026-10-22, chưa có test): `processReceipt` khoá cơ sở `FOR KEY SHARE` trước attempt; `SplitPaymentService::expire` hết hạn attempt `split_share` sau commit. Còn lại chờ `VoucherUsageService` (task 5.1–5.3 của module 3): `consume`, `release`, `VoucherNoLongerApplies`, khoá đơn trước khi nhóm `confirmed` và nhánh hỏng của `confirmPaidAttempt` (dùng cùng cách hết hạn sau commit như `expire`).
+  - Ghi chú khi apply (2026-10-22), sau khi merge local commit `820d62cc` của module 3:
+    - `HeldReservationRelease` có thêm:
+      - `consumeVoucher($locked, $confirmedAt)`: gọi `consume`. Khi gặp `VoucherNoLongerApplies`, nhả đơn bằng `releaseHeld(…, 'expired', 'voucher_changed')`, báo khách, rồi trả lại lỗi thay vì ném, để transaction của nơi gọi giữ việc nhả.
+      - `notifyReleased($reservation, $reason)`: ghi thông báo vào outbox trong cùng transaction (database và mail), dùng chung cho `price_changed` và `voucher_changed`.
+      - `releaseHeld` gọi `VoucherUsageService::release`.
+    - `processReceipt`: lỗi voucher thì receipt thành EXCEPTION mã `voucher_changed` và đi qua `exceptions->record` như các mã khác. Thêm nhãn vi/en cho mã này ở trang ngoại lệ thanh toán.
+    - `confirmPaidAttempt`: khi nhóm đủ tiền, khoá đơn qua `lock`, rồi `consumeVoucher($reservation, $paidAt)`. Hỏng thì gọi `expire($group, true)`, rồi return.
+      - Tham số mới `$beforeDue` của `expire` cho phép kết thúc nhóm khi hạn chưa tới.
+      - `expire` thấy đơn đã nhả nên không nhả lại. Nó cho nhóm và phần chia còn chờ sang `expired`, ghi các phần đã trả qua `SplitExpiredShareExceptions::record`, và cho attempt `split_share` hết hạn sau commit.
+      - Phương án khác: tách một hàm `endGroup` riêng. Loại vì file vượt trần 415 dòng.
+    - `ReservationService::confirm` dùng cùng `$confirmedAt` cho `consume` và `confirmed_at`, ném lỗi sau khi transaction của service xong. `ReservationController::confirm` bắt lỗi trong closure của `IdempotencyService::run` và trả `render()` (422 `VOUCHER_INVALID`).
+    - `ReservationService::release` gọi `VoucherUsageService::release`.
+    - Listener giá (5.6) nay gọi `quote` một lần cho cả khoảng giờ của đơn, với `choiceFor($reservation)` và `$heldBy` là chính đơn. Bắt cả `VoucherNoLongerApplies`, theo D19 của module 3.
+    - Không báo danh sách chờ khi nhả vì voucher (chỉ listener giá và huỷ của khách có báo). Có thể thêm sau nếu cần.
 - [x] 5.6 D11: listener `CourtPricesTookEffect(courtIds, effectiveAt)`. (test: chưa làm)
   - Tìm đơn `held` trên `courtIds` có giờ kết thúc sau `effectiveAt`.
   - Mỗi đơn một transaction: khoá qua `HeldReservationRelease::lock`, đơn không còn `held` thì bỏ qua, tính lại bằng `RentalPriceCalculator::quote` với voucher đơn đang giữ và `$heldBy` là chính đơn đó.
@@ -153,7 +167,7 @@
     - Mỗi đơn chạy trong `rescue(DB::transaction(...))`: một đơn lỗi được report, không chặn các đơn sau và không làm request công bố giá của chủ sân lỗi sau khi đã commit.
     - Thông báo ghi vào outbox trong cùng transaction với `releaseHeld` (kênh database và mail, khoá `reservation.notification.{id}.price_changed`), nên rollback thì không gửi. Slot được nhả báo cho danh sách chờ sau commit, như huỷ thanh toán của khách.
     - Quyết định: bỏ đơn của chuỗi đặt định kỳ (`recurringOccurrence`). Lý do: giá đơn định kỳ đã chốt trong hợp đồng và hoá đơn tháng, attempt của nó là `recurring_period` theo chuỗi nên `releaseHeld` không cho hết hạn được; đặt định kỳ là Non-Goal của change này (giữ báo giá theo slot và `hold_expires_at_override`). Phương án khác: kiểm cả đơn định kỳ, loại vì sẽ nhả lẻ một buổi và lệch hoá đơn tháng.
-    - Voucher: chưa truyền voucher (`ponytail:` trong code) vì module 3 chưa ghi lượt voucher đơn giữ (task 5.1–5.3 của họ). Task 5.5 nối phần này.
+    - Voucher: task 5.5 đã nối. Listener tính một lần cho cả khoảng giờ, với voucher đơn đang giữ (xem ghi chú 5.5).
 - [x] 5.7 Frontend: (test: chưa làm)
   - Form chọn giờ bắt đầu và kết thúc trên lưới 30 phút, từ availability mới.
   - Hiện khoảng giờ và thời lượng ("1 giờ 30 phút") thay cho danh sách slot.

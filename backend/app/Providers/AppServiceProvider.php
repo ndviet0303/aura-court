@@ -42,7 +42,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->configureAuthRateLimits();
+        $this->configureRateLimits();
         // BR-23: remember when each session signed in, so a later account lock can end it.
         Event::listen(Login::class, function (): void {
             if (app()->bound('session.store') && request()->hasSession()) {
@@ -68,7 +68,7 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 
-    private function configureAuthRateLimits(): void
+    private function configureRateLimits(): void
     {
         $tooMany = fn (Request $request, array $headers) => response()->json(
             ['message' => 'Bạn thao tác quá nhiều lần. Vui lòng thử lại sau ít phút.'],
@@ -82,6 +82,8 @@ class AppServiceProvider extends ServiceProvider
         ]);
         RateLimiter::for('auth-register', fn (Request $request) => Limit::perMinute(5)->by($request->ip())->response($tooMany));
         RateLimiter::for('auth-reset', fn (Request $request) => Limit::perMinute(5)->by($request->ip())->response($tooMany));
+        // D20: the public code check answers per code, so it is capped per address to blunt enumeration.
+        RateLimiter::for('voucher-check', fn (Request $request) => Limit::perMinute(20)->by('voucher-check:'.$request->ip())->response($tooMany));
         // BR-05/BR-10: verification and reset emails at least 60 s apart and at most 5 an hour per account.
         RateLimiter::for('auth-email-link', function (Request $request) use ($tooMany) {
             $account = EmailLinkThrottle::account($request->user()->email ?? (string) $request->input('email'));

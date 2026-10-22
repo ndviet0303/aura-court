@@ -1,6 +1,5 @@
 import { api } from '@/core/api/client'
 import type { Court, Venue, CourtBlock } from '@/features/court/types/court'
-import type { Coupon } from '@/features/booking/types/booking'
 import type { CourtForm, BlockForm, VenueForm } from '../types/admin'
 import type { VenueBookingPolicySettings, VenueBookingPolicyVersion } from '../types/admin'
 
@@ -76,32 +75,6 @@ export const adminApi = {
     page?: number
   }) => api.get<T>('/admin/reservations', { params }),
   getPayments: <T = any>() => api.get<T>('/admin/payments'),
-
-  // Coupons
-  getCoupons: <T = Coupon[]>(organizationId?: number) =>
-    api.get<T>(`/admin/coupons${organizationId ? `?organization_id=${organizationId}` : ''}`),
-  createCoupon: (payload: Record<string, unknown>) => api.post<Coupon>('/admin/coupons', payload),
-  updateCoupon: (id: number, payload: Record<string, unknown>) =>
-    api.patch<{ coupon: Coupon }>(`/admin/coupons/${id}`, payload),
-  transitionCoupon: (
-    id: number,
-    action: 'activate' | 'suspend' | 'retire',
-    organizationId?: number,
-  ) =>
-    api.post<{ coupon: Coupon }>(`/admin/coupons/${id}/${action}`, {
-      organization_id: organizationId,
-    }),
-  getPromotionCampaigns: <T = unknown>(organizationId?: number) =>
-    api.get<T>(`/admin/promotions${organizationId ? `?organization_id=${organizationId}` : ''}`),
-  createPromotionCampaign: (payload: Record<string, unknown>) =>
-    api.post('/admin/promotions', payload),
-  updatePromotionCampaign: (id: number, payload: Record<string, unknown>) =>
-    api.patch(`/admin/promotions/${id}`, payload),
-  transitionPromotionCampaign: (
-    id: number,
-    action: 'activate' | 'suspend' | 'retire',
-    organizationId?: number,
-  ) => api.post(`/admin/promotions/${id}/${action}`, { organization_id: organizationId }),
 
   // Logs
   getAuditLogs: <T = unknown>() => api.get<T>('/admin/audit-logs'),
