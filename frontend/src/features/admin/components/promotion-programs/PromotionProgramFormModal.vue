@@ -103,9 +103,7 @@ const payload = computed<CreatePromotionProgramPayload>(() => ({
   ...(draft.type === 'private' ? { code_count: draft.codeCount ?? 0 } : {}),
 }))
 const reviewCourtNames = computed(() =>
-  props.courts
-    .filter((court) => draft.courtIds.includes(court.id))
-    .map((court) => court.code),
+  props.courts.filter((court) => draft.courtIds.includes(court.id)).map((court) => court.code),
 )
 
 // The second click of a double-click on "Xem lại" lands on the confirm button, so it stays disabled for a moment.

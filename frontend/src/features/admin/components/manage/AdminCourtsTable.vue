@@ -103,9 +103,7 @@ function goToPage(page: number) {
           <SelectDropdown
             :model-value="statusFilter"
             :options="statusFilterOptions"
-            @update:model-value="
-              emit('update:statusFilter', $event as StatusFilter)
-            "
+            @update:model-value="emit('update:statusFilter', $event as StatusFilter)"
           />
         </div>
 

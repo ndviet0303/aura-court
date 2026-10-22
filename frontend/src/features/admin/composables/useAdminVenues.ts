@@ -60,9 +60,7 @@ export function useAdminVenues() {
   })
 
   const totalVenuesCount = computed(() => venues.value.length)
-  const activeVenuesCount = computed(
-    () => venues.value.filter((v) => v.status === 'active').length,
-  )
+  const activeVenuesCount = computed(() => venues.value.filter((v) => v.status === 'active').length)
   const totalCourtsCount = computed(() => {
     return venues.value.reduce((sum, v) => sum + (v.courts_count || 0), 0)
   })

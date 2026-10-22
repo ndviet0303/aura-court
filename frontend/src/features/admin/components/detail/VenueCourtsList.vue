@@ -26,7 +26,10 @@ const { t } = useI18n()
       <div class="court-main">
         <RouterLink
           class="court-code"
-          :to="{ name: 'admin-court-detail', params: { organizationId, venueId, courtId: court.id } }"
+          :to="{
+            name: 'admin-court-detail',
+            params: { organizationId, venueId, courtId: court.id },
+          }"
         >
           {{ court.code }}
         </RouterLink>

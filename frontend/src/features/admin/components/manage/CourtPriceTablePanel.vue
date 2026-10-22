@@ -49,12 +49,7 @@ onMounted(load)
               : t('admin.priceTables.linkOpenEnded', { from: labels.instant(link.starts_at) })
           }}</span>
         </span>
-        <AuraButton
-          variant="danger"
-          size="sm"
-          :disabled="saving"
-          @click="end(link.table.kind)"
-        >
+        <AuraButton variant="danger" size="sm" :disabled="saving" @click="end(link.table.kind)">
           {{ t('admin.priceTables.endLinkBtn') }}
         </AuraButton>
       </li>
@@ -113,7 +108,9 @@ onMounted(load)
 
     <p v-if="notice" class="coverage-ok" role="status">{{ notice }}</p>
     <div v-if="rejectedGaps.length" class="form-error" role="alert">
-      <p>{{ t('admin.priceTables.coverage.title') }}. {{ t('admin.priceTables.coverage.message') }}</p>
+      <p>
+        {{ t('admin.priceTables.coverage.title') }}. {{ t('admin.priceTables.coverage.message') }}
+      </p>
       <ul class="plain-list">
         <li v-for="gap in rejectedGaps" :key="gap">{{ gap }}</li>
       </ul>
