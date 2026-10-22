@@ -64,6 +64,7 @@ async function submit(agreedTotal?: number) {
     <div
       v-if="store.selectedSlots.length"
       class="floating-booking"
+      :class="{ 'with-agreement': auth.user && props.courtId }"
       role="region"
       :aria-label="t('home.floating.summary', { ...picked, total: totalText })"
     >
