@@ -111,6 +111,37 @@ Test trong bảng dưới đã chạy xanh ở gate của pha tương ứng. Pla
 | BR-87 | lệch có chủ đích | – | – | Task 5.6 |
 | BR-88 | khớp | Pha 0 (0.2), Pha 3, Pha 4 | `CustomerPaymentCancelTest` ("Another customer's booking"), `OwnerPaymentExceptionLookupTest` (hai tổ chức, "Unauthorized reader"), `AttendanceOperationsAndReadinessTest` | – |
 
+### Sau Pha 5 và task 3.6 (code, chưa có test)
+
+Cập nhật 2026-10-22 trên nhánh `feat/module04-phase5`, chưa merge vào `main`. Nhánh đã merge `feat/module03-price-tables` (Pha 2–5.3 của module 3) và `feat/module02-venue-court-alignment` (bảng `affected_reservation_cases`). Trạng thái dưới đây là kết quả đọc code. Task 5.8, vitest của 5.7 và test của 3.6 chưa viết; gate 6.1 và Playwright 6.2 chưa chạy.
+
+| Task | Commit |
+| --- | --- |
+| 5.4; phần không cần code module 3 của 5.5 | `8fe41b01` |
+| 5.1–5.3 | `957f1ce7` |
+| 5.7 | `f8f9f7d2` |
+| 3.6 | `2b0758a4` |
+| 5.6 | `0c0eeb0e` |
+| 5.5 | `9476b816` |
+
+Chỉ liệt kê mã đổi trạng thái so với bảng sau Pha 4:
+
+| ID | Trạng thái (đọc code) | Task | Test còn thiếu |
+| --- | --- | --- | --- |
+| FR-70 | khớp | 5.1, 5.7 | `ThirtyMinuteBookingIntervalTest`; test bốn mốc của đơn 19:00–21:00; vitest form chọn giờ |
+| FR-71 | khớp | 5.7 | Vitest form chọn giờ |
+| FR-72 | khớp | 5.1 | `ThirtyMinuteBookingIntervalTest` |
+| FR-74 | khớp | 5.5 | `VoucherConsumeOnConfirmTest` |
+| FR-78 | khớp | 5.6 | `PendingPriceChangeTest` |
+| FR-79 | khớp | 3.6 | Test API chi tiết đơn có case; vitest `ReservationDetailFacts` |
+| BR-73 | khớp | 5.1 | `ThirtyMinuteBookingIntervalTest` ("Gapped selection") |
+| BR-75 | khớp | 5.1–5.4 | `ThirtyMinuteBookingIntervalTest`; test migration 45 → 60 |
+| BR-80 | khớp | 5.1 | `AgreedAmountTest` theo hợp đồng mới |
+| BR-83 | khớp | 5.5 | `VoucherConsumeOnConfirmTest` |
+| BR-87 | khớp | 5.6 | `PendingPriceChangeTest` |
+
+Còn mở: FR-69, BR-76, BR-81 chờ module 2 và 3 (task 6.4); FR-75, BR-82 theo task 5.4 của module 3.
+
 ## Use case
 
 | UC | Tên | FR | Ghi chú |
