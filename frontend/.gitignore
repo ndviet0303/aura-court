@@ -39,8 +39,3 @@ __screenshots__/
 # Vite
 *.timestamp-*-*.mjs
 
-# Playwright
-test-results/
-playwright-report/
-auth-states/
-*.auth.json

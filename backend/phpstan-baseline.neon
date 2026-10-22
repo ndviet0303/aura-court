@@ -7,12 +7,6 @@ parameters:
 			path: app/Console/Commands/BackfillReviewedPartnerMappingsCommand.php
 
 		-
-			message: '#^Using nullsafe property access on non\-nullable type mixed\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Console/Commands/E2ESeedFixturesCommand.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1

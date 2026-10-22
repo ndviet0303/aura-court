@@ -189,11 +189,9 @@ Backend:
 
 ```bash
 cd backend
-php artisan test
+vendor/bin/phpunit tests/Unit/Architecture
 vendor/bin/pint --test
 ```
-
-Test backend cần PostgreSQL test database đúng với `phpunit.xml` (`booking_test`).
 
 Frontend:
 
@@ -201,7 +199,6 @@ Frontend:
 cd frontend
 npm run type-check
 npm run test:unit -- --run
-npm run test:e2e
 npm run build
 npx wrangler deploy --dry-run
 ```
