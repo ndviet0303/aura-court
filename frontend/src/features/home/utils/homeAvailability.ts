@@ -1,4 +1,4 @@
-import type { AvailabilitySlot, Court } from '@/features/court/types/court'
+import type { Court } from '@/features/court/types/court'
 
 /**
  * Gets the current or provided date string (YYYY-MM-DD) in the venue's local timezone (default: Asia/Ho_Chi_Minh).
@@ -44,32 +44,6 @@ export function getVenueLocalDate(
   }).format(d)
 }
 
-/**
- * Formats slot range with start and end time (e.g. "19:00 – 20:00") according to locale and timezone.
- */
-export function formatSlotRange(
-  slot: AvailabilitySlot,
-  locale = 'vi',
-  timeZone = 'Asia/Ho_Chi_Minh',
-): string {
-  const options: Intl.DateTimeFormatOptions = {
-    timeZone,
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }
-  const loc = locale === 'en' ? 'en-US' : 'vi-VN'
-
-  const startDate = new Date(slot.startsAt)
-  const start = new Intl.DateTimeFormat(loc, options).format(startDate)
-
-  const endDate = slot.endsAt
-    ? new Date(slot.endsAt)
-    : new Date(startDate.getTime() + 60 * 60 * 1000)
-  const end = new Intl.DateTimeFormat(loc, options).format(endDate)
-
-  return `${start} – ${end}`
-}
 /**
  * Resolves the dynamic availability heading in the specified locale.
  * Replaces fixed "today" headings with format:

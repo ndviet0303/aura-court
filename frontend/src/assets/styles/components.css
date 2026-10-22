@@ -171,7 +171,7 @@ html.dark .hero h1 em {
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.12);
   padding: 12px 14px;
   display: grid;
-  grid-template-columns: 1fr 1fr 58px;
+  grid-template-columns: 1fr 58px;
   gap: 4px;
   border: 1px solid var(--border);
   box-sizing: border-box;
@@ -219,97 +219,9 @@ html.dark .hero h1 em {
   padding: 58px 24px 90px;
 }
 
-/* Slot Grid */
-.slot-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.slot {
-  border: 1px solid var(--outline);
-  background: var(--soft);
-  border-radius: 12px;
-  padding: 12px 8px;
-  cursor: pointer;
-  color: var(--ink);
-  text-align: center;
-  font-size: 14px;
-  font-weight: 700;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-}
-
-.slot:hover:not(:disabled):not(.selected) {
-  border-color: var(--accent, #c9a15a);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(201, 161, 90, 0.15);
-}
-
-.slot.selected {
-  background: linear-gradient(135deg, #dfba72 0%, #c9a15a 100%) !important;
-  border: 1px solid #b88e45 !important;
-  color: #1c1202 !important;
-  font-weight: 800;
-  box-shadow: 0 4px 16px rgba(201, 161, 90, 0.4) !important;
-  transform: translateY(-2px);
-}
-
-.slot.selected small {
-  color: #3b2507 !important;
-  font-weight: 700 !important;
-  opacity: 0.95;
-}
-
-html.dark .slot.selected {
-  background: linear-gradient(135deg, #e5c382 0%, #d8b46e 100%) !important;
-  border: 1px solid #fae0a2 !important;
-  color: #1c1202 !important;
-  box-shadow: 0 4px 20px rgba(216, 180, 110, 0.5) !important;
-}
-
-html.dark .slot.selected small {
-  color: #241402 !important;
-  font-weight: 700 !important;
-  opacity: 0.95;
-}
-
-.slot.unavailable {
-  opacity: 0.38;
-  text-decoration: line-through;
-  cursor: not-allowed;
-}
-
+/* Home start-time picker */
 .slot-preview {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-  gap: 8px;
   margin: 18px 0 30px;
-}
-
-.slot-preview .skeleton-group {
-  grid-column: 1 / -1;
-}
-
-/* Past/booked slots recede instead of shouting with a strike-through. */
-.slot-preview .slot.unavailable {
-  opacity: 0.4;
-  text-decoration: none;
-  background: transparent;
-  border-style: dashed;
-}
-
-.slot-preview small {
-  display: block;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--muted);
-  transition: color 0.2s ease;
 }
 
 /* Generic Layout Row */

@@ -12,12 +12,10 @@ const {
   date,
   selectedCourtId,
   selectedVenueId,
-  timeFilter,
   court,
   directOwnerPayments,
   venuesList,
   filteredCourts,
-  filteredSlots,
   carouselDays,
   error,
   notice,
@@ -30,10 +28,8 @@ const {
   goToNextDay,
   selectCourt,
   selectVenue,
-  toggleSlot,
+  pickSlots,
   removeSlot,
-  clearSelectedSlots,
-  quickSelectAvailableHours,
   proceedToBooking,
   resendVerificationEmail,
 } = useCourtSchedule()
@@ -106,14 +102,11 @@ const {
     <div class="schedule-split-layout">
       <div class="slots-col">
         <ScheduleSlotsGrid
-          :slots="filteredSlots"
-          :selected-slots="store.selectedSlots"
-          :time-filter="timeFilter"
+          :slots="store.slots"
+          :selection="store.selection"
           :loading="loading"
-          @toggle-slot="toggleSlot"
-          @update-time-filter="timeFilter = $event"
-          @quick-select="quickSelectAvailableHours"
-          @clear-selected="clearSelectedSlots"
+          @pick="pickSlots"
+          @next-day="goToNextDay"
         />
       </div>
 
