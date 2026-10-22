@@ -40,7 +40,7 @@ trait PaysPackages
     /** A SePay transfer quoting the code, recorded by the bank at $at (Vietnam wall time, as SePay sends it). */
     protected function payPackage(string $paymentCode, int $amount, CarbonInterface $at, ?string $transactionId = null, string $type = 'in'): TestResponse
     {
-        return $this->postJson('/api/webhooks/sepay', [
+        return $this->postJson('/api/v1/webhooks/sepay', [
             'id' => $transactionId ?? (string) random_int(1, PHP_INT_MAX),
             'gateway' => 'Vietcombank',
             'transactionDate' => $at->copy()->setTimezone('Asia/Ho_Chi_Minh')->format('Y-m-d H:i:s'),
