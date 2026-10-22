@@ -24,7 +24,7 @@ export type OwnerFinanceBooking = {
   code: string
   status: string
   venue: { id: number | null; name: string | null }
-  court: { id: number; name: string | null }
+  court: { id: number; code: string | null }
   starts_at: string | null
   ends_at: string | null
   payable: number

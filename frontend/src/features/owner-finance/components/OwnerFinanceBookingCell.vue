@@ -17,7 +17,7 @@ const status = (key: string) =>
       <span class="status">{{ status(booking.status) }}</span>
     </span>
     <span class="sub">
-      {{ [booking.venue.name, booking.court.name].filter(Boolean).join(' · ') || '—' }}
+      {{ [booking.venue.name, booking.court.code].filter(Boolean).join(' · ') || '—' }}
     </span>
     <span v-if="booking.starts_at" class="sub">
       {{ d(new Date(booking.starts_at), 'date') }}
