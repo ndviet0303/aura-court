@@ -28,7 +28,7 @@ export interface SpecialDateItem {
 /** An open stop of one court, listed on the schedule page. */
 export interface CourtStop extends OperationalStop {
   court_id: number
-  court_name: Court['name']
+  court_name: Court['code']
   court_status?: OperatingStatus
   organization_id?: number
   status: 'upcoming' | 'ongoing'
@@ -306,7 +306,7 @@ export function useAdminSchedule() {
       (court.operational_stops ?? []).map((stop): CourtStop => ({
         ...stop,
         court_id: court.id,
-        court_name: court.name,
+        court_name: court.code,
         court_status: court.status,
         organization_id: court.venue?.organization_id,
         status: new Date(stop.starts_at).getTime() > Date.now() ? 'upcoming' : 'ongoing',

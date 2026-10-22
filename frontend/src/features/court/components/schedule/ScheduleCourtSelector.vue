@@ -89,7 +89,7 @@ function scrollCourts(direction: 'left' | 'right') {
             </span>
           </div>
 
-          <strong class="c-name">{{ c.name }}</strong>
+          <strong class="c-name">{{ c.code }}</strong>
           <span class="c-venue">
             <span class="material-symbols-outlined icon-12">location_on</span>
             <span>{{ c.venue?.name || 'Aura Court' }}</span>

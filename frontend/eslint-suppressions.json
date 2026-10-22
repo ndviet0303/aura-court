@@ -161,7 +161,7 @@
   },
   "src/features/admin/components/venues/VenueFormModal.vue": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 5
+      "count": 4
     }
   },
   "src/features/admin/composables/useAdminContracts.ts": {

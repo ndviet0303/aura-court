@@ -68,13 +68,13 @@ const sportLabel = computed(() => t(`sportTypes.${props.booking.court?.sport_typ
         </div>
         <h3 class="court-name">
           <RouterLink
-            v-if="booking.court?.slug"
-            :to="`/courts/${booking.court.slug}`"
+            v-if="booking.court?.id"
+            :to="`/courts/${booking.court.id}`"
             class="court-link"
           >
-            {{ booking.court?.name || 'Sân Aura Court' }}
+            {{ booking.court?.code || 'Sân Aura Court' }}
           </RouterLink>
-          <span v-else>{{ booking.court?.name || 'Sân Aura Court' }}</span>
+          <span v-else>{{ booking.court?.code || 'Sân Aura Court' }}</span>
         </h3>
         <div class="venue-info">
           <span class="material-symbols-outlined venue-icon">location_on</span>
@@ -82,8 +82,8 @@ const sportLabel = computed(() => t(`sportTypes.${props.booking.court?.sport_typ
             booking.court?.venue?.name || 'Aura Badminton Center'
           }}</span>
           <RouterLink
-            v-if="booking.court?.slug"
-            :to="`/courts/${booking.court.slug}/directions`"
+            v-if="booking.court?.id"
+            :to="`/courts/${booking.court.id}/directions`"
             class="directions-link"
             :title="$t('courts.directionsBtn')"
           >

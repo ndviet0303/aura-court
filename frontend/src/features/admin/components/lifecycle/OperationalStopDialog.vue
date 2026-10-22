@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { resolveLocalizedText } from '@/i18n'
 import { venueInstant } from '@/core/utils/venueTime'
 import { AuraButton, DateTimePicker, SelectDropdown } from '@/shared/components'
 import type { DropdownOption } from '@/shared/components'
@@ -55,7 +54,7 @@ const title = computed(() =>
   t(`admin.lifecycle.dialogTitle.${props.command}${props.target === 'venue' ? 'Venue' : 'Court'}`),
 )
 const courtOptions = computed<DropdownOption[]>(() =>
-  (props.courts ?? []).map((c) => ({ value: c.id, label: resolveLocalizedText(c.name) })),
+  (props.courts ?? []).map((c) => ({ value: c.id, label: c.code })),
 )
 const canSubmit = computed(
   () =>

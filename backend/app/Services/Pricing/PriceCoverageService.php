@@ -86,7 +86,7 @@ class PriceCoverageService
     }
 
     /**
-     * @param  array{schedule: ?VenueOperatingSchedule, exceptions: array<string, VenueScheduleException>}  $calendar
+     * @param  array{venue: ?VenueOperatingSchedule, court: ?VenueOperatingSchedule, exceptions: array<string, array{venue?: VenueScheduleException, court?: VenueScheduleException}>}  $calendar
      * @return list<array{court_id: int, court_name: string, weekday: ?int, date: ?string, start: string, end: string}>
      */
     private function courtItems(Court $court, CourtPriceTimeline $timeline, array $calendar, CarbonImmutable $from): array
@@ -109,7 +109,8 @@ class PriceCoverageService
             ->sortBy(fn (array $gap): string => sprintf('%s|%d|%04d', $gap['date'] ?? '', $gap['weekday'] ?? 0, $gap['start']))
             ->map(fn (array $gap): array => [
                 'court_id' => (int) $court->id,
-                'court_name' => (string) $court->name,
+                // D9: the court's code is its display name; the key stays for module 3's API.
+                'court_name' => (string) $court->code,
                 'weekday' => $gap['weekday'],
                 'date' => $gap['date'],
                 'start' => self::clock($gap['start']),
@@ -123,7 +124,7 @@ class PriceCoverageService
      * Gaps of a segment [$start, $end) whose versions stay the same: each date that a schedule exception or the
      * holiday version names on its own, every other day once per weekday.
      *
-     * @param  array{schedule: ?VenueOperatingSchedule, exceptions: array<string, VenueScheduleException>}  $calendar
+     * @param  array{venue: ?VenueOperatingSchedule, court: ?VenueOperatingSchedule, exceptions: array<string, array{venue?: VenueScheduleException, court?: VenueScheduleException}>}  $calendar
      * @return list<array{weekday: ?int, date: ?string, start: int, end: int}>
      */
     private function segmentGaps(array $calendar, ?PriceTableVersion $normal, ?PriceTableVersion $holiday, CarbonImmutable $start, ?CarbonImmutable $end): array
@@ -145,7 +146,7 @@ class PriceCoverageService
         $gaps = [];
         foreach ($special as $date) {
             $weekday = CarbonImmutable::parse($date)->dayOfWeekIso;
-            $open = VenueOperatingCalendar::openMinutes($calendar['schedule'], $calendar['exceptions'][$date] ?? null, $weekday);
+            $open = VenueOperatingCalendar::dayMinutes($calendar, $date, $weekday);
             foreach (self::uncovered(self::clip($open, ...$window($date)), CourtPriceTimeline::pricing($normal, $holiday, $date, $weekday)[1]) as [$from, $to]) {
                 $gaps[] = ['weekday' => null, 'date' => $date, 'start' => $from, 'end' => $to];
             }
@@ -165,7 +166,7 @@ class PriceCoverageService
             $windows[$day->dayOfWeekIso][] = [$from, $to];
         }
         foreach ($windows as $weekday => $ranges) {
-            $open = VenueOperatingCalendar::openMinutes($calendar['schedule'], null, $weekday);
+            $open = VenueOperatingCalendar::dayMinutes($calendar, null, $weekday);
             $intervals = CourtPriceTimeline::pricing($normal, null, '', $weekday)[1];
             foreach (isset($whole[$weekday]) ? [[0, 1440]] : $ranges as [$from, $to]) {
                 foreach (self::uncovered(self::clip($open, $from, $to), $intervals) as [$gapFrom, $gapTo]) {

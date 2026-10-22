@@ -29,7 +29,7 @@ function getCourtPrice(c: Court): number | null {
       <div v-for="c in courts" :key="c.id" class="court-item-card">
         <div class="card-top-info">
           <span class="sport-tag">{{ $t(`sportTypes.${c.sport_type}`) }}</span>
-          <strong class="court-name">{{ c.name }}</strong>
+          <strong class="court-name">{{ c.code }}</strong>
         </div>
 
         <div v-if="getCourtPrice(c) !== null" class="card-price-row">
@@ -38,12 +38,12 @@ function getCourtPrice(c: Court): number | null {
         </div>
 
         <div class="card-actions-row">
-          <RouterLink :to="`/courts/${c.slug || c.id}/schedule`" class="btn-schedule-action">
+          <RouterLink :to="`/courts/${c.id}/schedule`" class="btn-schedule-action">
             <span class="material-symbols-outlined icon-14">event_available</span>
             <span>{{ $t('directions.bookNow') }}</span>
           </RouterLink>
 
-          <RouterLink :to="`/courts/${c.slug || c.id}`" class="btn-detail-action">
+          <RouterLink :to="`/courts/${c.id}`" class="btn-detail-action">
             <span>{{ $t('directions.details') }}</span>
           </RouterLink>
         </div>

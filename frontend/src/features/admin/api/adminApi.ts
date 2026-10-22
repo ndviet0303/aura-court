@@ -3,14 +3,23 @@ import type { Court, OperationalStop, Venue } from '@/features/court/types/court
 import type { Coupon } from '@/features/booking/types/booking'
 import type { CourtForm, VenueForm } from '../types/admin'
 import type { LifecycleCommand, StopPayload } from '../types/lifecycle'
+import type { CourtDetail } from '../types/venueDetail'
 import type { VenueBookingPolicySettings, VenueBookingPolicyVersion } from '../types/admin'
 
 export const adminApi = {
   // Venues
   getVenues: () => api.get<Venue[]>('/admin/venues'),
-  createVenue: (payload: VenueForm) => api.post<Venue>('/admin/venues', payload),
-  updateVenue: (id: number, payload: Partial<VenueForm>) =>
-    api.patch<Venue>(`/admin/venues/${id}`, payload),
+  // D12: the partner path is the only venue write path; an update sends the full venue information.
+  createVenue: (organizationId: number, payload: VenueForm) =>
+    api.post<{ data: Venue; message: string }>(
+      `/partner/organizations/${organizationId}/venues`,
+      payload,
+    ),
+  updateVenue: (organizationId: number, venueId: number, payload: VenueForm) =>
+    api.put<{ data: Venue; message: string }>(
+      `/partner/organizations/${organizationId}/venues/${venueId}`,
+      payload,
+    ),
   venueCommand: (
     organizationId: number,
     venueId: number,
@@ -48,6 +57,13 @@ export const adminApi = {
     api.get<{ data: any[] }>(
       `/partner/organizations/${organizationId}/venues/${venueId}/schedule-exceptions`,
       { params: courtId ? { court_id: courtId } : undefined },
+    ),
+  // Read-only detail for the owner and assigned staff.
+  getPartnerVenue: (organizationId: number, venueId: number) =>
+    api.get<{ data: Venue }>(`/partner/organizations/${organizationId}/venues/${venueId}`),
+  getPartnerCourt: (organizationId: number, venueId: number, courtId: number) =>
+    api.get<{ data: CourtDetail }>(
+      `/partner/organizations/${organizationId}/venues/${venueId}/courts/${courtId}`,
     ),
   saveScheduleException: (organizationId: number, venueId: number, payload: any) =>
     api.put<{ data: any }>(

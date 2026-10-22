@@ -28,6 +28,8 @@ const {
   showCourtModal,
   editingCourtId,
   courtForm,
+  courtErrors,
+  courtVenueOptions,
   showCouponModal,
   couponSaving,
   filteredCourts,
@@ -106,16 +108,18 @@ onMounted(() => {
 
     <!-- Modals -->
     <CourtFormModal
-      v-model:name="courtForm.name"
-      v-model:address="courtForm.address"
+      v-model:code="courtForm.code"
+      v-model:venue-id="courtForm.venue_id"
       v-model:sport-type="courtForm.sport_type"
       v-model:surface-type="courtForm.surface_type"
       v-model:capacity="courtForm.capacity"
       v-model:description="courtForm.description"
-      v-model:image-url="courtForm.image_url"
+      v-model:images="courtForm.images"
       :show="showCourtModal"
       :editing-court-id="editingCourtId"
       :saving="saving"
+      :venue-options="courtVenueOptions"
+      :errors="courtErrors"
       @close="showCourtModal = false"
       @save="saveCourt"
     />

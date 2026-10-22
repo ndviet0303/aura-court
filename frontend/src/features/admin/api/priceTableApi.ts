@@ -1,6 +1,7 @@
 import { api } from '@/core/api/client'
 import type {
   CreatePriceTablePayload,
+  PriceCoverageMissingItem,
   PriceTable,
   PriceTableDetail,
   PriceTableKind,
@@ -21,4 +22,8 @@ export const priceTableApi = {
     ),
   retire: (tableId: number) =>
     api.post<{ data: PriceTableDetail }>(`/admin/price-tables/${tableId}/retire`),
+  coverage: (courtId: number) =>
+    api.get<{
+      data: { court_id: number; covered: boolean; missing_items: PriceCoverageMissingItem[] }
+    }>(`/admin/courts/${courtId}/price-coverage`),
 }

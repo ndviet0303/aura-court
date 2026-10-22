@@ -29,7 +29,7 @@ const emit = defineEmits<{
 
       <div class="modal-body qr-body">
         <div class="court-summary-box">
-          <span class="court-title">{{ booking.court?.name || 'Sân Aura Court' }}</span>
+          <span class="court-title">{{ booking.court?.code || 'Sân Aura Court' }}</span>
           <span class="venue-subtitle">
             <span class="material-symbols-outlined loc-icon">location_on</span>
             {{ booking.court?.venue?.name || 'Aura Badminton Center' }}

@@ -33,7 +33,7 @@ export type ApiResaleListing = {
     starts_at: string
     ends_at: string
     amount: number
-    court?: { name: string; venue?: { name: string; address?: string | null } | null } | null
+    court?: { code: string; venue?: { name: string; address?: string | null } | null } | null
   } | null
   seller?: { id: number; name: string; avatar_url?: string | null } | null
 }
@@ -136,13 +136,13 @@ export interface CreateListingPayload {
 export type ResaleSourceReservation = {
   id: number
   status: string
-  court?: { name: string; venue?: { name: string } | null } | null
+  court?: { code: string; venue?: { name: string } | null } | null
   entitlements?: {
     id: number
     status: string
     starts_at: string
     ends_at: string
     amount: number | null
-    court?: { name: string; venue?: { name: string } | null } | null
+    court?: { code: string; venue?: { name: string } | null } | null
   }[]
 }

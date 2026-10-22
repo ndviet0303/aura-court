@@ -54,12 +54,11 @@ function isItemPermitted(item: NavItem): boolean {
     userAny.capabilities?.can_manage_venues === true
   const isStaff = activeOrgs.some((o: any) => o.role === 'staff')
 
-  // Owner-only: courts, contracts, venues, pricing, membership, organization profile & staff, payment exceptions
+  // Owner-only: courts, contracts, pricing, membership, organization profile & staff, payment exceptions
   if (
     [
       '/admin/manage',
       '/admin/contracts',
-      '/admin/venues',
       '/admin/pricing',
       '/admin/membership',
       '/admin/organization',
@@ -69,10 +68,11 @@ function isItemPermitted(item: NavItem): boolean {
   ) {
     return isOwner
   }
-  // Owner or staff: schedule, POS, shifts, inventory, tournaments
+  // Owner or staff: schedule, venues (staff read-only), POS, shifts, inventory, tournaments
   if (
     [
       '/admin/schedule',
+      '/admin/venues',
       '/admin/pos',
       '/pos',
       '/admin/shifts',

@@ -120,7 +120,7 @@ class DisputeFinanceSeeder extends Seeder
         $membershipPlan = $this->membershipPlanName($org->id, $customer->id, $filedAt);
 
         $vars = [
-            '{court}' => $court->getTranslation('name', 'vi'),
+            '{court}' => $court->code,
             '{venue}' => $venue->getTranslation('name', 'vi'),
             '{date}' => $startsAt->format('d/m'),
             '{slot}' => $startsAt->format('H:i').'-'.$endsAt->format('H:i'),
@@ -274,7 +274,7 @@ class DisputeFinanceSeeder extends Seeder
             ->take(3)
             ->sortBy('id')
             ->map(fn ($court): array => [
-                'name' => $court->getTranslation('name', 'vi'),
+                'name' => $court->code,
                 'status' => $court->id === $reservation->court_id ? $spec['map_status'] : 'available',
                 'label' => $court->id === $reservation->court_id ? $spec['map_label'] : 'Hoạt động bình thường',
             ])

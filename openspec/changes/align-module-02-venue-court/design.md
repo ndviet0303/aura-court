@@ -313,6 +313,8 @@
    - Cơ sở `published` có cột đang lưu khác `approved_public_snapshot`.
    - `court_blocks` còn `ends_at` trong tương lai; đơn tương lai `held`, `confirmed` hoặc đang sử dụng trên cơ sở hoặc sân không `active`.
    - Sân `active` có lịch phục vụ chưa phủ giá kín (sau Pha 2 của module 3).
+   - Sân `active` ở cơ sở chưa có giờ hoạt động hoặc đóng cả tuần: sau change này sân không có giờ phục vụ nên không nhận đặt (BR-31, không coi là mở 24 giờ).
+   - Ảnh đã upload dưới host khác với base URL của disk ảnh trên prod (`APP_URL/storage/` hoặc `R2_URL`): migration ảnh coi là link ngoài và bỏ. Khi sinh SQL bằng `--pretend` ở local, sửa base trong SQL thành base của prod trước khi chạy.
 3. **Diễn tập local.**
    - Restore dump mới vào DB local. `artisan migrate --pretend` để ra SQL. Chạy SQL đó trên bản restore.
    - Restore lần hai, chạy `migrate` thật. Diff `pg_dump -s` và dữ liệu giữa hai bản.

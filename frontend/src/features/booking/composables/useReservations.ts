@@ -253,7 +253,7 @@ export function useReservations() {
       list = list.filter(
         (r) =>
           displayCode(r).toLowerCase().includes(q) ||
-          r.court?.name?.toLowerCase().includes(q) ||
+          r.court?.code?.toLowerCase().includes(q) ||
           r.court?.venue?.name?.toLowerCase().includes(q),
       )
     }

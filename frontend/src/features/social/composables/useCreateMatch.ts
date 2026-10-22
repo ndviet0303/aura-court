@@ -123,7 +123,7 @@ export function useCreateMatch() {
     }
     const list: DropdownOption[] = courts.value.map((c: any) => ({
       value: c.id,
-      label: `${c.name} ${c.venue ? `(${c.venue.name})` : ''}`,
+      label: `${c.code} ${c.venue ? `(${c.venue.name})` : ''}`,
       sublabel: `${i18n.global.t(`sportTypes.${c.sport_type}`)} · ${c.price_per_hour ? new Intl.NumberFormat('vi-VN').format(c.price_per_hour) + '₫/h' : 'Tiêu chuẩn'}`,
       icon: 'stadium',
     }))
@@ -244,7 +244,7 @@ export function useCreateMatch() {
       sport_name: sportNameVi.value,
       sport_icon: sportIconName.value,
       venue_name: selectedVenueName.value,
-      court_name: selectedCourtObj ? selectedCourtObj.name : undefined,
+      court_name: selectedCourtObj ? selectedCourtObj.code : undefined,
       city: selectedVenueName.value.includes('Sài Gòn') ? 'TP. Hồ Chí Minh' : 'Hà Nội',
       starts_at: formattedStart,
       joined_count: isOwnerHosted ? selectedFriendsCount.value : 1 + selectedFriendsCount.value,
@@ -368,7 +368,7 @@ export function useCreateMatch() {
             split_cost: splitCost.value,
             cost_per_person: costPerPerson.value,
             court_id: selectedCourtId.value || undefined,
-            court_name: selectedCourtObj ? selectedCourtObj.name : undefined,
+            court_name: selectedCourtObj ? selectedCourtObj.code : undefined,
             venue_name: selectedVenueName.value,
             description: matchDescription.value.trim(),
           },
@@ -377,7 +377,7 @@ export function useCreateMatch() {
             sport_name: sportNameVi.value,
             format: matchFormat.value,
             court_id: selectedCourtId.value || undefined,
-            court_name: selectedCourtObj ? selectedCourtObj.name : undefined,
+            court_name: selectedCourtObj ? selectedCourtObj.code : undefined,
             venue_name: selectedVenueName.value,
             cost_per_person: costPerPerson.value,
             split_cost: splitCost.value,

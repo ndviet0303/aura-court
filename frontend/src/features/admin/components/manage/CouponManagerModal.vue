@@ -258,7 +258,7 @@ function cancelEdit() {
               >
                 <option :value="null">{{ t('admin.manage.promotionAllCourts') }}</option>
                 <option v-for="court in scopedCourts" :key="court.id" :value="court.id">
-                  {{ resolveLocalizedText(court.name) }}
+                  {{ court.code }}
                 </option>
               </select>
             </div>

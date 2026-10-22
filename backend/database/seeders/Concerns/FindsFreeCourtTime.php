@@ -13,7 +13,7 @@ use Carbon\Carbon;
 trait FindsFreeCourtTime
 {
     /**
-     * First court and start hour accepted by $fits: the given court, then the venue's other courts of the same sport by slug;
+     * First court and start hour accepted by $fits: the given court, then the venue's other courts of the same sport by code;
      * on each court the requested hour, later hours, then earlier ones, keeping the session within 06:00-23:00.
      *
      * @param  callable(Court, int): bool  $fits
@@ -25,7 +25,7 @@ trait FindsFreeCourtTime
             ->where('venue_id', $court->venue_id)
             ->where('sport_type', $court->sport_type)
             ->whereKeyNot($court->id)
-            ->orderBy('slug')
+            ->orderBy('code')
             ->get()
             ->prepend($court);
         $startHours = [];
@@ -44,7 +44,7 @@ trait FindsFreeCourtTime
             }
         }
 
-        throw new \RuntimeException("No free {$hours}h court time near {$court->slug} from {$hour}:00.");
+        throw new \RuntimeException("No free {$hours}h court time near {$court->code} from {$hour}:00.");
     }
 
     /** No active booking, reservation, stop of the court or its venue, or match on the court, nor an active reservation of the player, overlaps [from, to). */

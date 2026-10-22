@@ -4,6 +4,7 @@ namespace App\Domain\Venue\Actions;
 
 use App\Contracts\Repositories\OperationalStatusRepositoryInterface;
 use App\Domain\Venue\Rules\LifecycleGuard;
+use App\Domain\Venue\Rules\ServiceIntervalRules;
 use App\Events\CourtStatusUpdated;
 use App\Exceptions\OpeningConditionsUnmetException;
 use App\Models\Court;
@@ -22,8 +23,6 @@ use Illuminate\Support\Facades\DB;
  */
 class OpenCourt
 {
-    private const WEEKDAYS = [1 => 'Thứ Hai', 2 => 'Thứ Ba', 3 => 'Thứ Tư', 4 => 'Thứ Năm', 5 => 'Thứ Sáu', 6 => 'Thứ Bảy', 7 => 'Chủ nhật'];
-
     public function __construct(
         private readonly OperationalStatusRepositoryInterface $statuses,
         private readonly VenueOperatingCalendar $calendar,
@@ -61,8 +60,7 @@ class OpenCourt
     public function missingItems(Court $court, Venue $venue): array
     {
         $items = [];
-        // ponytail: courts.code arrives with task 2.9; until then a non-empty name stands in for the code.
-        if (array_filter($court->getTranslations('name'), fn (mixed $name): bool => trim((string) $name) !== '') === []) {
+        if (trim((string) $court->code) === '') {
             $items[] = ['code' => 'court_code', 'message' => 'Sân chưa có mã sân.'];
         }
         if (! in_array($court->sport_type, Court::SPORT_TYPES, true)) {
@@ -78,7 +76,7 @@ class OpenCourt
         if ($venue->isSuspended()) {
             $items[] = ['code' => 'venue_suspended', 'message' => 'Cơ sở đang bị nền tảng đình chỉ.'];
         }
-        // Without a service schedule the coverage service reads the court as open all day and would list noise.
+        // Without service time there is nothing to price.
         if ($hasServiceTime) {
             foreach ($this->coverage->missingItems($court, CarbonImmutable::now()) as $gap) {
                 $items[] = ['code' => 'price_coverage_gap', 'message' => self::gapMessage($gap), ...$gap];
@@ -88,26 +86,11 @@ class OpenCourt
         return $items;
     }
 
-    /** The effective schedule (the court's own, else the venue's) shares at least one minute with the venue hours. */
+    /** The effective schedule (the venue hours intersected with the court's own or inherited one) has an interval. */
     private function hasServiceTime(Court $court): bool
     {
-        $schedule = $this->calendar->scheduleFor($court);
-        $venueHours = $this->statuses->venueSchedule((int) $court->venue_id);
-        // openMinutes() reads a missing schedule as open all day, so both have to exist.
-        if ($schedule === null || $venueHours === null) {
-            return false;
-        }
-        foreach (range(1, 7) as $weekday) {
-            foreach (VenueOperatingCalendar::openMinutes($schedule, null, $weekday) as [$from, $to]) {
-                foreach (VenueOperatingCalendar::openMinutes($venueHours, null, $weekday) as [$venueFrom, $venueTo]) {
-                    if (max($from, $venueFrom) < min($to, $venueTo)) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
+        return collect($this->calendar->serviceSchedule($court)['schedule']['weekly_hours'] ?? [])
+            ->contains(fn (array $day): bool => ! $day['closed']);
     }
 
     /** @param  array{weekday: ?int, date: ?string, start: string, end: string}  $gap */
@@ -115,7 +98,7 @@ class OpenCourt
     {
         $day = $gap['date'] !== null
             ? 'ngày '.Carbon::parse($gap['date'])->format('d/m/Y')
-            : (self::WEEKDAYS[$gap['weekday']] ?? 'Thứ '.$gap['weekday']);
+            : (ServiceIntervalRules::WEEKDAYS[$gap['weekday']] ?? 'Thứ '.$gap['weekday']);
 
         return "Chưa có giá cho {$day} {$gap['start']}–{$gap['end']}.";
     }

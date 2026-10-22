@@ -528,16 +528,15 @@ class E2ESeedFixturesCommand extends Command
             ]);
 
             // Courts for Venue 1-A
+            // A code fits 50 characters and is unique per venue; each run has its own database, so no run id.
             $court1A1 = Court::create([
                 'venue_id' => $venue1A->id,
-                'name' => "Court 1-A1 {$runId}",
-                'slug' => "court-1a1-{$runId}",
+                'code' => 'Court 1-A1',
                 'status' => Court::STATUS_ACTIVE,
             ]);
             $court1A2 = Court::create([
                 'venue_id' => $venue1A->id,
-                'name' => "Court 1-A2 {$runId}",
-                'slug' => "court-1a2-{$runId}",
+                'code' => 'Court 1-A2',
                 'status' => Court::STATUS_ACTIVE,
             ]);
             // A whole-day normal table per venue, linked from a day ago so it prices any booking a test makes.
@@ -602,8 +601,7 @@ class E2ESeedFixturesCommand extends Command
 
             $court1B1 = Court::create([
                 'venue_id' => $venue1B->id,
-                'name' => "Court 1-B1 {$runId}",
-                'slug' => "court-1b1-{$runId}",
+                'code' => 'Court 1-B1',
                 'status' => Court::STATUS_ACTIVE,
             ]);
 
@@ -769,8 +767,7 @@ class E2ESeedFixturesCommand extends Command
 
             $court2 = Court::create([
                 'venue_id' => $venue2->id,
-                'name' => "Court 2-1 {$runId}",
-                'slug' => "court-21-{$runId}",
+                'code' => 'Court 2-1',
                 'status' => Court::STATUS_ACTIVE,
             ]);
 

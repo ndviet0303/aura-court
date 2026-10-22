@@ -28,7 +28,7 @@ export function useCourtSchedule() {
   const getLocalDateString = (offsetDays = 0): string => shiftDay(isoDay(new Date()), offsetDays)
 
   const date = ref(getLocalDateString(0))
-  const slugOrId = computed(() => String(route.params.slug || route.params.id || ''))
+  const courtIdParam = computed(() => String(route.params.id || ''))
   const selectedCourtId = ref<number | null>(null)
   const selectedVenueId = ref<number | null>(null)
   const timeFilter = ref<ScheduleTimeFilter>('all')
@@ -142,10 +142,10 @@ export function useCourtSchedule() {
       if (store.courts.length === 0) {
         await store.loadCourts()
       }
-      const key = slugOrId.value
+      const key = courtIdParam.value
       if (key) {
         // The cached list may omit a newly published court or contain stale eligibility.
-        const requestedCourt = await courtApi.getBySlug(key)
+        const requestedCourt = await courtApi.getById(key)
         const index = store.courts.findIndex((c: Court) => c.id === requestedCourt.id)
         if (index >= 0) store.courts[index] = requestedCourt
         else store.courts.push(requestedCourt)
@@ -182,10 +182,7 @@ export function useCourtSchedule() {
 
   function selectCourt(courtId: number) {
     selectedCourtId.value = courtId
-    const found = store.courts.find((c: Court) => c.id === courtId)
-    if (found?.slug) {
-      router.replace({ params: { slug: found.slug } })
-    }
+    router.replace({ params: { id: String(courtId) } })
     fetchAvailability()
   }
 

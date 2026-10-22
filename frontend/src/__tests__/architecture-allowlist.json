@@ -17,7 +17,6 @@
   ["component-lines", "features/admin/components/kyc/KycQueueList.vue", 598],
   ["component-lines", "features/admin/components/manage/AdminCourtsTable.vue", 898],
   ["component-lines", "features/admin/components/manage/CouponManagerModal.vue", 647],
-  ["component-lines", "features/admin/components/manage/CourtFormModal.vue", 401],
   ["component-lines", "features/admin/components/membership/MembershipPlanModal.vue", 620],
   ["component-lines", "features/admin/components/membership/MembershipPlansGrid.vue", 457],
   ["component-lines", "features/admin/components/org/OrgMembersTab.vue", 477],

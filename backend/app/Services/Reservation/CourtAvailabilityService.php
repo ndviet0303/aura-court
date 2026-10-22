@@ -22,7 +22,7 @@ class CourtAvailabilityService
         $day = CarbonImmutable::createFromFormat('!Y-m-d', $date, $court->venue?->timezone ?: config('app.timezone'));
         $step = $this->step($court);
         $slots = [];
-        foreach (VenueOperatingCalendar::openMinutes($this->calendar->scheduleFor($court), $this->calendar->exceptionFor($court, $date), $day->dayOfWeekIso) as [$from, $to]) {
+        foreach ($this->calendar->minutesOn($court, $date) as [$from, $to]) {
             // Quotes take starts on a 30-minute mark only.
             for ($minute = (int) ceil($from / 30) * 30; $minute + $step <= $to; $minute += $step) {
                 $slots[] = [$day->addMinutes($minute), $day->addMinutes($minute + $step)];

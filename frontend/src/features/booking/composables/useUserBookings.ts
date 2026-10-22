@@ -95,7 +95,7 @@ export function useUserBookings() {
       const q = searchQuery.value.trim().toLowerCase()
       list = list.filter((b) => {
         const code = displayCode(b).toLowerCase()
-        const courtName = (b.court?.name || '').toLowerCase()
+        const courtName = (b.court?.code || '').toLowerCase()
         const venueName = (b.court?.venue?.name || '').toLowerCase()
         return code.includes(q) || courtName.includes(q) || venueName.includes(q)
       })

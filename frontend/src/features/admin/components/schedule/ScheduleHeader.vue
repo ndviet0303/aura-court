@@ -40,7 +40,7 @@ const calendarCourtOptions = computed<DropdownOption[]>(() => [
     .filter((court) => (court.venue_id || court.venue?.id) === props.selectedVenueId)
     .map((court) => ({
       value: court.id,
-      label: resolveLocalizedText(court.name),
+      label: court.code,
       icon: 'sports_tennis',
     })),
 ])

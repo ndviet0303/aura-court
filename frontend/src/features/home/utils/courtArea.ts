@@ -68,7 +68,7 @@ export function filterCourts(
     if (area !== null && courtAreaKey(court) !== area) return false
     if (!q) return true
     const fields = [
-      court.name,
+      court.code,
       court.venue?.name,
       court.venue?.district,
       court.venue?.address,

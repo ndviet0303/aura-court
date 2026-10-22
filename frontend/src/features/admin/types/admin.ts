@@ -2,26 +2,28 @@ import type { Court, SportType } from '@/features/court/types/court'
 import type { User } from '@/core/types/common'
 
 export type CourtForm = {
-  name: string
+  code: string
   venue_id: number
   sport_type: SportType
   description?: string | null
-  image_url?: string | null
+  images?: string[]
   surface_type?: Court['surface_type']
   capacity?: number | null
 }
 
+/** SaveVenueRequest body; null clears an optional field, an omitted one keeps its saved value. */
 export type VenueForm = {
   name: string
   address: string
-  city?: string
-  district?: string
-  ward?: string
-  phone?: string
-  email?: string
-  description?: string
+  phone: string
+  email: string
+  city?: string | null
+  district?: string | null
+  ward?: string | null
+  description?: string | null
+  amenities?: string[]
   images?: string[]
-  google_maps_url?: string
+  google_maps_url?: string | null
   latitude?: number | null
   longitude?: number | null
 }

@@ -16,17 +16,17 @@ class OperationalStopSeeder extends Seeder
         $nextMonday = $today->copy()->startOfWeek()->addWeek();
         $saturday = $today->copy()->next(Carbon::SATURDAY);
 
-        // [court slug, local start, hours, reason, created days ago]
+        // [court code, local start, hours, reason, created days ago]
         $stops = [
-            ['san-2-tieu-chuan-cau-giay', $nextMonday->copy()->addDay()->setTime(6, 0), 4, 'Bảo trì định kỳ: thay thảm và căng lại lưới sân 2', 5],
-            ['san-tennis-1-dat-nen-tay-ho', $nextMonday->copy()->addDays(2)->setTime(13, 0), 4, 'Bảo dưỡng mặt sân đất nện: lu nền và kẻ lại vạch', 4],
-            ['san-bong-ro-in-house-nba-landmark', $saturday->copy()->setTime(18, 0), 4, 'Sự kiện riêng: giao lưu bóng rổ doanh nghiệp, thuê trọn sân', 6],
-            ['san-bong-da-mini-pmh', $saturday->copy()->addDay()->setTime(7, 0), 4, 'Sự kiện riêng: giải bóng đá mini cư dân Phú Mỹ Hưng', 9],
-            ['san-bong-ban-2-stiga-master-quan-ngua', $today->copy()->subDays(3)->setTime(14, 0), 3, 'Thay mặt bàn và lưới bàn bóng bàn số 2', 10],
+            ['Sân 2 - Tiêu Chuẩn', $nextMonday->copy()->addDay()->setTime(6, 0), 4, 'Bảo trì định kỳ: thay thảm và căng lại lưới sân 2', 5],
+            ['Sân Tennis 1 - Đất Nện French Open Tây Hồ', $nextMonday->copy()->addDays(2)->setTime(13, 0), 4, 'Bảo dưỡng mặt sân đất nện: lu nền và kẻ lại vạch', 4],
+            ['Sân Bóng Rổ Trong Nhà NBA Landmark', $saturday->copy()->setTime(18, 0), 4, 'Sự kiện riêng: giao lưu bóng rổ doanh nghiệp, thuê trọn sân', 6],
+            ['Sân Bóng Đá Mini PMH', $saturday->copy()->addDay()->setTime(7, 0), 4, 'Sự kiện riêng: giải bóng đá mini cư dân Phú Mỹ Hưng', 9],
+            ['Sân Bóng Bàn 2 - Stiga Master Quần Ngựa', $today->copy()->subDays(3)->setTime(14, 0), 3, 'Thay mặt bàn và lưới bàn bóng bàn số 2', 10],
         ];
 
-        foreach ($stops as [$slug, $startsAt, $hours, $reason, $createdDaysAgo]) {
-            $court = Court::where('slug', $slug)->first();
+        foreach ($stops as [$courtCode, $startsAt, $hours, $reason, $createdDaysAgo]) {
+            $court = Court::where('code', $courtCode)->first();
             if (! $court) {
                 continue;
             }

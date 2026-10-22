@@ -14,7 +14,7 @@ const emit = defineEmits<{
 function handleImageError(event: Event) {
   const target = event.target as HTMLImageElement | null
   if (target) {
-    const fallback = resolveCourtImage({ ...props.court, image_url: undefined })
+    const fallback = resolveCourtImage({ ...props.court, images: [] })
     if (target.src !== fallback) {
       target.src = fallback
     }
@@ -28,7 +28,7 @@ function handleImageError(event: Event) {
       <div class="main-img-wrap">
         <img
           :src="resolveCourtImage(court)"
-          :alt="court.name"
+          :alt="court.code"
           class="hero-img"
           @error="handleImageError"
         />
@@ -42,7 +42,7 @@ function handleImageError(event: Event) {
     <div class="court-header-info">
       <div class="title-rating-row">
         <h1 class="court-title">
-          {{ court.name }} · <span class="venue-name">{{ court.venue?.name }}</span>
+          {{ court.code }} · <span class="venue-name">{{ court.venue?.name }}</span>
         </h1>
         <a
           href="#reviews-section"
@@ -65,7 +65,7 @@ function handleImageError(event: Event) {
         </div>
         <RouterLink
           v-if="court.venue"
-          :to="`/courts/${court.slug || court.id}/directions`"
+          :to="`/courts/${court.id}/directions`"
           class="btn-directions-pill"
           :title="$t('courtDetail.directions')"
         >

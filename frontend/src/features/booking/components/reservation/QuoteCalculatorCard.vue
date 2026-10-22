@@ -66,7 +66,7 @@ const availableTimeSlots = [
 const courtOptions = computed<DropdownOption[]>(() =>
   props.courts.map((c) => ({
     value: c.id,
-    label: c.name,
+    label: c.code,
     sublabel: c.venue?.name ? `· ${c.venue.name}` : undefined,
     icon: 'stadium',
   })),
@@ -214,7 +214,7 @@ function setDatePreset(date: string) {
         <div class="quote-breakdown-box">
           <div class="quote-row">
             <span class="row-label">{{ t('reservations.calculator.courtRow') }}</span>
-            <span class="row-value font-bold">{{ selectedCourtObj?.name || 'Aura Court' }}</span>
+            <span class="row-value font-bold">{{ selectedCourtObj?.code || 'Aura Court' }}</span>
           </div>
           <div class="quote-row">
             <span class="row-label">{{ t('reservations.calculator.timeRow') }}</span>

@@ -30,6 +30,7 @@ use App\Http\Controllers\Organization\OrganizationController;
 use App\Http\Controllers\Partner\PartnerApplicationController;
 use App\Http\Controllers\Partner\PartnerDocumentController;
 use App\Http\Controllers\Partner\PartnerVenueController;
+use App\Http\Controllers\Partner\PartnerVenueCourtController;
 use App\Http\Controllers\Partner\PartnerVenueScheduleController;
 use App\Http\Controllers\Partner\ReceivingConnectionController;
 use App\Http\Controllers\Partner\VenueLifecycleController;
@@ -110,10 +111,10 @@ Route::get('courts/{court}/reviews', [ReviewController::class, 'index']);
 Route::get('venues', [AdminController::class, 'venues']);
 Route::get('venues/{slug}', [AdminController::class, 'showVenue']);
 Route::get('availability', AvailabilityController::class);
-// Venues and courts are never deleted; closure ends them (spec "Retired write endpoints"). Without these routes the
-// live PATCH/PUT on the same paths would answer the old DELETE with 405 instead of 404. When task 2.3 removes
-// PATCH admin/venues/{venue} and POST admin/venues, they need the same 404 here, or they answer 405.
-Route::delete('admin/venues/{venue}', fn () => abort(404));
+// Venues and courts are never deleted and venues are written only on the partner path (spec "Retired write
+// endpoints", D12). Without these routes the live GET admin/venues and PATCH/PUT admin/courts/{court} would answer
+// the retired calls with 405 instead of 404; admin/venues/{venue} has no route left, so it answers 404 by itself.
+Route::post('admin/venues', fn () => abort(404));
 Route::delete('admin/courts/{court}', fn () => abort(404));
 // Google, Facebook and SePay consoles have these URLs registered, so they keep their pre-unversioning v1 paths.
 Route::prefix('v1')->group(function () {
@@ -194,9 +195,10 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
     });
     Route::prefix('partner/organizations/{organizationId}/venues')->group(function () {
         Route::get('', [PartnerVenueController::class, 'index']);
-        Route::post('', [PartnerVenueController::class, 'store']);
+        // D12: the one venue write path; demo owners only simulate it, as on the retired admin/venues routes.
+        Route::post('', [PartnerVenueController::class, 'store'])->middleware(SimulateDemoMutations::class);
         Route::get('{venueId}', [PartnerVenueController::class, 'show']);
-        Route::put('{venueId}', [PartnerVenueController::class, 'update']);
+        Route::put('{venueId}', [PartnerVenueController::class, 'update'])->middleware(SimulateDemoMutations::class);
         Route::get('{venueId}/booking-policy', [PartnerVenueScheduleController::class, 'bookingPolicy']);
         Route::put('{venueId}/booking-policy', [PartnerVenueScheduleController::class, 'saveBookingPolicy']);
         Route::get('{venueId}/operating-schedule', [PartnerVenueScheduleController::class, 'operatingSchedule']);
@@ -204,6 +206,7 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
         Route::get('{venueId}/schedule-exceptions', [PartnerVenueScheduleController::class, 'scheduleExceptions']);
         Route::put('{venueId}/schedule-exceptions', [PartnerVenueScheduleController::class, 'saveScheduleException']);
         Route::delete('{venueId}/schedule-exceptions/{exceptionId}', [PartnerVenueScheduleController::class, 'deleteScheduleException']);
+        Route::get('{venueId}/courts/{courtId}', [PartnerVenueCourtController::class, 'show']);
         Route::post('{venueId}/open', [VenueLifecycleController::class, 'open']);
         Route::post('{venueId}/pause', [VenueLifecycleController::class, 'pause']);
         Route::post('{venueId}/resume', [VenueLifecycleController::class, 'resume']);
@@ -345,8 +348,6 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
         // BR-23: organization operations need an owner or staff membership; platform admin rights do not stand in.
         Route::middleware(['venue_admin'])->group(function () {
             Route::get('venues', [AdminController::class, 'venues']);
-            Route::post('venues', [AdminController::class, 'storeVenue']);
-            Route::patch('venues/{venue}', [AdminController::class, 'updateVenue']);
             Route::get('courts', [CourtController::class, 'adminIndex']);
             Route::apiResource('courts', CourtController::class)->except(['index', 'show', 'destroy']);
             Route::post('courts/{court}/open', [CourtLifecycleController::class, 'open']);

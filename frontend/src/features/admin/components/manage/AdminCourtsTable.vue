@@ -160,9 +160,9 @@ function goToPage(page: number) {
       >
         <div class="court-card-img">
           <img
-            v-if="court.image_url"
-            :src="court.image_url"
-            :alt="resolveLocalizedText(court.name)"
+            v-if="court.images?.length"
+            :src="court.images[0]"
+            :alt="court.code"
             loading="lazy"
           />
           <div v-else class="no-img-box">
@@ -182,7 +182,7 @@ function goToPage(page: number) {
 
         <div class="court-card-body">
           <div class="court-title-row">
-            <h4 class="court-name">{{ resolveLocalizedText(court.name) }}</h4>
+            <h4 class="court-name">{{ court.code }}</h4>
             <span class="venue-name">
               <span class="material-symbols-outlined icon-14">location_on</span>
               <span>{{ resolveLocalizedText(court.venue?.name) }}</span>
@@ -213,7 +213,8 @@ function goToPage(page: number) {
             @command="(command) => emit('command', court, command)"
           />
 
-          <div class="court-actions-footer">
+          <!-- Editing and price tables are owner-only (D10, D25); a staff assignment shows none. -->
+          <div v-if="ownerOf(court.venue?.organization_id)" class="court-actions-footer">
             <button
               type="button"
               class="btn-court-action"

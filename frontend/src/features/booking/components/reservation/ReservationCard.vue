@@ -50,7 +50,7 @@ const emit = defineEmits<{
           <span class="material-symbols-outlined court-icon">sports_tennis</span>
         </div>
         <div class="court-text-col">
-          <h4 class="court-title">{{ reservation.court?.name || 'Aura Court' }}</h4>
+          <h4 class="court-title">{{ reservation.court?.code || 'Aura Court' }}</h4>
           <p class="court-address">
             {{ reservation.court?.venue?.address || 'Aura Sports Complex' }}
           </p>

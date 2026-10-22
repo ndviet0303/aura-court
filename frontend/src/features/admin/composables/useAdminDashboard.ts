@@ -16,7 +16,7 @@ export interface AdminReport {
     court_id: number
     bookings: number
     revenue: number
-    court?: { id: number; name: string }
+    court?: { id: number; code: string }
   }[]
 }
 
@@ -29,7 +29,7 @@ export interface AdminReservation {
   created_at?: string
   // Contact recorded when the booking was made; null on a booking that has none.
   booker?: ReservationBooker | null
-  court?: { id?: number; name: string }
+  court?: { id?: number; code: string }
   slots?: { starts_at: string; ends_at?: string; status?: string }[]
   legacy_mapping?: { legacy_code: string; legacy_status: string }[]
 }

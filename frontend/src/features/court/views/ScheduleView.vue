@@ -48,8 +48,8 @@ const {
       <RouterLink to="/courts" class="bc-link">{{ $t('schedule.breadcrumbCourts') }}</RouterLink>
       <template v-if="court">
         <span class="material-symbols-outlined bc-sep">chevron_right</span>
-        <RouterLink :to="`/courts/${court.slug || court.id}`" class="bc-link">
-          {{ court.name }}
+        <RouterLink :to="`/courts/${court.id}`" class="bc-link">
+          {{ court.code }}
         </RouterLink>
       </template>
       <span class="material-symbols-outlined bc-sep">chevron_right</span>

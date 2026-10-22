@@ -71,14 +71,15 @@ export type AvailabilitySlot = {
 
 export type Court = {
   id: number
-  name: string
-  slug?: string
+  /** The court's display name (BR-27); courts are always addressed by id. */
+  code: string
   venue_id?: number
   venue: Venue
   sport_type: SportType
   slot_duration: number
   description?: string
-  image_url?: string
+  /** Uploaded or built-in images only, at most 10. */
+  images?: string[]
   is_active?: boolean
   status?: OperatingStatus
   /** Lowest hourly price a booking can pay now; null when the court has no price. */

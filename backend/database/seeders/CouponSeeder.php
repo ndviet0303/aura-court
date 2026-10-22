@@ -27,7 +27,7 @@ class CouponSeeder extends Seeder
         $owner = User::where('email', 'owner@demo.auracourt.vn')->first();
         $partnerOwner = User::where('email', 'owner.hoanggia@demo.auracourt.vn')->first();
         $venue = fn (string $slug): ?int => Venue::where('slug', $slug)->value('id');
-        $court = fn (string $slug): ?int => Court::where('slug', $slug)->value('id');
+        $court = fn (string $code): ?int => Court::where('code', $code)->value('id');
 
         $campaigns = [
             [
@@ -81,7 +81,7 @@ class CouponSeeder extends Seeder
                 'description' => 'Giảm 20% khi đặt Sân Pickleball 3 - Sunset View Hồ Tây.',
                 'status' => 'active',
                 'venue' => 'aura-complex-tay-ho',
-                'court' => 'san-pickleball-3-sunset-tay-ho',
+                'court' => 'Sân Pickleball 3 - Sunset View Hồ Tây',
                 'starts_at' => $today->copy()->subDays(14),
                 'ends_at' => $today->copy()->addDays(30)->endOfDay(),
                 'usage_limit' => 200,
@@ -112,7 +112,7 @@ class CouponSeeder extends Seeder
                 'description' => 'Giảm 15% Sân Tennis 3 - Mặt Cứng US Open tại Landmark 72, áp dụng từ tuần sau.',
                 'status' => 'active',
                 'venue' => 'aura-landmark-72',
-                'court' => 'san-tennis-3-mat-cung-landmark',
+                'court' => 'Sân Tennis 3 - Mặt Cứng US Open Landmark',
                 'starts_at' => $today->copy()->addDays(7),
                 'ends_at' => $today->copy()->addDays(37)->endOfDay(),
                 'usage_limit' => 100,

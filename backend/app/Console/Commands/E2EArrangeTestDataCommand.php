@@ -115,12 +115,11 @@ class E2EArrangeTestDataCommand extends Command
         }
 
         $basePrice = (int) ($payload['price'] ?? 100000);
-        $courtName = "Court {$testKey} {$runId}";
-        $courtSlug = 'court-'.Str::slug($testKey)."-{$runId}-".Str::lower(Str::random(6));
+        // D9: at most 50 characters and unique in the venue, so a long key or run id is cut and a random tail added.
+        $courtCode = Str::substr("{$testKey}-{$runId}", 0, 40).'-'.Str::lower(Str::random(6));
         $court = Court::create([
             'venue_id' => $venue->id,
-            'name' => $courtName,
-            'slug' => $courtSlug,
+            'code' => $courtCode,
             'status' => Court::STATUS_ACTIVE,
         ]);
 
@@ -136,8 +135,7 @@ class E2EArrangeTestDataCommand extends Command
         $out = [
             'status' => 'success',
             'court_id' => $court->id,
-            'name' => $court->name,
-            'slug' => $court->slug,
+            'code' => $court->code,
             'venue_id' => $venue->id,
             'organization_id' => $venue->organization_id,
             'price' => $basePrice,

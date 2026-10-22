@@ -50,7 +50,7 @@ class EloquentRecurringContractRepository implements RecurringContractRepository
                             ->orWhere('email', 'like', "%{$search}%");
                     })
                     ->orWhereHas('court', function ($cq) use ($search) {
-                        $cq->where('name', 'like', "%{$search}%")
+                        $cq->where('code', 'like', "%{$search}%")
                             ->orWhereHas('venue', fn ($vq) => $vq->where('name', 'like', "%{$search}%"));
                     });
             });

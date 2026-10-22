@@ -73,10 +73,6 @@ class OpenVenue
 
     private static function hasOpenInterval(?VenueOperatingSchedule $schedule): bool
     {
-        // openMinutes() reads a missing schedule as open all day, so it has to be ruled out first.
-        if ($schedule === null) {
-            return false;
-        }
         foreach (range(1, 7) as $weekday) {
             foreach (VenueOperatingCalendar::openMinutes($schedule, null, $weekday) as [$from, $to]) {
                 if ($from < $to) {

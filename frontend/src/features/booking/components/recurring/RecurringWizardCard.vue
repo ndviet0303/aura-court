@@ -51,7 +51,7 @@ const emit = defineEmits<{
 const courtOptions = computed<DropdownOption[]>(() =>
   props.courts.map((c) => ({
     value: c.id,
-    label: c.name,
+    label: c.code,
     sublabel: c.venue ? `— ${c.venue.name}` : undefined,
     icon: 'sports_tennis',
   })),
@@ -100,7 +100,7 @@ function formatMoney(amount: number | null): string {
         <div v-if="selectedCourt" class="court-preview-pill">
           <span class="material-symbols-outlined court-icon">sports_tennis</span>
           <div class="court-info">
-            <span class="court-name">{{ selectedCourt.name }}</span>
+            <span class="court-name">{{ selectedCourt.code }}</span>
             <span v-if="selectedCourt.venue" class="court-venue">
               <span class="material-symbols-outlined loc-icon">location_on</span>
               {{ selectedCourt.venue.name }}

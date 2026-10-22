@@ -105,7 +105,7 @@ class AdminContractController extends Controller
                 $code = $c->metadata['contract_code'] ?? "CTR-{$c->id}";
                 $name = $c->metadata['customer_name'] ?? $c->user?->name;
                 $phone = $c->metadata['phone'] ?? $c->user?->phone;
-                $court = $c->court?->name;
+                $court = $c->court?->code;
                 $venue = $c->court?->venue?->name;
                 $monthly = $c->metadata['monthly_amount'] ?? ($c->invoices->first()?->amount ?: 0);
                 fputcsv($output, [

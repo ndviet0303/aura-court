@@ -67,7 +67,24 @@ const sports = computed(() => [...new Set(props.venue.courts?.map((court) => cou
     />
 
     <div class="venue-card-actions">
-      <button type="button" class="btn-action-sm" @click="emit('showReceiving', venue)">
+      <RouterLink
+        v-if="venue.organization_id"
+        :to="{
+          name: 'admin-venue-detail',
+          params: { organizationId: venue.organization_id, venueId: venue.id },
+        }"
+        class="btn-action-sm"
+      >
+        <span class="material-symbols-outlined icon-16">visibility</span>
+        <span>{{ t('admin.venueDetail.viewDetail') }}</span>
+      </RouterLink>
+      <!-- Staff read their assigned venues; receiving connection and edits stay with the owner. -->
+      <button
+        v-if="owner"
+        type="button"
+        class="btn-action-sm"
+        @click="emit('showReceiving', venue)"
+      >
         <span class="material-symbols-outlined icon-16">account_balance</span>
         <span>{{ t('admin.venues.receivingConnection.openBtn') }}</span>
       </button>
@@ -75,7 +92,7 @@ const sports = computed(() => [...new Set(props.venue.courts?.map((court) => cou
         <span class="material-symbols-outlined icon-16">qr_code_2</span>
         <span>{{ t('admin.venues.qrBtn') }}</span>
       </button>
-      <button type="button" class="btn-action-sm" @click="emit('edit', venue)">
+      <button v-if="owner" type="button" class="btn-action-sm" @click="emit('edit', venue)">
         <span class="material-symbols-outlined icon-16">edit</span>
         <span>{{ t('admin.venues.editBtn') }}</span>
       </button>

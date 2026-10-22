@@ -6,10 +6,9 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
 use Spatie\Translatable\HasTranslations;
 
-#[Fillable(['name', 'slug', 'venue_id', 'sport_type', 'slot_duration', 'description', 'image_url', 'amenities', 'surface_type', 'capacity', 'status'])]
+#[Fillable(['code', 'venue_id', 'sport_type', 'slot_duration', 'description', 'images', 'amenities', 'surface_type', 'capacity', 'status'])]
 class Court extends Model
 {
     use HasTranslations;
@@ -29,29 +28,26 @@ class Court extends Model
 
     public const SLOT_DURATIONS = [30, 45, 60, 90, 120];
 
-    public array $translatable = ['name', 'description'];
+    public array $translatable = ['description'];
 
     /** Mirrors the column defaults so a court built in memory already has its sport and slot length. */
-    protected $attributes = ['sport_type' => 'badminton', 'slot_duration' => 60];
+    protected $attributes = ['sport_type' => 'badminton', 'slot_duration' => 60, 'images' => '[]'];
 
     protected $appends = ['timezone'];
+
+    /**
+     * D9, D11: code replaced name and slug, images replaced the single image_url; those columns stay unread until the
+     * contract step. code_normalized only backs the code's uniqueness within the venue.
+     */
+    protected $hidden = ['name', 'slug', 'image_url', 'code_normalized'];
 
     protected static function booted(): void
     {
         // Keep model-level seeders and existing integrations compatible while
-        // every persisted court still receives a real venue_id and clean slug.
+        // every persisted court still receives a real venue_id.
         static::creating(function (Court $court): void {
             if (! $court->venue_id) {
                 $court->venue_id = Venue::query()->where('slug', 'aura-court')->value('id');
-            }
-            if (! $court->slug && $court->name) {
-                $court->slug = Str::slug($court->name);
-            }
-        });
-
-        static::updating(function (Court $court): void {
-            if ($court->isDirty('name') && ! $court->slug) {
-                $court->slug = Str::slug($court->name);
             }
         });
     }
@@ -60,6 +56,7 @@ class Court extends Model
     {
         return [
             'amenities' => 'array',
+            'images' => 'array',
             'capacity' => 'integer',
             'slot_duration' => 'integer',
         ];
@@ -83,7 +80,7 @@ class Court extends Model
             return $this->venue->amenities;
         }
 
-        return ['parking', 'wifi', 'shower', 'cafe', 'shop', 'lounge'];
+        return [];
     }
 
     public function getTimezoneAttribute(): string
@@ -131,9 +128,11 @@ class Court extends Model
         return $this->hasMany(Review::class);
     }
 
+    /** D9: a court is addressed by its id only; a former slug URL is a 404, not a database error. */
     public function resolveRouteBinding($value, $field = null)
     {
-        return $this->where(ctype_digit((string) $value) ? 'id' : 'slug', $value)->first();
+        // (int) caps an id past bigint at PHP_INT_MAX, so it finds nothing instead of a PostgreSQL range error (500).
+        return ctype_digit((string) $value) ? $this->whereKey((int) $value)->first() : null;
     }
 
     public function toArray()

@@ -170,7 +170,7 @@
       - Scenario: "Staff open the organization detail", "Customer member opens the organization detail", "Owner and platform administrator open the organization detail".
     - `VenueChannelAuthorizationTest`, requirement "Venue realtime channel authorization".
       - Scenario: "Assigned staff subscribe", "Restricted account or revoked session", "Non-operators subscribe".
-- [ ] 2.2 `SaveVenueRequest` duy nhất, validate theo BR-26:
+- [x] 2.2 `SaveVenueRequest` duy nhất, validate theo BR-26: (test: chưa làm)
   - Trim mọi chuỗi trước khi validate.
   - Tên 2–100 ký tự. Địa chỉ 10–255 ký tự.
   - SĐT theo `User::PHONE_PATTERN`: 0 và 9 chữ số, hoặc +84 và 9 chữ số.
@@ -180,7 +180,7 @@
   - Sửa thông tin không đổi trạng thái, giờ hoạt động, lịch sân hay giá.
   - Test: `VenueInformationValidationTest`, dùng data-provider BR-26.
     - Scenario: "Boundary values", "Accepted formats and trimming", "Partly invalid update", "Amenity limits".
-- [ ] 2.3 Một đường ghi cơ sở (D12): `partner/organizations/{org}/venues`.
+- [x] 2.3 Một đường ghi cơ sở (D12): `partner/organizations/{org}/venues`. (test: chưa làm)
   - Cơ sở tạo ra thuộc đúng tổ chức trên path và ở `inactive`.
   - Kiểm hạn mức cơ sở của gói khi tạo. Ghi audit actor và thời điểm.
   - Người không phải owner nhận 403.
@@ -188,29 +188,29 @@
   - Test: `SingleVenueWritePathTest`.
     - Scenario: "Owner of two organizations creates a venue", "Caller is not an owner of the named organization", "Retired write endpoints".
   - Test: giữ hạn mức trong `PlanQuotaEnforcementAndDowngradeTest`.
-- [ ] 2.4 `OpenVenue` và `ResumeVenue` kiểm thông tin cơ sở bằng chính bộ rule của `SaveVenueRequest`. Chỉ một nguồn rule.
+- [x] 2.4 `OpenVenue` và `ResumeVenue` kiểm thông tin cơ sở bằng chính bộ rule của `SaveVenueRequest`. Chỉ một nguồn rule. (test: chưa làm)
   - Test: `VenueOpeningConditionsTest`, thêm ca SĐT sai định dạng.
-- [ ] 2.5 Bỏ danh sách tiện ích mặc định trong `Venue`, `Court` và `CourtAmenitiesGrid`.
+- [x] 2.5 Bỏ danh sách tiện ích mặc định trong `Venue`, `Court` và `CourtAmenitiesGrid`. (test: chưa làm)
   - Test: scenario "No amenities declared", ở API và vitest.
-- [ ] 2.6 Siết endpoint upload ảnh (D11):
+- [x] 2.6 Siết endpoint upload ảnh (D11): (test: chưa làm)
   - Chỉ nhận JPG, JPEG, PNG, kiểm cả đuôi lẫn nội dung.
   - Mỗi ảnh tối đa 5 MB. File bị từ chối thì không được lưu.
   - Test: `VenueCourtImageUploadTest`.
     - Scenario "Image type and size": PNG 5.1 MB, GIF, WebP.
     - Scenario "Valid image": JPG 4.9 MB.
-- [ ] 2.7 Kiểm ảnh khi lưu cơ sở hoặc sân:
+- [x] 2.7 Kiểm ảnh khi lưu cơ sở hoặc sân: (test: chưa làm)
   - Tối đa 10 ảnh.
   - Mỗi phần tử là URL trên disk ảnh của `FileStorageService`, hoặc preset `/courts/*.jpg` có file thật (ảnh sân có sẵn của nền tảng). Link ngoài trả 422.
   - Migration: `courts.image_url` thành `courts.images`. Bỏ link ngoài khỏi `courts.images` và `venues.images`.
   - Test: `VenueCourtImageUploadTest`. Scenario: "Too many images or an external link", "Built-in court image".
-- [ ] 2.8 Migration mã sân (D9):
+- [x] 2.8 Migration mã sân (D9): (test: chưa làm)
   - Thêm `courts.code` varchar(50).
   - Thêm `code_normalized`, là cột generated `lower(btrim(code))`.
   - Unique `(venue_id, code_normalized)`.
   - Backfill từ `name` (`vi`, thiếu thì `en`). Mã trùng thì thêm " (2)", " (3)" theo thứ tự id, rồi cắt về tối đa 50 ký tự.
   - Kiểm collation với chữ có dấu trên PostgreSQL thật.
   - Test: test migration. Scenario: "Existing court names become codes".
-- [ ] 2.9 Mã sân là định danh hiển thị:
+- [x] 2.9 Mã sân là định danh hiển thị: (test: chưa làm)
   - Validate mã 1–50 ký tự sau trim, không trùng trong cơ sở; mô tả tối đa 2000 ký tự.
   - Bỏ `courts.name` và slug sân. Mọi route API và frontend gọi sân theo id.
   - Đơn đọc mã hiện tại của sân.
@@ -218,7 +218,7 @@
   - Test: `CourtCodeIdentityTest`, dùng data-provider BR-27.
     - Scenario: "Duplicate code in the same venue", "Same code at two venues", "Code limits", "Renamed court on bookings".
   - Test: vitest cho nhãn và route theo id.
-- [ ] 2.10 Sửa sân (D10):
+- [x] 2.10 Sửa sân (D10): (test: chưa làm)
   - Chỉ nhận `code`, `description`, `images` và các trường D16.
   - `venue_id` hoặc `sport_type` khác giá trị đang lưu thì trả 422.
   - Bỏ ô địa chỉ cơ sở khỏi `CourtFormModal`.
@@ -227,7 +227,7 @@
     - Scenario: "Sport or venue change", "Unsupported sport", "New venue has no implicit grouping".
     - Scenario "Sport filter on public lists": chỉ đếm sân `active`.
   - Test: giữ `RemoveSportZonesMigrationTest` xanh. Scenario: "Retired sport-zone endpoints", "Existing courts keep their sport and interval".
-- [ ] 2.11 Lịch sân theo BR-31:
+- [x] 2.11 Lịch sân theo BR-31: (test: chưa làm)
   - FormRequest từ chối khoảng nằm ngoài giờ cơ sở và khoảng chồng nhau. Hai khoảng chạm nhau thì được.
   - Lỗi 422 chỉ rõ khoảng sai.
   - `VenueOperatingCalendar::isOpen` lấy phần giao của giờ cơ sở và lịch sân.
@@ -236,25 +236,25 @@
   - Chi tiết sân trả lịch phục vụ kèm cờ kế thừa từ cơ sở.
   - Test: `CourtScheduleWithinVenueHoursTest`.
     - Scenario: "Court schedule outside venue hours", "Touching and overlapping intervals", "Venue hours shrink", "Staff tries to change hours".
-- [ ] 2.12 Staff được phân công đọc giờ hoạt động, ngoại lệ và lịch sân qua `canOperateVenue`.
+- [x] 2.12 Staff được phân công đọc giờ hoạt động, ngoại lệ và lịch sân qua `canOperateVenue`. (test: chưa làm)
   - Cơ sở anh em trong cùng tổ chức trả 403.
   - Response sân có mã, môn, mô tả, ảnh, lịch phục vụ và trạng thái.
   - Test: mở rộng `PartnerVenueReadAccessTest`.
     - Scenario `organization-access`: "Staff read only assigned venues", "Assignment revoked".
-- [ ] 2.13 Trang chi tiết cơ sở và sân, chỉ đọc, cho owner và staff:
+- [x] 2.13 Trang chi tiết cơ sở và sân, chỉ đọc, cho owner và staff: (test: chưa làm)
   - Staff không có nút tạo, sửa, giá, mở, đóng hay tạm ngừng kinh doanh.
   - Danh sách trống hiện "Chưa có cơ sở" kèm nút thêm cơ sở.
   - Test: vitest cho trang chi tiết. Scenario: "Staff court detail", "Owner venue detail", "Organization without venues".
-- [ ] 2.14 Modal cơ sở hiện lỗi cạnh từng trường và giữ giá trị đã nhập.
+- [x] 2.14 Modal cơ sở hiện lỗi cạnh từng trường và giữ giá trị đã nhập. (test: chưa làm)
   - Theo mẫu `fieldErrors` của `usePartnerRegistration`.
   - Form ảnh chỉ còn upload.
   - Test: vitest cho modal. Scenario: "Field errors in the form".
-- [ ] 2.15 Liên hệ, ảnh, bề mặt và sức chứa sau khi lưu hiện ngay ở chi tiết của owner và staff, và ở trang công khai của cơ sở `active`.
+- [x] 2.15 Liên hệ, ảnh, bề mặt và sức chứa sau khi lưu hiện ngay ở chi tiết của owner và staff, và ở trang công khai của cơ sở `active`. (test: chưa làm)
   - Test: viết lại `VenueProfilePersistenceTest`. Scenario: "Catalog persistence".
 - [ ] 2.16 Bỏ `hold_ttl_minutes` và `require_continuity` khỏi form và request chính sách cơ sở (yêu cầu của module 4, D3 và D6 của module 4).
   - Làm sau khi module 4 merge phần bỏ đọc hai trường này. Không xoá cột trong change này.
   - Test: `VenueBookingPolicyVersioningTest` xanh; vitest cho form chính sách.
-- [ ] 2.17 Kiểm dữ liệu dịch theo `localization/database-i18n` "Bilingual Data Validation" (D9, D12):
+- [x] 2.17 Kiểm dữ liệu dịch theo `localization/database-i18n` "Bilingual Data Validation" (D9, D12): (test: chưa làm)
   - Tên cơ sở gửi dạng chuỗi đơn chỉ validate theo `SaveVenueRequest` (2.2). Mô tả sân dạng chuỗi đơn chỉ validate theo 2.9. Không đòi khoá `en`.
   - Không đổi cách lưu chuỗi đơn vào trường dịch trong change này.
   - Test: `VenueInformationValidationTest`, tên " Sân A " không có `en` lưu thành "Sân A". `CourtCodeIdentityTest`, mô tả chuỗi đơn 2000 ký tự lưu được.
@@ -268,7 +268,7 @@
   - service, endpoint và mã lỗi 422 của độ phủ.
   - Change này không làm phần nào trong số đó.
   - Module 3 đã nhận yêu cầu phối hợp (design Q1; D3 và task 1.4 của họ): họ bỏ delta `venue-court-operations` và task `OpenCourt`/resume; change này làm 3.3–3.5.
-- [ ] 3.2 Form sân chọn bảng giá cùng cơ sở, đọc và ghi đúng liên kết mà module 3 định nghĩa, qua API của module 3. Không tự thêm cột liên kết trên `courts`.
+- [x] 3.2 Form sân chọn bảng giá cùng cơ sở, đọc và ghi đúng liên kết mà module 3 định nghĩa, qua API của module 3. Không tự thêm cột liên kết trên `courts`. (test: chưa làm)
   - Gọi cùng action áp liên kết của module 3 (task 2.5 của họ, test `PriceTableLinkActionTest`). Đổi liên kết làm hở giá một sân `active` hoặc `paused` nhận 422 `PRICE_COVERAGE_INCOMPLETE` của họ; màn sân hiện các khoảng thiếu.
   - Vitest `CourtFormModal.spec.ts`: chọn bảng giá cùng cơ sở, hiện giá đã resolve và đánh dấu khoảng hở, hiện `missing_items` của 422 `PRICE_COVERAGE_INCOMPLETE` khi đổi liên kết. Thay `PricingCalendarGrid.spec.ts` mà module 3 xoá.
   - Bảng giá của cơ sở hoặc tổ chức khác thì trả 422 và liên kết cũ giữ nguyên.

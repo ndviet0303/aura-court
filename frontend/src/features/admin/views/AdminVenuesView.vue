@@ -23,6 +23,7 @@ const {
   saving,
   notice,
   error,
+  fieldErrors,
   searchQuery,
   statusFilter,
   showVenueModal,
@@ -37,10 +38,11 @@ const {
   activeVenuesCount,
   totalCourtsCount,
   mapsLinkedCount,
+  canCreateVenue,
   loadData,
   showNotice,
+  openVenueForm,
   saveVenue,
-  loadBookingPolicy,
   saveBookingPolicy,
 } = useAdminVenues()
 
@@ -54,19 +56,6 @@ const lifecycle = reactive(
 function handleCommand(venue: AdminVenueItem, command: LifecycleCommand) {
   const organizationId = venue.organization_id
   if (organizationId) void lifecycle.run({ type: 'venue', id: venue.id, organizationId }, command)
-}
-
-function handleStartCreate() {
-  editingVenue.value = null
-  bookingPolicy.value = null
-  showVenueModal.value = true
-}
-
-function handleStartEdit(venue: AdminVenueItem) {
-  editingVenue.value = venue
-  bookingPolicy.value = null
-  showVenueModal.value = true
-  void loadBookingPolicy(venue)
 }
 
 function handleShowQr(venue: AdminVenueItem) {
@@ -98,7 +87,7 @@ onMounted(() => {
           >
           <span>{{ t('admin.venues.refreshBtn') }}</span>
         </AuraButton>
-        <AuraButton variant="primary" @click="handleStartCreate">
+        <AuraButton v-if="canCreateVenue" variant="primary" @click="openVenueForm(null)">
           <span class="material-symbols-outlined icon-18">add_business</span>
           <span>{{ t('admin.venues.addNewVenue') }}</span>
         </AuraButton>
@@ -160,9 +149,13 @@ onMounted(() => {
     <!-- Empty Venues State -->
     <div v-else-if="filteredVenues.length === 0" class="empty-venues-state">
       <span class="material-symbols-outlined empty-icon">domain_disabled</span>
-      <h3 class="empty-title">{{ t('admin.venues.noVenuesFound') }}</h3>
-      <p class="empty-sub">{{ t('admin.venues.noVenuesSub') }}</p>
-      <AuraButton variant="primary" class="mt-4" @click="handleStartCreate">
+      <h3 class="empty-title">
+        {{ t(totalVenuesCount ? 'admin.venues.noVenuesFound' : 'admin.venues.emptyTitle') }}
+      </h3>
+      <p class="empty-sub">
+        {{ t(totalVenuesCount ? 'admin.venues.noVenuesSub' : 'admin.venues.emptySub') }}
+      </p>
+      <AuraButton v-if="canCreateVenue" variant="primary" class="mt-4" @click="openVenueForm(null)">
         <span class="material-symbols-outlined icon-18">add_business</span>
         <span>{{ t('admin.venues.addNewVenue') }}</span>
       </AuraButton>
@@ -177,7 +170,7 @@ onMounted(() => {
         :owner="lifecycle.isOwnerOf(v.organization_id)"
         :busy="lifecycle.busy"
         @command="handleCommand"
-        @edit="handleStartEdit"
+        @edit="openVenueForm"
         @show-qr="handleShowQr"
         @show-receiving="(venue) => (receivingVenue = venue)"
       />
@@ -188,6 +181,8 @@ onMounted(() => {
       :show="showVenueModal"
       :venue="editingVenue"
       :saving="saving"
+      :error="error"
+      :field-errors="fieldErrors"
       :booking-policy="bookingPolicy"
       :loading-booking-policy="loadingBookingPolicy"
       :saving-booking-policy="savingBookingPolicy"

@@ -13,7 +13,7 @@ export function useCourtDetail() {
   const reviewsLoading = ref(false)
   const reviews = ref<CourtReview[]>([])
 
-  const slugOrId = computed(() => String(route.params.slug || route.params.id || ''))
+  const courtId = computed(() => String(route.params.id || ''))
   const fetchedCourt = ref<Court | null>(null)
 
   async function loadCourt() {
@@ -30,11 +30,11 @@ export function useCourtDetail() {
   }
 
   const court = computed<Court | null>(() => {
-    const key = slugOrId.value
+    const key = courtId.value
     if (!key) return bookingStore.courts[0] || null
     return (
       fetchedCourt.value ||
-      bookingStore.courts.find((c) => c.slug === key || String(c.id) === key) ||
+      bookingStore.courts.find((c) => String(c.id) === key) ||
       bookingStore.courts[0] ||
       null
     )

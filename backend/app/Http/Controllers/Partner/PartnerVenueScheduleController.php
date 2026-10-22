@@ -6,6 +6,7 @@ use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
 use App\Domain\Venue\Actions\SaveVenueBookingPolicy;
 use App\Domain\Venue\Actions\SaveVenueOperatingSchedule;
 use App\Domain\Venue\Actions\SaveVenueScheduleException;
+use App\Http\Controllers\Concerns\AuthorizesVenueRead;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Partner\SaveVenueOperatingScheduleRequest;
 use App\Http\Requests\Partner\SaveVenueScheduleExceptionRequest;
@@ -20,6 +21,8 @@ use Illuminate\Support\Facades\Cache;
 
 class PartnerVenueScheduleController extends Controller
 {
+    use AuthorizesVenueRead;
+
     public function __construct(
         private readonly VenueLifecycleRepositoryInterface $venueRepo,
     ) {}
@@ -44,9 +47,10 @@ class PartnerVenueScheduleController extends Controller
         return response()->json(['data' => $policy], 201);
     }
 
+    /** The owner and assigned staff read; only the owner saves (BR-31). */
     public function operatingSchedule(Request $request, int $organizationId, int $venueId): JsonResponse
     {
-        $venue = $this->authorizeVenue($request, $organizationId, $venueId, 'Bạn không có quyền quản lý lịch hoạt động của cơ sở này.');
+        $venue = $this->authorizeVenueRead($request, $organizationId, $venueId);
         $courtId = $request->query('court_id');
         if ($courtId !== null) {
             abort_unless($venue->courts()->whereKey($courtId)->exists(), 404, 'Sân không thuộc cơ sở này.');
@@ -81,7 +85,7 @@ class PartnerVenueScheduleController extends Controller
 
     public function scheduleExceptions(Request $request, int $organizationId, int $venueId): JsonResponse
     {
-        $venue = $this->authorizeVenue($request, $organizationId, $venueId, 'Bạn không có quyền quản lý lịch hoạt động của cơ sở này.');
+        $venue = $this->authorizeVenueRead($request, $organizationId, $venueId);
         $courtId = $request->query('court_id');
         $query = VenueScheduleException::query()->where('venue_id', $venue->id);
         if ($courtId !== null) {

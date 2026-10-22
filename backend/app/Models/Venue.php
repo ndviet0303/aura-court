@@ -49,16 +49,12 @@ class Venue extends Model
         return ($this->attributes['status'] ?? null) === self::STATUS_ACTIVE;
     }
 
+    /** BR-26: only what the owner declared; no saved amenities means none, never a default list. */
     public function getAmenitiesAttribute($value): array
     {
-        if ($value !== null) {
-            $decoded = is_string($value) ? json_decode($value, true) : $value;
-            if (is_array($decoded) && count($decoded) > 0) {
-                return $decoded;
-            }
-        }
+        $decoded = is_string($value) ? json_decode($value, true) : $value;
 
-        return ['parking', 'wifi', 'shower', 'cafe', 'shop', 'lounge'];
+        return is_array($decoded) ? $decoded : [];
     }
 
     public function getTimezoneAttribute(): string

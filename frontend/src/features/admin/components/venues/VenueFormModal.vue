@@ -1,16 +1,20 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
 import type { AdminVenueItem } from '../../composables/useAdminVenues'
 import VenueBookingPolicyForm from './VenueBookingPolicyForm.vue'
+import VenueImageUploader from './VenueImageUploader.vue'
 import { formatVenueCoordinates, parseVenueCoordinates } from '../../utils/venueCoordinates'
 import type { VenueBookingPolicySettings, VenueBookingPolicyVersion } from '../../types/admin'
+import type { VenueForm } from '../../types/admin'
 
 const props = defineProps<{
   show: boolean
   venue: AdminVenueItem | null
   saving?: boolean
+  error?: string
+  fieldErrors?: Record<string, string[]>
   bookingPolicy?: VenueBookingPolicyVersion | null
   loadingBookingPolicy?: boolean
   savingBookingPolicy?: boolean
@@ -18,7 +22,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'save', payload: any): void
+  (e: 'save', payload: VenueForm): void
   (e: 'save-policy', settings: VenueBookingPolicySettings): void
 }>()
 
@@ -32,15 +36,16 @@ const ward = ref('')
 const phone = ref('')
 const email = ref('')
 const description = ref('')
-const imagesText = ref('')
+const amenitiesText = ref('')
+const images = ref<string[]>([])
 const googleMapsUrl = ref('')
 const coordinates = ref('')
-const validationError = ref('')
+const coordinatesError = ref('')
 
 watch(
-  () => props.venue,
+  () => (props.show ? props.venue : undefined), // refill on every open, not only on a new venue
   (v) => {
-    validationError.value = ''
+    coordinatesError.value = ''
     name.value =
       typeof v?.name === 'string' ? v.name : (v?.name as any)?.vi || (v?.name as any)?.en || ''
     address.value =
@@ -53,58 +58,43 @@ watch(
     phone.value = v?.phone || ''
     email.value = v?.email || ''
     description.value = v?.description || ''
-    imagesText.value = (v?.images || []).join('\n')
+    amenitiesText.value = (v?.amenities || []).join('\n')
+    images.value = [...(v?.images || [])]
     googleMapsUrl.value = v?.google_maps_url || ''
     coordinates.value = formatVenueCoordinates(v)
   },
   { immediate: true },
 )
 
-const isValidMapsUrl = computed(() => {
-  const url = googleMapsUrl.value.trim()
-  if (!url) return false
-  return (
-    url.startsWith('https://') &&
-    (url.includes('google.com') || url.includes('goo.gl') || url.includes('maps'))
-  )
-})
+/** The server message for a field, or for an item of a list field such as images.3. */
+function err(field: string): string | undefined {
+  const errors = props.fieldErrors ?? {}
+  const key = Object.keys(errors).find((k) => k === field || k.startsWith(`${field}.`))
+  return key ? errors[key]?.[0] : undefined
+}
 
+// The server trims and validates every field (BR-26) and answers 422 per field; an empty optional
+// field goes as null so an update clears it instead of keeping the saved value.
 function handleSave() {
-  validationError.value = ''
-  const trimmedName = name.value.trim()
-  const trimmedAddress = address.value.trim()
-  const trimmedMaps = googleMapsUrl.value.trim()
-
-  if (!trimmedName) {
-    validationError.value = t('admin.venues.venueNameLabel') + ' is required'
-    return
-  }
-
-  if (trimmedMaps && !isValidMapsUrl.value) {
-    validationError.value = t('admin.venues.googleMapsInvalid')
-    return
-  }
-
   const coords = parseVenueCoordinates(coordinates.value)
-  if (!coords) {
-    validationError.value = t('admin.venues.coordinatesInvalid')
-    return
-  }
+  coordinatesError.value = coords ? '' : t('admin.venues.coordinatesInvalid')
+  if (!coords) return
 
   emit('save', {
-    name: trimmedName,
-    address: trimmedAddress || undefined,
-    city: city.value.trim() || undefined,
-    district: district.value.trim() || undefined,
-    ward: ward.value.trim() || undefined,
-    phone: phone.value.trim() || undefined,
-    email: email.value.trim() || undefined,
-    description: description.value.trim() || undefined,
-    images: imagesText.value
+    name: name.value.trim(),
+    address: address.value.trim(),
+    phone: phone.value.trim(),
+    email: email.value.trim(),
+    city: city.value.trim() || null,
+    district: district.value.trim() || null,
+    ward: ward.value.trim() || null,
+    description: description.value.trim() || null,
+    amenities: amenitiesText.value
       .split(/\r?\n/)
-      .map((image) => image.trim())
+      .map((item) => item.trim())
       .filter(Boolean),
-    google_maps_url: trimmedMaps || undefined,
+    images: images.value,
+    google_maps_url: googleMapsUrl.value.trim() || null,
     ...coords,
   })
 }
@@ -130,9 +120,9 @@ function handleSave() {
 
       <!-- Modal Body -->
       <div class="modal-body">
-        <div v-if="validationError" class="form-error-banner">
+        <div v-if="error" class="form-error-banner">
           <span class="material-symbols-outlined icon-16">error</span>
-          <span>{{ validationError }}</span>
+          <span>{{ error }}</span>
         </div>
 
         <div class="form-group">
@@ -146,6 +136,7 @@ function handleSave() {
             :placeholder="t('admin.venues.venueNamePlaceholder')"
             required
           />
+          <p v-if="err('name')" class="field-error">{{ err('name') }}</p>
         </div>
 
         <div class="form-group address-parts">
@@ -159,6 +150,9 @@ function handleSave() {
           <label class="form-label"
             >{{ t('admin.venues.wardLabel') }}<input v-model="ward" type="text" class="form-input"
           /></label>
+          <p v-if="err('city')" class="field-error">{{ err('city') }}</p>
+          <p v-if="err('district')" class="field-error">{{ err('district') }}</p>
+          <p v-if="err('ward')" class="field-error">{{ err('ward') }}</p>
         </div>
 
         <div class="form-group contact-parts">
@@ -169,26 +163,31 @@ function handleSave() {
             >{{ t('admin.venues.emailLabel')
             }}<input v-model="email" type="email" class="form-input"
           /></label>
+          <p v-if="err('phone')" class="field-error">{{ err('phone') }}</p>
+          <p v-if="err('email')" class="field-error">{{ err('email') }}</p>
         </div>
 
         <div class="form-group">
           <label class="form-label">{{ t('admin.venues.descriptionLabel') }}</label>
           <textarea v-model="description" class="form-input" rows="3" maxlength="2000" />
+          <p v-if="err('description')" class="field-error">{{ err('description') }}</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{{ t('admin.venues.amenitiesLabel') }}</label>
+          <textarea v-model="amenitiesText" class="form-input" rows="3" />
+          <span class="field-hint">{{ t('admin.venues.amenitiesHint') }}</span>
+          <p v-if="err('amenities')" class="field-error">{{ err('amenities') }}</p>
         </div>
 
         <div class="form-group">
           <label class="form-label">{{ t('admin.venues.imagesLabel') }}</label>
-          <textarea
-            v-model="imagesText"
-            class="form-input"
-            rows="3"
-            :placeholder="t('admin.venues.imagesHint')"
-          />
+          <VenueImageUploader v-model="images" :error="err('images')" />
         </div>
 
         <div class="form-group">
           <label class="form-label">
-            {{ t('admin.venues.fullAddressLabel') }}
+            {{ t('admin.venues.fullAddressLabel') }} <span class="required">*</span>
           </label>
           <input
             v-model="address"
@@ -196,6 +195,7 @@ function handleSave() {
             class="form-input"
             :placeholder="t('admin.venues.fullAddressPlaceholder')"
           />
+          <p v-if="err('address')" class="field-error">{{ err('address') }}</p>
         </div>
 
         <div class="form-group">
@@ -209,6 +209,7 @@ function handleSave() {
             :placeholder="t('admin.venues.googleMapsPlaceholder')"
           />
           <span class="field-hint">{{ t('admin.venues.googleMapsHint') }}</span>
+          <p v-if="err('google_maps_url')" class="field-error">{{ err('google_maps_url') }}</p>
         </div>
 
         <div class="form-group">
@@ -221,6 +222,7 @@ function handleSave() {
             placeholder="21.0306, 105.7830"
           />
           <span class="field-hint">{{ t('admin.venues.coordinatesHint') }}</span>
+          <p v-if="coordinatesError" class="field-error">{{ coordinatesError }}</p>
         </div>
 
         <VenueBookingPolicyForm
@@ -402,6 +404,13 @@ function handleSave() {
   font-size: 11px;
   color: var(--muted);
   line-height: 1.4;
+}
+
+.field-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 12px;
+  color: #ef4444;
 }
 
 .modal-footer {

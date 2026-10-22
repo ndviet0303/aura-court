@@ -72,9 +72,9 @@ const formattedDate = computed(() => {
       </div>
 
       <div class="court-meta">
-        <strong class="court-name">{{ court.name }}</strong>
+        <strong class="court-name">{{ court.code }}</strong>
         <RouterLink
-          :to="`/courts/${court.slug || court.id}/directions`"
+          :to="`/courts/${court.id}/directions`"
           class="venue-info-link"
           :title="$t('courts.directionsBtn')"
         >

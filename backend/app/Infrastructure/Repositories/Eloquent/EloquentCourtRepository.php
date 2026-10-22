@@ -37,4 +37,14 @@ class EloquentCourtRepository implements CourtRepositoryInterface
     {
         return $court->update($attributes);
     }
+
+    public function codeTaken(int $venueId, string $code, ?int $exceptCourtId = null): bool
+    {
+        return Court::query()
+            ->where('venue_id', $venueId)
+            // The generated column's own expression (migration 2026_10_22_300001), so this check and the unique index agree.
+            ->whereRaw('code_normalized = lower(btrim(?) COLLATE "und-x-icu")', [$code])
+            ->when($exceptCourtId !== null, fn ($query) => $query->whereKeyNot($exceptCourtId))
+            ->exists();
+    }
 }

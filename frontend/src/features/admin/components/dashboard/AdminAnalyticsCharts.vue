@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { resolveLocalizedText, formatCurrency } from '@/i18n'
+import { formatCurrency } from '@/i18n'
 import type { AdminReport } from '../../composables/useAdminDashboard'
 
 const props = defineProps<{
@@ -171,7 +171,7 @@ const maxCourtBookings = computed(() => {
       <div v-else class="court-util-list">
         <div v-for="c in report.byCourt" :key="c.court_id" class="court-util-row">
           <strong class="c-name">{{
-            resolveLocalizedText(c.court?.name) || `Sân #${c.court_id}`
+            c.court?.code || `Sân #${c.court_id}`
           }}</strong>
           <div class="progress-bar-wrap">
             <div
