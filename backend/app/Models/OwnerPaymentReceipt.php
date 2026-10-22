@@ -75,6 +75,7 @@ class OwnerPaymentReceipt extends Model
         return $this->belongsTo(OwnerPaymentAttempt::class, 'payment_attempt_id');
     }
 
+    /** @return BelongsTo<ReceivingConnection, $this> */
     public function connection(): BelongsTo
     {
         return $this->belongsTo(ReceivingConnection::class, 'receiving_connection_id');

@@ -114,7 +114,7 @@ export function useCourtSchedule() {
 
   const totalSlotsCount = computed(() => store.slots.length)
 
-  const totalHours = computed(() => store.selectedSlots.length)
+  const totalHours = computed(() => (store.selection?.minutes ?? 0) / 60)
 
   async function fetchAvailability() {
     if (!court.value) return
@@ -206,22 +206,20 @@ export function useCourtSchedule() {
     store.toggle(slot)
   }
 
-  function removeSlot(slot: AvailabilitySlot) {
-    store.toggle(slot)
-  }
-
   function clearSelectedSlots() {
     store.selectedSlots = []
   }
 
+  // The first free run of `count` hours, two 30-minute times per hour, within the time filter.
   function quickSelectAvailableHours(count: number = 1) {
     if (loading.value || !court.value) return
     clearSelectedSlots()
-    const available = filteredSlots.value.filter((s) => s.available)
-    for (let i = 0; i < Math.min(count, available.length); i++) {
-      const slot = available[i]
-      if (slot) {
-        store.toggle(slot)
+    const times = filteredSlots.value
+    for (let i = 0; i + count * 2 <= times.length; i++) {
+      const run = store.freeRun(times[i]!, times[i + count * 2 - 1]!)
+      if (run?.length === count * 2) {
+        store.selectedSlots = run
+        return
       }
     }
   }
@@ -309,7 +307,8 @@ export function useCourtSchedule() {
     selectCourt,
     selectVenue,
     toggleSlot,
-    removeSlot,
+    // The summary shows one interval, so removing it clears the selection.
+    removeSlot: clearSelectedSlots,
     clearSelectedSlots,
     quickSelectAvailableHours,
     proceedToBooking,

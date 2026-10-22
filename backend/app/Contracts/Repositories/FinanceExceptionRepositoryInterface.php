@@ -20,6 +20,9 @@ interface FinanceExceptionRepositoryInterface
         int $perPage = 30
     ): LengthAwarePaginator;
 
+    /** Direct-owner payment exceptions (`owner_payment_*`) of one organization, newest first. */
+    public function paginateOwnerPaymentExceptions(Organization $organization, int $perPage = 30): LengthAwarePaginator;
+
     public function getStatsForOrganization(Organization $organization): array;
 
     public function create(array $attributes): FinanceException;

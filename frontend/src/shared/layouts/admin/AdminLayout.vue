@@ -18,7 +18,7 @@ import {
 
 const { t, locale } = useI18n()
 const auth = useAuthStore()
-const { isPayoutsEnabled } = useTenantCapabilities()
+const { isEnabled } = useTenantCapabilities()
 
 const route = useRoute()
 
@@ -71,9 +71,11 @@ const permittedNavGroups = computed(() => {
   return navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter(isItemPermitted),
+      items: group.items.filter(
+        (item) => isItemPermitted(item) && (!item.capability || isEnabled(item.capability)),
+      ),
     }))
-    .filter((group) => group.items.length > 0 && (group.id !== 'finance' || isPayoutsEnabled.value))
+    .filter((group) => group.items.length > 0)
 })
 
 const isDashboardPermitted = computed(() => {

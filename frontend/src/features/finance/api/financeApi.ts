@@ -4,6 +4,7 @@ import type {
   PayoutRecord,
   BeneficiaryAccount,
   FinanceExceptionItem,
+  OwnerPaymentExceptionPage,
 } from '../types/finance'
 import type { SplitGroup } from '../types/split'
 
@@ -62,6 +63,9 @@ export const financeApi = {
 
   resolveException: (id: number | string, payload: { note: string }) =>
     api.post(`/finance/exceptions/${id}/resolve`, payload),
+
+  getOwnerPaymentExceptions: (page = 1) =>
+    api.get<OwnerPaymentExceptionPage>(`/owner-payment-exceptions?page=${page}`),
 
   getSplitGroup: (splitId: number) => api.get<{ split: SplitGroup }>(`/split-groups/${splitId}`),
 

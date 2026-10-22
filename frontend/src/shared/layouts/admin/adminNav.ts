@@ -1,3 +1,4 @@
+/** Admin sidebar entries; AdminLayout filters them by role and by the tenant's capabilities. */
 export interface NavItem {
   id: string
   path: string
@@ -5,6 +6,8 @@ export interface NavItem {
   icon: string
   matchExact?: boolean
   badgeKey?: string
+  /** Tenant capability the item needs; the route meta carries the same flag. */
+  capability?: string
 }
 
 export interface NavGroup {
@@ -109,18 +112,28 @@ export const navGroups: NavGroup[] = [
         path: '/admin/payouts',
         labelKey: 'admin.nav.payouts',
         icon: 'account_balance_wallet',
+        capability: 'marketplace_payouts',
       },
       {
         id: 'finance-reconciliation',
         path: '/admin/reconciliation',
         labelKey: 'admin.nav.reconciliationAlerts',
         icon: 'analytics',
+        capability: 'marketplace_payouts',
       },
       {
         id: 'finance-exceptions',
         path: '/admin/financial-exceptions',
         labelKey: 'admin.nav.financialExceptions',
         icon: 'shield',
+        capability: 'marketplace_payouts',
+      },
+      {
+        id: 'finance-payment-exceptions',
+        path: '/admin/payment-exceptions',
+        labelKey: 'admin.nav.paymentExceptions',
+        icon: 'report',
+        capability: 'direct_owner_payments',
       },
     ],
   },
@@ -166,7 +179,8 @@ export const navGroups: NavGroup[] = [
   },
 ]
 
-// Owner-only: courts, contracts, venues, pricing, promotions, membership, organization profile & staff
+// Owner-only: courts, contracts, venues, pricing, promotions, membership, organization profile & staff,
+// payment exceptions
 export const OWNER_ONLY_PATHS = [
   '/admin/manage',
   '/admin/contracts',
@@ -176,6 +190,7 @@ export const OWNER_ONLY_PATHS = [
   '/admin/membership',
   '/admin/organization',
   '/admin/staff',
+  '/admin/payment-exceptions',
 ]
 
 // Owner or staff: schedule, POS, shifts, inventory, tournaments

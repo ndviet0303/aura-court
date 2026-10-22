@@ -133,3 +133,24 @@ export interface OccurrenceItem {
     status?: string
   }
 }
+
+/** A direct-owner payment exception as the owner's read-only lookup returns it (FR-81). */
+export interface OwnerPaymentException {
+  id: number
+  code: string
+  status: string
+  amount: number
+  currency: string
+  payment_code: string | null
+  event_at: string | null
+  connection: { bank_code: string | null; account_last_four: string | null }
+  purpose: string | null
+  /** Set only when the payment code matched a booking's payment request. */
+  booking_code: string | null
+  detected_at: string
+}
+
+export interface OwnerPaymentExceptionPage {
+  data: OwnerPaymentException[]
+  meta: { current_page: number; last_page: number; total: number }
+}

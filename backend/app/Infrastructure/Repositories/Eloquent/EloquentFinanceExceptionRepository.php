@@ -42,6 +42,16 @@ class EloquentFinanceExceptionRepository implements FinanceExceptionRepositoryIn
             ->paginate($perPage);
     }
 
+    public function paginateOwnerPaymentExceptions(Organization $organization, int $perPage = 30): LengthAwarePaginator
+    {
+        return FinanceException::query()
+            ->where('organization_id', $organization->id)
+            ->where('type', 'like', 'owner\_payment\_%')
+            ->latest('detected_at')
+            ->latest('id')
+            ->paginate($perPage);
+    }
+
     public function getStatsForOrganization(Organization $organization): array
     {
         $baseQuery = FinanceException::where('organization_id', $organization->id);

@@ -56,6 +56,18 @@ export const quoteDiscounts = (snapshot?: PriceQuote['benefit_snapshot']) =>
 export const validBookerPhone = (phone?: string | null): boolean =>
   /^(0\d{9}|\+84\d{9})$/.test(phone ?? '')
 
+// A booking's length in words, "1 giờ 30 phút" (design D14), never a count of slots.
+export function formatDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60)
+  const rest = minutes % 60
+  return [
+    hours ? i18n.global.t('common.durationHours', { count: hours }) : '',
+    rest ? i18n.global.t('common.durationMinutes', { count: rest }) : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+}
+
 const BOOKING_ERROR_KEYS: Record<string, string> = {
   PHONE_REQUIRED: 'reservations.messages.phoneRequired',
   PAYMENT_WINDOW_CLOSED: 'reservations.messages.paymentWindowClosed',

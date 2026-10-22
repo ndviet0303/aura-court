@@ -305,7 +305,7 @@ export function useResaleMarketplace() {
         asking_price: asking,
         ...(asking > 0 && receiver ? { seller_receiver: receiver } : {}),
       })
-      showNotice(`Đã đăng pass 1 giờ chơi tại ${slot.courtName} lên chợ.`)
+      showNotice(`Đã đăng pass đơn ${slot.timeSlot} tại ${slot.courtName} lên chợ.`)
       closeSellModal()
       activeTab.value = 'my-listings'
       await refreshAll()

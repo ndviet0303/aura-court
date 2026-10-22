@@ -213,8 +213,7 @@ class OrganizationVenueSeeder extends Seeder
                     'email' => $vd['slug'].'@demo.auracourt.vn',
                     'description' => $vd['description'],
                     'amenities' => $vd['amenities'],
-                    'status' => 'published',
-                    'is_active' => true,
+                    'status' => Venue::STATUS_ACTIVE,
                     'published_at' => now()->subMonths(1),
                     'organization_id' => $tenant->id,
                 ]

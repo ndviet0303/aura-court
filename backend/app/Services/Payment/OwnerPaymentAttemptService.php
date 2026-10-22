@@ -2,7 +2,6 @@
 
 namespace App\Services\Payment;
 
-use App\Models\FinanceException;
 use App\Models\OwnerPaymentAllocation;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
@@ -10,9 +9,11 @@ use App\Models\ReceivingConnection;
 use App\Models\ReceivingConnectionEvidence;
 use App\Models\Reservation;
 use App\Models\User;
+use App\Models\Venue;
 use App\Services\Booking\RecurringSeriesService;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\POS\PosQrPaymentService;
+use App\Services\Reservation\HeldReservationRelease;
 use App\Services\Tournament\TournamentRegistrationPaymentService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -22,7 +23,10 @@ use Illuminate\Support\Facades\DB;
 
 class OwnerPaymentAttemptService
 {
-    public function __construct(private readonly FinancialPostingService $financials) {}
+    public function __construct(
+        private readonly FinancialPostingService $financials,
+        private readonly OwnerPaymentExceptionRecorder $exceptions,
+    ) {}
 
     private const PURPOSES = ['booking', 'recurring_period', 'split_share', 'pos_order', 'tournament_registration'];
 
@@ -267,11 +271,10 @@ class OwnerPaymentAttemptService
             $attempt = null;
             $purposeSnapshot = null;
             if ($receiverMatches && $paymentCode !== '') {
-                $attempt = OwnerPaymentAttempt::query()
-                    ->where('receiving_connection_id', $connection->id)
-                    ->where('reference', strtoupper($paymentCode))
-                    ->lockForUpdate()
-                    ->first();
+                $attemptQuery = OwnerPaymentAttempt::query()->where('receiving_connection_id', $connection->id)->where('reference', strtoupper($paymentCode));
+                // The allocation insert key-locks the venue; take it before the attempt, in checkout's order (D12).
+                Venue::query()->whereKey((clone $attemptQuery)->value('venue_id'))->lock('for key share')->first(['id']);
+                $attempt = $attemptQuery->lockForUpdate()->first();
                 $purposeSnapshot = $attempt?->purposeSnapshot();
             }
 
@@ -312,13 +315,12 @@ class OwnerPaymentAttemptService
                         ->where('code', $attempt->purpose_id)
                         ->lockForUpdate()
                         ->first();
-                    if (! $bookingReservation
-                        || (int) $bookingReservation->user_id !== (int) $attempt->user_id
-                        || $bookingReservation->payment_model !== 'direct_owner_v1'
-                        || $bookingReservation->status !== 'held') {
-                        $bookingReservation = null;
-                        $status = OwnerPaymentReceipt::STATUS_EXCEPTION;
-                        $exceptionCode = 'reservation_hold_unavailable';
+                    $unavailable = ! $bookingReservation || (int) $bookingReservation->user_id !== (int) $attempt->user_id
+                        || $bookingReservation->payment_model !== 'direct_owner_v1' || $bookingReservation->status !== 'held';
+                    // D12: a voucher that no longer applies releases the booking, and the transfer becomes an exception.
+                    $exceptionCode = $unavailable ? 'reservation_hold_unavailable' : (app(HeldReservationRelease::class)->consumeVoucher($bookingReservation, $receipt->event_at) ? 'voucher_changed' : null);
+                    if ($exceptionCode !== null) {
+                        [$bookingReservation, $status] = [null, OwnerPaymentReceipt::STATUS_EXCEPTION];
                     }
                 } elseif ($status === OwnerPaymentReceipt::STATUS_ALLOCATED && isset(self::CONFIRMERS[$attempt->purpose])) {
                     [$service, $check, $unavailable] = self::CONFIRMERS[$attempt->purpose];
@@ -375,7 +377,7 @@ class OwnerPaymentAttemptService
                 $confirmer?->confirmPaidAttempt($allocation, $receipt->event_at);
                 $this->financials->postDirectOwnerReceipt($receipt);
             } elseif ($exceptionCode !== null) {
-                $this->recordReceiptException($receipt, $exceptionCode);
+                $this->exceptions->record($receipt, $exceptionCode);
             }
         });
     }
@@ -401,46 +403,9 @@ class OwnerPaymentAttemptService
             ])->save();
 
             if ($exhausted) {
-                $this->recordReceiptException($receipt, 'processing_exhausted');
+                $this->exceptions->record($receipt, 'processing_exhausted');
             }
         });
-    }
-
-    private function recordReceiptException(OwnerPaymentReceipt $receipt, string $exceptionCode): void
-    {
-        $type = 'owner_payment_'.$exceptionCode;
-        $reference = 'owner-receipt:'.$receipt->id;
-        $existing = FinanceException::withoutGlobalScopes()
-            ->where('organization_id', $receipt->organization_id)
-            ->where('type', $type)
-            ->where('reference', $reference)
-            ->first();
-        if ($existing) {
-            return;
-        }
-
-        FinanceException::create([
-            'organization_id' => $receipt->organization_id,
-            'type' => $type,
-            'severity' => in_array($exceptionCode, ['foreign_receiver', 'transfer_after_expiry', 'excess_amount', 'processing_exhausted'], true) ? 'high' : 'medium',
-            'status' => 'open',
-            'amount' => (int) $receipt->amount,
-            'currency' => $receipt->currency,
-            'reference' => $reference,
-            'description' => 'Authenticated direct-owner receipt requires reconciliation ('.$exceptionCode.').',
-            'links' => [
-                'owner_payment_receipt_id' => $receipt->id,
-                'payment_attempt_id' => $receipt->payment_attempt_id,
-                'receiving_connection_id' => $receipt->receiving_connection_id,
-            ],
-            'metadata' => [
-                'provider' => $receipt->provider,
-                'credential_version' => (int) $receipt->credential_version,
-                'exception_code' => $exceptionCode,
-            ],
-            'detected_at' => now(),
-            'due_at' => now()->addMinutes(15),
-        ]);
     }
 
     private function applyAttemptChecks(

@@ -487,6 +487,18 @@ const router = createRouter({
           },
         },
         {
+          // Direct-owner payments, not payouts, open this read-only lookup (FR-81).
+          path: 'payment-exceptions',
+          name: 'admin-payment-exceptions',
+          component: () => import('@/features/finance/views/OwnerPaymentExceptionsView.vue'),
+          meta: {
+            orgRoles: ['organization_owner'],
+            capability: 'direct_owner_payments',
+            titleKey: 'seo.adminPaymentExceptionsTitle',
+            indexable: false,
+          },
+        },
+        {
           path: 'reconciliation',
           name: 'admin-reconciliation',
           component: () => import('@/features/admin/views/AdminFinancialReconciliationView.vue'),

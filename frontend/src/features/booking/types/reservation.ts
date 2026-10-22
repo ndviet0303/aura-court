@@ -90,6 +90,15 @@ export type ReservationAttendance = {
   checked_out_at: string | null
 }
 
+// The newest affected-booking case from a venue or court change (detail API only).
+export type ReservationAffectedCase = {
+  status: 'pending' | 'contacting' | 'unreachable' | 'moved' | 'time_changed' | 'cancelled' | 'kept'
+  source_type: string
+  source_starts_at: string | null
+  source_ends_at: string | null
+  handled_at: string | null
+}
+
 export type Reservation = {
   id: number
   code: string
@@ -119,11 +128,14 @@ export type Reservation = {
   booker?: ReservationBooker | null
   payment?: ReservationPaymentResult | null
   attendance?: ReservationAttendance | null
+  latest_affected_case?: ReservationAffectedCase | null
 }
 
+// One interval on the 30-minute grid (design D14); a list of slot starts is refused with 422.
 export type PriceQuotePayload = {
   court_id: number
-  slots: string[]
+  starts_at: string
+  ends_at: string
 }
 
 export type HoldReservationPayload = {
@@ -132,7 +144,8 @@ export type HoldReservationPayload = {
   quote_token?: string
   quote_id?: number
   court_id?: number
-  slots?: string[]
+  starts_at?: string
+  ends_at?: string
 }
 
 // New amounts of a 409 PRICE_CHANGED: nothing was created and the customer must confirm them first.

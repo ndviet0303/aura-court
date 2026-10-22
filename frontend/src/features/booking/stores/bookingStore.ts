@@ -74,13 +74,36 @@ export const useBookingStore = defineStore('booking', () => {
     }
   }
 
+  // The times from `from` to `to` when all are free and adjacent, else null.
+  function freeRun(from: AvailabilitySlot, to: AvailabilitySlot): AvailabilitySlot[] | null {
+    const ordered = [...slots.value].sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+    const first = ordered.findIndex((item) => item.startsAt === from.startsAt)
+    const last = ordered.findIndex((item) => item.startsAt === to.startsAt)
+    const run = first >= 0 && last >= first ? ordered.slice(first, last + 1) : []
+    const free = run.every(
+      (item, i) =>
+        item.available && (i === 0 || Date.parse(run[i - 1]!.endsAt) === Date.parse(item.startsAt)),
+    )
+    return run.length && free ? run : null
+  }
+
+  // A booking is one interval on the 30-minute grid (design D14): the first tap picks its start, a
+  // later tap its end; any other tap starts again, and tapping a lone start clears it.
   function toggle(slot: AvailabilitySlot) {
     if (!slot.available) return
-    const index = selectedSlots.value.findIndex((item) => item.startsAt === slot.startsAt)
-    if (index >= 0) selectedSlots.value.splice(index, 1)
-    else selectedSlots.value.push(slot)
-    selectedSlots.value.sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+    const start = selectedSlots.value.length === 1 ? selectedSlots.value[0] : undefined
+    if (start?.startsAt === slot.startsAt) selectedSlots.value = []
+    else selectedSlots.value = (start && freeRun(start, slot)) || [slot]
   }
+
+  // The interval sent to quote and checkout: first selected start to last selected end.
+  const selection = computed(() => {
+    const first = selectedSlots.value[0]
+    const last = selectedSlots.value[selectedSlots.value.length - 1]
+    if (!first || !last) return null
+    const minutes = (Date.parse(last.endsAt) - Date.parse(first.startsAt)) / 60000
+    return { startsAt: first.startsAt, endsAt: last.endsAt, minutes }
+  })
 
   let inFlightWalletBalance: Promise<number> | null = null
 
@@ -104,14 +127,18 @@ export const useBookingStore = defineStore('booking', () => {
 
   // A PRICE_CHANGED awaiting the customer's confirmation; another court or selection drops it.
   const price = usePriceChange()
-  watch([selectedCourt, () => selectedSlots.value.map((slot) => slot.startsAt).join()], price.clear)
+  watch(
+    [selectedCourt, () => `${selection.value?.startsAt}/${selection.value?.endsAt}`],
+    price.clear,
+  )
 
-  // Checks out the selected slots at the amount payable the customer was shown; the server prices them
-  // in the same transaction.
+  // Checks out the selected interval at the amount payable the customer was shown; the server prices
+  // it in the same transaction.
   async function checkoutReservation(expectedTotal: number) {
     const { reservation } = await bookingApi.checkoutReservation({
       court_id: selectedCourt.value ?? undefined,
-      slots: selectedSlots.value.map((slot) => slot.startsAt),
+      starts_at: selection.value?.startsAt,
+      ends_at: selection.value?.endsAt,
       expected_total: expectedTotal,
     })
     return reservation
@@ -122,6 +149,7 @@ export const useBookingStore = defineStore('booking', () => {
     slots,
     selectedCourt,
     selectedSlots,
+    selection,
     walletBalance,
     error,
     loading,
@@ -130,6 +158,7 @@ export const useBookingStore = defineStore('booking', () => {
     loadCourts,
     loadAvailability,
     toggle,
+    freeRun,
     checkoutReservation,
     priceChange: price.priceChange,
     catchPriceChange: price.caught,

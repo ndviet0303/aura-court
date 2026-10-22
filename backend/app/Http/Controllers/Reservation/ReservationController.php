@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Reservation;
 
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
+use App\Exceptions\VoucherNoLongerApplies;
 use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
 use App\Models\Reservation;
@@ -13,6 +14,7 @@ use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\IdempotencyService;
 use App\Services\Payment\ReservationPaymentService;
 use App\Services\Reservation\PriceQuoteService;
+use App\Services\Reservation\ReservationIntake;
 use App\Services\Reservation\ReservationService;
 use App\Services\Reservation\VisibleReservations;
 use App\Services\Social\ResalePriceCap;
@@ -36,6 +38,7 @@ class ReservationController extends Controller
         private readonly IdempotencyService $idempotency,
         private readonly OrdinaryCheckoutService $checkoutService,
         private readonly VisibleReservations $visible,
+        private readonly ReservationIntake $intake,
     ) {}
 
     public function index(Request $request, ResalePriceCap $caps)
@@ -60,7 +63,9 @@ class ReservationController extends Controller
         $legacyMapping = fn ($q) => $q->withoutGlobalScope('tenant_isolation')->select('id', 'reservation_id', 'legacy_code', 'legacy_status');
         // Check-in and check-out times only; staff notes stay with the venue.
         $attendance = fn ($q) => $q->select('id', 'reservation_id', 'status', 'checked_in_at', 'checked_out_at');
-        $record->load(['court.venue', 'quote', 'slots', 'entitlements', 'legacyMapping' => $legacyMapping, 'attendance' => $attendance]);
+        // Incident handling: status and source window only; contact channel and notes stay with the venue.
+        $affectedCase = fn ($q) => $q->select(array_map(fn (string $column): string => 'affected_reservation_cases.'.$column, ['id', 'reservation_id', 'source_type', 'source_starts_at', 'source_ends_at', 'status', 'handled_at']));
+        $record->load(['court.venue', 'quote', 'slots', 'entitlements', 'legacyMapping' => $legacyMapping, 'attendance' => $attendance, 'latestAffectedCase' => $affectedCase]);
 
         return response()->json(['reservation' => [...$record->toArray(), 'payment' => $payments->result($record)]]);
     }
@@ -110,15 +115,16 @@ class ReservationController extends Controller
     public function quote(Request $request)
     {
         $organization = $this->organization($request);
+        $this->refuseSlotList($request);
         $data = $request->validate([
             'court_id' => 'required|integer',
-            'slots' => 'required|array|min:1|max:24',
-            'slots.*' => 'required',
+            'starts_at' => 'required|string|max:40',
+            'ends_at' => 'required|string|max:40',
             ...self::NO_BENEFITS,
         ], self::NO_BENEFIT_MESSAGES);
 
         return $this->idempotency->run($request, function () use ($request, $organization, $data) {
-            $quote = $this->quotes->create($request->user()->id, $organization->id, (int) $data['court_id'], $data['slots']);
+            $quote = $this->quotes->create($request->user()->id, $organization->id, (int) $data['court_id'], $data['starts_at'], $data['ends_at']);
 
             return response()->json(['quote' => $quote], 201);
         });
@@ -127,12 +133,13 @@ class ReservationController extends Controller
     public function store(Request $request)
     {
         $organization = $this->organization($request);
+        $this->refuseSlotList($request);
         $data = $request->validate([
             'quote_id' => 'nullable|integer',
             'quote_token' => 'nullable|string|max:80',
             'court_id' => 'required_without_all:quote_id,quote_token|integer',
-            'slots' => 'required_without_all:quote_id,quote_token|array|min:1|max:24',
-            'slots.*' => 'required',
+            'starts_at' => 'required_without_all:quote_id,quote_token|string|max:40',
+            'ends_at' => 'required_without_all:quote_id,quote_token|string|max:40',
             'customer_id' => 'nullable|integer',
             'expected_total' => 'required|integer|min:0',
             ...self::NO_BENEFITS,
@@ -175,12 +182,13 @@ class ReservationController extends Controller
     public function checkout(Request $request)
     {
         $organization = $this->organization($request);
+        $this->refuseSlotList($request);
         $data = $request->validate([
             'quote_id' => 'nullable|integer',
             'quote_token' => 'nullable|string|max:80',
             'court_id' => 'required_without_all:quote_id,quote_token|integer',
-            'slots' => 'required_without_all:quote_id,quote_token|array|min:1|max:24',
-            'slots.*' => 'required',
+            'starts_at' => 'required_without_all:quote_id,quote_token|string|max:40',
+            'ends_at' => 'required_without_all:quote_id,quote_token|string|max:40',
             'customer_id' => 'nullable|integer',
             'expected_total' => 'required|integer|min:0',
             ...self::NO_BENEFITS,
@@ -225,7 +233,20 @@ class ReservationController extends Controller
         $record = $this->visible->find($request->user(), $organization, $reservation);
 
         return $this->idempotency->run($request, function () use ($record) {
-            return response()->json(['reservation' => $this->reservations->confirm($record)]);
+            try {
+                return response()->json(['reservation' => $this->reservations->confirm($record)]);
+            } catch (VoucherNoLongerApplies $refused) {
+                // D12: answered inside the idempotent transaction, so the booking's release commits with the 422.
+                return $refused->render();
+            }
         });
+    }
+
+    /** A booking is one interval now (design D14): a list of start times is refused, not converted. */
+    private function refuseSlotList(Request $request): void
+    {
+        if ($request->has('slots')) {
+            $this->intake->refuseBookingTime();
+        }
     }
 }
