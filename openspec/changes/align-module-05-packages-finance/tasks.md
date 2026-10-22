@@ -294,12 +294,22 @@ Pha 2–6 làm trên nhánh `feat/module05-packages-finance` và chỉ vào main
 
 ## 7. Pha 7 – Bật demo trên prod (D16)
 
-- [ ] 7.1 `VenuePackageSeeder` bản demo:
+- [x] 7.1 `VenuePackageSeeder` bản demo: (test: chưa làm)
   - Bốn giá.
   - Mọi cơ sở có gói `active`, trong đó một cơ sở còn ≤ 3 ngày. Một cơ sở có gói đã chấm dứt.
   - Mỗi cơ sở có một yêu cầu `paid` với receipt `applied` và bút toán ledger.
   - Một yêu cầu `expired` có receipt `late`.
   - Test: `VenuePackageSeederTest` chạy seeder trên DB test và kiểm các điều trên.
+
+- Ghi chú 7.1 (2026-10-22, chỉ implement, chưa chạy seeder hay test):
+  - Đọc D16 theo nghĩa đen: mọi cơ sở đều có gói `active`. "Một cơ sở có gói đã chấm dứt" là `aura-landmark-72`: chấm dứt gói 30 ngày ở D-20 rồi mua gói 360 ngày, nên lịch sử có dòng đã chấm dứt mà cơ sở vẫn nhận đặt sân. Phương án khác là để một cơ sở đang bị chặn; bị loại vì luồng demo ở mọi cơ sở phải chạy, còn cảnh bị chặn có thể diễn trực tiếp bằng cách chấm dứt gói.
+  - Mọi gói, yêu cầu, receipt, chấm dứt và bút toán đều đi qua action thật (`CreatePackagePaymentRequest`, `ApplyPackagePayment`, `TerminateVenuePackage`) với đồng hồ lùi bằng `Carbon::setTestNow`, luôn trả lại trong `finally`. Người trả là owner của chính tổ chức.
+  - Dòng thời gian: giá có hiệu lực từ D-40; `aura-court` 360 ngày, `aura-arena-quan-ngua` 180 ngày, `hoang-gia-phu-my-hung` 90 ngày, mua ở D-35. `aura-complex-tay-ho` có yêu cầu đầu nhận chuyển khoản sau 12 phút (`late`, yêu cầu `expired`), rồi trả yêu cầu thứ hai (90 ngày). `aura-central-saigon` trả gói 30 ngày lúc 20:00 ngày D-28, nên hết hạn khoảng 20:03 ngày D+2.
+  - Kết quả trên DB mới: 4 giá, 7 gói, 8 yêu cầu (7 `paid`, 1 `expired`), 8 receipt (7 `applied`, 1 `late`), 7 journal `platform.package_fee_receipt`.
+  - Thông báo: chỉ kênh `database`, không gửi mail khi seed (bảng giá ghi thẳng bằng `firstOrCreate`, không qua `SchedulePackagePrice` vì action đó gửi mail cho owner). Mã giao dịch giả có dạng `seed-{request_code}`, không bao giờ trùng id số của SePay sau khi restore.
+  - `SEPAY_ACCOUNT` trống: ở `local`/`testing` dùng số giả `0000000000`, môi trường khác thì dừng trước khi ghi. Seeder bỏ qua cơ sở đã có gói, mỗi cơ sở một transaction, nên chạy lại không nhân bản.
+  - Lưu ý khi làm 7.3: phải reseed trong vòng 2 ngày trước buổi demo, nếu không `aura-central-saigon` đã hết gói khi trình bày. Sau khi restore, scheduler gửi nhắc hạn 3 ngày của cơ sở này qua app và mail cho 4 owner của tổ chức 2 (gồm `admin@auracourt.vn` và hai email admin demo). Thẻ "Phí đã thu tháng này" có thể bằng 0 nếu ngày seed rơi vào 20 ngày đầu tháng, cho tới khi có thanh toán thật trong smoke test.
+  - Cho lane test: `VenuePackageSeederTest` (chạy `OrganizationVenueSeeder`, `UserSeeder`, `VenuePackageSeeder` sau `travelTo` 07:30; kiểm các điều ở trên, chạy lại không đổi số dòng, `Mail::fake` không gửi gì, môi trường khác `local`/`testing` với `SEPAY_ACCOUNT` trống thì ném lỗi và không ghi gì). `DatabaseSeederTest` vẫn phải qua kiểm giờ ≥ 6.
 - [ ] 7.2 Người dùng xác nhận Q2. Thiếu giá trị nào thì dừng, không deploy.
 - [ ] 7.3 Hẹn giờ với người dùng, rồi làm theo thứ tự:
   - `pg_dump` prod (memory `bt-server-demo-reseed`).
