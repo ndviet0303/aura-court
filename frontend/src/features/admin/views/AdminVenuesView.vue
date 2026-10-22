@@ -1,21 +1,22 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AuraButton } from '@/shared/components'
+import { AuraButton, ErrorModal } from '@/shared/components'
+import { OPERATING_STATUSES } from '@/features/court/types/court'
 import { useAdminVenues, type AdminVenueItem } from '../composables/useAdminVenues'
-import type { VenueForm } from '../types/admin'
-import type { VenueBookingPolicySettings } from '../types/admin'
+import { useLifecycleCommands } from '../composables/useLifecycleCommands'
+import type { LifecycleCommand } from '../types/lifecycle'
 
 import VenueKpiBar from '../components/venues/VenueKpiBar.vue'
 import VenueCard from '../components/venues/VenueCard.vue'
 import VenueCardSkeleton from '../components/venues/VenueCardSkeleton.vue'
 import VenueFormModal from '../components/venues/VenueFormModal.vue'
 import VenueQrModal from '../components/venues/VenueQrModal.vue'
-import VenueReadinessModal from '../components/venues/VenueReadinessModal.vue'
+import VenueReceivingConnectionModal from '../components/venues/VenueReceivingConnectionModal.vue'
+import OperationalStopDialog from '../components/lifecycle/OperationalStopDialog.vue'
 
 const { t } = useI18n()
-const showReadinessModal = ref(false)
-const selectedVenueForReadiness = ref<AdminVenueItem | null>(null)
+const receivingVenue = ref<AdminVenueItem | null>(null)
 
 const {
   loading,
@@ -37,11 +38,23 @@ const {
   totalCourtsCount,
   mapsLinkedCount,
   loadData,
+  showNotice,
   saveVenue,
   loadBookingPolicy,
   saveBookingPolicy,
-  toggleVenueActive,
 } = useAdminVenues()
+
+const lifecycle = reactive(
+  useLifecycleCommands(async (message) => {
+    await loadData()
+    showNotice(message)
+  }),
+)
+
+function handleCommand(venue: AdminVenueItem, command: LifecycleCommand) {
+  const organizationId = venue.organization_id
+  if (organizationId) void lifecycle.run({ type: 'venue', id: venue.id, organizationId }, command)
+}
 
 function handleStartCreate() {
   editingVenue.value = null
@@ -59,19 +72,6 @@ function handleStartEdit(venue: AdminVenueItem) {
 function handleShowQr(venue: AdminVenueItem) {
   selectedVenueForQr.value = venue
   showQrModal.value = true
-}
-
-function handleShowReadiness(venue: AdminVenueItem) {
-  selectedVenueForReadiness.value = venue
-  showReadinessModal.value = true
-}
-
-async function handleSaveVenue(payload: VenueForm) {
-  await saveVenue(payload)
-}
-
-async function handleSaveBookingPolicy(settings: VenueBookingPolicySettings) {
-  await saveBookingPolicy(settings)
 }
 
 onMounted(() => {
@@ -142,8 +142,9 @@ onMounted(() => {
       <div class="toolbar-right">
         <select v-model="statusFilter" class="status-filter-select">
           <option value="all">{{ t('admin.venues.allStatuses') }}</option>
-          <option value="active">{{ t('admin.venues.statusActive') }}</option>
-          <option value="inactive">{{ t('admin.venues.statusInactive') }}</option>
+          <option v-for="status in OPERATING_STATUSES" :key="status" :value="status">
+            {{ t(`admin.lifecycle.status.${status}`) }}
+          </option>
         </select>
         <span v-if="!loading" class="results-count-badge">
           {{ t('admin.venues.resultsCount', { count: filteredVenues.length }) }}
@@ -173,10 +174,12 @@ onMounted(() => {
         v-for="v in filteredVenues"
         :key="v.id"
         :venue="v"
-        @toggle-active="toggleVenueActive"
+        :owner="lifecycle.isOwnerOf(v.organization_id)"
+        :busy="lifecycle.busy"
+        @command="handleCommand"
         @edit="handleStartEdit"
         @show-qr="handleShowQr"
-        @show-readiness="handleShowReadiness"
+        @show-receiving="(venue) => (receivingVenue = venue)"
       />
     </div>
 
@@ -189,19 +192,26 @@ onMounted(() => {
       :loading-booking-policy="loadingBookingPolicy"
       :saving-booking-policy="savingBookingPolicy"
       @close="showVenueModal = false"
-      @save="handleSaveVenue"
-      @save-policy="handleSaveBookingPolicy"
+      @save="saveVenue"
+      @save-policy="saveBookingPolicy"
     />
 
     <VenueQrModal :show="showQrModal" :venue="selectedVenueForQr" @close="showQrModal = false" />
 
-    <VenueReadinessModal
-      :venue="selectedVenueForReadiness"
-      :organization-id="selectedVenueForReadiness?.organization_id || 0"
-      :is-open="showReadinessModal"
-      @close="showReadinessModal = false"
-      @submitted="loadData"
-      @status-changed="loadData"
+    <VenueReceivingConnectionModal :venue="receivingVenue" @close="receivingVenue = null" />
+
+    <OperationalStopDialog
+      :command="lifecycle.stopRequest?.command ?? null"
+      target="venue"
+      owner
+      :loading="lifecycle.busy"
+      @close="lifecycle.closeStop"
+      @submit="lifecycle.submitStop"
+    />
+    <ErrorModal
+      :open="lifecycle.failureOpen"
+      v-bind="lifecycle.failureModal"
+      @close="lifecycle.closeFailure"
     />
   </div>
 </template>
@@ -255,7 +265,8 @@ onMounted(() => {
   gap: 10px;
 }
 
-.alert-pill {
+.alert-pill,
+.alert-pill-error {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -265,20 +276,10 @@ onMounted(() => {
   color: #fff;
   font-size: 13px;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
 .alert-pill-error {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 10px;
   background: #ef4444;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
 
 .venues-toolbar {
@@ -400,15 +401,6 @@ onMounted(() => {
 
 .spin-icon {
   animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .icon-16 {

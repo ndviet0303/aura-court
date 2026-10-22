@@ -4,13 +4,9 @@ namespace App\Http\Controllers\Partner;
 
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
 use App\Domain\Venue\Actions\CreateDraftVenue;
-use App\Domain\Venue\Actions\EvaluateVenueReadiness;
-use App\Domain\Venue\Actions\SubmitVenueForPublication;
-use App\Domain\Venue\Actions\TransitionVenueLifecycle;
 use App\Domain\Venue\Actions\UpdateDraftVenue;
 use App\Domain\Venue\DTOs\CreateDraftVenueData;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Partner\TransitionVenueLifecycleRequest;
 use App\Http\Requests\Partner\UpdateDraftVenueRequest;
 use App\Http\Requests\Venue\CreateDraftVenueRequest;
 use App\Models\OrganizationMember;
@@ -48,20 +44,6 @@ class PartnerVenueController extends Controller
         ]);
     }
 
-    public function readiness(
-        Request $request,
-        int $organizationId,
-        int $venueId,
-        EvaluateVenueReadiness $action
-    ): JsonResponse {
-        $this->authorizeVenueRead($request, $organizationId, $venueId);
-        $result = $action->execute($venueId);
-
-        return response()->json([
-            'data' => $result,
-        ]);
-    }
-
     /** BR-25: a venue is read only through its own organization, by the owner or by staff assigned to it. */
     private function authorizeVenueRead(Request $request, int $organizationId, int $venueId): Venue
     {
@@ -92,7 +74,7 @@ class PartnerVenueController extends Controller
 
         return response()->json([
             'data' => $venue,
-            'message' => 'Tạo bản nháp cơ sở thể thao thành công. Vui lòng thiết lập sân và bảng giá trước khi gửi duyệt xuất bản.',
+            'message' => 'Tạo cơ sở thể thao thành công. Vui lòng thiết lập giờ hoạt động rồi mở cơ sở để nhận đặt sân.',
         ], 201);
     }
 
@@ -111,40 +93,6 @@ class PartnerVenueController extends Controller
         return response()->json([
             'data' => $updated,
             'message' => 'Cập nhật thông tin cơ sở thể thao thành công.',
-        ]);
-    }
-
-    public function submitPublication(
-        Request $request,
-        int $organizationId,
-        int $venueId,
-        SubmitVenueForPublication $action
-    ): JsonResponse {
-        $revision = $action->execute($venueId, (int) $request->user()->id);
-
-        return response()->json([
-            'data' => $revision,
-            'message' => 'Đã gửi cơ sở vào hàng đợi xét duyệt xuất bản thành công.',
-        ], 201);
-    }
-
-    public function transitionLifecycle(
-        TransitionVenueLifecycleRequest $request,
-        int $organizationId,
-        int $venueId,
-        TransitionVenueLifecycle $action
-    ): JsonResponse {
-        $updated = $action->execute(
-            venueId: $venueId,
-            actorId: (int) $request->user()->id,
-            targetStatus: (string) $request->validated('status'),
-            reason: $request->validated('reason'),
-            isPlatformAdmin: false
-        );
-
-        return response()->json([
-            'data' => $updated,
-            'message' => 'Cập nhật trạng thái vòng đời cơ sở thành công.',
         ]);
     }
 }

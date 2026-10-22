@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Spatie\Translatable\HasTranslations;
 
-#[Fillable(['organization_id', 'name', 'slug', 'address', 'city', 'district', 'ward', 'phone', 'email', 'description', 'images', 'google_maps_url', 'latitude', 'longitude', 'amenities', 'status', 'status_reason', 'published_at', 'approved_public_snapshot', 'current_publication_revision_id', 'current_receiving_connection_id'])]
+#[Fillable(['organization_id', 'name', 'slug', 'address', 'city', 'district', 'ward', 'phone', 'email', 'description', 'images', 'google_maps_url', 'latitude', 'longitude', 'amenities', 'status', 'status_reason', 'published_at', 'current_receiving_connection_id'])]
 class Venue extends Model
 {
     use HasTranslations;
@@ -29,6 +29,9 @@ class Venue extends Model
 
     protected $appends = ['share_url', 'timezone'];
 
+    /** D1: no approved public version any more; the columns stay only until the contract migration drops them. */
+    protected $hidden = ['approved_public_snapshot', 'current_publication_revision_id'];
+
     protected function casts(): array
     {
         return [
@@ -36,7 +39,6 @@ class Venue extends Model
             'latitude' => 'float',
             'longitude' => 'float',
             'published_at' => 'datetime',
-            'approved_public_snapshot' => 'array',
             'images' => 'array',
         ];
     }
@@ -83,14 +85,10 @@ class Venue extends Model
         return $this->hasMany(PriceTable::class);
     }
 
+    // ponytail: only the legacy partner:backfill-mappings / partner:reconcile-legacy commands still read revisions; drop with venue_publication_revisions in the contract migration.
     public function publicationRevisions(): HasMany
     {
         return $this->hasMany(VenuePublicationRevision::class)->orderBy('revision_number', 'desc');
-    }
-
-    public function currentPublicationRevision(): BelongsTo
-    {
-        return $this->belongsTo(VenuePublicationRevision::class, 'current_publication_revision_id');
     }
 
     public function bookingPolicyVersions(): HasMany
@@ -152,12 +150,6 @@ class Venue extends Model
     public function toArray()
     {
         $attributes = parent::toArray();
-        $publicSnapshot = request()
-            && request()->is('api/venues', 'api/venues/*', 'api/*/venues', 'api/*/venues/*')
-            && $this->isActive()
-            && is_array($this->approved_public_snapshot['venue'] ?? null)
-                ? $this->approved_public_snapshot['venue']
-                : null;
 
         if (request() && request()->is('api/admin/*')) {
             return $attributes;
@@ -173,10 +165,6 @@ class Venue extends Model
                     ?? ($translations['en']
                     ?? (is_array($translations) && count($translations) > 0 ? reset($translations) : ''))));
             }
-        }
-
-        if ($publicSnapshot !== null) {
-            $attributes = array_merge($attributes, $publicSnapshot);
         }
 
         return $attributes;

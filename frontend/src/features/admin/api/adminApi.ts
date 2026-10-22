@@ -1,16 +1,26 @@
 import { api } from '@/core/api/client'
-import type { Court, Venue, CourtBlock } from '@/features/court/types/court'
+import type { Court, OperationalStop, Venue } from '@/features/court/types/court'
 import type { Coupon } from '@/features/booking/types/booking'
-import type { CourtForm, BlockForm, VenueForm } from '../types/admin'
+import type { CourtForm, VenueForm } from '../types/admin'
+import type { LifecycleCommand, StopPayload } from '../types/lifecycle'
 import type { VenueBookingPolicySettings, VenueBookingPolicyVersion } from '../types/admin'
 
 export const adminApi = {
   // Venues
   getVenues: () => api.get<Venue[]>('/admin/venues'),
   createVenue: (payload: VenueForm) => api.post<Venue>('/admin/venues', payload),
-  updateVenue: (id: number, payload: Partial<VenueForm> | { is_active?: boolean }) =>
+  updateVenue: (id: number, payload: Partial<VenueForm>) =>
     api.patch<Venue>(`/admin/venues/${id}`, payload),
-  deleteVenue: (id: number) => api.delete(`/admin/venues/${id}`),
+  venueCommand: (
+    organizationId: number,
+    venueId: number,
+    command: LifecycleCommand,
+    payload?: StopPayload,
+  ) =>
+    api.post<{ data: Venue; stop?: OperationalStop; message: string }>(
+      `/partner/organizations/${organizationId}/venues/${venueId}/${command}`,
+      payload,
+    ),
   getVenueBookingPolicy: (organizationId: number, venueId: number) =>
     api.get<{ data: VenueBookingPolicyVersion | null }>(
       `/partner/organizations/${organizationId}/venues/${venueId}/booking-policy`,
@@ -55,18 +65,15 @@ export const adminApi = {
   createCourt: (payload: CourtForm) => api.post<Court>('/admin/courts', payload),
   updateCourt: (id: number, payload: Partial<CourtForm>) =>
     api.patch<Court>(`/admin/courts/${id}`, payload),
-  deleteCourt: (id: number) => api.delete(`/admin/courts/${id}`),
+  courtCommand: (courtId: number, command: LifecycleCommand, payload?: StopPayload) =>
+    api.post<{ data: Court; stop?: OperationalStop; message: string }>(
+      `/admin/courts/${courtId}/${command}`,
+      payload,
+    ),
 
   // Upload
   uploadImage: (formData: FormData) =>
     api.post<{ url: string; filename: string }>('/admin/upload', formData),
-
-  // Blocks
-  createBlock: (courtId: number, payload: BlockForm) =>
-    api.post(`/admin/courts/${courtId}/blocks`, payload),
-  getBlocks: (courtId: number) => api.get<CourtBlock[]>(`/admin/courts/${courtId}/blocks`),
-  deleteBlock: (courtId: number, blockId: number) =>
-    api.delete(`/admin/courts/${courtId}/blocks/${blockId}`),
 
   // Reservations & Payments
   getReservations: <T = unknown>(params?: {

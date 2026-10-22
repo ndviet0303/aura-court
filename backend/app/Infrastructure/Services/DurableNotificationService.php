@@ -11,7 +11,6 @@ use App\Models\OutboxMessage;
 use App\Models\PlatformPaymentAttempt;
 use App\Models\PlatformSubscription;
 use App\Models\User;
-use App\Models\VenuePublicationRevision;
 use App\Services\Infrastructure\OutboxService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
@@ -155,38 +154,6 @@ class DurableNotificationService implements DurableNotificationServiceInterface
                 'aggregate_id' => $attempt->id,
             ],
             orgId: $attempt->organization_id
-        );
-    }
-
-    public function notifyPublicationReviewed(
-        VenuePublicationRevision $revision,
-        string $decision,
-        ?string $reason = null
-    ): OutboxMessage {
-        $key = "venue.publication.{$revision->id}.{$decision}";
-        $userId = (int) $revision->submitted_by;
-        $venue = $revision->venue;
-
-        $title = match ($decision) {
-            'approved' => "Cơ sở {$venue?->name} đã được phê duyệt xuất bản",
-            'revision_required' => "Cơ sở {$venue?->name} cần chỉnh sửa trước khi xuất bản",
-            default => "Kết quả xét duyệt xuất bản cơ sở {$venue?->name}",
-        };
-
-        return $this->recordOutboxNotification(
-            key: $key,
-            userId: $userId,
-            eventType: "venue.publication.{$decision}",
-            payload: [
-                'title' => $title,
-                'decision' => $decision,
-                'reason' => $reason,
-                'revision_number' => $revision->revision_number,
-                'venue_id' => $revision->venue_id,
-                'aggregate_type' => VenuePublicationRevision::class,
-                'aggregate_id' => $revision->id,
-            ],
-            orgId: $venue?->organization_id
         );
     }
 

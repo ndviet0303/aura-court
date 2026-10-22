@@ -2,11 +2,10 @@
 import { useI18n } from 'vue-i18n'
 import { resolveLocalizedText } from '@/i18n'
 import { AuraButton } from '@/shared/components'
-import type { MaintenanceBlock } from '../../composables/useAdminSchedule'
+import type { CourtStop } from '../../composables/useAdminSchedule'
 
 defineProps<{
-  show: boolean
-  block: MaintenanceBlock | null
+  block: CourtStop | null
   loading?: boolean
 }>()
 
@@ -19,15 +18,11 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <div
-    v-if="show && block"
-    class="modal-backdrop modal-overlay-backdrop"
-    @click.self="emit('close')"
-  >
+  <div v-if="block" class="modal-backdrop modal-overlay-backdrop" @click.self="emit('close')">
     <div class="modal-card modal-sm">
       <div class="modal-header">
         <div class="title-with-icon">
-          <span class="material-symbols-outlined card-title-icon text-green">lock_open</span>
+          <span class="material-symbols-outlined card-title-icon text-green">play_arrow</span>
           <h3 class="modal-title modal-title-text">{{ t('admin.schedule.unlockConfirmTitle') }}</h3>
         </div>
         <button type="button" class="modal-close-btn" @click="emit('close')">✕</button>

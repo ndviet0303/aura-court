@@ -8,7 +8,6 @@ use App\Models\HostKyc;
 use App\Models\OutboxMessage;
 use App\Models\PlatformPaymentAttempt;
 use App\Models\PlatformSubscription;
-use App\Models\VenuePublicationRevision;
 use Illuminate\Database\Eloquent\Model;
 
 interface DurableNotificationServiceInterface
@@ -41,8 +40,6 @@ interface DurableNotificationServiceInterface
     public function notifySubscriptionActivated(PlatformSubscription $subscription): OutboxMessage;
 
     public function notifyPaymentFailed(PlatformPaymentAttempt $attempt): OutboxMessage;
-
-    public function notifyPublicationReviewed(VenuePublicationRevision $revision, string $decision, ?string $reason = null): OutboxMessage;
 
     public function notifyBooking(Booking $booking, string $event, string $title, string $body, ?string $actionUrl = '/booking'): OutboxMessage;
 }

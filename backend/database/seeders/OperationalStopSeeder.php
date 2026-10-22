@@ -3,11 +3,12 @@
 namespace Database\Seeders;
 
 use App\Models\Court;
-use App\Models\CourtBlock;
+use App\Models\OperationalStop;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
-class CourtBlockSeeder extends Seeder
+/** Court maintenance windows, seeded like migrated court blocks (design D5): a maintenance stop whose recorded end is the window end. */
+class OperationalStopSeeder extends Seeder
 {
     public function run(): void
     {
@@ -16,7 +17,7 @@ class CourtBlockSeeder extends Seeder
         $saturday = $today->copy()->next(Carbon::SATURDAY);
 
         // [court slug, local start, hours, reason, created days ago]
-        $blocks = [
+        $stops = [
             ['san-2-tieu-chuan-cau-giay', $nextMonday->copy()->addDay()->setTime(6, 0), 4, 'Bảo trì định kỳ: thay thảm và căng lại lưới sân 2', 5],
             ['san-tennis-1-dat-nen-tay-ho', $nextMonday->copy()->addDays(2)->setTime(13, 0), 4, 'Bảo dưỡng mặt sân đất nện: lu nền và kẻ lại vạch', 4],
             ['san-bong-ro-in-house-nba-landmark', $saturday->copy()->setTime(18, 0), 4, 'Sự kiện riêng: giao lưu bóng rổ doanh nghiệp, thuê trọn sân', 6],
@@ -24,16 +25,21 @@ class CourtBlockSeeder extends Seeder
             ['san-bong-ban-2-stiga-master-quan-ngua', $today->copy()->subDays(3)->setTime(14, 0), 3, 'Thay mặt bàn và lưới bàn bóng bàn số 2', 10],
         ];
 
-        foreach ($blocks as [$slug, $startsAt, $hours, $reason, $createdDaysAgo]) {
+        foreach ($stops as [$slug, $startsAt, $hours, $reason, $createdDaysAgo]) {
             $court = Court::where('slug', $slug)->first();
             if (! $court) {
                 continue;
             }
 
-            // Keyed by court and reason so a re-seed never moves a block under bookings seeded around it.
-            CourtBlock::firstOrCreate(['court_id' => $court->id, 'reason' => $reason], [
+            $endsAt = $startsAt->copy()->addHours($hours);
+            // Keyed by court and reason so a re-seed never moves a stop under bookings seeded around it.
+            // The recorded end bounds the window, so the court stays active and the per-minute status job skips it.
+            OperationalStop::firstOrCreate(['court_id' => $court->id, 'reason' => $reason], [
+                'venue_id' => $court->venue_id,
+                'kind' => OperationalStop::KIND_MAINTENANCE,
                 'starts_at' => $startsAt,
-                'ends_at' => $startsAt->copy()->addHours($hours),
+                'expected_end_at' => $endsAt,
+                'ended_at' => $endsAt,
                 'created_at' => $today->copy()->subDays($createdDaysAgo)->setTime(9, 30),
                 'updated_at' => $today->copy()->subDays($createdDaysAgo)->setTime(9, 30),
             ]);

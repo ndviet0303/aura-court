@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 defineProps<{
   totalCourtsCount: number
   activeCourtsCount: number
-  totalBlocksCount: number
+  pausedCourtsCount: number
   loading?: boolean
 }>()
 
@@ -46,11 +46,11 @@ const { t } = useI18n()
 
       <div class="kpi-card kpi-maintenance">
         <div class="kpi-icon-box maintenance-icon-box">
-          <span class="material-symbols-outlined icon-22">build</span>
+          <span class="material-symbols-outlined icon-22">pause_circle</span>
         </div>
         <div class="kpi-content">
-          <span class="kpi-lbl">{{ t('admin.manage.maintenanceBlocks') }}</span>
-          <strong class="kpi-num text-yellow">{{ totalBlocksCount }}</strong>
+          <span class="kpi-lbl">{{ t('admin.manage.pausedCourts') }}</span>
+          <strong class="kpi-num text-yellow">{{ pausedCourtsCount }}</strong>
         </div>
       </div>
     </template>

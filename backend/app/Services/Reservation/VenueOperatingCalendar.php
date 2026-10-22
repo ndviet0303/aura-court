@@ -154,21 +154,4 @@ class VenueOperatingCalendar
 
         return $capacity;
     }
-
-    public function configuredForVenue(int $venueId): bool
-    {
-        $courts = Court::query()->with('venue')->where('venue_id', $venueId)->where('status', Court::STATUS_ACTIVE)->get();
-        if ($courts->isEmpty()) {
-            return false;
-        }
-
-        foreach ($courts as $court) {
-            $schedule = $this->scheduleFor($court);
-            if (! $schedule || ! collect($schedule->weekly_hours)->contains(fn ($day) => ! ($day['closed'] ?? true) && count($day['intervals'] ?? []) > 0)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
 }

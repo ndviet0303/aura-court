@@ -2,18 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Contracts\Repositories\CourtBlockRepositoryInterface;
 use App\Contracts\Repositories\PaymentRepositoryInterface;
 use App\Contracts\Repositories\VenueRepositoryInterface;
 use App\Contracts\Storage\FileStorageServiceInterface;
 use App\Domain\Admin\Actions\CreateVenue;
-use App\Domain\Admin\Actions\ManageCourtBlocks;
 use App\Domain\Admin\Actions\ReviewPayment;
 use App\Domain\Admin\Actions\UpdateVenue;
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Http\Controllers\Controller;
 use App\Models\Court;
-use App\Models\CourtBlock;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\OwnerRefundObligation;
@@ -34,13 +31,11 @@ class AdminController extends Controller
 {
     public function __construct(
         private readonly VenueRepositoryInterface $venues,
-        private readonly CourtBlockRepositoryInterface $courtBlocks,
         private readonly PaymentRepositoryInterface $payments,
         private readonly AuditLogger $audits,
         private readonly FileStorageServiceInterface $fileStorage,
         private readonly CreateVenue $createVenueAction,
         private readonly UpdateVenue $updateVenueAction,
-        private readonly ManageCourtBlocks $manageCourtBlocksAction,
         private readonly ReviewPayment $reviewPaymentAction,
     ) {}
 
@@ -59,7 +54,10 @@ class AdminController extends Controller
             $venues = Venue::query()
                 ->whereIn('id', $authorizedVenueIds)
                 ->withCount(['courts' => fn ($query) => $query->where('status', Court::STATUS_ACTIVE)])
-                ->with(['courts' => fn ($query) => $query->where('status', Court::STATUS_ACTIVE)->select(['id', 'venue_id', 'sport_type'])])
+                ->with([
+                    'courts' => fn ($query) => $query->where('status', Court::STATUS_ACTIVE)->select(['id', 'venue_id', 'sport_type']),
+                    'activeSuspension',
+                ])
                 ->orderBy('id')
                 ->get();
 
@@ -125,18 +123,6 @@ class AdminController extends Controller
         return $venue->fresh(['courts' => fn ($query) => $query->where('is_active', true)->select(['id', 'venue_id', 'sport_type'])]);
     }
 
-    public function destroyVenue(Venue $venue)
-    {
-        $user = request()->user();
-        abort_unless($user->canManageVenue($venue), 403, 'Unauthorized venue.');
-
-        $this->updateVenueAction->execute($venue, ['is_active' => false]);
-        Cache::increment('venues_version');
-        $this->audits->record(request(), 'venue.deactivated', $venue);
-
-        return ['message' => 'Đã ngừng hoạt động địa điểm.'];
-    }
-
     public function showVenue(string $slug)
     {
         $venue = $this->venues->findBySlug($slug);
@@ -200,42 +186,6 @@ class AdminController extends Controller
             && (bool) preg_match('#^/maps(?:/|$)#', $path);
     }
 
-    public function blocks(Request $request, Court $court)
-    {
-        $user = $request->user();
-        abort_unless($user->canOperateVenue($court->venue_id), 403, 'Unauthorized court venue.');
-
-        $data = $request->validate([
-            'starts_at' => 'required|date',
-            'ends_at' => 'required|date|after:starts_at',
-            'reason' => 'nullable|string|max:255',
-        ]);
-
-        $block = $this->manageCourtBlocksAction->createBlock($court, $data);
-        $this->audits->record($request, 'court_block.created', $block, ['court_id' => $court->id]);
-
-        return response()->json($block, 201);
-    }
-
-    public function blocksIndex(Court $court)
-    {
-        $user = request()->user();
-        abort_unless($user->canOperateVenue($court->venue_id), 403, 'Unauthorized court venue.');
-
-        return $this->courtBlocks->paginateForCourt($court, 50);
-    }
-
-    public function destroyBlock(Court $court, CourtBlock $block)
-    {
-        $user = request()->user();
-        abort_unless($user->canOperateVenue($court->venue_id), 403, 'Unauthorized court venue.');
-
-        $this->manageCourtBlocksAction->deleteBlock($court, $block);
-        $this->audits->record(request(), 'court_block.deleted', $block, ['court_id' => $court->id]);
-
-        return ['message' => 'Đã mở khóa lịch sân.'];
-    }
-
     public function payments(Request $request)
     {
         return $this->payments->paginateManualReview(30);
@@ -274,7 +224,7 @@ class AdminController extends Controller
             ->get(['reservation_slots.*']);
 
         $capacity = app(VenueOperatingCalendar::class)->slotCapacity(
-            Court::query()->where('is_active', true)->when($scopedVenueIds !== null, fn ($q) => $q->whereIn('venue_id', $scopedVenueIds))->get(),
+            Court::query()->where('status', Court::STATUS_ACTIVE)->when($scopedVenueIds !== null, fn ($q) => $q->whereIn('venue_id', $scopedVenueIds))->get(),
             $from,
             $to,
         );

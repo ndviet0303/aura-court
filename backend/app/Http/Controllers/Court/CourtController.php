@@ -9,11 +9,13 @@ use App\Models\Court;
 use App\Models\Organization;
 use App\Models\Venue;
 use App\Services\Infrastructure\FeatureFlagService;
+use App\Services\Pricing\PriceCoverageService;
 use App\Services\Reservation\CourtPriceRuleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class CourtController extends Controller
 {
@@ -50,6 +52,8 @@ class CourtController extends Controller
             $filteredCourts = [];
             $priceRules = app(CourtPriceRuleService::class);
             $pricedCourtIds = $priceRules->pricedCourtIds($courtsQuery);
+            // BR-41, BR-47: one batch coverage check for the whole list; a court with any unpriced service time is hidden.
+            $pricedCourtIds = array_diff_key($pricedCourtIds, array_flip(app(PriceCoverageService::class)->uncoveredCourtIds(array_keys($pricedCourtIds), now())));
             $fromPrices = $priceRules->fromPrices($courtsQuery);
 
             foreach ($courtsQuery as $court) {
@@ -117,10 +121,8 @@ class CourtController extends Controller
             $scopedVenueIds = [(int) $request->query('venue_id')];
         }
 
-        $query = Court::with([
-            'venue',
-            'blocks' => fn ($query) => $query->latest('starts_at'),
-        ])
+        // Open stops and the venue suspension drive the admin status badges and the resume buttons.
+        $query = Court::with(['venue.activeSuspension', 'operationalStops' => fn ($q) => $q->open()])
             ->when($scopedVenueIds !== null, fn ($q) => $q->whereIn('venue_id', $scopedVenueIds))
             ->when($request->query('sport_type'), fn ($q, $sportType) => $q->where('sport_type', $sportType))
             ->orderBy('id');
@@ -140,7 +142,8 @@ class CourtController extends Controller
         $data = $request->validate([
             'name' => 'required|array',
             'name.*' => 'string|max:120',
-            'venue_id' => ['required', 'integer', Rule::exists('venues', 'id')->whereNotIn('status', self::CLOSED_VENUE_STATUSES)],
+            // A closed venue is refused after the 403 check, so another organization's venue never reveals its status.
+            'venue_id' => ['required', 'integer', Rule::exists('venues', 'id')],
             'sport_type' => ['required', Rule::in(Court::SPORT_TYPES)],
             'slot_duration' => ['sometimes', 'integer', Rule::in(Court::SLOT_DURATIONS)],
             'description' => 'nullable|array',
@@ -150,7 +153,6 @@ class CourtController extends Controller
             'amenities.*' => 'string',
             'surface_type' => ['nullable', Rule::in(['wood', 'synthetic', 'acrylic', 'concrete', 'grass', 'clay', 'hard', 'other'])],
             'capacity' => 'nullable|integer|min:1|max:100',
-            'is_active' => 'boolean',
         ]);
         $user = $request->user();
         if ($user) {
@@ -158,7 +160,11 @@ class CourtController extends Controller
         }
 
         $court = DB::transaction(function () use ($data) {
-            $venue = Venue::findOrFail($data['venue_id']);
+            // Locked, so a closure of the venue cannot slip in before the court exists.
+            $venue = Venue::query()->lockForUpdate()->findOrFail($data['venue_id']);
+            if ($venue->isClosed()) {
+                throw ValidationException::withMessages(['venue_id' => 'Không thể thêm sân vào cơ sở đã ngừng kinh doanh.']);
+            }
             if ($venue->organization_id) {
                 $org = Organization::find($venue->organization_id);
                 if ($org && $org->hasActiveSubscription()) {
@@ -166,7 +172,8 @@ class CourtController extends Controller
                 }
             }
 
-            $court = Court::create($data)->load(['venue']);
+            // D3: a new court starts inactive, also at an inactive venue, and opens only through OpenCourt.
+            $court = Court::create([...$data, 'status' => Court::STATUS_INACTIVE])->load(['venue']);
             Cache::increment('courts_version');
 
             return $court;
@@ -202,7 +209,6 @@ class CourtController extends Controller
             'amenities.*' => 'string',
             'surface_type' => ['sometimes', 'nullable', Rule::in(['wood', 'synthetic', 'acrylic', 'concrete', 'grass', 'clay', 'hard', 'other'])],
             'capacity' => 'sometimes|nullable|integer|min:1|max:100',
-            'is_active' => 'boolean',
         ]);
 
         if (isset($data['venue_id']) && $user) {
@@ -221,23 +227,9 @@ class CourtController extends Controller
             }
 
             $court->update($data);
-            abort_if($court->is_active && $court->venue()->whereIn('status', self::CLOSED_VENUE_STATUSES)->exists(), 422, 'Không thể mở sân tại cơ sở đã ngừng kinh doanh.');
             Cache::increment('courts_version');
         });
 
         return $court->fresh(['venue']);
-    }
-
-    public function destroy(Court $court)
-    {
-        $user = request()->user();
-        if ($user) {
-            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
-        }
-
-        $court->update(['is_active' => false]);
-        Cache::increment('courts_version');
-
-        return ['message' => 'Đã ngừng mở sân.'];
     }
 }

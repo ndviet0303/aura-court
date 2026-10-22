@@ -4,7 +4,6 @@ namespace App\Services\Reservation;
 
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Models\Court;
-use App\Models\CourtBlock;
 use App\Models\PriceQuote;
 use App\Models\ReservationSlot;
 use App\Services\Pricing\RentalPriceCalculator;
@@ -19,6 +18,7 @@ class PriceQuoteService
     public function __construct(
         private readonly VenueOperatingCalendar $operatingCalendar,
         private readonly RentalPriceCalculator $rentals,
+        private readonly SlotSelectionPolicy $slotPolicy,
     ) {}
 
     public function create(int $userId, int $organizationId, int $courtId, array $slots): PriceQuote
@@ -38,21 +38,11 @@ class PriceQuoteService
             }
         }
 
-        // Check for maintenance closures / court blocks
         $firstSlot = $resolvedSlots->first();
         $lastSlot = $resolvedSlots->last();
         $blockStarts = $firstSlot->copy()->utc();
         $blockEnds = $lastSlot->copy()->addMinutes($duration)->utc();
-
-        $overlappingBlock = CourtBlock::query()
-            ->where('court_id', $court->id)
-            ->where('starts_at', '<', $blockEnds)
-            ->where('ends_at', '>', $blockStarts)
-            ->first();
-
-        if ($overlappingBlock) {
-            abort(409, 'Sân đang bảo trì hoặc tạm đóng trong khoảng thời gian đã chọn.');
-        }
+        $this->slotPolicy->assertNoStop($court, $blockStarts, $blockEnds);
 
         $overlapping = ReservationSlot::query()
             ->where('court_id', $court->id)

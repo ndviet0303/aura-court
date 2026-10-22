@@ -4,7 +4,6 @@ import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
 import type { AdminVenueItem } from '../../composables/useAdminVenues'
 import VenueBookingPolicyForm from './VenueBookingPolicyForm.vue'
-import VenueStatusToggle from './VenueStatusToggle.vue'
 import { formatVenueCoordinates, parseVenueCoordinates } from '../../utils/venueCoordinates'
 import type { VenueBookingPolicySettings, VenueBookingPolicyVersion } from '../../types/admin'
 
@@ -36,7 +35,6 @@ const description = ref('')
 const imagesText = ref('')
 const googleMapsUrl = ref('')
 const coordinates = ref('')
-const isActive = ref(true)
 const validationError = ref('')
 
 watch(
@@ -58,7 +56,6 @@ watch(
     imagesText.value = (v?.images || []).join('\n')
     googleMapsUrl.value = v?.google_maps_url || ''
     coordinates.value = formatVenueCoordinates(v)
-    isActive.value = v?.is_active ?? true
   },
   { immediate: true },
 )
@@ -109,7 +106,6 @@ function handleSave() {
       .filter(Boolean),
     google_maps_url: trimmedMaps || undefined,
     ...coords,
-    is_active: isActive.value,
   })
 }
 </script>
@@ -225,12 +221,6 @@ function handleSave() {
             placeholder="21.0306, 105.7830"
           />
           <span class="field-hint">{{ t('admin.venues.coordinatesHint') }}</span>
-        </div>
-
-        <!-- Custom Status Toggle Card -->
-        <div v-if="venue?.status === 'published' || venue?.status === 'active'" class="form-group">
-          <label class="form-label">{{ t('admin.venues.operationalStatusLabel') }}</label>
-          <VenueStatusToggle v-model="isActive" />
         </div>
 
         <VenueBookingPolicyForm

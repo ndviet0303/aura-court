@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
-import type { Venue } from '@/features/court/types/court'
+import type { OperatingStatus, Venue } from '@/features/court/types/court'
 import type { VenueForm } from '../types/admin'
 import type { VenueBookingPolicySettings, VenueBookingPolicyVersion } from '../types/admin'
 
@@ -20,7 +20,7 @@ export function useAdminVenues() {
   const error = ref('')
 
   const searchQuery = ref('')
-  const statusFilter = ref<'all' | 'active' | 'inactive'>('all')
+  const statusFilter = ref<'all' | OperatingStatus>('all')
 
   const venues = ref<AdminVenueItem[]>([])
 
@@ -35,10 +35,7 @@ export function useAdminVenues() {
   const filteredVenues = computed(() => {
     const q = searchQuery.value.trim().toLowerCase()
     return venues.value.filter((v) => {
-      const matchStatus =
-        statusFilter.value === 'all' ||
-        (statusFilter.value === 'active' && v.is_active) ||
-        (statusFilter.value === 'inactive' && !v.is_active)
+      const matchStatus = statusFilter.value === 'all' || v.status === statusFilter.value
 
       const venueName =
         typeof v.name === 'string' ? v.name : (v.name as any)?.vi || (v.name as any)?.en || ''
@@ -58,7 +55,9 @@ export function useAdminVenues() {
   })
 
   const totalVenuesCount = computed(() => venues.value.length)
-  const activeVenuesCount = computed(() => venues.value.filter((v) => v.is_active).length)
+  const activeVenuesCount = computed(
+    () => venues.value.filter((v) => v.status === 'active').length,
+  )
   const totalCourtsCount = computed(() => {
     return venues.value.reduce((sum, v) => sum + (v.courts_count || 0), 0)
   })
@@ -161,38 +160,6 @@ export function useAdminVenues() {
     }
   }
 
-  async function toggleVenueActive(venue: AdminVenueItem) {
-    const nextStatus = !venue.is_active
-    try {
-      await adminApi.updateVenue(venue.id, { is_active: nextStatus })
-      venue.is_active = nextStatus
-      const statusText = nextStatus
-        ? t('admin.venues.statusActive')
-        : t('admin.venues.statusInactive')
-      const nameStr =
-        typeof venue.name === 'string'
-          ? venue.name
-          : (venue.name as any)?.vi || (venue.name as any)?.en || ''
-      showNotice(t('admin.venues.toggleStatusSuccess', { name: nameStr, status: statusText }))
-    } catch (e) {
-      showError(errorMessage(e, 'Không thể cập nhật trạng thái cơ sở.'))
-    }
-  }
-
-  async function deleteVenue(venue: AdminVenueItem) {
-    try {
-      await adminApi.deleteVenue(venue.id)
-      venue.is_active = false
-      const nameStr =
-        typeof venue.name === 'string'
-          ? venue.name
-          : (venue.name as any)?.vi || (venue.name as any)?.en || ''
-      showNotice(t('admin.venues.deleteVenueSuccess', { name: nameStr }))
-    } catch (e) {
-      showError(errorMessage(e, 'Không thể ngưng hoạt động cơ sở.'))
-    }
-  }
-
   return {
     loading,
     saving,
@@ -219,7 +186,5 @@ export function useAdminVenues() {
     saveVenue,
     loadBookingPolicy,
     saveBookingPolicy,
-    toggleVenueActive,
-    deleteVenue,
   }
 }

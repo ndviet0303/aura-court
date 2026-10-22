@@ -32,21 +32,21 @@
     - Scenario: "Closed is final", "Closed court stays closed", "Paused or closed court".
     - Scenario: phần closed của "Suspended or closed object".
     - Scenario "Second pause", phần 422 cho sân `inactive`, `paused`, `closed`.
-- [ ] 1.5 Action `OpenVenue`, chỉ owner dùng được:
+- [x] 1.5 Action `OpenVenue`, chỉ owner dùng được: (test: chưa làm)
   - Ba điều kiện: thông tin cơ sở đủ, giờ hoạt động có ít nhất một khoảng mở, không có đình chỉ đang hiệu lực.
   - Thiếu điều kiện thì trả 422 kèm `missing_items[]`.
   - Sân giữ nguyên trạng thái của mình.
   - Không kiểm gói, đối tác, kết nối nhận tiền, chính sách đặt, sân hay giá.
   - Test: `VenueOpeningConditionsTest`.
     - Scenario: "Missing items", "Suspended venue", "Opening without courts or payment setup", "Courts stay as they are", "Wrong source status or actor".
-- [ ] 1.6 Action `OpenCourt`, chỉ owner dùng được:
+- [x] 1.6 Action `OpenCourt`, chỉ owner dùng được: (test: chưa làm)
   - Điều kiện: có mã và môn, lịch phục vụ hiệu lực có ít nhất một khoảng trong giờ cơ sở, cơ sở `active` và không đình chỉ.
   - Thiếu điều kiện thì trả 422 kèm `missing_items[]`.
   - Chưa có cổng độ phủ giá. Ghi `ponytail:` tại chỗ kiểm, trỏ tới 3.4.
   - Test: `CourtOpeningConditionsTest`.
     - Scenario: "No service schedule", "Venue not open", "Paused or closed court".
     - Scenario: "All conditions met", trừ phần độ phủ giá.
-- [ ] 1.7 Dừng vận hành dùng chung `PauseRequest` (BR-35): `PauseVenue`, `PauseCourt`, `CloseVenue`, `CloseCourt`.
+- [x] 1.7 Dừng vận hành dùng chung `PauseRequest` (BR-35): `PauseVenue`, `PauseCourt`, `CloseVenue`, `CloseCourt`. (test: chưa làm)
   - Lý do 10–1000 ký tự sau trim, `starts_at ≥ now`, `expected_end_at > starts_at`.
   - Bảo trì và tạm ngừng kinh doanh đều là pause.
   - Pause đối tượng không `active` trả 422 qua `LifecycleGuard` (1.4). Đối tượng `active` đã có pause mở, kể cả pause hẹn trước, trả 409.
@@ -57,7 +57,7 @@
   - Test: `OperationalStopTest`.
     - Scenario: "Invalid stop requests", "Second pause" (phần 409), "Venue pause keeps court statuses", "Expected end passes", "Deactivate court", "Maintenance stop reaches its start".
     - Closure trên cơ sở không có đơn còn hiệu lực thì thành công. Có đơn còn hiệu lực thì trả 409 tạm cho tới 4.4. Scenario "Close a venue with outstanding bookings" chuyển sang 4.4.
-- [ ] 1.8 Action `ResumeVenue` và `ResumeCourt`, đi qua `LifecycleGuard`:
+- [x] 1.8 Action `ResumeVenue` và `ResumeCourt`, đi qua `LifecycleGuard`: (test: chưa làm)
   - Chỉ áp cho đối tượng `paused`.
   - Ghi `ended_at = now()` và `ended_by` cho pause đang mở.
   - Cơ sở: kiểm thông tin, giờ hoạt động và đình chỉ; không kiểm sân.
@@ -66,7 +66,7 @@
   - Test:
     - `VenueOpeningConditionsTest`: scenario "Venue resume with paused courts", "Suspended or closed object".
     - `CourtOpeningConditionsTest`: scenario "Court resume while the venue is paused", "Successful court resume".
-- [ ] 1.9 Phân quyền dừng và khôi phục theo BR-34:
+- [x] 1.9 Phân quyền dừng và khôi phục theo BR-34: (test: chưa làm)
   - Owner làm được mọi loại stop và resume.
   - Staff được phân công chỉ tạo `maintenance` và resume từ `maintenance`, trên sân của cơ sở mình.
   - Platform admin gọi open, pause, resume, close thì nhận 403.
@@ -76,7 +76,7 @@
     - Scenario `organization-access`: "Staff pause and restore a court for maintenance", "Staff attempt an owner-only operation".
   - Test: giữ xanh `ComprehensiveRoleAndScopingMatrixTest` và `TenantIsolationAndRoleMatrixTest`.
     - Scenario: "Venue manager changes venue operations", "Owner without global admin", "Staff requests payout administration", "Organization switch".
-- [ ] 1.10 Predicate mới trong `VerifyEffectiveBookingEligibility`:
+- [x] 1.10 Predicate mới trong `VerifyEffectiveBookingEligibility`: (test: chưa làm)
   - Cơ sở `active` và không có đình chỉ đang hiệu lực; sân `active`.
   - Không có stop nào của sân hoặc cơ sở chồng `[s, e)` theo D5. Điều kiện này kiểm trong `SlotSelectionPolicy`, dưới cùng lock.
   - Giữ thứ tự lock của design.
@@ -88,31 +88,31 @@
   - Test: `OperationalStopTest`.
     - Scenario: "Future pause blocks at once", "Open-ended stop", "Status not yet updated", "Closed slot".
     - Biên: đơn kết thúc đúng `starts_at` thì không chồng.
-- [ ] 1.11 Kết nối nhận tiền đã xác minh chuyển thành điều kiện nhận đặt (D2). Bỏ nó khỏi mọi điều kiện mở.
+- [x] 1.11 Kết nối nhận tiền đã xác minh chuyển thành điều kiện nhận đặt (D2). Bỏ nó khỏi mọi điều kiện mở. (test: chưa làm)
   - Áp cho mọi đường đặt mới của eligibility (quote, hold, checkout, đặt định kỳ, phiên do owner tổ chức), không chỉ thanh toán online. Thiếu kết nối thì trả 409 kèm hướng dẫn, không tạo đơn, hold hay attempt.
   - Test: `VenueOpeningConditionsTest`, scenario "Venue opens before its connection is verified" và "Open venue without a collection connection".
   - Test: giữ `OwnerReceivingConnectionTest` xanh.
     - Scenario: "Incomplete connection", "Verified connection and rotation", "Receiving account changes", "Provider callback uses its supported credential form".
-- [ ] 1.11a Mua lại slot kiểm lại eligibility dưới lock (module 4 giao lại, design mục "Kiểm eligibility dưới lock"):
+- [x] 1.11a Mua lại slot kiểm lại eligibility dưới lock (module 4 giao lại, design mục "Kiểm eligibility dưới lock"): (test: chưa làm)
   - `PeerToPeerResaleService::lock` đọc listing không lock để lấy sân, rồi khoá theo thứ tự toàn cục: gói → sân → cơ sở → `venue_suspensions` → kết nối nhận tiền → listing → entitlement → đơn.
   - Kiểm trạng thái cơ sở và sân, đình chỉ, stop chồng slot, đối tác, gói và kết nối nhận tiền, qua `VerifyEffectiveBookingEligibility`. Không kiểm lại giá; slot giữ giá đã ghi.
   - Hỏng thì trả 409, không tạo lock người mua và không trả tài khoản nhận tiền của người bán.
   - Test: `AdvancedBookingMarketplaceTest`. Scenario "Resale purchase after a stop or suspension": cơ sở bị đình chỉ, cơ sở tạm ngừng, sân có stop chồng slot, cơ sở mất kết nối nhận tiền.
   - Test: giữ xanh scenario của "Peer-to-peer marketplace transfer", gồm "Buyer locks a listing", "Two buyers race to purchase a listing".
-- [ ] 1.11b Deadlock PostgreSQL (SQLSTATE `40P01`) khi khoá trả 409 thay cho 500 (module 4 giao lại):
+- [x] 1.11b Deadlock PostgreSQL (SQLSTATE `40P01`) khi khoá trả 409 thay cho 500 (module 4 giao lại): (test: chưa làm)
   - Áp cho hold, checkout, đặt định kỳ, phiên do owner tổ chức, mua lại slot và lần kiểm eligibility dưới lock.
   - Trả 409 kèm thông báo tiếng Việt yêu cầu thử lại. Transaction đã rollback; không còn đơn, hold, attempt hay lock người mua.
   - Bắt ở một chỗ dùng chung, không lặp ở từng service. Không tự chạy lại transaction.
   - Lỗi SQL khác vẫn đi đường xử lý lỗi hiện có.
   - Test: giả lập `QueryException` có SQLSTATE `40P01` trên đường hold và đường mua lại slot. Scenario "Database deadlock while locking".
-- [ ] 1.12 Lệnh mỗi phút trong `routes/console.php` (D6):
+- [x] 1.12 Lệnh mỗi phút trong `routes/console.php` (D6): (test: chưa làm)
   - Tìm stop có `ended_at IS NULL AND starts_at <= now()` mà đối tượng chưa ở trạng thái tương ứng.
   - Khoá dòng rồi đổi `status`.
   - Chỉ phát `CourtStatusUpdated` sau commit, và chỉ khi trạng thái thật sự đổi. Resume sân cũng phát sự kiện.
   - Test: `OperationalStopTest`.
     - Scenario `realtime-updates` "Court is marked for emergency maintenance": stop hẹn sau phát khi sân chuyển `paused`, resume phát khi sân về `active`.
     - Chạy lệnh hai lần không đổi gì thêm và không phát sự kiện thứ hai.
-- [ ] 1.13 Bỏ duyệt công khai (D1):
+- [x] 1.13 Bỏ duyệt công khai (D1): (test: chưa làm)
   - Xoá `SubmitVenueForPublication`, `ReviewVenuePublication`, `EvaluateVenueReadiness`. Nếu Pha 2 của module 3 merge trước task này, họ đã đổi `EvaluateVenueReadiness` và `SubmitVenueForPublication` sang liên kết; task này vẫn xoá chúng.
   - Xoá route `submit-publication`, `readiness`, `publication-queue`, `revisions/*`.
   - Xoá overlay snapshot trong `Venue::toArray`. API công khai đọc giá trị đang lưu.
@@ -125,18 +125,18 @@
     - Viết lại `FinalMutationEligibilityAndCacheTest`. Scenario: "Subscription expires".
     - Giữ `CourtArea.spec.ts` và `HomeView.spec.ts` xanh. Scenario: "Filter by area", "Nearest first", "Location denied".
     - `LifecycleRoleSplitTest`: scenario "Retired status-transition endpoints", hai route partner trả 404.
-- [ ] 1.14 Bỏ quyền admin trên trạng thái (D13):
+- [x] 1.14 Bỏ quyền admin trên trạng thái (D13): (test: chưa làm)
   - Xoá route `POST /admin/venues/{venueId}/lifecycle`; gọi route cũ trả 404 và không đổi bản ghi nào. Xoá `TransitionVenueLifecycle` và `AdminVenuePublicationController` (phần còn lại đã xoá ở 1.13).
   - Admin gọi lệnh open, pause, resume, close của cơ sở hoặc sân trả 403.
   - Từ Pha 2 tới Pha 6 không có đường đình chỉ mới; đình chỉ đã migrate vẫn chặn đặt và chỉ gỡ qua duyệt khắc phục (5.7). Đường đình chỉ mới là 5.1.
   - Test: `LifecycleRoleSplitTest`. Scenario "Retired status-transition endpoints", route admin trả 404. Scenario "Platform admin": admin open, pause, resume, close đều nhận 403.
-- [ ] 1.15 Bỏ xoá cứng:
+- [x] 1.15 Bỏ xoá cứng: (test: chưa làm)
   - Route DELETE của cơ sở và sân trả 404. Dừng hẳn chỉ đi qua closure.
   - Lệnh pause và resume thay `ManageCourtBlocks` và `/admin/courts/{court}/blocks*`.
   - Test: `VenueCourtCrudAndPreservationTest`.
     - Scenario: "Data kept after closure".
     - Scenario "Retired write endpoints", phần DELETE.
-- [ ] 1.16 Tạo sân:
+- [x] 1.16 Tạo sân: (test: chưa làm)
   - Sân mới ở `inactive`.
   - Cơ sở đích phải chưa `closed`, nên cơ sở `inactive` nhận được sân đầu tiên.
   - Cơ sở của tổ chức khác trả 403.
@@ -144,14 +144,14 @@
 - [ ] 1.17 Viết lại test đang dựa vào giá trị trạng thái cũ:
   - `NewRepositoriesAndLocksIntegrationTest`, `VenueLifecycleAndPublicationPersistenceTest`, `VenueLifecycleTransitionsTest`, `ReliabilityRealtimeAndSchedulerReadinessTest`, `BlockedCommandsInvariantsTest`.
   - Giữ `VenueBookingPolicyVersioningTest` xanh. Scenario: "Policy changes after booking".
-- [ ] 1.18 Frontend cho trạng thái:
+- [x] 1.18 Frontend cho trạng thái: (test: chưa làm)
   - Nút "Mở hoạt động cơ sở" và "Mở nhận đặt sân" hiện `missing_items`.
   - Dialog tạm ngừng và ngừng kinh doanh: lý do, ngừng ngay hoặc lên lịch, ngày dự kiến (tuỳ chọn).
   - Nhãn cho 4 trạng thái và badge đình chỉ.
   - Staff chỉ thấy nút bảo trì và khôi phục bảo trì.
   - Xoá `AdminPublicationQueueView` và mục nav của nó.
   - Test: vitest cho dialog và nút mở. Scenario "Readiness and owner creation", phần giao diện.
-- [ ] 1.19 Sự kiện trạng thái sân theo `realtime-updates` "Broadcast court status updates" (D6):
+- [x] 1.19 Sự kiện trạng thái sân theo `realtime-updates` "Broadcast court status updates" (D6): (test: chưa làm)
   - Stop sân bắt đầu ngay phát `CourtStatusUpdated` (paused) sau commit. Stop hẹn sau không phát lúc ghi; lệnh mỗi phút ở 1.12 phát khi sân chuyển `paused`. Resume phát khi sân về `active`.
   - Bỏ việc phát sự kiện lúc admin khoá sân, cùng `ManageCourtBlocks` (1.15).
   - Test: `OperationalStopTest`. Scenario "Court is marked for emergency maintenance": stop ngay phát một sự kiện; stop hẹn sau không phát lúc ghi.
@@ -262,7 +262,7 @@
 
 ## 3. Phụ thuộc module 3 (Pha 2 – bảng giá và độ phủ, gồm Pha 4 cũ của module 2): chỉ chờ và tích hợp
 
-- [ ] 3.1 Chờ change Pha 2 (bảng giá và độ phủ) của module 3 merge vào `main`. Change đó gồm:
+- [x] 3.1 Chờ change Pha 2 (bảng giá và độ phủ) của module 3 merge vào `main`. Change đó gồm: (đã merge nhánh `feat/module03-price-tables` vào nhánh này, `d67fca65`)
   - `price_tables` thuộc một cơ sở, liên kết sân–bảng giá (tên bảng/cột do design module 3 chốt), CRUD bảng giá, migrate rule;
   - bỏ `CourtPriceSlot`, viết lại availability;
   - service, endpoint và mã lỗi 422 của độ phủ.
@@ -277,14 +277,14 @@
   - Test: `CourtPriceTableLinkTest`.
     - Scenario: "Link a price table of the same venue", "Price table of another venue".
     - Scenario "Confirmed booking after a price change": đơn giữ đơn giá và tổng tiền đã ghi.
-- [ ] 3.3 `OpenCourt` gọi `PriceCoverageService` của module 3.
+- [x] 3.3 `OpenCourt` gọi `PriceCoverageService` của module 3. (test: chưa làm)
   - Giá chưa phủ kín thì trả 422 gộp: mỗi khoảng hở (sân, thứ hoặc ngày, giờ bắt đầu, giờ kết thúc) là một mục trong `missing_items`, cùng các điều kiện khác. Không trả `PRICE_COVERAGE_INCOMPLETE` riêng (D3 của module 3).
   - Test: `CourtOpeningConditionsTest`.
     - Scenario "Price gap": hở khung 21:00–22:00.
     - Scenario "All conditions met": độ phủ đủ.
-- [ ] 3.4 `ResumeCourt` gọi cùng service độ phủ. Bỏ ghi chú `ponytail:` ở 1.6 và 1.8.
+- [x] 3.4 `ResumeCourt` gọi cùng service độ phủ. Bỏ ghi chú `ponytail:` ở 1.6 và 1.8. (test: chưa làm)
   - Test: `CourtOpeningConditionsTest`, scenario "Court resume with a price gap".
-- [ ] 3.5 Độ phủ kín là điều kiện nhận đặt (design Q1, BR-41, BR-47):
+- [x] 3.5 Độ phủ kín là điều kiện nhận đặt (design Q1, BR-41, BR-47): (test: chưa làm)
   - `VerifyEffectiveBookingEligibility` thêm điều kiện: lịch phục vụ hiệu lực của sân được phủ giá kín, gọi cùng service độ phủ. Áp cho public list, chi tiết, availability và mọi đường đặt mới.
   - Pha 2 của module 3 đã đổi `CourtPriceRuleService::isPriced` (trong `VerifyEffectiveBookingEligibility`) và `pricedCourtIds` (danh sách công khai trong `CourtController::index`) thành "sân có liên kết thường đang hiệu lực". Thêm kiểm độ phủ trên cả hai, vì danh sách công khai không đi qua `execute` cho từng sân.
   - Trong `pricedCourtIds`, kiểm độ phủ một lần theo lô cho cả danh sách, không gọi theo từng sân: gọi `PriceCoverageService::uncoveredCourtIds($courtIds, $from)` của module 3 (D3 và task 2.4 của họ), bỏ các id nó trả về.

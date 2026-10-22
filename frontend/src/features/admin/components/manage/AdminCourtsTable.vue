@@ -2,28 +2,35 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { resolveLocalizedText } from '@/i18n'
-import type { Court, Venue } from '@/features/court/types/court'
+import type { Court, OperatingStatus, Venue } from '@/features/court/types/court'
 import { AuraButton, SelectDropdown } from '@/shared/components'
+import type { LifecycleCommand } from '../../types/lifecycle'
+import { hasOpenMaintenance } from '../../composables/useLifecycleCommands'
+import OperatingStatusBadge from '../lifecycle/OperatingStatusBadge.vue'
+import LifecycleActions from '../lifecycle/LifecycleActions.vue'
+
+type StatusFilter = 'all' | OperatingStatus
 
 const props = defineProps<{
   courts: Court[]
   venues: Venue[]
   selectedVenueFilter: number | 'all'
-  statusFilter: 'all' | 'active' | 'inactive'
+  statusFilter: StatusFilter
   searchQuery: string
   venueFilterOptions: Array<{ value: any; label: string; sublabel?: string; icon?: string }>
   statusFilterOptions: Array<{ value: any; label: string; icon?: string }>
   loading?: boolean
+  ownerOf: (organizationId?: number) => boolean
+  busy?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'update:selectedVenueFilter', val: number | 'all'): void
-  (e: 'update:statusFilter', val: 'all' | 'active' | 'inactive'): void
+  (e: 'update:statusFilter', val: StatusFilter): void
   (e: 'update:searchQuery', val: string): void
   (e: 'createCourt'): void
   (e: 'editCourt', court: Court): void
-  (e: 'openBlockModal', court: Court): void
-  (e: 'toggleStatus', court: Court): void
+  (e: 'command', court: Court, command: LifecycleCommand): void
 }>()
 
 const { t } = useI18n()
@@ -97,7 +104,7 @@ function goToPage(page: number) {
             :model-value="statusFilter"
             :options="statusFilterOptions"
             @update:model-value="
-              emit('update:statusFilter', $event as 'all' | 'active' | 'inactive')
+              emit('update:statusFilter', $event as StatusFilter)
             "
           />
         </div>
@@ -149,7 +156,7 @@ function goToPage(page: number) {
         v-for="court in paginatedCourts"
         :key="court.id"
         class="court-admin-card"
-        :class="{ inactive: court.is_active === false }"
+        :class="{ inactive: court.status !== 'active' }"
       >
         <div class="court-card-img">
           <img
@@ -162,16 +169,11 @@ function goToPage(page: number) {
             <span class="material-symbols-outlined fallback-icon">sports_tennis</span>
           </div>
 
-          <span
+          <OperatingStatusBadge
             class="status-chip"
-            :class="court.is_active !== false ? 'chip-active' : 'chip-inactive'"
-          >
-            {{
-              court.is_active !== false
-                ? t('admin.manage.statusOpen')
-                : t('admin.manage.statusClosed')
-            }}
-          </span>
+            :status="court.status"
+            :suspension="court.venue?.active_suspension"
+          />
 
           <span class="sport-chip">
             {{ t(`sportTypes.${court.sport_type}`) }}
@@ -202,23 +204,16 @@ function goToPage(page: number) {
             }}</span>
           </div>
 
-          <div class="court-stats-row">
-            <span class="stat-badge text-yellow">
-              <span class="material-symbols-outlined icon-14">build</span>
-              <span>{{ t('admin.manage.blocksCount', { count: court.blocks?.length || 0 }) }}</span>
-            </span>
-          </div>
+          <LifecycleActions
+            target="court"
+            :status="court.status"
+            :owner="ownerOf(court.venue?.organization_id)"
+            :maintenance-open="hasOpenMaintenance(court.operational_stops)"
+            :busy="busy"
+            @command="(command) => emit('command', court, command)"
+          />
 
           <div class="court-actions-footer">
-            <button
-              type="button"
-              class="btn-court-action"
-              :title="t('admin.manage.btnBlock')"
-              @click="emit('openBlockModal', court)"
-            >
-              <span class="material-symbols-outlined icon-14">lock</span>
-              <span>{{ t('admin.manage.btnBlock') }}</span>
-            </button>
             <button
               type="button"
               class="btn-court-action"
@@ -227,20 +222,6 @@ function goToPage(page: number) {
             >
               <span class="material-symbols-outlined icon-14">edit</span>
               <span>{{ t('admin.manage.btnEdit') }}</span>
-            </button>
-            <button
-              type="button"
-              class="btn-court-action btn-toggle"
-              :title="
-                court.is_active !== false
-                  ? t('admin.manage.statusClosed')
-                  : t('admin.manage.statusOpen')
-              "
-              @click="emit('toggleStatus', court)"
-            >
-              <span class="material-symbols-outlined icon-16">{{
-                court.is_active !== false ? 'pause' : 'play_arrow'
-              }}</span>
             </button>
           </div>
         </div>
@@ -541,26 +522,6 @@ function goToPage(page: number) {
   position: absolute;
   top: 10px;
   left: 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 11px;
-  font-weight: 700;
-  backdrop-filter: blur(8px);
-}
-
-.chip-active {
-  background: rgba(16, 185, 129, 0.9);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-}
-
-.chip-inactive {
-  background: rgba(239, 68, 68, 0.9);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 .sport-chip {
@@ -636,24 +597,6 @@ function goToPage(page: number) {
   gap: 8px;
   font-size: 11px;
   margin-top: auto;
-}
-
-.stat-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  background: var(--surface-subtle, rgba(0, 0, 0, 0.03));
-  border: 1px solid var(--outline);
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-:global(html.dark) .stat-badge {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .court-actions-footer {

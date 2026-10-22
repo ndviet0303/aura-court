@@ -355,16 +355,6 @@ const router = createRouter({
           },
         },
         {
-          path: 'venues/publication-queue',
-          name: 'admin-venue-publication-queue',
-          component: () => import('@/features/admin/views/AdminPublicationQueueView.vue'),
-          meta: {
-            platformAdmin: true,
-            titleKey: 'seo.adminVenuePublicationTitle',
-            indexable: false,
-          },
-        },
-        {
           path: 'pricing',
           name: 'admin-pricing',
           component: () => import('@/features/admin/views/AdminPriceTablesView.vue'),

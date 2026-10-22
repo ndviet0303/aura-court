@@ -4,12 +4,13 @@ namespace App\Providers;
 
 use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Contracts\Repositories\AuditLogRepositoryInterface;
-use App\Contracts\Repositories\CourtBlockRepositoryInterface;
 use App\Contracts\Repositories\CourtRepositoryInterface;
 use App\Contracts\Repositories\DisputeRepositoryInterface;
 use App\Contracts\Repositories\FinanceExceptionRepositoryInterface;
 use App\Contracts\Repositories\HostKycRepositoryInterface;
 use App\Contracts\Repositories\LoyaltyRuleRepositoryInterface;
+use App\Contracts\Repositories\OperationalStatusRepositoryInterface;
+use App\Contracts\Repositories\OperationalStopRepositoryInterface;
 use App\Contracts\Repositories\OrganizationLockRepositoryInterface;
 use App\Contracts\Repositories\PaymentRepositoryInterface;
 use App\Contracts\Repositories\PlatformPlanRepositoryInterface;
@@ -25,12 +26,13 @@ use App\Contracts\Repositories\VenueRepositoryInterface;
 use App\Contracts\Storage\FileStorageServiceInterface;
 use App\Contracts\Storage\PartnerDocumentStorageInterface;
 use App\Infrastructure\Repositories\Eloquent\EloquentAuditLogRepository;
-use App\Infrastructure\Repositories\Eloquent\EloquentCourtBlockRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentCourtRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentDisputeRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentFinanceExceptionRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentHostKycRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentLoyaltyRuleRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentOperationalStatusRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentOperationalStopRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentOrganizationLockRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPaymentRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPlatformPlanRepository;
@@ -57,7 +59,8 @@ class RepositoryServiceProvider extends ServiceProvider
         VenueRepositoryInterface::class => EloquentVenueRepository::class,
         CourtRepositoryInterface::class => EloquentCourtRepository::class,
         PriceTableRepositoryInterface::class => EloquentPriceTableRepository::class,
-        CourtBlockRepositoryInterface::class => EloquentCourtBlockRepository::class,
+        OperationalStopRepositoryInterface::class => EloquentOperationalStopRepository::class,
+        OperationalStatusRepositoryInterface::class => EloquentOperationalStatusRepository::class,
         ReservationRepositoryInterface::class => EloquentReservationRepository::class,
         PaymentRepositoryInterface::class => EloquentPaymentRepository::class,
         FinanceExceptionRepositoryInterface::class => EloquentFinanceExceptionRepository::class,

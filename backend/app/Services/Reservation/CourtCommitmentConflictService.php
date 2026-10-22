@@ -3,11 +3,11 @@
 namespace App\Services\Reservation;
 
 use App\Exceptions\CommitmentConflictException;
-use App\Models\Court;
 use App\Models\MatchPost;
 use App\Models\ReservationSlot;
 use App\Models\Venue;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
 class CourtCommitmentConflictService
@@ -35,48 +35,46 @@ class CourtCommitmentConflictService
         $this->abortOnConflicts($conflicts, 'Lịch hoạt động mới xung đột với các lượt đặt hiện có.');
     }
 
-    public function assertNoMatchPostConflict(int $courtId, Carbon|string $startsAt, Carbon|string $endsAt): void
+    /**
+     * A stop blocks [starts_at, no end): any held or confirmed booking, owner-hosted session or community activity
+     * without a reservation still running after its start conflicts, as it did for court blocks.
+     *
+     * ponytail: refuses the stop with 409 as court blocks did; task 4.4 replaces this with a preview and an
+     * acknowledged save that opens affected-booking cases.
+     *
+     * @param  list<int>  $courtIds
+     */
+    public function assertStopPreservesCommitments(array $courtIds, CarbonInterface $startsAt): void
     {
-        $startUtc = Carbon::parse($startsAt)->utc();
-        $endUtc = Carbon::parse($endsAt)->utc();
-
-        $hasConflict = MatchPost::query()
-            ->where('court_id', $courtId)
-            ->where('starts_at', '<', $endUtc)
-            ->where('ends_at', '>', $startUtc)
-            ->whereIn('status', ['open', 'active'])
-            ->where(fn ($q) => $q->where('is_owner_hosted', true)->orWhereNull('reservation_id'))
-            ->exists();
-
-        if ($hasConflict) {
-            abort(409, 'Court interval is reserved for a community/hosted activity.');
+        if ($courtIds === []) {
+            return;
         }
-    }
-
-    public function assertBlockPreservesCommitments(Court $court, Carbon $startsAt, Carbon $endsAt): void
-    {
-        $this->assertNoMatchPostConflict($court->id, $startsAt, $endsAt);
-
-        $conflicts = $this->commitments([$court->id], Carbon::now('UTC'), $startsAt, $endsAt)
+        $start = Carbon::instance($startsAt)->utc();
+        $conflicts = $this->commitments($courtIds, $start)
             ->pluck('reference')
             ->unique()
             ->values()
             ->all();
 
-        $this->abortOnConflicts($conflicts, 'Khung giờ đóng sân bị trùng với các lịch đặt đã xác nhận.');
+        $this->abortOnConflicts($conflicts, 'Lịch dừng vận hành trùng với các lượt đặt còn hiệu lực.');
+
+        // Same rule as SlotSelectionPolicy: a hosted or reservation-less activity holds the court like a booking.
+        $hostedActivity = MatchPost::query()
+            ->whereIn('court_id', $courtIds)
+            ->where('ends_at', '>', $start)
+            ->whereIn('status', ['open', 'active'])
+            ->where(fn ($q) => $q->where('is_owner_hosted', true)->orWhereNull('reservation_id'))
+            ->exists();
+        abort_if($hostedActivity, 409, 'Lịch dừng vận hành trùng với phiên chơi do chủ sân tổ chức hoặc hoạt động cộng đồng còn hiệu lực.');
     }
 
-    private function commitments(array $courtIds, Carbon $notBefore, ?Carbon $overlapStart = null, ?Carbon $overlapEnd = null): Collection
+    private function commitments(array $courtIds, Carbon $notBefore): Collection
     {
-        $notBeforeUtc = $notBefore->copy()->utc();
-        $overlapStartUtc = $overlapStart?->copy()->utc();
-        $overlapEndUtc = $overlapEnd?->copy()->utc();
-
         return ReservationSlot::query()
             ->whereIn('court_id', $courtIds)
-            ->where('ends_at', '>', $overlapStartUtc ?? $notBeforeUtc)
-            ->when($overlapEndUtc, fn ($query) => $query->where('starts_at', '<', $overlapEndUtc))
+            ->where('ends_at', '>', $notBefore->copy()->utc())
             ->whereHas('reservation', fn ($query) => $query->whereIn('status', ['confirmed', 'held']))
+            ->with(['court', 'reservation'])
             ->get()
             ->map(fn (ReservationSlot $slot): array => [
                 'court' => $slot->court,

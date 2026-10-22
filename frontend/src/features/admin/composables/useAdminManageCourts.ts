@@ -4,7 +4,8 @@ import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { resolveLocalizedText } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
-import type { Court, Venue, SportType } from '@/features/court/types/court'
+import { OPERATING_STATUSES } from '@/features/court/types/court'
+import type { Court, OperatingStatus, Venue, SportType } from '@/features/court/types/court'
 import type { Coupon } from '@/features/booking/types/booking'
 export type { Coupon }
 
@@ -18,7 +19,13 @@ export type CourtForm = {
   image_url: string
   surface_type: NonNullable<Court['surface_type']> | ''
   capacity: number | null
-  is_active: boolean
+}
+
+const STATUS_ICONS: Record<OperatingStatus, string> = {
+  inactive: 'hourglass_empty',
+  active: 'check_circle',
+  paused: 'pause_circle',
+  closed: 'block',
 }
 
 export function useAdminManageCourts() {
@@ -51,7 +58,7 @@ export function useAdminManageCourts() {
   // Filter & Search
   const searchQuery = ref('')
   const selectedVenueFilter = ref<number | 'all'>('all')
-  const statusFilter = ref<'all' | 'active' | 'inactive'>('all')
+  const statusFilter = ref<'all' | OperatingStatus>('all')
 
   // Modals & Sub-states
   const showCourtModal = ref(false)
@@ -65,25 +72,19 @@ export function useAdminManageCourts() {
     image_url: '',
     surface_type: '',
     capacity: null,
-    is_active: true,
   })
-
-  const showBlockModal = ref(false)
-  const selectedCourtForBlock = ref<Court | null>(null)
-  const blockSaving = ref(false)
 
   const showCouponModal = ref(false)
   const couponSaving = ref(false)
 
-  const activeVenues = computed(() => venues.value.filter((venue) => venue.is_active))
+  // A closed venue takes no new courts; inactive ones still do while the owner sets them up.
+  const activeVenues = computed(() => venues.value.filter((venue) => venue.status !== 'closed'))
 
   const filteredCourts = computed(() => {
     return courts.value.filter((c) => {
       const matchVenue =
         selectedVenueFilter.value === 'all' || c.venue?.id === selectedVenueFilter.value
-      const matchStatus =
-        statusFilter.value === 'all' ||
-        (statusFilter.value === 'active' ? c.is_active !== false : c.is_active === false)
+      const matchStatus = statusFilter.value === 'all' || c.status === statusFilter.value
       const matchSearch =
         !searchQuery.value.trim() ||
         resolveLocalizedText(c.name).toLowerCase().includes(searchQuery.value.toLowerCase()) ||
@@ -95,10 +96,8 @@ export function useAdminManageCourts() {
   })
 
   const totalCourtsCount = computed(() => courts.value.length)
-  const activeCourtsCount = computed(() => courts.value.filter((c) => c.is_active !== false).length)
-  const totalBlocksCount = computed(() =>
-    courts.value.reduce((sum, c) => sum + (c.blocks?.length || 0), 0),
-  )
+  const activeCourtsCount = computed(() => courts.value.filter((c) => c.status === 'active').length)
+  const pausedCourtsCount = computed(() => courts.value.filter((c) => c.status === 'paused').length)
 
   const venueFilterOptions = computed(() => [
     {
@@ -116,8 +115,11 @@ export function useAdminManageCourts() {
 
   const statusFilterOptions = computed(() => [
     { value: 'all', label: t('admin.manage.allStatusFilter'), icon: 'filter_list' },
-    { value: 'active', label: t('admin.manage.statusOpen'), icon: 'check_circle' },
-    { value: 'inactive', label: t('admin.manage.statusClosed'), icon: 'pause_circle' },
+    ...OPERATING_STATUSES.map((value) => ({
+      value,
+      label: t(`admin.lifecycle.status.${value}`),
+      icon: STATUS_ICONS[value],
+    })),
   ])
 
   function clearAlerts() {
@@ -146,27 +148,6 @@ export function useAdminManageCourts() {
     }
   }
 
-  async function toggleCourtStatus(court: Court) {
-    const nextStatus = court.is_active === false
-    clearAlerts()
-    try {
-      if (nextStatus) {
-        await adminApi.updateCourt(court.id, { is_active: true })
-        notice.value = t('admin.manage.statusOpenedNotice', {
-          name: resolveLocalizedText(court.name),
-        })
-      } else {
-        await adminApi.deleteCourt(court.id)
-        notice.value = t('admin.manage.statusClosedNotice', {
-          name: resolveLocalizedText(court.name),
-        })
-      }
-      await load()
-    } catch (cause: unknown) {
-      error.value = errorMessage(cause, t('admin.manage.statusChangeError'))
-    }
-  }
-
   // The address the form opened with, so saving only touches the venue when it changed.
   let openedAddress = ''
 
@@ -191,7 +172,6 @@ export function useAdminManageCourts() {
       image_url: '',
       surface_type: '',
       capacity: null,
-      is_active: true,
     }
     showCourtModal.value = true
   }
@@ -208,7 +188,6 @@ export function useAdminManageCourts() {
       image_url: court.image_url || '',
       surface_type: court.surface_type || '',
       capacity: court.capacity ?? null,
-      is_active: court.is_active !== false,
     }
     showCourtModal.value = true
   }
@@ -242,42 +221,6 @@ export function useAdminManageCourts() {
       error.value = errorMessage(cause, t('admin.manage.saveCourtError'))
     } finally {
       saving.value = false
-    }
-  }
-
-  function openBlockModal(court: Court) {
-    selectedCourtForBlock.value = court
-    showBlockModal.value = true
-  }
-
-  async function addBlock(payload: { starts_at: string; ends_at: string; reason: string }) {
-    if (!selectedCourtForBlock.value) return
-    blockSaving.value = true
-    clearAlerts()
-    try {
-      await adminApi.createBlock(selectedCourtForBlock.value.id, payload)
-      notice.value = t('admin.manage.createBlockSuccess')
-      showBlockModal.value = false
-      await load()
-    } catch (cause: unknown) {
-      error.value = errorMessage(cause, t('admin.manage.createBlockError'))
-    } finally {
-      blockSaving.value = false
-    }
-  }
-
-  async function deleteBlock(blockId: number) {
-    if (!selectedCourtForBlock.value) return
-    clearAlerts()
-    try {
-      await adminApi.deleteBlock(selectedCourtForBlock.value.id, blockId)
-      notice.value = t('admin.manage.deleteBlockSuccess')
-      await load()
-      // Refresh local selectedCourt blocks list
-      const refreshed = courts.value.find((c) => c.id === selectedCourtForBlock.value?.id)
-      if (refreshed) selectedCourtForBlock.value = refreshed
-    } catch (cause: unknown) {
-      error.value = errorMessage(cause, t('admin.manage.deleteBlockError'))
     }
   }
 
@@ -357,26 +300,19 @@ export function useAdminManageCourts() {
     showCourtModal,
     editingCourtId,
     courtForm,
-    showBlockModal,
-    selectedCourtForBlock,
-    blockSaving,
     showCouponModal,
     couponSaving,
     activeVenues,
     filteredCourts,
     totalCourtsCount,
     activeCourtsCount,
-    totalBlocksCount,
+    pausedCourtsCount,
     venueFilterOptions,
     statusFilterOptions,
     load,
-    toggleCourtStatus,
     openCreateCourtModal,
     openEditCourtModal,
     saveCourt,
-    openBlockModal,
-    addBlock,
-    deleteBlock,
     openCouponModal,
     createCoupon,
     updateCoupon,

@@ -2,7 +2,7 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
-import type { Court, Venue } from '@/features/court/types/court'
+import type { Court, OperatingStatus, OperationalStop, Venue } from '@/features/court/types/court'
 
 export interface ShiftTime {
   id: number
@@ -25,15 +25,13 @@ export interface SpecialDateItem {
   court_id?: number | null
 }
 
-export interface MaintenanceBlock {
-  id: number
+/** An open stop of one court, listed on the schedule page. */
+export interface CourtStop extends OperationalStop {
   court_id: number
-  court_name?: string | { vi: string; en: string }
-  venue_id?: number
-  starts_at: string
-  ends_at: string
-  reason: string | { vi: string; en: string }
-  status: 'upcoming' | 'ongoing' | 'ended'
+  court_name: Court['name']
+  court_status?: OperatingStatus
+  organization_id?: number
+  status: 'upcoming' | 'ongoing'
 }
 
 function emptyWeeklySchedule(): WeekdaySchedule[] {
@@ -53,30 +51,17 @@ export function useAdminSchedule() {
   const auditLogs = ref<any[]>([])
   const selectedVenueFilter = ref<number | 'all'>('all')
 
-  const showDowntimeModal = ref(false)
   const showSpecialDateModal = ref(false)
   const showAuditLogsModal = ref(false)
-  const showUnlockConfirmModal = ref(false)
-  const blockToUnlock = ref<MaintenanceBlock | null>(null)
 
   const weeklySchedule = ref<WeekdaySchedule[]>(emptyWeeklySchedule())
   const specialDates = ref<SpecialDateItem[]>([])
-  const maintenanceBlocks = ref<MaintenanceBlock[]>([])
 
   function showNotice(msg: string) {
     notice.value = msg
     setTimeout(() => {
       if (notice.value === msg) notice.value = ''
     }, 4000)
-  }
-
-  function computeBlockStatus(startsAt: string, endsAt: string): 'upcoming' | 'ongoing' | 'ended' {
-    const now = new Date().getTime()
-    const start = new Date(startsAt).getTime()
-    const end = new Date(endsAt).getTime()
-    if (now < start) return 'upcoming'
-    if (now >= start && now <= end) return 'ongoing'
-    return 'ended'
   }
 
   const selectedVenue = computed(() =>
@@ -160,28 +145,6 @@ export function useAdminSchedule() {
       if (logsRes.status === 'fulfilled' && logsRes.value) {
         const rawLogs = (logsRes.value as any)?.data || logsRes.value
         auditLogs.value = Array.isArray(rawLogs) ? rawLogs : []
-      }
-
-      // Extract court maintenance blocks from eager-loaded court.blocks
-      if (courts.value.length > 0) {
-        const allBlocks: MaintenanceBlock[] = []
-        courts.value.forEach((court: any) => {
-          const rawBlocks = court.blocks || []
-          const blockList = Array.isArray(rawBlocks) ? rawBlocks : rawBlocks.data || []
-          blockList.forEach((b: any) => {
-            allBlocks.push({
-              id: b.id,
-              court_id: court.id,
-              court_name: court.name,
-              venue_id: court.venue_id || court.venue?.id,
-              starts_at: b.starts_at,
-              ends_at: b.ends_at,
-              reason: b.reason || t('admin.schedule.defaultDowntimeReason'),
-              status: computeBlockStatus(b.starts_at, b.ends_at),
-            })
-          })
-        })
-        maintenanceBlocks.value = allBlocks
       }
       await loadCalendarSettings()
     } catch (e: unknown) {
@@ -270,69 +233,6 @@ export function useAdminSchedule() {
     }
   }
 
-  async function addDowntime(block: {
-    court_id: number
-    starts_at: string
-    ends_at: string
-    reason: string
-  }) {
-    loading.value = true
-    try {
-      const created = await adminApi.createBlock(block.court_id, {
-        starts_at: block.starts_at,
-        ends_at: block.ends_at,
-        reason: block.reason,
-      })
-      const court = courts.value.find((c) => c.id === block.court_id)
-      if (court) {
-        if (!(court as any).blocks) (court as any).blocks = []
-        ;(court as any).blocks.push(created)
-      }
-      maintenanceBlocks.value.unshift({
-        id: (created as any)?.id || Date.now(),
-        court_id: block.court_id,
-        court_name: court ? court.name : { vi: 'Sân đã chọn', en: 'Selected court' },
-        venue_id: court?.venue_id || court?.venue?.id,
-        starts_at: block.starts_at,
-        ends_at: block.ends_at,
-        reason: block.reason,
-        status: computeBlockStatus(block.starts_at, block.ends_at),
-      })
-
-      showDowntimeModal.value = false
-      showNotice(t('admin.schedule.downtimeCreated'))
-    } catch (e: unknown) {
-      error.value = errorMessage(e, t('admin.schedule.loadError'))
-    } finally {
-      loading.value = false
-    }
-  }
-
-  function promptUnlockCourt(block: MaintenanceBlock) {
-    blockToUnlock.value = block
-    showUnlockConfirmModal.value = true
-  }
-
-  async function confirmUnlockCourt() {
-    if (!blockToUnlock.value) return
-    const block = blockToUnlock.value
-    loading.value = true
-    try {
-      await adminApi.deleteBlock(block.court_id, block.id)
-      maintenanceBlocks.value = maintenanceBlocks.value.filter((b) => b.id !== block.id)
-      const court = courts.value.find((c) => c.id === block.court_id)
-      if (court && Array.isArray((court as any).blocks)) {
-        ;(court as any).blocks = (court as any).blocks.filter((b: any) => b.id !== block.id)
-      }
-      showUnlockConfirmModal.value = false
-      blockToUnlock.value = null
-    } catch (e: unknown) {
-      error.value = errorMessage(e, t('admin.schedule.unlockError'))
-    } finally {
-      loading.value = false
-    }
-  }
-
   async function addSpecialDate(item: {
     date: string
     name: string
@@ -400,16 +300,23 @@ export function useAdminSchedule() {
     )
   })
 
-  const filteredMaintenanceBlocks = computed(() => {
-    if (selectedVenueFilter.value === 'all') return maintenanceBlocks.value
-    const courtIds = new Set(filteredCourts.value.map((c) => c.id))
-    return maintenanceBlocks.value.filter((b) => courtIds.has(b.court_id))
-  })
+  // Open stops come eager-loaded on each court (operational_stops, ended_at null).
+  const filteredStops = computed(() =>
+    filteredCourts.value.flatMap((court) =>
+      (court.operational_stops ?? []).map((stop): CourtStop => ({
+        ...stop,
+        court_id: court.id,
+        court_name: court.name,
+        court_status: court.status,
+        organization_id: court.venue?.organization_id,
+        status: new Date(stop.starts_at).getTime() > Date.now() ? 'upcoming' : 'ongoing',
+      })),
+    ),
+  )
 
   const totalVenuesCount = computed(() => venues.value.length)
   const totalCourtsCount = computed(() => courts.value.length)
-  const activeCourtsCount = computed(() => courts.value.filter((c) => c.is_active).length)
-  const totalBlocksCount = computed(() => maintenanceBlocks.value.length)
+  const activeCourtsCount = computed(() => courts.value.filter((c) => c.status === 'active').length)
   const specialDatesCount = computed(() => specialDates.value.length)
 
   return {
@@ -425,18 +332,13 @@ export function useAdminSchedule() {
     selectedVenue,
     weeklySchedule,
     specialDates,
-    maintenanceBlocks,
-    showDowntimeModal,
     showSpecialDateModal,
     showAuditLogsModal,
-    showUnlockConfirmModal,
-    blockToUnlock,
     filteredCourts,
-    filteredMaintenanceBlocks,
+    filteredStops,
     totalVenuesCount,
     totalCourtsCount,
     activeCourtsCount,
-    totalBlocksCount,
     specialDatesCount,
     loadData,
     showNotice,
@@ -445,9 +347,6 @@ export function useAdminSchedule() {
     toggleDayOpen,
     copySchedule,
     saveWeeklySchedule,
-    addDowntime,
-    promptUnlockCourt,
-    confirmUnlockCourt,
     addSpecialDate,
     deleteSpecialDate,
   }

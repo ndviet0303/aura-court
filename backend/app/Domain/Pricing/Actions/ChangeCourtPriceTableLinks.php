@@ -50,8 +50,9 @@ class ChangeCourtPriceTableLinks
             if ($table) {
                 $this->priceTables->createLinks($table, $change->courtIds, $switchAt);
             }
-            // ponytail: every court counts until module 2 adds courts.status; inactive courts are then left out.
-            $this->coverage->assertCovered($change->courtIds, $switchAt);
+            // Only courts that take bookings must be covered; an inactive or closed court may keep a gap.
+            $operating = $courts->filter(fn (Court $court): bool => in_array($court->status, [Court::STATUS_ACTIVE, Court::STATUS_PAUSED], true));
+            $this->coverage->assertCovered(array_values($operating->modelKeys()), $switchAt);
         });
 
         // The public court list is cached by this key and shows only courts with a normal link in effect.

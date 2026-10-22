@@ -3,16 +3,21 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { resolveLocalizedText } from '@/i18n'
 import type { AdminVenueItem } from '../../composables/useAdminVenues'
+import type { LifecycleCommand } from '../../types/lifecycle'
+import OperatingStatusBadge from '../lifecycle/OperatingStatusBadge.vue'
+import LifecycleActions from '../lifecycle/LifecycleActions.vue'
 
 const props = defineProps<{
   venue: AdminVenueItem
+  owner: boolean
+  busy?: boolean
 }>()
 
 const emit = defineEmits<{
-  (e: 'toggleActive', venue: AdminVenueItem): void
+  (e: 'command', venue: AdminVenueItem, command: LifecycleCommand): void
   (e: 'edit', venue: AdminVenueItem): void
   (e: 'showQr', venue: AdminVenueItem): void
-  (e: 'showReadiness', venue: AdminVenueItem): void
+  (e: 'showReceiving', venue: AdminVenueItem): void
 }>()
 
 const { t } = useI18n()
@@ -21,33 +26,18 @@ const sports = computed(() => [...new Set(props.venue.courts?.map((court) => cou
 </script>
 
 <template>
-  <div class="venue-admin-card" :class="{ 'is-inactive': !venue.is_active }">
+  <div class="venue-admin-card" :class="{ 'is-inactive': venue.status !== 'active' }">
     <div class="venue-card-top">
       <div class="venue-meta-info">
         <div class="venue-name-row">
           <h3 class="venue-title">{{ resolveLocalizedText(venue.name) }}</h3>
-          <span class="status-chip" :class="venue.is_active ? 'chip-active' : 'chip-maintenance'">
-            {{
-              venue.is_active ? t('admin.venues.statusActive') : t('admin.venues.statusInactive')
-            }}
-          </span>
+          <OperatingStatusBadge :status="venue.status" :suspension="venue.active_suspension" />
         </div>
         <p class="venue-address">
           <span class="material-symbols-outlined icon-14">location_on</span>
           <span>{{ resolveLocalizedText(venue.address) || t('admin.venues.noAddress') }}</span>
         </p>
       </div>
-
-      <!-- Active switch toggle -->
-      <label class="switch-control-wrap" :title="t('admin.venues.toggleStatusTooltip')">
-        <input
-          type="checkbox"
-          :checked="venue.is_active"
-          :disabled="!!venue.status && !['published', 'active'].includes(venue.status)"
-          @change="emit('toggleActive', venue)"
-        />
-        <span class="slider"></span>
-      </label>
     </div>
 
     <!-- Sports offered by the venue's active courts -->
@@ -68,10 +58,18 @@ const sports = computed(() => [...new Set(props.venue.courts?.map((court) => cou
       </span>
     </div>
 
+    <LifecycleActions
+      target="venue"
+      :status="venue.status"
+      :owner="owner"
+      :busy="busy"
+      @command="(command) => emit('command', venue, command)"
+    />
+
     <div class="venue-card-actions">
-      <button type="button" class="btn-action-sm" @click="emit('showReadiness', venue)">
+      <button type="button" class="btn-action-sm" @click="emit('showReceiving', venue)">
         <span class="material-symbols-outlined icon-16">account_balance</span>
-        <span>{{ t('admin.venues.readinessBtn') }}</span>
+        <span>{{ t('admin.venues.receivingConnection.openBtn') }}</span>
       </button>
       <button type="button" class="btn-action-sm" @click="emit('showQr', venue)">
         <span class="material-symbols-outlined icon-16">qr_code_2</span>
@@ -159,25 +157,6 @@ const sports = computed(() => [...new Set(props.venue.courts?.map((court) => cou
   color: var(--ink);
 }
 
-.status-chip {
-  font-size: 10px;
-  font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.chip-active {
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
-}
-
-.chip-maintenance {
-  background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
-}
-
 .venue-address {
   margin: 0;
   display: inline-flex;
@@ -254,53 +233,6 @@ const sports = computed(() => [...new Set(props.venue.courts?.map((court) => cou
   border-color: var(--pink-dark, #db2777);
   color: var(--pink-dark, #db2777);
   background: rgba(219, 39, 119, 0.04);
-}
-
-.switch-control-wrap {
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 24px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.switch-control-wrap input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #cbd5e1;
-  transition: 0.2s;
-  border-radius: 24px;
-}
-
-.slider:before {
-  position: absolute;
-  content: '';
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.2s;
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-}
-
-input:checked + .slider {
-  background-color: #10b981;
-}
-
-input:checked + .slider:before {
-  transform: translateX(20px);
 }
 
 .icon-14 {

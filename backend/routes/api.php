@@ -6,7 +6,6 @@ use App\Http\Controllers\Admin\AdminDisputeController;
 use App\Http\Controllers\Admin\AdminKycController;
 use App\Http\Controllers\Admin\AdminMembershipController;
 use App\Http\Controllers\Admin\AdminUserController;
-use App\Http\Controllers\Admin\AdminVenuePublicationController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\PartnerReviewController;
 use App\Http\Controllers\Attendance\AttendanceController;
@@ -17,6 +16,7 @@ use App\Http\Controllers\Booking\AvailabilityController;
 use App\Http\Controllers\Booking\ResaleListingController;
 use App\Http\Controllers\Booking\WaitlistController;
 use App\Http\Controllers\Court\CourtController;
+use App\Http\Controllers\Court\CourtLifecycleController;
 use App\Http\Controllers\Court\ReviewController;
 use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Finance\FinanceController;
@@ -32,6 +32,7 @@ use App\Http\Controllers\Partner\PartnerDocumentController;
 use App\Http\Controllers\Partner\PartnerVenueController;
 use App\Http\Controllers\Partner\PartnerVenueScheduleController;
 use App\Http\Controllers\Partner\ReceivingConnectionController;
+use App\Http\Controllers\Partner\VenueLifecycleController;
 use App\Http\Controllers\POS\PosController;
 use App\Http\Controllers\POS\ServiceTabController;
 use App\Http\Controllers\Pricing\CourtPricingController;
@@ -109,6 +110,11 @@ Route::get('courts/{court}/reviews', [ReviewController::class, 'index']);
 Route::get('venues', [AdminController::class, 'venues']);
 Route::get('venues/{slug}', [AdminController::class, 'showVenue']);
 Route::get('availability', AvailabilityController::class);
+// Venues and courts are never deleted; closure ends them (spec "Retired write endpoints"). Without these routes the
+// live PATCH/PUT on the same paths would answer the old DELETE with 405 instead of 404. When task 2.3 removes
+// PATCH admin/venues/{venue} and POST admin/venues, they need the same 404 here, or they answer 405.
+Route::delete('admin/venues/{venue}', fn () => abort(404));
+Route::delete('admin/courts/{court}', fn () => abort(404));
 // Google, Facebook and SePay consoles have these URLs registered, so they keep their pre-unversioning v1 paths.
 Route::prefix('v1')->group(function () {
     Route::get('auth/{provider}/callback', [AuthController::class, 'handleProviderCallback'])->middleware('web');
@@ -191,7 +197,6 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
         Route::post('', [PartnerVenueController::class, 'store']);
         Route::get('{venueId}', [PartnerVenueController::class, 'show']);
         Route::put('{venueId}', [PartnerVenueController::class, 'update']);
-        Route::get('{venueId}/readiness', [PartnerVenueController::class, 'readiness']);
         Route::get('{venueId}/booking-policy', [PartnerVenueScheduleController::class, 'bookingPolicy']);
         Route::put('{venueId}/booking-policy', [PartnerVenueScheduleController::class, 'saveBookingPolicy']);
         Route::get('{venueId}/operating-schedule', [PartnerVenueScheduleController::class, 'operatingSchedule']);
@@ -199,9 +204,10 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
         Route::get('{venueId}/schedule-exceptions', [PartnerVenueScheduleController::class, 'scheduleExceptions']);
         Route::put('{venueId}/schedule-exceptions', [PartnerVenueScheduleController::class, 'saveScheduleException']);
         Route::delete('{venueId}/schedule-exceptions/{exceptionId}', [PartnerVenueScheduleController::class, 'deleteScheduleException']);
-        Route::post('{venueId}/submit-publication', [PartnerVenueController::class, 'submitPublication']);
-        Route::post('{venueId}/operational-status', [PartnerVenueController::class, 'transitionLifecycle']);
-        Route::post('{venueId}/lifecycle', [PartnerVenueController::class, 'transitionLifecycle']);
+        Route::post('{venueId}/open', [VenueLifecycleController::class, 'open']);
+        Route::post('{venueId}/pause', [VenueLifecycleController::class, 'pause']);
+        Route::post('{venueId}/resume', [VenueLifecycleController::class, 'resume']);
+        Route::post('{venueId}/close', [VenueLifecycleController::class, 'close']);
     });
     Route::get('partner/organizations/{organizationId}/venues/{venueId}/receiving-connection', [ReceivingConnectionController::class, 'show']);
     Route::post('partner/organizations/{organizationId}/venues/{venueId}/receiving-connection', [ReceivingConnectionController::class, 'store']);
@@ -313,12 +319,6 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             Route::patch('platform-plans/{id}', [PlatformPlanController::class, 'update']);
             Route::post('platform-plans/{id}/publish', [PlatformPlanController::class, 'publish']);
             Route::post('platform-plans/{id}/retire', [PlatformPlanController::class, 'retire']);
-            Route::prefix('venues')->group(function () {
-                Route::get('publication-queue', [AdminVenuePublicationController::class, 'queue']);
-                Route::get('revisions/{revisionId}', [AdminVenuePublicationController::class, 'show']);
-                Route::post('revisions/{revisionId}/review', [AdminVenuePublicationController::class, 'review']);
-                Route::post('{venueId}/lifecycle', [AdminVenuePublicationController::class, 'transitionLifecycle']);
-            });
             Route::get('payments', [AdminController::class, 'payments']);
             Route::patch('payments/{payment}', [AdminController::class, 'reviewPayment']);
             Route::get('audit-logs', [AuditLogController::class, 'index']);
@@ -347,12 +347,12 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             Route::get('venues', [AdminController::class, 'venues']);
             Route::post('venues', [AdminController::class, 'storeVenue']);
             Route::patch('venues/{venue}', [AdminController::class, 'updateVenue']);
-            Route::delete('venues/{venue}', [AdminController::class, 'destroyVenue']);
             Route::get('courts', [CourtController::class, 'adminIndex']);
-            Route::apiResource('courts', CourtController::class)->except(['index', 'show']);
-            Route::post('courts/{court}/blocks', [AdminController::class, 'blocks']);
-            Route::get('courts/{court}/blocks', [AdminController::class, 'blocksIndex']);
-            Route::delete('courts/{court}/blocks/{block}', [AdminController::class, 'destroyBlock']);
+            Route::apiResource('courts', CourtController::class)->except(['index', 'show', 'destroy']);
+            Route::post('courts/{court}/open', [CourtLifecycleController::class, 'open']);
+            Route::post('courts/{court}/pause', [CourtLifecycleController::class, 'pause']);
+            Route::post('courts/{court}/resume', [CourtLifecycleController::class, 'resume']);
+            Route::post('courts/{court}/close', [CourtLifecycleController::class, 'close']);
             Route::get('coupons', [PromotionController::class, 'coupons']);
             Route::post('coupons', [PromotionController::class, 'storeCoupon']);
             Route::patch('coupons/{coupon}', [PromotionController::class, 'updateCoupon']);

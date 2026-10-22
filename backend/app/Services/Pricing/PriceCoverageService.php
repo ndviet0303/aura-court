@@ -50,9 +50,7 @@ class PriceCoverageService
     /**
      * 422 PRICE_COVERAGE_INCOMPLETE listing every gap of the courts. Price publications and link changes call it
      * inside their transaction, after writing, so a failure rolls the change back.
-     *
-     * ponytail: every court counts as active or paused until module 2 adds courts.status (is_active false is
-     * backfilled to paused); callers then leave inactive courts out.
+     * Callers pass only active or paused courts.
      *
      * @param  list<int>  $courtIds
      */

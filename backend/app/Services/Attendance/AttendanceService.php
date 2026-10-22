@@ -5,8 +5,8 @@ namespace App\Services\Attendance;
 use App\Events\CourtStatusUpdated;
 use App\Models\BookingAttendance;
 use App\Models\Court;
-use App\Models\CourtBlock;
 use App\Models\LegacyBookingMapping;
+use App\Models\OperationalStop;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
@@ -160,15 +160,8 @@ class AttendanceService
                 abort(422, 'Court is currently under maintenance.');
             }
 
-            $nowUtc = $now->copy()->utc();
-            $hasBlock = CourtBlock::query()
-                ->where('court_id', $court->id)
-                ->where('starts_at', '<', $nowUtc)
-                ->where('ends_at', '>', $nowUtc)
-                ->exists();
-            if ($hasBlock) {
-                abort(422, 'Court is currently under maintenance.');
-            }
+            // A stop of the court or its venue that started before its status was updated (D5, D6).
+            abort_if(OperationalStop::query()->affectingCourt($court, (int) $court->venue_id)->overlapping($now, $now)->exists(), 422, 'Court is currently under maintenance.');
 
             $cachedStatus = Cache::get("court:{$court->id}:operational_status");
             if ($cachedStatus === 'awaiting_inspection') {

@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
+import { ErrorModal } from '@/shared/components'
+import type { Court } from '@/features/court/types/court'
 import { useAdminManageCourts } from '../composables/useAdminManageCourts'
+import { useLifecycleCommands } from '../composables/useLifecycleCommands'
+import type { LifecycleCommand } from '../types/lifecycle'
 
 import ManageHeader from '../components/manage/ManageHeader.vue'
 import ManageKpiBar from '../components/manage/ManageKpiBar.vue'
 import AdminCourtsTable from '../components/manage/AdminCourtsTable.vue'
 import CourtFormModal from '../components/manage/CourtFormModal.vue'
-import CourtBlockModal from '../components/manage/CourtBlockModal.vue'
+import OperationalStopDialog from '../components/lifecycle/OperationalStopDialog.vue'
 import CouponManagerModal from '../components/manage/CouponManagerModal.vue'
 
 // Courts and Main Operations Composable
@@ -24,31 +28,39 @@ const {
   showCourtModal,
   editingCourtId,
   courtForm,
-  showBlockModal,
-  selectedCourtForBlock,
-  blockSaving,
   showCouponModal,
   couponSaving,
   filteredCourts,
   totalCourtsCount,
   activeCourtsCount,
-  totalBlocksCount,
+  pausedCourtsCount,
   venueFilterOptions,
   statusFilterOptions,
   load,
-  toggleCourtStatus,
   openCreateCourtModal,
   openEditCourtModal,
   saveCourt,
-  openBlockModal,
-  addBlock,
-  deleteBlock,
   openCouponModal,
   createCoupon,
   updateCoupon,
   transitionCoupon,
   transitionCampaign,
 } = useAdminManageCourts()
+
+const lifecycle = reactive(
+  useLifecycleCommands(async (message) => {
+    await load()
+    notice.value = message
+  }),
+)
+
+// The stop dialog offers the business kind only to the owner of this court's organization.
+const commandCourt = ref<Court | null>(null)
+
+function handleCommand(court: Court, command: LifecycleCommand) {
+  commandCourt.value = court
+  void lifecycle.run({ type: 'court', id: court.id }, command)
+}
 
 onMounted(() => {
   load()
@@ -64,7 +76,7 @@ onMounted(() => {
     <ManageKpiBar
       :total-courts-count="totalCourtsCount"
       :active-courts-count="activeCourtsCount"
-      :total-blocks-count="totalBlocksCount"
+      :paused-courts-count="pausedCourtsCount"
       :loading="loading"
     />
 
@@ -82,13 +94,14 @@ onMounted(() => {
       :venue-filter-options="venueFilterOptions"
       :status-filter-options="statusFilterOptions"
       :loading="loading"
+      :owner-of="lifecycle.isOwnerOf"
+      :busy="lifecycle.busy"
       @update:selected-venue-filter="selectedVenueFilter = $event"
       @update:status-filter="statusFilter = $event"
       @update:search-query="searchQuery = $event"
       @create-court="openCreateCourtModal"
       @edit-court="openEditCourtModal"
-      @open-block-modal="openBlockModal"
-      @toggle-status="toggleCourtStatus"
+      @command="handleCommand"
     />
 
     <!-- Modals -->
@@ -98,7 +111,6 @@ onMounted(() => {
       v-model:sport-type="courtForm.sport_type"
       v-model:surface-type="courtForm.surface_type"
       v-model:capacity="courtForm.capacity"
-      v-model:is-active="courtForm.is_active"
       v-model:description="courtForm.description"
       v-model:image-url="courtForm.image_url"
       :show="showCourtModal"
@@ -108,13 +120,18 @@ onMounted(() => {
       @save="saveCourt"
     />
 
-    <CourtBlockModal
-      :show="showBlockModal"
-      :court="selectedCourtForBlock"
-      :saving="blockSaving"
-      @close="showBlockModal = false"
-      @add-block="addBlock"
-      @delete-block="deleteBlock"
+    <OperationalStopDialog
+      :command="lifecycle.stopRequest?.command ?? null"
+      target="court"
+      :owner="lifecycle.isOwnerOf(commandCourt?.venue?.organization_id)"
+      :loading="lifecycle.busy"
+      @close="lifecycle.closeStop"
+      @submit="lifecycle.submitStop"
+    />
+    <ErrorModal
+      :open="lifecycle.failureOpen"
+      v-bind="lifecycle.failureModal"
+      @close="lifecycle.closeFailure"
     />
 
     <CouponManagerModal

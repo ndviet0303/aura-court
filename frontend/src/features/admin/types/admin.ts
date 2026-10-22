@@ -9,13 +9,6 @@ export type CourtForm = {
   image_url?: string | null
   surface_type?: Court['surface_type']
   capacity?: number | null
-  is_active: boolean
-}
-
-export type BlockForm = {
-  starts_at: string
-  ends_at: string
-  reason: string
 }
 
 export type VenueForm = {
@@ -31,7 +24,6 @@ export type VenueForm = {
   google_maps_url?: string
   latitude?: number | null
   longitude?: number | null
-  is_active?: boolean
 }
 
 export type VenueBookingPolicySettings = {

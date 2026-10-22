@@ -23,7 +23,6 @@ const capacity = defineModel<number | null>('capacity', {
   required: true,
   set: (value) => (typeof value === 'number' ? value : null),
 })
-const isActive = defineModel<boolean>('isActive', { required: true })
 const description = defineModel<string>('description', { required: true })
 const imageUrl = defineModel<string>('imageUrl', { required: true })
 
@@ -196,14 +195,6 @@ onBeforeUnmount(() => {
             <input v-model.number="capacity" type="number" class="form-input" min="1" max="100" />
           </div>
 
-          <div class="form-group">
-            <label class="form-label">{{ t('admin.manage.courtStatusLabel') }}</label>
-            <label class="toggle-check-label">
-              <input v-model="isActive" type="checkbox" />
-              <span>{{ t('admin.manage.allowBookingCheckbox') }}</span>
-            </label>
-          </div>
-
           <div class="form-group full-width">
             <label class="form-label">{{ t('admin.manage.courtDescLabel') }}</label>
             <textarea
@@ -301,14 +292,6 @@ onBeforeUnmount(() => {
 
 .full-width {
   grid-column: 1 / -1;
-}
-
-.toggle-check-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-  cursor: pointer;
 }
 
 .quick-tags-row {

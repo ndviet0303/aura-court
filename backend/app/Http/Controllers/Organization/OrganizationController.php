@@ -41,7 +41,7 @@ class OrganizationController extends Controller
     {
         $user = $request->user();
         if ($user->isPlatformAdmin() || $user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_ORGANIZATION_OWNER])) {
-            $organization->load(['venues.courts', 'members.user']);
+            $organization->load(['venues.courts', 'venues.activeSuspension', 'members.user']);
 
             return response()->json(['organization' => $organization]);
         }
@@ -49,7 +49,7 @@ class OrganizationController extends Controller
         // BR-20: staff see only their assigned venues and no member list; customer memberships see nothing.
         abort_unless($user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_STAFF]), 403, 'Bạn không có quyền xem tổ chức này.');
         $venueIds = $user->getAuthorizedVenueIds($organization->id);
-        $organization->load(['venues' => fn ($venues) => $venues->whereIn('id', $venueIds)->with('courts')]);
+        $organization->load(['venues' => fn ($venues) => $venues->whereIn('id', $venueIds)->with(['courts', 'activeSuspension'])]);
 
         return response()->json(['organization' => $organization]);
     }

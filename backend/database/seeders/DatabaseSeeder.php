@@ -14,7 +14,7 @@ class DatabaseSeeder extends Seeder
             HostKycSeeder::class,
             CourtSeeder::class,
             CouponSeeder::class,
-            CourtBlockSeeder::class,
+            OperationalStopSeeder::class,
             BookingPaymentSeeder::class,
             PosProductSeeder::class,
             CashShiftSeeder::class,

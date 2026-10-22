@@ -4,8 +4,8 @@ namespace Database\Seeders\Concerns;
 
 use App\Models\BookingSlot;
 use App\Models\Court;
-use App\Models\CourtBlock;
 use App\Models\MatchPost;
+use App\Models\OperationalStop;
 use App\Models\ReservationSlot;
 use Carbon\Carbon;
 
@@ -47,13 +47,13 @@ trait FindsFreeCourtTime
         throw new \RuntimeException("No free {$hours}h court time near {$court->slug} from {$hour}:00.");
     }
 
-    /** No active booking, reservation, block or match on the court, nor an active reservation of the player, overlaps [from, to). */
+    /** No active booking, reservation, stop of the court or its venue, or match on the court, nor an active reservation of the player, overlaps [from, to). */
     protected function isFree(int $courtId, Carbon $from, Carbon $to, ?int $userId = null): bool
     {
         $overlapping = fn ($query): bool => $query->where('starts_at', '<', $to->copy()->utc())->where('ends_at', '>', $from->copy()->utc())->exists();
 
         return ! $overlapping(BookingSlot::where('court_id', $courtId)->whereIn('status', ['held', 'confirmed']))
-            && ! $overlapping(CourtBlock::where('court_id', $courtId))
+            && ! OperationalStop::query()->affectingCourt($courtId, (int) Court::whereKey($courtId)->value('venue_id'))->overlapping($from, $to)->exists()
             && ! $overlapping(MatchPost::withoutGlobalScope('tenant_isolation')->where('court_id', $courtId)->whereIn('status', ['open', 'active', 'full']))
             && ! $overlapping(ReservationSlot::withoutGlobalScope('tenant_isolation')
                 ->whereIn('status', ['held', 'confirmed'])

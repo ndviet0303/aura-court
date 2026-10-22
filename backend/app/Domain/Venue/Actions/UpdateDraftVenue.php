@@ -6,6 +6,7 @@ use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Contracts\Repositories\OrganizationLockRepositoryInterface;
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
 use App\Models\Venue;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class UpdateDraftVenue
@@ -18,7 +19,7 @@ class UpdateDraftVenue
 
     public function execute(int $venueId, int $actorId, array $attributes): Venue
     {
-        return DB::transaction(function () use ($venueId, $actorId, $attributes) {
+        $updated = DB::transaction(function () use ($venueId, $actorId, $attributes) {
             $venue = $this->venueRepo->findByIdWithLock($venueId);
             if (! $venue) {
                 abort(404, 'Cơ sở thể thao không tồn tại.');
@@ -43,7 +44,7 @@ class UpdateDraftVenue
                 abort(409, 'Cơ sở đã ngừng kinh doanh, không thể chỉnh sửa.');
             }
 
-            // Remove any attempts to force publication via draft update
+            // D3: status changes only through the open, pause, resume and close commands
             unset($attributes['status'], $attributes['is_active'], $attributes['published_at']);
 
             $updated = $this->venueRepo->updateVenue($venue, $attributes);
@@ -59,5 +60,10 @@ class UpdateDraftVenue
 
             return $updated;
         });
+
+        // D1: public lists read the saved values with no review step, so drop their cached copies after commit.
+        Cache::increment('venues_version');
+
+        return $updated;
     }
 }
