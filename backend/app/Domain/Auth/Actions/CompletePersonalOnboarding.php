@@ -34,7 +34,7 @@ class CompletePersonalOnboarding
                 abort(400, 'Tài khoản đã hoàn tất thiết lập ban đầu.');
             }
 
-            // Customer identity is preserved. Role remains customer; never self-grant admin!
+            // BR-ACC-05/08: onboarding never changes the account role; owner rights come only from partner approval.
             $updatePayload = [
                 'onboarded' => true,
             ];
@@ -47,11 +47,6 @@ class CompletePersonalOnboarding
                 $updatePayload['play_level'] = $data->playLevel;
             }
 
-            // Ensure role is customer if not already an existing platform admin
-            if ($user->role !== 'admin') {
-                $updatePayload['role'] = 'customer';
-            }
-
             $updatedUser = $this->userRepo->update($user, $updatePayload);
 
             $isCourtOwnerIntent = $data->accountType === 'court_owner';
@@ -60,7 +55,7 @@ class CompletePersonalOnboarding
                 'user' => $updatedUser,
                 'account_type' => $data->accountType,
                 'next_step' => $isCourtOwnerIntent ? 'partner_registration' : 'explore_venues',
-                'partner_registration_url' => $isCourtOwnerIntent ? '/partner/register' : null,
+                'partner_registration_url' => $isCourtOwnerIntent ? '/partner-registration' : null,
                 'message' => $isCourtOwnerIntent
                     ? 'Thiết lập tài khoản cá nhân thành công. Để kinh doanh và quản lý câu lạc bộ, vui lòng tiếp tục đăng ký trở thành đối tác.'
                     : 'Thiết lập tài khoản thành công.',
