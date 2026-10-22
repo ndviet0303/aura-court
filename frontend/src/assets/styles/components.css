@@ -171,7 +171,7 @@ html.dark .hero h1 em {
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.12);
   padding: 12px 14px;
   display: grid;
-  grid-template-columns: 1.15fr 0.95fr 1fr 58px;
+  grid-template-columns: 1fr 1fr 58px;
   gap: 4px;
   border: 1px solid var(--border);
   box-sizing: border-box;

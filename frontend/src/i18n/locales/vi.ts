@@ -177,8 +177,6 @@ export default {
     openBadge: 'Mở cửa',
     hoursOpen: 'Mở cửa',
     search: {
-      court: 'Khu vực & Sân thi đấu',
-      allAreas: 'Tất cả khu vực',
       otherArea: 'Khu vực khác',
       date: 'Ngày chơi',
       timeSlot: 'Khung giờ',

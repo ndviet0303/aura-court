@@ -177,8 +177,6 @@ export default {
     openBadge: 'Open Daily',
     hoursOpen: 'Open Daily',
     search: {
-      court: 'Area / Sports Court',
-      allAreas: 'All Areas',
       otherArea: 'Other areas',
       date: 'Play Date',
       timeSlot: 'Time Slot',
