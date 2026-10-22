@@ -186,4 +186,15 @@ class StaffManagementTest extends TestCase
         $this->actingAs($this->owner)->deleteJson($url)->assertStatus(422);
         $this->assertSame(['organization_owner', 'active'], [$ownerRow->fresh()->role, $ownerRow->fresh()->status]);
     }
+
+    public function test_br_par_12_venue_details_and_receiving_account_stay_with_the_owner(): void
+    {
+        $staff = $this->staffOf($this->venueA);
+        $base = "/api/partner/organizations/{$this->orgId()}/venues/{$this->venueA->id}";
+
+        $this->actingAs($staff)->putJson($base, ['name' => 'Tên mới'])->assertForbidden();
+        $this->actingAs($staff)->getJson("{$base}/receiving-connection")->assertForbidden();
+        $this->actingAs($staff)->postJson("{$base}/receiving-connection", ['bank_code' => 'VCB'])->assertForbidden();
+        $this->assertNotSame('Tên mới', $this->venueA->fresh()->name);
+    }
 }

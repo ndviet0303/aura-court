@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Module01;
 
+use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Models\HostKyc;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
@@ -128,5 +129,23 @@ class PartnerReviewTest extends TestCase
 
         $this->assertSame(1, Organization::where('source_kyc_id', $kyc->id)->count());
         $this->assertSame('customer', $kyc->user->fresh()->role);
+    }
+
+    public function test_partner_suspension_stops_new_bookings_and_termination_is_final(): void
+    {
+        $court = $this->bookableCourt();
+        $orgId = $court->venue->organization_id;
+        $admin = $this->platformAdmin();
+        $eligible = fn () => app(VerifyEffectiveBookingEligibility::class)->execute($court->fresh())['eligible'];
+
+        $this->actingAs($admin)->postJson("/api/admin/partner/{$orgId}/suspend", ['reason' => 'Khiếu nại chưa xử lý'])->assertOk();
+        $this->assertFalse($eligible());
+
+        $this->actingAs($admin)->postJson("/api/admin/partner/{$orgId}/restore")->assertOk();
+        $this->assertTrue($eligible());
+
+        $this->actingAs($admin)->postJson("/api/admin/partner/{$orgId}/terminate", ['reason' => 'Vi phạm hợp đồng'])->assertOk();
+        $this->actingAs($admin)->postJson("/api/admin/partner/{$orgId}/restore")->assertConflict();
+        $this->assertFalse($eligible());
     }
 }
