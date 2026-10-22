@@ -190,11 +190,9 @@ class OrganizationVenueSeeder extends Seeder
     {
         return [
             'booking' => [
-                'hold_ttl_minutes' => 15,
                 'max_days_ahead' => 30,
                 'min_duration_minutes' => 60,
                 'max_duration_minutes' => 240,
-                'require_continuity' => true,
             ],
             'arrival' => ['early_minutes' => 15, 'late_grace_minutes' => 15, 'no_show_after_minutes' => 30],
             'recurring' => [

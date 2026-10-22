@@ -23,16 +23,15 @@ class StoreVenueBookingPolicyRequest extends FormRequest
             ]);
     }
 
+    /** Module 4 D3/D6: the hold time and slot continuity are fixed by the booking flow, not set per venue (task 2.16). */
     public function rules(): array
     {
         return [
             'settings' => ['required', 'array:booking,arrival,recurring,transfer'],
-            'settings.booking' => ['required', 'array:hold_ttl_minutes,max_days_ahead,min_duration_minutes,max_duration_minutes,require_continuity'],
-            'settings.booking.hold_ttl_minutes' => ['required', 'integer', 'min:1', 'max:1440'],
+            'settings.booking' => ['required', 'array:max_days_ahead,min_duration_minutes,max_duration_minutes'],
             'settings.booking.max_days_ahead' => ['required', 'integer', 'min:1', 'max:365'],
             'settings.booking.min_duration_minutes' => ['required', 'integer', 'min:15', 'max:1440'],
             'settings.booking.max_duration_minutes' => ['required', 'integer', 'min:15', 'max:1440'],
-            'settings.booking.require_continuity' => ['required', 'boolean'],
             'settings.arrival' => ['required', 'array:early_minutes,late_grace_minutes,no_show_after_minutes'],
             'settings.arrival.early_minutes' => ['required', 'integer', 'min:0', 'max:1440'],
             'settings.arrival.late_grace_minutes' => ['required', 'integer', 'min:0', 'max:1440'],
