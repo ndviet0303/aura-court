@@ -46,6 +46,11 @@ class EloquentAffectedReservationCaseRepository implements AffectedReservationCa
         return AffectedReservationCase::query()->whereKey($id)->when($lock, fn (Builder $query) => $query->lockForUpdate())->first();
     }
 
+    public function hasOpen(int $reservationId): bool
+    {
+        return AffectedReservationCase::query()->where('reservation_id', $reservationId)->open()->exists();
+    }
+
     public function update(AffectedReservationCase $case, array $attributes): AffectedReservationCase
     {
         $case->forceFill($attributes)->save();

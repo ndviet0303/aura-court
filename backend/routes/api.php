@@ -423,7 +423,6 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
         Route::middleware(RequireOrganizationRole::class.':organization_owner,staff')->group(function () {
             Route::post('attendance/check-in', [AttendanceController::class, 'checkIn']);
             Route::post('attendance/check-out', [AttendanceController::class, 'checkOut']);
-            Route::post('attendance/courts/{court}/confirm-ready', [AttendanceController::class, 'confirmReady']);
             Route::post('attendance/no-show', [AttendanceController::class, 'markNoShow']);
             // Design D8: operator commands on a booking with an open affected-booking case; reassign-court is retired.
             Route::post('reservations/{reservation}/move-court', [AffectedBookingCommandController::class, 'moveCourt']);

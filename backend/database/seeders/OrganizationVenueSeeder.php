@@ -194,7 +194,6 @@ class OrganizationVenueSeeder extends Seeder
                 'min_duration_minutes' => 60,
                 'max_duration_minutes' => 240,
             ],
-            'arrival' => ['early_minutes' => 15, 'late_grace_minutes' => 15, 'no_show_after_minutes' => 30],
             'recurring' => [
                 'payment_policy' => 'per_period',
                 'conflict_policy' => 'all_or_nothing',

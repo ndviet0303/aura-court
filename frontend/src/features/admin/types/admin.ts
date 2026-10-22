@@ -34,11 +34,6 @@ export type VenueBookingPolicySettings = {
     min_duration_minutes: number
     max_duration_minutes: number
   }
-  arrival: {
-    early_minutes: number
-    late_grace_minutes: number
-    no_show_after_minutes: number
-  }
   recurring: {
     payment_policy: 'full_series' | 'per_period'
     conflict_policy: 'all_or_nothing' | 'partial'

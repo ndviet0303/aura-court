@@ -25,7 +25,7 @@ class EloquentOwnerFinanceReportRepository implements OwnerFinanceReportReposito
             'received' => $this->summarize($this->received($filter)),
             'completed' => $this->summarize($this->attended($filter, BookingAttendance::STATUS_CHECKED_OUT, 'checked_out_at')),
             'unfinished' => $this->summarize($this->unfinished($filter)),
-            'no_show' => $this->summarize($this->attended($filter, BookingAttendance::STATUS_NO_SHOW, 'checked_in_at')),
+            'no_show' => $this->summarize($this->attended($filter, BookingAttendance::STATUS_NO_SHOW, 'no_show_at')),
             'incident' => $this->summarize($this->incident($filter)),
         ];
     }

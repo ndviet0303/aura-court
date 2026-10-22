@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'checked_in_by',
     'checked_out_at',
     'checked_out_by',
+    'no_show_at',
+    'no_show_by',
     'notes',
     'metadata',
 ])]
@@ -29,13 +31,19 @@ class BookingAttendance extends Model
 
     public const STATUS_NO_SHOW = 'no_show';
 
-    public const STATUS_AWAITING_INSPECTION = 'awaiting_inspection';
+    /** Module 06 D3: the status a booking shows for its attendance row; a booking without one shows confirmed. */
+    public const OPERATIONAL_STATUS = [
+        self::STATUS_CHECKED_IN => 'in_use',
+        self::STATUS_CHECKED_OUT => 'completed',
+        self::STATUS_NO_SHOW => 'no_show',
+    ];
 
     protected function casts(): array
     {
         return [
             'checked_in_at' => 'datetime',
             'checked_out_at' => 'datetime',
+            'no_show_at' => 'datetime',
             'metadata' => 'array',
         ];
     }
@@ -55,13 +63,21 @@ class BookingAttendance extends Model
         return $this->belongsTo(Booking::class, 'legacy_booking_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function checkedInBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'checked_in_by');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function checkedOutBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'checked_out_by');
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function noShowBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'no_show_by');
     }
 }
