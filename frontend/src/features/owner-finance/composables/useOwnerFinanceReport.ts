@@ -16,18 +16,20 @@ export function useOwnerFinanceReport(organizationId: number, filters: () => Own
   const selected = ref<FinanceMetricKey | null>(null)
 
   // U changes as bookings finish, so every filter change or tab visit reads the report again.
-  function load() {
+  function query() {
     const { venueId, courtId, from, to } = filters()
-    return execute(organizationId, {
-      venue_id: venueId || undefined,
-      court_id: courtId || undefined,
-      from,
-      to,
-    }).catch(() => null)
+    return { venue_id: venueId || undefined, court_id: courtId || undefined, from, to }
   }
+
+  function load() {
+    return execute(organizationId, query()).catch(() => null)
+  }
+
+  // D14: the same filters as the screen, so the file matches what is shown.
+  const exportFile = () => ownerFinanceApi.exportReport(organizationId, query())
 
   watch(filters, () => load())
   onMounted(() => load())
 
-  return { metrics, selected, loading, error, load }
+  return { metrics, selected, loading, error, load, exportFile }
 }

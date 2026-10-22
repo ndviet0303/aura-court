@@ -8,7 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ListPlatformFeeVenuesRequest;
 use App\Http\Resources\Package\PlatformFeeVenueResource;
 use Illuminate\Http\JsonResponse;
+use App\Services\Package\PlatformFeeExport;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /** Venue package status at the time of viewing for the platform admin (D15, BR-116). */
 class PlatformFeeVenueController extends Controller
@@ -21,6 +23,11 @@ class PlatformFeeVenueController extends Controller
 
         return PlatformFeeVenueResource::collection($this->venues->paginate(PlatformFeeVenueFilterData::fromRequest($request), $now))
             ->additional(['expiring_counts' => $this->venues->expiringCounts($now)]);
+    }
+
+    public function export(ListPlatformFeeVenuesRequest $request, PlatformFeeExport $export): StreamedResponse
+    {
+        return $export->venues($request);
     }
 
     public function show(int $venueId): JsonResponse

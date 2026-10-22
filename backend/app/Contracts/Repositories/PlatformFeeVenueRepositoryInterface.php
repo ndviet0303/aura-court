@@ -6,6 +6,7 @@ use App\Domain\Package\DTOs\PlatformFeeVenueFilterData;
 use App\Models\Venue;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 interface PlatformFeeVenueRepositoryInterface
 {
@@ -17,6 +18,13 @@ interface PlatformFeeVenueRepositoryInterface
      * @return LengthAwarePaginator<int, Venue>
      */
     public function paginate(PlatformFeeVenueFilterData $filter, CarbonInterface $now): LengthAwarePaginator;
+
+    /**
+     * The same query as paginate() with every matching venue, for the export (D14).
+     *
+     * @return Collection<int, Venue>
+     */
+    public function all(PlatformFeeVenueFilterData $filter, CarbonInterface $now): Collection;
 
     /**
      * BR-116: distinct venues whose non-terminated current package ends within each group, 0 < ends_at − now ≤ n days.

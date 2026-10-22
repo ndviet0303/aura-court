@@ -23,6 +23,9 @@ export const platformFeeApi = {
   getRequests: (params: PlatformFeeRequestQuery) =>
     api.get<PlatformFeePage<PlatformFeeRequest>>('/admin/platform-fees/requests', { params }),
 
+  exportRequests: (params: PlatformFeeRequestQuery) =>
+    api.download('/admin/platform-fees/requests/export', 'yeu-cau-thanh-toan-goi.xlsx', { params }),
+
   getRequest: (code: string) =>
     api.get<{ data: PlatformFeeRequest }>(
       `/admin/platform-fees/requests/${encodeURIComponent(code)}`,
@@ -31,9 +34,19 @@ export const platformFeeApi = {
   getVenues: (params: PlatformFeeVenueQuery) =>
     api.get<PlatformFeeVenuePage>('/admin/platform-fees/venues', { params }),
 
+  exportVenues: (params: PlatformFeeVenueQuery) =>
+    api.download('/admin/platform-fees/venues/export', 'tinh-trang-goi.xlsx', { params }),
+
   getVenue: (venueId: number) =>
     api.get<{ data: PlatformFeeVenue }>(`/admin/platform-fees/venues/${venueId}`),
 
   getReport: (params: PlatformFeeReportQuery) =>
     api.get<{ data: PlatformFeeReport }>('/admin/platform-fees/report', { params }),
+
+  exportReport: (params: PlatformFeeReportQuery) =>
+    api.download(
+      '/admin/platform-fees/report/export',
+      `bao-cao-thu-phi-${params.from}-${params.to}.xlsx`,
+      { params },
+    ),
 }

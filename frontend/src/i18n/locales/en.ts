@@ -1,5 +1,7 @@
 export default {
   common: {
+    exportExcel: 'Export Excel',
+    exportError: 'Could not export the Excel file. Please try again.',
     refresh: 'Refresh',
     noData: 'No data',
     appName: 'Aura Court',

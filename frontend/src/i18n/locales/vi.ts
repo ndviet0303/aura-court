@@ -1,5 +1,7 @@
 export default {
   common: {
+    exportExcel: 'Xuất Excel',
+    exportError: 'Không xuất được file Excel. Vui lòng thử lại.',
     refresh: 'Làm mới',
     noData: 'Không có dữ liệu',
     appName: 'Aura Court',

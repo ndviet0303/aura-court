@@ -10,11 +10,23 @@ use App\Models\VenuePackage;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\JoinClause;
 
 class EloquentPlatformFeeVenueRepository implements PlatformFeeVenueRepositoryInterface
 {
     public function paginate(PlatformFeeVenueFilterData $filter, CarbonInterface $now): LengthAwarePaginator
+    {
+        return $this->filtered($filter, $now)->paginate($filter->perPage);
+    }
+
+    public function all(PlatformFeeVenueFilterData $filter, CarbonInterface $now): Collection
+    {
+        return $this->filtered($filter, $now)->get();
+    }
+
+    /** @return Builder<Venue> */
+    private function filtered(PlatformFeeVenueFilterData $filter, CarbonInterface $now): Builder
     {
         // The package columns hold UTC wall time and the grammar binds a Carbon without converting it.
         $at = $now->copy()->utc();
@@ -44,8 +56,7 @@ class EloquentPlatformFeeVenueRepository implements PlatformFeeVenueRepositoryIn
                 ['%'.addcslashes($search, '%_\\').'%'],
             ))
             ->orderByRaw('cur.ends_at asc nulls last')
-            ->orderBy('venues.id')
-            ->paginate($filter->perPage);
+            ->orderBy('venues.id');
     }
 
     public function expiringCounts(CarbonInterface $now): array

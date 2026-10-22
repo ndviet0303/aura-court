@@ -24,18 +24,20 @@ export function usePlatformFeeReport() {
   const report = computed(() => data.value?.data ?? null)
 
   // useApiCall already keeps the message in `error`; the rethrow has nothing left to tell the view.
-  function load() {
+  function query() {
     const { venueId, term, from, to } = filters.value
-    return execute({
-      from,
-      to,
-      venue_id: venueId || undefined,
-      term: term || undefined,
-    }).catch(() => null)
+    return { from, to, venue_id: venueId || undefined, term: term || undefined }
   }
+
+  function load() {
+    return execute(query()).catch(() => null)
+  }
+
+  // D14: the same filters as the screen, so the file matches what is shown.
+  const exportFile = () => platformFeeApi.exportReport(query())
 
   watch(filters, () => load())
   onMounted(() => load())
 
-  return { filters, report, loading, error }
+  return { filters, report, loading, error, exportFile }
 }

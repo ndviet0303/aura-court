@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AuraButton, SelectDropdown } from '@/shared/components'
+import { AuraButton, ExportButton, SelectDropdown } from '@/shared/components'
 import type { DropdownOption } from '@/shared/components'
 import type { PackageStatus } from '@/features/platform-subscriptions/types'
 import { usePlatformFeeVenues } from '../composables/usePlatformFeeVenues'
@@ -20,6 +20,7 @@ const {
   loading,
   error,
   load,
+  exportFile,
   openId,
   opened,
   detailLoading,
@@ -119,7 +120,10 @@ function closePanel() {
       </button>
     </div>
 
-    <p class="note">{{ t('admin.platformFees.venues.note') }}</p>
+    <div class="toolbar">
+      <p class="note">{{ t('admin.platformFees.venues.note') }}</p>
+      <ExportButton :action="exportFile" />
+    </div>
 
     <p v-if="error" class="error" role="alert">{{ error }}</p>
     <p v-else-if="loading && !venues.length" class="muted">{{ t('common.loading') }}</p>
@@ -207,6 +211,14 @@ function closePanel() {
 </template>
 
 <style scoped>
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
 .venues-tab {
   display: flex;
   flex-direction: column;

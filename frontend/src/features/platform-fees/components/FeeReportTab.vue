@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
+import { ExportButton } from '@/shared/components'
 import { usePlatformFeeReport } from '../composables/usePlatformFeeReport'
 import FeeReportFilterBar from './FeeReportFilterBar.vue'
 
 const { t } = useI18n()
-const { filters, report, loading, error } = usePlatformFeeReport()
+const { filters, report, loading, error, exportFile } = usePlatformFeeReport()
 
 const TOTALS = [
   { key: 'amount', labelKey: 'admin.platformFees.report.collected' },
@@ -18,7 +19,10 @@ const termLabel = (days: number) => t('admin.packages.termLabel', { days })
 <template>
   <section class="report-tab" :aria-busy="loading">
     <FeeReportFilterBar v-model="filters" />
-    <p class="note">{{ t('admin.platformFees.report.note') }}</p>
+    <div class="toolbar">
+      <p class="note">{{ t('admin.platformFees.report.note') }}</p>
+      <ExportButton :action="exportFile" />
+    </div>
 
     <p v-if="error" class="error" role="alert">{{ error }}</p>
     <p v-else-if="loading && !report" class="muted">{{ t('common.loading') }}</p>
@@ -106,6 +110,14 @@ const termLabel = (days: number) => t('admin.packages.termLabel', { days })
 </template>
 
 <style scoped>
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
 .report-tab {
   display: flex;
   flex-direction: column;

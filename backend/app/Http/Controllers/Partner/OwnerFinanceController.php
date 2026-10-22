@@ -10,7 +10,9 @@ use App\Http\Requests\Partner\ListOwnerFinanceTransactionsRequest;
 use App\Http\Requests\Partner\ShowOwnerFinanceReportRequest;
 use App\Http\Resources\Finance\OwnerFinanceReportResource;
 use App\Http\Resources\Finance\OwnerFinanceTransactionResource;
+use App\Services\Finance\OwnerFinanceReportExport;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * The organization owner's booking finance (D12). These path-id routes have no tenant context, so the requests check
@@ -33,5 +35,10 @@ class OwnerFinanceController extends Controller
     public function report(ShowOwnerFinanceReportRequest $request, int $organizationId): OwnerFinanceReportResource
     {
         return OwnerFinanceReportResource::make($this->reports->metrics(OwnerFinanceFilterData::fromRequest($request, $organizationId)));
+    }
+
+    public function export(ShowOwnerFinanceReportRequest $request, int $organizationId, OwnerFinanceReportExport $export): StreamedResponse
+    {
+        return $export->download($request, $organizationId);
     }
 }

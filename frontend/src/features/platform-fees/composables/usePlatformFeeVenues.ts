@@ -26,17 +26,21 @@ export function usePlatformFeeVenues() {
   const opened = computed(() => detail.data.value?.data ?? null)
 
   // useApiCall already keeps the message in `error`; the rethrow has nothing left to tell the view.
-  function load(target = 1) {
+  function query() {
     const { status, expiringWithin, search } = filters.value
-    return list
-      .execute({
-        status: status || undefined,
-        expiring_within: expiringWithin || undefined,
-        search: search.trim() || undefined,
-        page: target,
-      })
-      .catch(() => null)
+    return {
+      status: status || undefined,
+      expiring_within: expiringWithin || undefined,
+      search: search.trim() || undefined,
+    }
   }
+
+  function load(target = 1) {
+    return list.execute({ ...query(), page: target }).catch(() => null)
+  }
+
+  // D14: every venue matching the filters, not just the page on screen.
+  const exportFile = () => platformFeeApi.exportVenues(query())
 
   function open(venueId: number) {
     openId.value = venueId
@@ -62,6 +66,7 @@ export function usePlatformFeeVenues() {
     loading: list.loading,
     error: list.error,
     load,
+    exportFile,
     openId,
     opened,
     detailLoading: detail.loading,

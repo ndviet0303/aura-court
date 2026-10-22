@@ -2,7 +2,7 @@
 import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
-import { DatePicker, SelectDropdown } from '@/shared/components'
+import { DatePicker, ExportButton, SelectDropdown } from '@/shared/components'
 import type { DropdownOption } from '@/shared/components'
 import { usePlatformFeeFilterOptions } from '../composables/usePlatformFeeFilterOptions'
 import { usePlatformFeeRequests } from '../composables/usePlatformFeeRequests'
@@ -20,6 +20,7 @@ const {
   loading,
   error,
   load,
+  exportFile,
   openCode,
   opened,
   detailLoading,
@@ -126,7 +127,10 @@ function closePanel() {
       <p class="form-hint period-hint">{{ t('admin.platformFees.filters.periodHint') }}</p>
     </div>
 
-    <p class="note">{{ t('admin.platformFees.requests.note') }}</p>
+    <div class="toolbar">
+      <p class="note">{{ t('admin.platformFees.requests.note') }}</p>
+      <ExportButton :action="exportFile" />
+    </div>
 
     <p v-if="error" class="error" role="alert">{{ error }}</p>
     <p v-else-if="loading && !requests.length" class="muted">{{ t('common.loading') }}</p>
@@ -221,6 +225,14 @@ function closePanel() {
 </template>
 
 <style scoped>
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
 .requests-tab {
   display: flex;
   flex-direction: column;

@@ -208,6 +208,7 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
     Route::get('partner/organizations/{organizationId}/package-requests/{code}', [VenuePackageController::class, 'showRequest']);
     Route::get('partner/organizations/{organizationId}/finance/transactions', [OwnerFinanceController::class, 'transactions']);
     Route::get('partner/organizations/{organizationId}/finance/report', [OwnerFinanceController::class, 'report']);
+    Route::get('partner/organizations/{organizationId}/finance/report/export', [OwnerFinanceController::class, 'export']);
     Route::get('partner/organizations/{organizationId}/venues/{venueId}/receiving-connection', [ReceivingConnectionController::class, 'show']);
     Route::post('partner/organizations/{organizationId}/venues/{venueId}/receiving-connection', [ReceivingConnectionController::class, 'store']);
     Route::post('partner/organizations/{organizationId}/venues/{venueId}/receiving-connection/{connectionId}/credential', [ReceivingConnectionController::class, 'rotateCredential']);
@@ -313,10 +314,13 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             Route::get('platform-fees/prices', [PlatformFeePriceController::class, 'index']);
             Route::post('platform-fees/prices', [PlatformFeePriceController::class, 'store']);
             Route::get('platform-fees/requests', [PlatformFeeRequestController::class, 'index']);
+            Route::get('platform-fees/requests/export', [PlatformFeeRequestController::class, 'export']);
             Route::get('platform-fees/requests/{code}', [PlatformFeeRequestController::class, 'show']);
             Route::get('platform-fees/venues', [PlatformFeeVenueController::class, 'index']);
+            Route::get('platform-fees/venues/export', [PlatformFeeVenueController::class, 'export']);
             Route::get('platform-fees/venues/{venueId}', [PlatformFeeVenueController::class, 'show'])->whereNumber('venueId');
             Route::get('platform-fees/report', [PlatformFeeReportController::class, 'show']);
+            Route::get('platform-fees/report/export', [PlatformFeeReportController::class, 'export']);
             Route::prefix('venues')->group(function () {
                 Route::get('publication-queue', [AdminVenuePublicationController::class, 'queue']);
                 Route::get('revisions/{revisionId}', [AdminVenuePublicationController::class, 'show']);

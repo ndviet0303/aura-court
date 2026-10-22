@@ -31,19 +31,23 @@ export function usePlatformFeeRequests() {
   const opened = computed(() => detail.data.value?.data ?? null)
 
   // useApiCall already keeps the message in `error`; the rethrow has nothing left to tell the view.
-  function load(target = 1) {
+  function query() {
     const { status, venueId, term, from, to } = filters.value
-    return list
-      .execute({
-        status: status || undefined,
-        venue_id: venueId || undefined,
-        term: term || undefined,
-        // The API needs both ends of the period, so a half-picked period filters nothing yet.
-        ...(from && to ? { from, to } : {}),
-        page: target,
-      })
-      .catch(() => null)
+    return {
+      status: status || undefined,
+      venue_id: venueId || undefined,
+      term: term || undefined,
+      // The API needs both ends of the period, so a half-picked period filters nothing yet.
+      ...(from && to ? { from, to } : {}),
+    }
   }
+
+  function load(target = 1) {
+    return list.execute({ ...query(), page: target }).catch(() => null)
+  }
+
+  // D14: every row matching the filters, not just the page on screen.
+  const exportFile = () => platformFeeApi.exportRequests(query())
 
   function open(code: string) {
     openCode.value = code
@@ -68,6 +72,7 @@ export function usePlatformFeeRequests() {
     loading: list.loading,
     error: list.error,
     load,
+    exportFile,
     openCode,
     opened,
     detailLoading: detail.loading,

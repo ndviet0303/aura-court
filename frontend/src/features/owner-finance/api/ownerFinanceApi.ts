@@ -16,6 +16,13 @@ export const ownerFinanceApi = {
   getReport: (organizationId: number, params: OwnerFinanceQuery) =>
     api.get<{ data: OwnerFinanceReport }>(`${finance(organizationId)}/report`, { params }),
 
+  exportReport: (organizationId: number, params: OwnerFinanceQuery) =>
+    api.download(
+      `${finance(organizationId)}/report/export`,
+      `bao-cao-tai-chinh-${params.from}-${params.to}.xlsx`,
+      { params },
+    ),
+
   getVenues: () => api.get<Venue[]>('/admin/venues'),
 
   getCourts: (venueId: number) =>

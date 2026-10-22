@@ -10,10 +10,22 @@ use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 
 class EloquentPlatformFeeRequestRepository implements PlatformFeeRequestRepositoryInterface
 {
     public function paginate(PlatformFeeRequestFilterData $filter, CarbonInterface $now): LengthAwarePaginator
+    {
+        return $this->filtered($filter, $now)->paginate($filter->perPage);
+    }
+
+    public function all(PlatformFeeRequestFilterData $filter, CarbonInterface $now): Collection
+    {
+        return $this->filtered($filter, $now)->get();
+    }
+
+    /** @return Builder<PackagePaymentRequest> */
+    private function filtered(PlatformFeeRequestFilterData $filter, CarbonInterface $now): Builder
     {
         return PackagePaymentRequest::query()
             ->with(['venue', 'organization.owner'])
@@ -23,8 +35,7 @@ class EloquentPlatformFeeRequestRepository implements PlatformFeeRequestReposito
             ->when($filter->createdFrom, fn (Builder $query, CarbonImmutable $from) => $query
                 ->where('created_at', '>=', $from)
                 ->where('created_at', '<', $filter->createdBefore))
-            ->orderByDesc('id')
-            ->paginate($filter->perPage);
+            ->orderByDesc('id');
     }
 
     public function findByCode(string $requestCode): ?PackagePaymentRequest

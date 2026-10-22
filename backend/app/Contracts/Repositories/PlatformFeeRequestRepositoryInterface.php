@@ -6,6 +6,7 @@ use App\Domain\Package\DTOs\PlatformFeeRequestFilterData;
 use App\Models\PackagePaymentRequest;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 interface PlatformFeeRequestRepositoryInterface
 {
@@ -17,6 +18,13 @@ interface PlatformFeeRequestRepositoryInterface
      * @return LengthAwarePaginator<int, PackagePaymentRequest>
      */
     public function paginate(PlatformFeeRequestFilterData $filter, CarbonInterface $now): LengthAwarePaginator;
+
+    /**
+     * The same query as paginate() with every matching row, for the export (D14).
+     *
+     * @return Collection<int, PackagePaymentRequest>
+     */
+    public function all(PlatformFeeRequestFilterData $filter, CarbonInterface $now): Collection;
 
     /** A request by its code, with `venue`, `organization.owner` and every stored receipt in transfer order. */
     public function findByCode(string $requestCode): ?PackagePaymentRequest;

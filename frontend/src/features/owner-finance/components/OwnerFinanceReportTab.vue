@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
+import { ExportButton } from '@/shared/components'
 import { useOwnerFinanceReport } from '../composables/useOwnerFinanceReport'
 import type { FinanceMetricKey, OwnerFinanceFilters } from '../types/ownerFinance'
 import OwnerFinanceBookingCell from './OwnerFinanceBookingCell.vue'
@@ -9,7 +10,7 @@ import OwnerFinanceBookingCell from './OwnerFinanceBookingCell.vue'
 const props = defineProps<{ organizationId: number; filters: OwnerFinanceFilters }>()
 
 const { t, d } = useI18n()
-const { metrics, selected, loading, error } = useOwnerFinanceReport(
+const { metrics, selected, loading, error, exportFile } = useOwnerFinanceReport(
   props.organizationId,
   () => props.filters,
 )
@@ -34,7 +35,10 @@ const toggle = (key: FinanceMetricKey) => {
 
 <template>
   <section class="report-tab" :aria-busy="loading">
-    <p class="note">{{ t('admin.ownerFinance.report.note') }}</p>
+    <div class="toolbar">
+      <p class="note">{{ t('admin.ownerFinance.report.note') }}</p>
+      <ExportButton :action="exportFile" />
+    </div>
 
     <p v-if="error" class="error" role="alert">{{ error }}</p>
     <p v-else-if="loading && !metrics" class="muted">{{ t('common.loading') }}</p>
@@ -110,6 +114,14 @@ const toggle = (key: FinanceMetricKey) => {
 </template>
 
 <style scoped>
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
 .report-tab {
   display: flex;
   flex-direction: column;

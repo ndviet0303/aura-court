@@ -228,7 +228,7 @@ Pha 2–6 làm trên nhánh `feat/module05-packages-finance` và chỉ vào main
 
 ## 5. Pha 5 – Tài chính của chủ cơ sở (D12, D14)
 
-- [ ] 5.1 Thư viện Excel (D14, Q1): **chặn — `ext-zip` của image prod chưa xác minh** (không truy cập được image; chờ coordinator/người dùng chạy `php -m` trên image hoặc container prod).
+- [x] 5.1 Thư viện Excel (D14, Q1): Q1 = A (duyệt 2026-10-22). Image `registry.gitlab.com/bantool/devops/frankenphp:latest` không pull được (forbidden); kiểm trên image prod build sẵn ở máy `booking/server:latest` (PHP 8.5.5) có `zip`. Đã cài `openspout/openspout:^5.12`.
   - Kiểm `ext-zip` của image chạy prod `registry.gitlab.com/bantool/devops/frankenphp:latest` (`devops/build/booking.prod.Dockerfile:3`) bằng `php -m`, chạy trên image đó hoặc trong container backend (chỉ đọc, không chạy artisan).
   - Chưa có Q1 thì dừng, không cài package.
   - A được duyệt và có `ext-zip` → `composer require openspout/openspout`. Không có `ext-zip` → báo người dùng, chuyển B (`write-excel-file`) hoặc thêm extension vào image.
@@ -241,11 +241,11 @@ Pha 2–6 làm trên nhánh `feat/module05-packages-finance` và chỉ vào main
     - Scenario "Metrics kept separate", "Unfinished booking completes later", "No-show and incident", "Free booking", "Court filter", "Midnight boundary", "Calendar month".
     - S không gồm đơn huỷ trước khi thanh toán và đơn đã dời sân hoặc giờ.
     - Số mã đơn đếm duy nhất. Response không có tổng doanh thu.
-- [ ] 5.4 Xuất Excel báo cáo owner theo Q1: **chặn bởi 5.1**.
+- [x] 5.4 Xuất Excel báo cáo owner theo Q1. (test: chưa làm)
   - Dùng lại đúng query của task 5.3.
   - Đầu file ghi tên báo cáo, cơ sở và sân, kỳ, thời điểm xuất (giờ VN). Sheet "Tổng hợp" và "Chi tiết".
   - Test: `OwnerFinanceExportTest`. Scenario "Export matches the screen", "Staff access", "Another organization".
-- [ ] 5.5 Frontend `/admin/finance` cho owner: đã làm mọi phần trừ nút xuất (chờ 5.4). Vitest chưa làm.
+- [x] 5.5 Frontend `/admin/finance` cho owner. (test: chưa làm — Vitest)
   - Hai tab "Giao dịch" và "Báo cáo".
   - Lọc theo cơ sở, sân, và kỳ theo ngày, tháng, quý hoặc năm lịch VN.
   - Năm thẻ chỉ số, không có tổng. Danh sách chi tiết của từng chỉ số. Nút xuất.
@@ -263,16 +263,25 @@ Pha 2–6 làm trên nhánh `feat/module05-packages-finance` và chỉ vào main
   - Để sau: xem cả năm chưa phân trang danh sách chi tiết; nút "Hôm nay" dùng ngày của trình duyệt.
   - Cho lane test: `OwnerFinanceTransactionsTest`, `OwnerFinanceReportTest` (các scenario ở 5.2, 5.3, cộng 403 khi cơ sở hoặc sân thuộc tổ chức khác), Vitest cho `OwnerFinanceView`, hai tab, bộ lọc, `financePeriod` và `useApiCall`.
 
+- Ghi chú xuất Excel 5.1, 5.4, 6.1–6.3, 5.5/6.5 (2026-10-22, chỉ implement, chưa chạy test; đã kiểm một file mẫu mở được, đúng hai sheet):
+  - Trước khi làm đã merge `feat/module04-phase5` vào nhánh này (`d2462b1a`). Khi gộp: `HeldReservationRelease::notifyReleased` truyền `channels: ['database', 'mail']` làm tham số, vì `DurableNotificationService::recordOutboxNotification` (task 2.4) ghi đè `channels` trong payload.
+  - `App\Services\Export\ExcelReportWriter` (openspout) stream file: sheet "Tổng hợp" có tên báo cáo, phạm vi (tổ chức/cơ sở/sân hoặc bộ lọc), kỳ, "Thời điểm xuất" giờ VN, rồi bảng tổng hợp; sheet "Chi tiết" có một dòng tiêu đề và các dòng dữ liệu.
+  - Owner: `GET partner/organizations/{org}/finance/report/export` dùng lại `ShowOwnerFinanceReportRequest` (quyền như 5.3) và `metrics()`; tổng hợp năm chỉ số tách riêng, không có tổng; chi tiết liệt kê đơn của từng chỉ số.
+  - Platform admin: `GET admin/platform-fees/{requests,venues,report}/export` dùng lại FormRequest và repository của màn hình. Repository yêu cầu và cơ sở tách `filtered()` dùng chung cho `paginate()` và `all()`, nên file có mọi dòng khớp bộ lọc, không theo trang. Tình trạng gói thêm ba dòng 7/3/1 ngày "(toàn hệ thống)" như màn hình.
+  - Frontend: `api.download(path, fileName, options)` trong `core/api/client.ts` (tách `fetchAt` khỏi `requestAt`, hành vi lỗi và 419 giữ nguyên) tải Blob rồi lưu; `ExportButton` dùng chung báo lỗi ngay dưới nút khi thất bại, không báo đã tạo file. Tên file đặt ở frontend vì CORS không expose `Content-Disposition`.
+  - `backend/vendor` của worktree là symlink sang checkout chính; sau `composer` ở worktree phải chạy `composer dump-autoload -o --no-scripts` ở checkout chính. `openspout` hiện có trong vendor chung, một `composer install` từ nhánh không có package này sẽ gỡ nó.
+  - Cho lane test: `OwnerFinanceExportTest` (5.4), phần export của `PlatformFeeAdminTest` (6.4, "Export matches the screen"), Vitest cho `ExportButton` (thành công, lỗi), `api.download` và nút xuất ở bốn tab.
+
 ## 6. Pha 6 – Quản trị phí nền tảng (D13, D15)
 
-- [ ] 6.1 `PlatformFeeRequestController` (`index`, `show`, `export`) trong nhóm `admin`. Đã làm `index`, `show`; `export` chờ 5.1.
-- [ ] 6.2 `PlatformFeeVenueController` (`index`, `show`, `export`). Đã làm `index`, `show`; `export` chờ 5.1.
-- [ ] 6.3 `PlatformFeeReportController` (`show`, `export`). Đã làm `show`; `export` chờ 5.1.
+- [x] 6.1 `PlatformFeeRequestController` (`index`, `show`, `export`) trong nhóm `admin`. (test: chưa làm)
+- [x] 6.2 `PlatformFeeVenueController` (`index`, `show`, `export`). (test: chưa làm)
+- [x] 6.3 `PlatformFeeReportController` (`show`, `export`). (test: chưa làm)
 - [ ] 6.4 Test: `PlatformFeeAdminTest`.
   - Scenario "Collected fees by term", "Expiring venues", "Request detail with an anomalous transfer", "Export matches the screen", "Non-administrator access".
   - Nhóm 7/3/1 ngày theo `0 < ends_at − now ≤ n ngày`; tổng đếm cơ sở duy nhất.
   - Giá đổi sau khi trả không đổi báo cáo. Gói đã chấm dứt vẫn tính phí.
-- [ ] 6.5 Frontend `/admin/platform-fees` thêm ba tab "Yêu cầu thanh toán", "Tình trạng gói", "Báo cáo thu phí", mỗi tab có nút xuất. Vitest đi kèm. Đã làm ba tab; nút xuất chờ 5.1, Vitest chưa làm.
+- [x] 6.5 Frontend `/admin/platform-fees` thêm ba tab "Yêu cầu thanh toán", "Tình trạng gói", "Báo cáo thu phí", mỗi tab có nút xuất. Vitest đi kèm. (test: chưa làm — Vitest)
 - [x] 6.6 Dashboard `/admin` của platform admin: thay số liệu từ `getReports` (`useAdminDashboard.ts:140`) bằng tóm tắt phí nền tảng (phí đã thu trong tháng, số cơ sở sắp hết hạn trong 7 ngày). (test: chưa làm)
 - [x] 6.7 Xoá báo cáo cũ (D13): (test: chưa làm — xoá ba file test và sửa allowlist thuộc lane test)
   - Ba route `admin/reports*`; `AdminController::report`, `reportCsv`, `buildReportDataset`; `getReports` trong `adminApi.ts`.
