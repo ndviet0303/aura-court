@@ -48,7 +48,8 @@ class PlatformFeeExport
             $matching = $rows->filter(fn (PackagePaymentRequest $row) => $row->statusAt($now) === $status);
             $summary[] = [$label, $matching->count(), (int) $matching->sum('amount')];
         }
-        $summary[] = ['Tổng', $rows->count(), (int) $rows->sum('amount')];
+        // BR-115: unpaid requests are neither fees collected nor debt, so the total counts requests and adds no amount.
+        $summary[] = ['Tổng', $rows->count(), null];
 
         return $this->writer->download(
             'yeu-cau-thanh-toan-goi-'.$now->format('Ymd-Hi').'.xlsx',
