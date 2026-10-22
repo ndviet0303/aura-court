@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * A platform suspension of a venue (design D3). It never changes the venue's or a court's status;
@@ -36,6 +37,31 @@ class VenueSuspension extends Model
     public function liftedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'lifted_by');
+    }
+
+    /**
+     * Submissions oldest first (BR-45 history).
+     *
+     * @return HasMany<SuspensionRemediation, $this>
+     */
+    public function remediations(): HasMany
+    {
+        return $this->hasMany(SuspensionRemediation::class)->orderBy('id');
+    }
+
+    /**
+     * The approved submission that lifted it; its review note is the decision's conclusion.
+     *
+     * @return BelongsTo<SuspensionRemediation, $this>
+     */
+    public function remediation(): BelongsTo
+    {
+        return $this->belongsTo(SuspensionRemediation::class, 'remediation_id');
+    }
+
+    public function isLifted(): bool
+    {
+        return $this->lifted_at !== null;
     }
 
     public function scopeActive(Builder $query): Builder

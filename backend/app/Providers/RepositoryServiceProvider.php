@@ -31,7 +31,9 @@ use App\Contracts\Repositories\TenantMembershipPlanRepositoryInterface;
 use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
 use App\Contracts\Repositories\VenuePackageRepositoryInterface;
+use App\Contracts\Repositories\VenueMonitoringRepositoryInterface;
 use App\Contracts\Repositories\VenueRepositoryInterface;
+use App\Contracts\Repositories\VenueSuspensionRepositoryInterface;
 use App\Contracts\Repositories\VoucherUseRepositoryInterface;
 use App\Contracts\Storage\FileStorageServiceInterface;
 use App\Contracts\Storage\PartnerDocumentStorageInterface;
@@ -63,7 +65,9 @@ use App\Infrastructure\Repositories\Eloquent\EloquentTenantMembershipPlanReposit
 use App\Infrastructure\Repositories\Eloquent\EloquentUserRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueLifecycleRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenuePackageRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentVenueMonitoringRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentVenueSuspensionRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVoucherUseRepository;
 use App\Infrastructure\Services\DurableNotificationService;
 use App\Infrastructure\Storage\FileStorageService;
@@ -96,6 +100,8 @@ class RepositoryServiceProvider extends ServiceProvider
         LoyaltyRuleRepositoryInterface::class => EloquentLoyaltyRuleRepository::class,
         FileStorageServiceInterface::class => FileStorageService::class,
         VenueLifecycleRepositoryInterface::class => EloquentVenueLifecycleRepository::class,
+        VenueSuspensionRepositoryInterface::class => EloquentVenueSuspensionRepository::class,
+        VenueMonitoringRepositoryInterface::class => EloquentVenueMonitoringRepository::class,
         OrganizationLockRepositoryInterface::class => EloquentOrganizationLockRepository::class,
         PartnerDocumentStorageInterface::class => PrivatePartnerDocumentStorage::class,
         DurableNotificationServiceInterface::class => DurableNotificationService::class,

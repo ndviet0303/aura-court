@@ -29,7 +29,7 @@ class AffectedReservationCaseResource extends JsonResource
                 },
                 'customer_name' => $reservation?->booker['name'] ?? $reservation?->user?->name,
                 'customer_phone' => $reservation?->booker['phone'] ?? $reservation?->user?->phone,
-                'court_id' => $reservation?->court_id ?? $this->court_id,
+                'court_id' => $reservation->court_id ?? $this->court_id,
                 'court_code' => $reservation?->court?->code,
                 'starts_at' => $reservation?->starts_at?->toIso8601String(),
                 'ends_at' => $reservation?->ends_at?->toIso8601String(),

@@ -73,6 +73,7 @@ class Venue extends Model
         return $this->belongsTo(Organization::class);
     }
 
+    /** @return HasMany<Court, $this> */
     public function courts(): HasMany
     {
         return $this->hasMany(Court::class);
@@ -123,6 +124,16 @@ class Venue extends Model
     public function packagePaymentRequests(): HasMany
     {
         return $this->hasMany(PackagePaymentRequest::class);
+    }
+
+    /**
+     * The venue's weekly schedule (scope_key 'venue') and court overrides ('court:{id}').
+     *
+     * @return HasMany<VenueOperatingSchedule, $this>
+     */
+    public function operatingSchedules(): HasMany
+    {
+        return $this->hasMany(VenueOperatingSchedule::class);
     }
 
     /** @return HasMany<VenueSuspension, $this> */

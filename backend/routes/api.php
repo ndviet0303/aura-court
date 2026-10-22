@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminVenueMonitoringController;
+use App\Http\Controllers\Admin\AdminVenueRemediationController;
+use App\Http\Controllers\Admin\AdminVenueSuspensionController;
 use App\Http\Controllers\Admin\AdminContractController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminDisputeController;
@@ -41,6 +44,7 @@ use App\Http\Controllers\Partner\ReceivingConnectionController;
 use App\Http\Controllers\Partner\VenuePackageController;
 use App\Http\Controllers\Partner\VenueLifecycleController;
 use App\Http\Controllers\Partner\VenueScheduleImpactController;
+use App\Http\Controllers\Partner\VenueSuspensionController;
 use App\Http\Controllers\POS\PosController;
 use App\Http\Controllers\POS\ServiceTabController;
 use App\Http\Controllers\Pricing\CourtPricingController;
@@ -221,6 +225,9 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
         Route::post('{venueId}/operating-schedule/preview', [VenueScheduleImpactController::class, 'operatingSchedule']);
         Route::post('{venueId}/schedule-exceptions/preview', [VenueScheduleImpactController::class, 'scheduleException']);
         Route::post('{venueId}/schedule-exceptions/{exceptionId}/delete-preview', [VenueScheduleImpactController::class, 'deleteScheduleException']);
+        Route::get('{venueId}/suspensions', [VenueSuspensionController::class, 'index']);
+        Route::get('{venueId}/suspensions/{suspensionId}', [VenueSuspensionController::class, 'show']);
+        Route::post('{venueId}/suspensions/{suspensionId}/remediations', [VenueSuspensionController::class, 'storeRemediation']);
     });
     Route::get('partner/organizations/{organizationId}/packages', [VenuePackageController::class, 'index']);
     Route::get('partner/organizations/{organizationId}/package-requests/{code}', [VenuePackageController::class, 'showRequest']);
@@ -345,6 +352,14 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             Route::get('users', [AdminUserController::class, 'index']);
             Route::post('users/{user}/lock', [AdminUserController::class, 'lock']);
             Route::post('users/{user}/unlock', [AdminUserController::class, 'unlock']);
+            // D13/D14: suspension, remediation review and read-only cross-organization monitoring.
+            Route::get('venues/{venueId}/suspensions/preview', [AdminVenueSuspensionController::class, 'preview']);
+            Route::post('venues/{venueId}/suspensions', [AdminVenueSuspensionController::class, 'store']);
+            Route::get('venue-remediations', [AdminVenueRemediationController::class, 'index']);
+            Route::get('venue-remediations/{id}', [AdminVenueRemediationController::class, 'show']);
+            Route::post('venue-remediations/{id}/review', [AdminVenueRemediationController::class, 'review']);
+            Route::get('monitoring/venues', [AdminVenueMonitoringController::class, 'index']);
+            Route::get('monitoring/venues/{venueId}', [AdminVenueMonitoringController::class, 'show']);
             // Admin partner application review and lifecycle management
             Route::prefix('partner')->group(function () {
                 Route::get('applications', [PartnerReviewController::class, 'index']);
