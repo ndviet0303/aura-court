@@ -2,26 +2,35 @@
 import { useI18n } from 'vue-i18n'
 import { resolveLocalizedText, formatDateTime } from '@/i18n'
 import { SkeletonLoader, AuraButton } from '@/shared/components'
-import type { MaintenanceBlock } from '../../composables/useAdminSchedule'
+import type { CourtStop } from '../../composables/useAdminSchedule'
 
-defineProps<{
-  blocks: MaintenanceBlock[]
+const props = defineProps<{
+  stops: CourtStop[]
+  ownerOf: (organizationId?: number) => boolean
   loading?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'scheduleDowntime'): void
-  (e: 'unlockCourt', block: MaintenanceBlock): void
+  (e: 'resumeCourt', stop: CourtStop): void
 }>()
 
 const { t } = useI18n()
 
-function formatTimeDisplay(startsAt: string, endsAt: string) {
-  try {
-    return `${formatDateTime(startsAt)} → ${formatDateTime(endsAt)}`
-  } catch {
-    return `${startsAt} - ${endsAt}`
-  }
+// A scheduled stop cannot be cancelled; only the started pause of a paused court resumes.
+// Staff may resume only a maintenance pause.
+function canResume(stop: CourtStop) {
+  return (
+    stop.status === 'ongoing' &&
+    stop.court_status === 'paused' &&
+    stop.kind !== 'closure' &&
+    (stop.kind === 'maintenance' || props.ownerOf(stop.organization_id))
+  )
+}
+
+function formatTimeDisplay(stop: CourtStop) {
+  const start = formatDateTime(stop.starts_at)
+  return stop.expected_end_at ? `${start} → ${formatDateTime(stop.expected_end_at)}` : start
 }
 </script>
 
@@ -59,24 +68,23 @@ function formatTimeDisplay(startsAt: string, endsAt: string) {
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="blocks.length === 0" class="empty-blocks">
+    <div v-else-if="stops.length === 0" class="empty-blocks">
       <span class="material-symbols-outlined empty-icon">check_circle</span>
       <p>{{ t('admin.schedule.noMaintenance') }}</p>
     </div>
 
     <!-- Blocks List -->
     <div v-else class="blocks-list">
-      <div v-for="b in blocks" :key="b.id" class="block-row">
+      <div v-for="b in stops" :key="b.id" class="block-row">
         <div class="block-info">
           <div class="block-top-meta">
             <strong class="block-reason">{{ b.reason }}</strong>
             <span class="status-chip" :class="`status-${b.status}`">
+              {{ t(`admin.lifecycle.kind.${b.kind}`) }} ·
               {{
                 b.status === 'ongoing'
                   ? t('admin.schedule.statusOngoing')
-                  : b.status === 'upcoming'
-                    ? t('admin.schedule.statusUpcoming')
-                    : t('admin.schedule.statusEnded')
+                  : t('admin.schedule.statusUpcoming')
               }}
             </span>
           </div>
@@ -88,18 +96,13 @@ function formatTimeDisplay(startsAt: string, endsAt: string) {
 
           <span class="block-time font-mono">
             <span class="material-symbols-outlined icon-14">schedule</span>
-            <span>{{ formatTimeDisplay(b.starts_at, b.ends_at) }}</span>
+            <span>{{ formatTimeDisplay(b) }}</span>
           </span>
         </div>
 
-        <div class="block-actions">
-          <button
-            type="button"
-            class="btn-unlock-court"
-            :title="t('admin.schedule.unlockCourtBtn')"
-            @click="emit('unlockCourt', b)"
-          >
-            <span class="material-symbols-outlined icon-16">lock_open</span>
+        <div v-if="canResume(b)" class="block-actions">
+          <button type="button" class="btn-unlock-court" @click="emit('resumeCourt', b)">
+            <span class="material-symbols-outlined icon-16">play_arrow</span>
             <span>{{ t('admin.schedule.unlockCourtBtn') }}</span>
           </button>
         </div>
@@ -228,11 +231,6 @@ function formatTimeDisplay(startsAt: string, endsAt: string) {
 .status-upcoming {
   background: rgba(245, 158, 11, 0.12);
   color: #f59e0b;
-}
-
-.status-ended {
-  background: rgba(107, 114, 128, 0.12);
-  color: #6b7280;
 }
 
 .block-court,

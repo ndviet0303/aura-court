@@ -37,6 +37,17 @@ $app = Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
+        // A PostgreSQL deadlock (40P01) while locking rolled the whole transaction back: a conflict to retry, not a 500.
+        // Nested transactions wrap it in DeadlockException, so the chain is walked; other SQL errors keep the default.
+        $exceptions->render(function (PDOException $exception) {
+            for ($e = $exception; $e !== null; $e = $e->getPrevious()) {
+                if ($e instanceof PDOException && in_array('40P01', [(string) $e->getCode(), $e->errorInfo[0] ?? null], true)) {
+                    return response()->json(['message' => 'Hệ thống đang bận xử lý một yêu cầu khác cùng lúc. Vui lòng thử lại.'], 409);
+                }
+            }
+
+            return null;
+        });
     })->create();
 
 if ($storagePath = env('LARAVEL_STORAGE_PATH')) {

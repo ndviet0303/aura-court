@@ -9,9 +9,11 @@ use App\Models\ReceivingConnection;
 use App\Models\ReceivingConnectionEvidence;
 use App\Models\Reservation;
 use App\Models\User;
+use App\Models\Venue;
 use App\Services\Booking\RecurringSeriesService;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\POS\PosQrPaymentService;
+use App\Services\Reservation\HeldReservationRelease;
 use App\Services\Tournament\TournamentRegistrationPaymentService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -269,11 +271,10 @@ class OwnerPaymentAttemptService
             $attempt = null;
             $purposeSnapshot = null;
             if ($receiverMatches && $paymentCode !== '') {
-                $attempt = OwnerPaymentAttempt::query()
-                    ->where('receiving_connection_id', $connection->id)
-                    ->where('reference', strtoupper($paymentCode))
-                    ->lockForUpdate()
-                    ->first();
+                $attemptQuery = OwnerPaymentAttempt::query()->where('receiving_connection_id', $connection->id)->where('reference', strtoupper($paymentCode));
+                // The allocation insert key-locks the venue; take it before the attempt, in checkout's order (D12).
+                Venue::query()->whereKey((clone $attemptQuery)->value('venue_id'))->lock('for key share')->first(['id']);
+                $attempt = $attemptQuery->lockForUpdate()->first();
                 $purposeSnapshot = $attempt?->purposeSnapshot();
             }
 
@@ -314,13 +315,12 @@ class OwnerPaymentAttemptService
                         ->where('code', $attempt->purpose_id)
                         ->lockForUpdate()
                         ->first();
-                    if (! $bookingReservation
-                        || (int) $bookingReservation->user_id !== (int) $attempt->user_id
-                        || $bookingReservation->payment_model !== 'direct_owner_v1'
-                        || $bookingReservation->status !== 'held') {
-                        $bookingReservation = null;
-                        $status = OwnerPaymentReceipt::STATUS_EXCEPTION;
-                        $exceptionCode = 'reservation_hold_unavailable';
+                    $unavailable = ! $bookingReservation || (int) $bookingReservation->user_id !== (int) $attempt->user_id
+                        || $bookingReservation->payment_model !== 'direct_owner_v1' || $bookingReservation->status !== 'held';
+                    // D12: a voucher that no longer applies releases the booking, and the transfer becomes an exception.
+                    $exceptionCode = $unavailable ? 'reservation_hold_unavailable' : (app(HeldReservationRelease::class)->consumeVoucher($bookingReservation, $receipt->event_at) ? 'voucher_changed' : null);
+                    if ($exceptionCode !== null) {
+                        [$bookingReservation, $status] = [null, OwnerPaymentReceipt::STATUS_EXCEPTION];
                     }
                 } elseif ($status === OwnerPaymentReceipt::STATUS_ALLOCATED && isset(self::CONFIRMERS[$attempt->purpose])) {
                     [$service, $check, $unavailable] = self::CONFIRMERS[$attempt->purpose];

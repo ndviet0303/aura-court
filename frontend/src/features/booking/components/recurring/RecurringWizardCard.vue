@@ -7,7 +7,7 @@ import {
   TimePicker,
   type DropdownOption,
 } from '@/shared/components'
-
+import { formatCurrency } from '@/i18n'
 import type { Court } from '@/features/court/types/court'
 import type { RecurringFrequency, WeekdayOption } from '../../types/recurring'
 
@@ -23,7 +23,7 @@ const props = defineProps<{
   endDate: string
   weekdayButtons: WeekdayOption[]
   sessionDurationHours: number
-  hourlyRate: number
+  hourlyRate: number | null
   previewSessions: Array<{
     date: string
     weekdayName: string
@@ -32,7 +32,7 @@ const props = defineProps<{
     conflictReason: string | null
   }>
   estimatedSessionsCount: number
-  estimatedTotalAmount: number
+  estimatedTotalAmount: number | null
   submitting?: boolean
   submitDisabled?: boolean
 }>()
@@ -51,14 +51,14 @@ const emit = defineEmits<{
 const courtOptions = computed<DropdownOption[]>(() =>
   props.courts.map((c) => ({
     value: c.id,
-    label: c.name,
+    label: c.code,
     sublabel: c.venue ? `— ${c.venue.name}` : undefined,
     icon: 'sports_tennis',
   })),
 )
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
+function formatMoney(amount: number | null): string {
+  return amount === null ? '—' : formatCurrency(amount)
 }
 </script>
 
@@ -100,13 +100,13 @@ function formatMoney(amount: number): string {
         <div v-if="selectedCourt" class="court-preview-pill">
           <span class="material-symbols-outlined court-icon">sports_tennis</span>
           <div class="court-info">
-            <span class="court-name">{{ selectedCourt.name }}</span>
+            <span class="court-name">{{ selectedCourt.code }}</span>
             <span v-if="selectedCourt.venue" class="court-venue">
               <span class="material-symbols-outlined loc-icon">location_on</span>
               {{ selectedCourt.venue.name }}
             </span>
           </div>
-          <div class="court-rate font-mono">{{ formatMoney(hourlyRate) }}/h</div>
+          <div v-if="hourlyRate" class="court-rate font-mono">{{ formatMoney(hourlyRate) }}/h</div>
         </div>
       </div>
 
@@ -247,7 +247,7 @@ function formatMoney(amount: number): string {
           </div>
 
           <div class="estimate-item">
-            <span class="est-label">Đơn giá tham khảo</span>
+            <span class="est-label">Giá thuê từ</span>
             <span class="est-value font-mono">{{ formatMoney(hourlyRate) }}</span>
           </div>
 

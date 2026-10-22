@@ -3,11 +3,13 @@
 namespace App\Services\Reservation;
 
 use App\Models\Court;
-use App\Models\CourtBlock;
 use App\Models\MatchPost;
+use App\Models\OperationalStop;
+use App\Models\Reservation;
 use App\Models\ReservationSlot;
 use App\Models\Venue;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
@@ -27,6 +29,10 @@ use Illuminate\Validation\ValidationException;
  *
  * Slot-start alignment is intentionally NOT enforced here: each caller keeps its
  * own per-version alignment rule.
+ *
+ * An operator command on an affected booking (design D8) passes the booking as $changing: its own slots and
+ * sessions do not overlap it, its captured policy replaces the live one, and duration bounds are skipped.
+ * $allowStarted accepts a slot already in play (move-court), rejecting only one that has ended.
  */
 class SlotSelectionPolicy
 {
@@ -35,7 +41,7 @@ class SlotSelectionPolicy
     /**
      * @param  array<int, array{start: \DateTimeInterface|string, end: \DateTimeInterface|string}>  $intervals
      */
-    public function assertAllowed(Court $court, array $intervals): void
+    public function assertAllowed(Court $court, array $intervals, ?Reservation $changing = null, bool $allowStarted = false): void
     {
         if ($intervals === []) {
             return;
@@ -56,7 +62,7 @@ class SlotSelectionPolicy
 
         // 1. Past-rejection (re-asserted under lock).
         foreach ($slots as $slot) {
-            if ($slot['start']->copy()->setTimezone($timezone)->isPast()) {
+            if ($slot[$allowStarted ? 'end' : 'start']->copy()->setTimezone($timezone)->isPast()) {
                 throw ValidationException::withMessages(['slots' => 'Không thể đặt giờ đã qua.']);
             }
         }
@@ -68,19 +74,12 @@ class SlotSelectionPolicy
             }
         }
 
-        // 3. Court maintenance blocks (true-interval).
+        // 3. Stops of the court or its venue (D5).
         foreach ($slots as $slot) {
-            $blocked = CourtBlock::query()
-                ->where('court_id', $court->id)
-                ->where('starts_at', '<', $slot['end']->copy()->utc())
-                ->where('ends_at', '>', $slot['start']->copy()->utc())
-                ->exists();
-            if ($blocked) {
-                abort(409, 'Sân đang bị khóa trong khoảng thời gian đã chọn.');
-            }
+            $this->assertNoStop($court, $slot['start'], $slot['end']);
         }
 
-        $booking = $this->livePolicyBooking($venue);
+        $booking = $changing === null ? $this->livePolicyBooking($venue) : $this->capturedPolicyBooking($changing);
 
         // 4. Book-ahead horizon (datetime-based, venue timezone).
         if ($booking !== null && isset($booking['max_days_ahead'])) {
@@ -92,8 +91,8 @@ class SlotSelectionPolicy
             }
         }
 
-        // 5. Total-session duration bounds (count × slot_duration).
-        if ($booking !== null) {
+        // 5. Total-session duration bounds (count × slot_duration); an operator change keeps the booking's duration.
+        if ($booking !== null && $changing === null) {
             $totalMinutes = (int) $slots->sum(fn (array $slot): int => $slot['start']->diffInMinutes($slot['end']));
             if (isset($booking['min_duration_minutes']) && $totalMinutes < (int) $booking['min_duration_minutes']) {
                 throw ValidationException::withMessages(['slots' => 'Tổng thời lượng đặt sân thấp hơn mức tối thiểu cho phép của sân.']);
@@ -122,6 +121,7 @@ class SlotSelectionPolicy
                 ->where('starts_at', '<', $endUtc)
                 ->where('ends_at', '>', $startUtc)
                 ->whereIn('status', ['held', 'confirmed'])
+                ->when($changing, fn ($q) => $q->where('reservation_id', '!=', $changing->id))
                 ->whereHas('reservation', fn ($reservation) => $reservation->blocksInventory())
                 ->exists();
             if ($reservationConflict) {
@@ -134,11 +134,19 @@ class SlotSelectionPolicy
                 ->where('ends_at', '>', $startUtc)
                 ->whereIn('status', ['open', 'active'])
                 ->where(fn ($q) => $q->where('is_owner_hosted', true)->orWhereNull('reservation_id'))
+                ->when($changing, fn ($q) => $q->where(fn ($own) => $own->whereNull('reservation_id')->orWhere('reservation_id', '!=', $changing->id)))
                 ->exists();
             if ($matchConflict) {
                 abort(409, 'Court interval is reserved for a community/hosted activity.');
             }
         }
+    }
+
+    /** D5: a stop of the court or its venue blocks [starts_at, ended_at ?? infinity); callers read it after their court and venue locks. */
+    public function assertNoStop(Court $court, CarbonInterface $start, CarbonInterface $end): void
+    {
+        $stopped = OperationalStop::query()->affectingCourt($court, (int) $court->venue_id)->overlapping($start, $end)->exists();
+        abort_if($stopped, 409, 'Sân đang tạm ngừng hoặc ngừng kinh doanh trong khoảng thời gian đã chọn.');
     }
 
     /**
@@ -155,6 +163,14 @@ class SlotSelectionPolicy
         }
 
         $booking = data_get((array) $policy->settings, 'booking');
+
+        return is_array($booking) ? $booking : null;
+    }
+
+    /** @return array<string, mixed>|null the booking settings captured on the reservation when it was made */
+    private function capturedPolicyBooking(Reservation $reservation): ?array
+    {
+        $booking = data_get($reservation->metadata, 'booking_policy_snapshot.settings.booking');
 
         return is_array($booking) ? $booking : null;
     }

@@ -10,8 +10,8 @@ const props = defineProps<{
   index: number
 }>()
 
-// No invented price: a court without a configured price shows none.
-const fromPrice = computed(() => props.court.price_slots?.[0]?.price ?? null)
+// No invented price: a court without a price shows none.
+const fromPrice = computed(() => props.court.from_price ?? null)
 
 const sportIcon = computed(() => {
   const type = props.court.sport_type
@@ -25,7 +25,7 @@ const sportIcon = computed(() => {
 function handleImageError(event: Event) {
   const target = event.target as HTMLImageElement | null
   if (target) {
-    const fallback = resolveCourtImage({ ...props.court, image_url: undefined })
+    const fallback = resolveCourtImage({ ...props.court, images: [] })
     if (target.src !== fallback) {
       target.src = fallback
     }
@@ -38,7 +38,7 @@ function handleImageError(event: Event) {
     <div class="card-img-wrap">
       <img
         :src="resolveCourtImage(court)"
-        :alt="court.name"
+        :alt="court.code"
         class="court-img"
         loading="lazy"
         @error="handleImageError"
@@ -51,14 +51,14 @@ function handleImageError(event: Event) {
 
     <div class="card-body">
       <div class="court-title-meta">
-        <h3 class="c-name">{{ court.name }}</h3>
+        <h3 class="c-name">{{ court.code }}</h3>
         <div class="c-venue">
           <span class="material-symbols-outlined icon-venue">location_on</span>
           <span>{{ court.venue?.name || 'Aura Club' }}</span>
         </div>
         <RouterLink
           v-if="court.venue?.address"
-          :to="`/courts/${court.slug || court.id}/directions`"
+          :to="`/courts/${court.id}/directions`"
           class="c-addr-link"
           :title="$t('courts.directionsBtn')"
         >
@@ -78,11 +78,11 @@ function handleImageError(event: Event) {
         </div>
 
         <div class="card-actions">
-          <RouterLink :to="`/courts/${court.slug || court.id}`" class="btn-detail">
+          <RouterLink :to="`/courts/${court.id}`" class="btn-detail">
             <span class="material-symbols-outlined btn-icon">info</span>
             <span>{{ $t('courts.detailBtn') }}</span>
           </RouterLink>
-          <RouterLink :to="`/courts/${court.slug || court.id}/schedule`" class="btn-book">
+          <RouterLink :to="`/courts/${court.id}/schedule`" class="btn-book">
             <span class="material-symbols-outlined btn-icon">event_available</span>
             <span>{{ $t('courts.bookBtn') }}</span>
           </RouterLink>

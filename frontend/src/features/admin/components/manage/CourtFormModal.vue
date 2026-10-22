@@ -1,21 +1,24 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CourtForm } from '../../composables/useAdminManageCourts'
 import { SPORT_TYPES, type SportType } from '@/features/court/types/court'
-import { adminApi } from '../../api/adminApi'
-import { errorMessage } from '@/core/utils/errorMessage'
 import SelectDropdown from '@/shared/components/forms/SelectDropdown.vue'
-import CourtImagePresets from './CourtImagePresets.vue'
+import type { DropdownOption } from '@/shared/components'
+import VenueImageUploader from '../venues/VenueImageUploader.vue'
+import CourtPriceTablePanel from './CourtPriceTablePanel.vue'
 
+// BR-27: the code is the court's name; venue and sport are fixed once the court exists.
 const props = defineProps<{
   show: boolean
   editingCourtId: number | null
   saving?: boolean
+  venueOptions: DropdownOption[]
+  errors: string[]
 }>()
 
-const name = defineModel<string>('name', { required: true })
-const address = defineModel<string>('address', { required: true })
+const code = defineModel<string>('code', { required: true })
+const venueId = defineModel<number>('venueId', { required: true })
 const sportType = defineModel<SportType>('sportType', { required: true })
 const surfaceType = defineModel<CourtForm['surface_type']>('surfaceType', { required: true })
 // A cleared number input yields '', which is not a valid capacity.
@@ -23,9 +26,9 @@ const capacity = defineModel<number | null>('capacity', {
   required: true,
   set: (value) => (typeof value === 'number' ? value : null),
 })
-const isActive = defineModel<boolean>('isActive', { required: true })
 const description = defineModel<string>('description', { required: true })
-const imageUrl = defineModel<string>('imageUrl', { required: true })
+// D11: uploaded images only, same rules as venue images.
+const images = defineModel<string[]>('images', { required: true })
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -33,10 +36,6 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-
-const uploadingImage = ref(false)
-const uploadError = ref('')
-const fileInput = ref<HTMLInputElement | null>(null)
 
 const sportOptions = computed(() =>
   SPORT_TYPES.map((sport) => ({ value: sport, label: t(`sportTypes.${sport}`) })),
@@ -75,27 +74,6 @@ function toggleDescriptionTag(tagLabel: string) {
       .trim()
   } else {
     description.value = `${description.value}, ${tagLabel}`
-  }
-}
-
-async function handleFileUpload(event: Event) {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (!file) return
-
-  uploadError.value = ''
-  uploadingImage.value = true
-
-  try {
-    const formData = new FormData()
-    formData.append('image', file)
-    const res = await adminApi.uploadImage(formData)
-    imageUrl.value = res.url
-  } catch (err: unknown) {
-    uploadError.value = errorMessage(err, t('admin.manage.uploadImageError'))
-  } finally {
-    uploadingImage.value = false
-    if (fileInput.value) fileInput.value.value = ''
   }
 }
 
@@ -140,32 +118,35 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="modal-body">
-        <div v-if="uploadError" class="alert-banner-error">{{ uploadError }}</div>
+        <div v-for="message in errors" :key="message" class="alert-banner-error" role="alert">
+          {{ message }}
+        </div>
 
         <div class="modal-form-grid">
           <div class="form-group">
-            <label class="form-label"
+            <label class="form-label" for="court-code"
               >{{ t('admin.manage.courtNameLabel') }} <span class="required">*</span></label
             >
             <input
-              v-model="name"
+              id="court-code"
+              v-model="code"
               type="text"
               class="form-input"
+              maxlength="50"
+              required
               :placeholder="t('admin.manage.courtNamePlaceholder')"
             />
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="court-address">{{
-              t('admin.manage.courtAddressLabel')
-            }}</label>
-            <input
-              id="court-address"
-              v-model="address"
-              type="text"
-              class="form-input"
-              autocomplete="street-address"
-              :placeholder="t('admin.manage.courtAddressPlaceholder')"
+            <label class="form-label">{{ t('admin.manage.courtVenueLabel') }}</label>
+            <SelectDropdown
+              :model-value="venueId"
+              :options="venueOptions"
+              :disabled="!!editingCourtId"
+              variant="bordered"
+              :aria-label="t('admin.manage.courtVenueLabel')"
+              @update:model-value="(value) => (venueId = Number(value))"
             />
           </div>
 
@@ -174,6 +155,7 @@ onBeforeUnmount(() => {
             <SelectDropdown
               :model-value="sportType"
               :options="sportOptions"
+              :disabled="!!editingCourtId"
               variant="bordered"
               :aria-label="t('admin.manage.sportTypeLabel')"
               @update:model-value="(value) => (sportType = value as SportType)"
@@ -196,19 +178,12 @@ onBeforeUnmount(() => {
             <input v-model.number="capacity" type="number" class="form-input" min="1" max="100" />
           </div>
 
-          <div class="form-group">
-            <label class="form-label">{{ t('admin.manage.courtStatusLabel') }}</label>
-            <label class="toggle-check-label">
-              <input v-model="isActive" type="checkbox" />
-              <span>{{ t('admin.manage.allowBookingCheckbox') }}</span>
-            </label>
-          </div>
-
           <div class="form-group full-width">
             <label class="form-label">{{ t('admin.manage.courtDescLabel') }}</label>
             <textarea
               v-model="description"
               rows="2"
+              maxlength="2000"
               class="form-textarea"
               :placeholder="t('admin.manage.courtDescPlaceholder')"
             ></textarea>
@@ -230,35 +205,16 @@ onBeforeUnmount(() => {
 
           <div class="form-group full-width">
             <label class="form-label">{{ t('admin.manage.courtImageLabel') }}</label>
-            <div class="img-input-row">
-              <input
-                v-model="imageUrl"
-                type="text"
-                class="form-input"
-                :placeholder="t('admin.manage.courtImagePlaceholder')"
-              />
-              <input
-                ref="fileInput"
-                type="file"
-                accept="image/*"
-                class="hidden-file-input"
-                @change="handleFileUpload"
-              />
-              <button
-                type="button"
-                class="btn-upload"
-                :disabled="uploadingImage"
-                @click="fileInput?.click()"
-              >
-                <span v-if="uploadingImage">{{ t('admin.manage.uploadingText') }}</span>
-                <span v-else class="btn-upload-content">
-                  <span class="material-symbols-outlined icon-16">cloud_upload</span>
-                  <span>{{ t('admin.manage.uploadToR2Btn') }}</span>
-                </span>
-              </button>
-            </div>
+            <VenueImageUploader v-model="images" />
+          </div>
 
-            <CourtImagePresets v-model="imageUrl" />
+          <div class="form-group full-width">
+            <CourtPriceTablePanel
+              v-if="editingCourtId"
+              :court-id="editingCourtId"
+              :venue-id="venueId"
+            />
+            <p v-else class="form-hint">{{ t('admin.priceTables.court.saveFirstHint') }}</p>
           </div>
         </div>
       </div>
@@ -270,7 +226,7 @@ onBeforeUnmount(() => {
         <button
           type="button"
           class="btn-primary"
-          :disabled="saving || !name.trim()"
+          :disabled="saving || !code.trim() || !venueId"
           @click="emit('save')"
         >
           <span v-if="saving">{{ t('admin.manage.savingText') }}</span>
@@ -303,14 +259,6 @@ onBeforeUnmount(() => {
   grid-column: 1 / -1;
 }
 
-.toggle-check-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-  cursor: pointer;
-}
-
 .quick-tags-row {
   display: flex;
   flex-wrap: wrap;
@@ -340,33 +288,6 @@ onBeforeUnmount(() => {
   border-color: var(--pink-dark, #db2777);
 }
 
-.img-input-row {
-  display: flex;
-  gap: 8px;
-}
-
-.hidden-file-input {
-  display: none;
-}
-
-.btn-upload {
-  padding: 0 16px;
-  border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: var(--surface-secondary, rgba(0, 0, 0, 0.04));
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.btn-upload-content {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
 .btn-cancel {
   padding: 10px 18px;
   border-radius: 10px;
@@ -393,9 +314,5 @@ onBeforeUnmount(() => {
   color: #ef4444;
   font-size: 13px;
   margin-bottom: 12px;
-}
-
-.icon-16 {
-  font-size: 16px;
 }
 </style>

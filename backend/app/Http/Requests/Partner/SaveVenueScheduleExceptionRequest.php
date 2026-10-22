@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests\Partner;
 
+use App\Domain\Venue\Rules\ServiceIntervalRules;
 use App\Models\OrganizationMember;
 use App\Models\Venue;
+use App\Services\Reservation\VenueOperatingCalendar;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -29,6 +32,7 @@ class SaveVenueScheduleExceptionRequest extends FormRequest
     {
         return [
             'court_id' => ['nullable', 'integer'],
+            'acknowledge_affected' => ['sometimes', 'boolean'],
             'exception_date' => ['required', 'date_format:Y-m-d'],
             'name' => ['required', 'string', 'max:120'],
             'type' => ['required', 'in:holiday,special_hours,closed'],
@@ -42,20 +46,27 @@ class SaveVenueScheduleExceptionRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
-            $intervals = $this->input('intervals', []);
-            $type = $this->input('type');
-            if ($type === 'special_hours' && count($intervals) === 0) {
-                $validator->errors()->add('intervals', 'Special hours must include at least one operating interval.');
+            // The interval checks read a well-formed date and H:i times only.
+            if ($validator->errors()->isNotEmpty()) {
+                return;
             }
-
-            $sorted = collect($intervals)->sortBy('start')->values();
-            foreach ($sorted as $index => $interval) {
-                if (($interval['end'] ?? '') <= ($interval['start'] ?? '')) {
-                    $validator->errors()->add("intervals.{$index}.end", 'End time must be later than start time.');
-                }
-                if ($index > 0 && ($interval['start'] ?? '') < ($sorted[$index - 1]['end'] ?? '')) {
-                    $validator->errors()->add("intervals.{$index}.start", 'Operating intervals must not overlap.');
-                }
+            $type = $this->input('type');
+            $intervals = $this->input('intervals') ?? [];
+            if ($type === 'special_hours' && $intervals === []) {
+                $validator->errors()->add('intervals', 'Giờ đặc biệt phải có ít nhất một khung giờ.');
+            }
+            // A closed day ignores its intervals.
+            if ($type === 'closed') {
+                return;
+            }
+            $date = (string) $this->input('exception_date');
+            // BR-31: a court exception lies inside the venue's hours of that date; a venue exception has no outer bound.
+            $venueMinutes = $this->input('court_id') === null
+                ? null
+                : app(VenueOperatingCalendar::class)->venueMinutesOn((int) $this->route('venueId'), $date);
+            $day = 'Ngày '.CarbonImmutable::parse($date)->format('d/m/Y');
+            foreach (ServiceIntervalRules::errors($intervals, 'intervals', $day, $venueMinutes) as [$field, $message]) {
+                $validator->errors()->add($field, $message);
             }
         });
     }

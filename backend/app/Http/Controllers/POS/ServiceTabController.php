@@ -4,6 +4,7 @@ namespace App\Http\Controllers\POS;
 
 use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\POS\QuotePosOrderRequest;
 use App\Services\Infrastructure\IdempotencyService;
 use App\Services\POS\ServiceTabService;
 use Illuminate\Http\JsonResponse;
@@ -85,7 +86,8 @@ class ServiceTabController extends Controller
             'payment_method' => 'required|in:cash,wallet,qr',
             'cash_tendered' => 'nullable|integer|min:0',
             'customer_id' => 'nullable|integer',
-        ]);
+            ...QuotePosOrderRequest::NO_VOUCHER,
+        ], QuotePosOrderRequest::NO_VOUCHER_MESSAGES);
 
         return $this->idempotency->run($request, function () use ($request, $organization, $tab, $data) {
             $result = $this->tabs->settleTab(

@@ -3,14 +3,6 @@ import { useBookingStore } from '@/stores/booking'
 import { i18n } from '@/i18n'
 import type { Court } from '../types/court'
 
-export function getCourtMinPrice(court: Court): number {
-  if (court.price_slots && court.price_slots.length > 0) {
-    const prices = court.price_slots.map((s) => s.price).filter((p) => p > 0)
-    if (prices.length > 0) return Math.min(...prices)
-  }
-  return 100000
-}
-
 export function courtMatchesSport(court: Court, sport: string): boolean {
   if (!sport || sport === 'all') return true
   // The "football" filter covers both pitch sizes.
@@ -20,7 +12,9 @@ export function courtMatchesSport(court: Court, sport: string): boolean {
 
 export function courtMatchesPriceRange(court: Court, range: string): boolean {
   if (!range || range === 'all') return true
-  const price = getCourtMinPrice(court)
+  const price = court.from_price
+  // A court without a price matches no price range.
+  if (price == null) return false
   if (range === 'under_100k') return price < 100000
   if (range === '100k_150k') return price >= 100000 && price <= 150000
   if (range === '150k_200k') return price >= 150000 && price <= 200000
@@ -117,7 +111,7 @@ export function useCourtsList() {
       const q = searchQuery.value.trim().toLowerCase()
       const matchSearch =
         !q ||
-        c.name.toLowerCase().includes(q) ||
+        c.code.toLowerCase().includes(q) ||
         (c.venue?.name && c.venue.name.toLowerCase().includes(q)) ||
         (c.venue?.address && c.venue.address.toLowerCase().includes(q)) ||
         i18n.global.t(`sportTypes.${c.sport_type}`).toLowerCase().includes(q)
@@ -135,14 +129,15 @@ export function useCourtsList() {
     // Sort courts
     const sorted = [...list]
     switch (sortBy.value) {
+      // Courts without a price sort last both ways.
       case 'price_asc':
-        return sorted.sort((a, b) => getCourtMinPrice(a) - getCourtMinPrice(b))
+        return sorted.sort((a, b) => (a.from_price ?? Infinity) - (b.from_price ?? Infinity))
       case 'price_desc':
-        return sorted.sort((a, b) => getCourtMinPrice(b) - getCourtMinPrice(a))
+        return sorted.sort((a, b) => (b.from_price ?? -Infinity) - (a.from_price ?? -Infinity))
       case 'rating_desc':
         return sorted.sort((a, b) => (b.reviews_avg_rating || 0) - (a.reviews_avg_rating || 0))
       case 'name_asc':
-        return sorted.sort((a, b) => a.name.localeCompare(b.name, 'vi'))
+        return sorted.sort((a, b) => a.code.localeCompare(b.code, 'vi'))
       case 'popular':
       default:
         return sorted

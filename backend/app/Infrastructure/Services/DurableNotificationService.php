@@ -7,11 +7,11 @@ use App\Contracts\Repositories\AuditLogRepositoryInterface;
 use App\Models\AuditLog;
 use App\Models\Booking;
 use App\Models\HostKyc;
+use App\Models\OrganizationMember;
 use App\Models\OutboxMessage;
-use App\Models\PlatformPaymentAttempt;
-use App\Models\PlatformSubscription;
+use App\Models\SuspensionRemediation;
 use App\Models\User;
-use App\Models\VenuePublicationRevision;
+use App\Models\VenueSuspension;
 use App\Services\Infrastructure\OutboxService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
@@ -28,7 +28,8 @@ class DurableNotificationService implements DurableNotificationServiceInterface
         int $userId,
         string $eventType,
         array $payload,
-        ?int $orgId = null
+        ?int $orgId = null,
+        array $channels = ['database']
     ): OutboxMessage {
         return $this->outbox->enqueue([
             'message_key' => $key,
@@ -37,7 +38,7 @@ class DurableNotificationService implements DurableNotificationServiceInterface
             'organization_id' => $orgId,
             'aggregate_type' => $payload['aggregate_type'] ?? null,
             'aggregate_id' => isset($payload['aggregate_id']) ? (int) $payload['aggregate_id'] : null,
-        ], array_merge($payload, ['user_id' => $userId]));
+        ], array_merge($payload, ['user_id' => $userId, 'channels' => $channels]));
     }
 
     public function recordAudit(
@@ -113,83 +114,6 @@ class DurableNotificationService implements DurableNotificationServiceInterface
         );
     }
 
-    public function notifySubscriptionActivated(PlatformSubscription $subscription): OutboxMessage
-    {
-        $key = "subscription.activated.{$subscription->id}.v{$subscription->plan_version}";
-        $org = $subscription->organization;
-        $ownerMember = $org?->members()->where('role', 'organization_owner')->first() ?? $org?->members()->first();
-        $userId = (int) ($ownerMember?->user_id ?? $org?->sourceKyc?->user_id ?? User::query()->value('id') ?? 1);
-
-        return $this->recordOutboxNotification(
-            key: $key,
-            userId: $userId,
-            eventType: 'platform.subscription.activated',
-            payload: [
-                'title' => 'Gói dịch vụ nền tảng đã được kích hoạt',
-                'status' => $subscription->status,
-                'plan_id' => $subscription->plan_id,
-                'aggregate_type' => PlatformSubscription::class,
-                'aggregate_id' => $subscription->id,
-            ],
-            orgId: $subscription->organization_id
-        );
-    }
-
-    public function notifyPaymentFailed(PlatformPaymentAttempt $attempt): OutboxMessage
-    {
-        $key = "payment.failed.{$attempt->reference_code}";
-        $org = $attempt->organization;
-        $ownerMember = $org?->members()->where('role', 'organization_owner')->first() ?? $org?->members()->first();
-        $userId = (int) ($ownerMember?->user_id ?? $org?->sourceKyc?->user_id ?? User::query()->value('id') ?? 1);
-
-        return $this->recordOutboxNotification(
-            key: $key,
-            userId: $userId,
-            eventType: 'platform.payment.failed',
-            payload: [
-                'title' => 'Thanh toán gói dịch vụ thất bại',
-                'reference_code' => $attempt->reference_code,
-                'amount' => $attempt->amount,
-                'reason' => $attempt->failure_reason,
-                'aggregate_type' => PlatformPaymentAttempt::class,
-                'aggregate_id' => $attempt->id,
-            ],
-            orgId: $attempt->organization_id
-        );
-    }
-
-    public function notifyPublicationReviewed(
-        VenuePublicationRevision $revision,
-        string $decision,
-        ?string $reason = null
-    ): OutboxMessage {
-        $key = "venue.publication.{$revision->id}.{$decision}";
-        $userId = (int) $revision->submitted_by;
-        $venue = $revision->venue;
-
-        $title = match ($decision) {
-            'approved' => "Cơ sở {$venue?->name} đã được phê duyệt xuất bản",
-            'revision_required' => "Cơ sở {$venue?->name} cần chỉnh sửa trước khi xuất bản",
-            default => "Kết quả xét duyệt xuất bản cơ sở {$venue?->name}",
-        };
-
-        return $this->recordOutboxNotification(
-            key: $key,
-            userId: $userId,
-            eventType: "venue.publication.{$decision}",
-            payload: [
-                'title' => $title,
-                'decision' => $decision,
-                'reason' => $reason,
-                'revision_number' => $revision->revision_number,
-                'venue_id' => $revision->venue_id,
-                'aggregate_type' => VenuePublicationRevision::class,
-                'aggregate_id' => $revision->id,
-            ],
-            orgId: $venue?->organization_id
-        );
-    }
-
     public function notifyBooking(Booking $booking, string $event, string $title, string $body, ?string $actionUrl = '/booking'): OutboxMessage
     {
         $booking->loadMissing(['court.venue']);
@@ -209,13 +133,13 @@ class DurableNotificationService implements DurableNotificationServiceInterface
                     'title' => $title,
                     'body' => $body,
                     'action_url' => $actionUrl,
-                    'channels' => ['database', 'mail'],
                     'delivered_channels' => [],
                     'mail_view' => 'emails.booking-notification',
                     'aggregate_type' => Booking::class,
                     'aggregate_id' => $booking->id,
                 ],
-                orgId: $orgId
+                orgId: $orgId,
+                channels: ['database', 'mail']
             );
         } catch (\Throwable $secondaryException) {
             Log::warning("Secondary booking notification delivery failed immediately for booking {$booking->code}: {$secondaryException->getMessage()}", [
@@ -225,5 +149,71 @@ class DurableNotificationService implements DurableNotificationServiceInterface
 
             return OutboxMessage::where('message_key', $key)->firstOrFail();
         }
+    }
+
+    public function notifyVenueSuspended(VenueSuspension $suspension): void
+    {
+        $venue = $suspension->venue;
+        $this->fanOut($this->ownerIds((int) $venue->organization_id), "venue.suspended.{$suspension->id}", 'venue.suspended', [
+            'title' => 'Cơ sở bị đình chỉ',
+            'body' => "Cơ sở {$venue->name} bị đình chỉ nhận đặt sân. Lý do: {$suspension->reason}",
+            'action_url' => $this->suspensionUrl($suspension),
+            'aggregate_type' => VenueSuspension::class,
+            'aggregate_id' => $suspension->id,
+        ], (int) $venue->organization_id);
+    }
+
+    public function notifyRemediationSubmitted(SuspensionRemediation $remediation): void
+    {
+        $venue = $remediation->suspension->venue;
+        $adminIds = User::query()->whereIn('role', ['platform_admin', 'admin'])->where('status', '!=', 'locked')->pluck('id')->all();
+        $this->fanOut($adminIds, "remediation.submitted.{$remediation->id}", 'venue.remediation.submitted', [
+            'title' => 'Có yêu cầu khắc phục đình chỉ mới',
+            'body' => "Chủ cơ sở {$venue->name} đã gửi hồ sơ khắc phục và chờ xem xét.",
+            'action_url' => "/admin/venue-remediations/{$remediation->id}",
+            'aggregate_type' => SuspensionRemediation::class,
+            'aggregate_id' => $remediation->id,
+        ], (int) $venue->organization_id);
+    }
+
+    public function notifyRemediationReviewed(SuspensionRemediation $remediation): void
+    {
+        $suspension = $remediation->suspension;
+        $venue = $suspension->venue;
+        $title = match ($remediation->status) {
+            'approved' => 'Yêu cầu khắc phục được chấp thuận, đình chỉ đã được gỡ',
+            'rejected' => 'Yêu cầu khắc phục bị từ chối',
+            default => 'Yêu cầu khắc phục cần bổ sung thông tin',
+        };
+        $this->fanOut($this->ownerIds((int) $venue->organization_id), "remediation.reviewed.{$remediation->id}", 'venue.remediation.'.$remediation->status, [
+            'title' => $title,
+            'body' => "Cơ sở {$venue->name}: {$remediation->review_note}",
+            'action_url' => $this->suspensionUrl($suspension),
+            'aggregate_type' => SuspensionRemediation::class,
+            'aggregate_id' => $remediation->id,
+        ], (int) $venue->organization_id);
+    }
+
+    /** @return list<int> active owners only: staff and customers never receive suspension notifications */
+    private function ownerIds(int $organizationId): array
+    {
+        return OrganizationMember::query()->where('organization_id', $organizationId)
+            ->where('role', OrganizationMember::ROLE_ORGANIZATION_OWNER)->where('status', 'active')
+            ->pluck('user_id')->map(fn ($id): int => (int) $id)->all();
+    }
+
+    /** @param  list<int>  $userIds */
+    private function fanOut(array $userIds, string $key, string $eventType, array $payload, int $orgId): void
+    {
+        foreach (array_unique($userIds) as $userId) {
+            $this->recordOutboxNotification("{$key}.user.{$userId}", (int) $userId, $eventType, $payload, $orgId);
+        }
+    }
+
+    private function suspensionUrl(VenueSuspension $suspension): string
+    {
+        $venue = $suspension->venue;
+
+        return "/admin/organizations/{$venue->organization_id}/venues/{$venue->id}/suspensions/{$suspension->id}";
     }
 }

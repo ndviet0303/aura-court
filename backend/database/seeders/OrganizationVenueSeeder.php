@@ -3,8 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Organization;
-use App\Models\PlatformPlan;
-use App\Models\PlatformSubscription;
 use App\Models\Venue;
 use App\Models\VenueBookingPolicy;
 use App\Models\VenueOperatingSchedule;
@@ -48,54 +46,6 @@ class OrganizationVenueSeeder extends Seeder
             'settings' => $settings,
             'created_at' => $partnerApprovedAt,
         ])->save();
-
-        $growth = PlatformPlan::updateOrCreate(
-            ['code' => 'PLATFORM_GROWTH'],
-            [
-                'name' => 'Gói Phát Triển',
-                'price' => 500000,
-                'billing_cycle' => 'monthly',
-                // Column defaults (1 venue / 4 courts) are below what this seeder creates.
-                'max_venues' => 10,
-                'max_courts' => 60,
-                'max_staff' => 20,
-                'status' => 'published',
-                'published_at' => now()->subMonths(3),
-                'is_active' => true,
-            ]
-        );
-
-        $starter = PlatformPlan::updateOrCreate(
-            ['code' => 'PLATFORM_STARTER'],
-            [
-                'name' => 'Gói Khởi Đầu',
-                'price' => 200000,
-                'billing_cycle' => 'monthly',
-                'max_venues' => 2,
-                'max_courts' => 10,
-                'max_staff' => 5,
-                'status' => 'published',
-                'published_at' => now()->subMonths(3),
-                'is_active' => true,
-            ]
-        );
-
-        foreach ([[$org, $growth], [$partner, $starter]] as [$tenant, $plan]) {
-            PlatformSubscription::updateOrCreate(
-                ['organization_id' => $tenant->id],
-                [
-                    'plan_id' => $plan->id,
-                    'plan_version' => 1,
-                    'status' => 'active',
-                    'billing_cycle' => 'monthly',
-                    'auto_renew' => true,
-                    'starts_at' => now()->subMonths(1),
-                    'ends_at' => now()->addYear(),
-                    'price_snapshot' => $plan->price,
-                    'currency_snapshot' => 'VND',
-                ]
-            );
-        }
 
         $venuesData = [
             [
@@ -213,8 +163,7 @@ class OrganizationVenueSeeder extends Seeder
                     'email' => $vd['slug'].'@demo.auracourt.vn',
                     'description' => $vd['description'],
                     'amenities' => $vd['amenities'],
-                    'status' => 'published',
-                    'is_active' => true,
+                    'status' => Venue::STATUS_ACTIVE,
                     'published_at' => now()->subMonths(1),
                     'organization_id' => $tenant->id,
                 ]
@@ -241,11 +190,9 @@ class OrganizationVenueSeeder extends Seeder
     {
         return [
             'booking' => [
-                'hold_ttl_minutes' => 15,
                 'max_days_ahead' => 30,
                 'min_duration_minutes' => 60,
                 'max_duration_minutes' => 240,
-                'require_continuity' => true,
             ],
             'arrival' => ['early_minutes' => 15, 'late_grace_minutes' => 15, 'no_show_after_minutes' => 30],
             'recurring' => [

@@ -25,10 +25,9 @@ function formatMoney(amount: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
 }
 
-function setDiscountPreset(percent: number) {
-  const price = props.bookingSlot?.originalPrice
-  if (price) emit('update:askingPrice', Math.round((price * (1 - percent / 100)) / 10000) * 10000)
-}
+const maxPrice = computed(() => props.bookingSlot?.maxResalePrice ?? 0)
+const setDiscountPreset = (percent: number) =>
+  emit('update:askingPrice', Math.floor((maxPrice.value * (100 - percent)) / 1e6) * 10000)
 
 const isFree = computed(() => props.askingPrice === 0)
 const priceValid = computed(
@@ -36,7 +35,7 @@ const priceValid = computed(
     !!props.bookingSlot &&
     Number.isInteger(props.askingPrice) &&
     props.askingPrice >= 0 &&
-    props.askingPrice <= props.bookingSlot.originalPrice,
+    props.askingPrice <= maxPrice.value,
 )
 const canSubmit = computed(() => priceValid.value && (isFree.value || receiver.value !== null))
 
@@ -80,7 +79,7 @@ function submit() {
           </div>
           <div class="slot-price-row">
             <span class="orig-label">Giá bạn đã thanh toán:</span>
-            <strong class="orig-val font-mono">{{ formatMoney(bookingSlot.originalPrice) }}</strong>
+            <strong class="orig-val font-mono">{{ formatMoney(maxPrice) }}</strong>
           </div>
         </div>
 
@@ -88,14 +87,14 @@ function submit() {
         <div class="form-group">
           <label class="form-label">
             <span>Đặt giá muốn chuyển nhượng (₫):</span>
-            <span class="max-hint">(Tối đa: {{ formatMoney(bookingSlot.originalPrice) }})</span>
+            <span class="max-hint">(Tối đa: {{ formatMoney(maxPrice) }})</span>
           </label>
           <div class="price-input-wrap">
             <input
               :value="askingPrice"
               type="number"
               min="0"
-              :max="bookingSlot.originalPrice"
+              :max="maxPrice"
               step="10000"
               class="form-input font-mono"
               @input="emit('update:askingPrice', Number(($event.target as HTMLInputElement).value))"

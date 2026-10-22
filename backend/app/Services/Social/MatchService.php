@@ -4,8 +4,6 @@ namespace App\Services\Social;
 
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Models\Court;
-use App\Models\CourtBlock;
-use App\Models\CourtPriceSlot;
 use App\Models\MatchBill;
 use App\Models\MatchInvitation;
 use App\Models\MatchParticipation;
@@ -16,13 +14,19 @@ use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
 use App\Models\User;
+use App\Models\Venue;
 use App\Services\Infrastructure\OutboxService;
+use App\Services\Pricing\RentalPriceCalculator;
+use App\Services\Reservation\SlotSelectionPolicy;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class MatchService
 {
+    public function __construct(private readonly RentalPriceCalculator $rentals) {}
+
     public function profile(User $user, int $organizationId, array $data): PlayerProfile
     {
         if (($data['skill_level'] ?? 1) < 1 || ($data['skill_level'] ?? 1) > 5) {
@@ -969,7 +973,7 @@ class MatchService
         abort_unless($shuttleCount >= 0, 422, 'Số quả cầu không được âm.');
         abort_unless($shuttleUnitPrice >= 0, 422, 'Đơn giá cầu không được âm.');
 
-        $courtSubtotal = (int) round(($durationMinutes * $courtHourlyRate) / 60, 0, PHP_ROUND_HALF_UP);
+        $courtSubtotal = intdiv($durationMinutes * $courtHourlyRate, 60);
         $shuttleSubtotal = (int) ($shuttleCount * $shuttleUnitPrice);
         $totalAmount = $courtSubtotal + $shuttleSubtotal;
 
@@ -991,12 +995,7 @@ class MatchService
         $startsAtUtc = $startsAt->copy()->utc();
         $endsAtUtc = $endsAt->copy()->utc();
 
-        $blockExists = CourtBlock::query()
-            ->where('court_id', $court->id)
-            ->where('starts_at', '<', $endsAtUtc)
-            ->where('ends_at', '>', $startsAtUtc)
-            ->exists();
-        abort_if($blockExists, 409, 'Sân đang có lịch bảo trì hoặc tạm đóng trong khoảng thời gian đã chọn.');
+        app(SlotSelectionPolicy::class)->assertNoStop($court, $startsAt, $endsAt);
 
         $reservationExists = ReservationSlot::query()
             ->where('court_id', $court->id)
@@ -1019,7 +1018,10 @@ class MatchService
     private function assertCourtCanHostSession(Court $court): void
     {
         // BR-37: no new session on a paused, closed or suspended venue; a session sets its own price, so an unpriced court may host one.
-        $eligibility = app(VerifyEffectiveBookingEligibility::class)->execute($court);
+        // Global lock order (court, venue) so a stop, suspension or package change committed meanwhile is seen.
+        $verifier = app(VerifyEffectiveBookingEligibility::class);
+        $locked = Court::query()->whereKey($court->id)->lockForUpdate()->firstOrFail();
+        $eligibility = $verifier->execute($locked->setRelation('venue', Venue::query()->whereKey($locked->venue_id)->lockForUpdate()->firstOrFail()));
         abort_unless($eligibility['eligible'] || $eligibility['reason'] === 'COURT_UNPRICED', 409, $eligibility['message'] ?? '');
     }
 
@@ -1055,18 +1057,12 @@ class MatchService
 
     public function getDefaultRates(Court $court, ?Carbon $time = null): array
     {
-        $timezone = $court->venue?->timezone ?? config('app.timezone', 'Asia/Ho_Chi_Minh');
-        $localTime = ($time ? $time->copy() : now())->setTimezone($timezone);
-        $priceSlot = CourtPriceSlot::query()
-            ->where('court_id', $court->id)
-            ->where('is_active', true)
-            ->where('weekday', $localTime->dayOfWeekIso)
-            ->where('starts_at', '<=', $localTime->format('H:i'))
-            ->where('ends_at', '>', $localTime->format('H:i'))
-            ->first();
+        // D24: the price per hour of the session's first minute; an unpriced minute suggests nothing.
+        $start = CarbonImmutable::instance($time ?? now())->startOfMinute();
+        $quote = $this->rentals->quoteEach($court, [[$start, $start->addMinute()]])[0] ?? null;
 
         return [
-            'court_hourly_rate' => $priceSlot ? (int) $priceSlot->price : null,
+            'court_hourly_rate' => $quote?->snapshot['parts'][0]['price_per_hour'],
             'shuttlecock_unit_price' => null,
         ];
     }

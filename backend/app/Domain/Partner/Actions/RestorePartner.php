@@ -4,7 +4,6 @@ namespace App\Domain\Partner\Actions;
 
 use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Contracts\Repositories\OrganizationLockRepositoryInterface;
-use App\Contracts\Repositories\PlatformSubscriptionRepositoryInterface;
 use App\Models\Organization;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -13,18 +12,10 @@ class RestorePartner
 {
     public function __construct(
         private readonly OrganizationLockRepositoryInterface $locks,
-        private readonly PlatformSubscriptionRepositoryInterface $subRepo,
         private readonly DurableNotificationServiceInterface $notif,
     ) {}
 
-    /**
-     * @return array{
-     *     organization: Organization,
-     *     has_valid_entitlement: bool,
-     *     new_bookings_enabled: bool
-     * }
-     */
-    public function execute(int $organizationId, int $actorId, ?string $notes = null): array
+    public function execute(int $organizationId, int $actorId, ?string $notes = null): Organization
     {
         return DB::transaction(function () use ($organizationId, $actorId, $notes) {
             $org = $this->locks->lockOrganizationForUpdate($organizationId);
@@ -41,11 +32,6 @@ class RestorePartner
             }
 
             $updated = $this->locks->updatePartnerStatus($org, 'approved', null);
-            Cache::increment('venues_version');
-
-            // Fresh check on subscription entitlement
-            $activeSub = $this->subRepo->findActiveForOrganization($org->id);
-            $hasValidEntitlement = $activeSub !== null && $activeSub->isValid();
 
             Cache::increment('venues_version');
 
@@ -55,16 +41,11 @@ class RestorePartner
                 auditable: $updated,
                 metadata: [
                     'notes' => $notes,
-                    'has_valid_entitlement' => $hasValidEntitlement,
                     'restored_at' => now()->toIso8601String(),
                 ]
             );
 
-            return [
-                'organization' => $updated,
-                'has_valid_entitlement' => $hasValidEntitlement,
-                'new_bookings_enabled' => $hasValidEntitlement,
-            ];
+            return $updated;
         });
     }
 }

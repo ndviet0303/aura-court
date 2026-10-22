@@ -30,28 +30,28 @@ class MarketplaceSeeder extends Seeder
     use PaysVenueOwner;
 
     /**
-     * [reservation code, seller (0 = user@example.com, N = khachNN), court slug, days ahead, start hour, hours, listed slot positions, asking % of the slot price, badge, notes].
+     * [reservation code, seller (0 = user@example.com, N = khachNN), court code, days ahead, start hour, hours, listed slot positions, asking % of the slot price, badge, notes].
      * Every start is 4+ days out, so the venues' 24h transfer cutoff keeps each listing open for days after seeding.
      */
     private const RESALES = [
-        ['RES-P2P-001', 3, 'san-1-tham-bwf-cau-giay', 4, 19, 1, [0], 90, 'urgent', 'Bận việc gia đình đột xuất, pass gấp lại cho anh em giao lưu.'],
-        ['RES-P2P-002', 6, 'san-pickleball-3-sunset-tay-ho', 5, 7, 1, [0], 80, 'deal', 'Sân pickleball view hồ Tây, nhượng lại do trùng lịch công tác.'],
-        ['RES-P2P-003', 9, 'san-bong-da-5v5-a1-quan-ngua', 5, 19, 1, [0], 95, 'hot', 'Đội thiếu người nên nhượng lại sân, có sẵn bóng và áo bib.'],
-        ['RES-P2P-004', 12, 'san-tennis-3-mat-cung-landmark', 6, 17, 1, [0], 85, 'deal', 'Đổi lịch tập với huấn luyện viên nên pass lại sân tennis mặt cứng.'],
-        ['RES-P2P-005', 15, 'san-bong-ro-1-streetball-tay-ho', 7, 18, 1, [0], 90, 'hot', 'Sân streetball đèn sáng, nhượng lại cho nhóm nào muốn đấu 3x3.'],
-        ['RES-P2P-006', 18, 'san-bong-ban-1-double-fish-cau-giay', 8, 20, 1, [0], 75, 'deal', 'Bàn thi đấu tiêu chuẩn, nhượng lại giá mềm cho bạn nào muốn luyện tập.'],
-        ['RES-P2P-007', 21, 'san-bong-chuyen-1-taraflex-landmark', 9, 18, 2, [0, 1], 90, 'hot', 'Nhượng lại trọn 2 giờ sân bóng chuyền thảm Taraflex cho đội cần sân tập.'],
-        ['RES-P2P-008', 24, 'san-11-sai-gon-central-bwf', 10, 20, 1, [0], 85, 'deal', 'Chuyến công tác vào Sài Gòn bị hủy nên pass lại sân cầu lông chuẩn BWF.'],
-        ['RES-P2P-009', 2, 'san-bong-da-7v7-c1-quan-ngua', 11, 19, 1, [0], 90, 'hot', 'Sân 7 người cỏ mới, nhượng lại vì đội nghỉ đá tuần này.'],
+        ['RES-P2P-001', 3, 'Sân 1 - Thảm BWF Tiêu Chuẩn', 4, 19, 1, [0], 90, 'urgent', 'Bận việc gia đình đột xuất, pass gấp lại cho anh em giao lưu.'],
+        ['RES-P2P-002', 6, 'Sân Pickleball 3 - Sunset View Hồ Tây', 5, 7, 1, [0], 80, 'deal', 'Sân pickleball view hồ Tây, nhượng lại do trùng lịch công tác.'],
+        ['RES-P2P-003', 9, 'Sân Bóng Đá 5v5 A1 Quần Ngựa', 5, 19, 1, [0], 95, 'hot', 'Đội thiếu người nên nhượng lại sân, có sẵn bóng và áo bib.'],
+        ['RES-P2P-004', 12, 'Sân Tennis 3 - Mặt Cứng US Open Landmark', 6, 17, 1, [0], 85, 'deal', 'Đổi lịch tập với huấn luyện viên nên pass lại sân tennis mặt cứng.'],
+        ['RES-P2P-005', 15, 'Sân Bóng Rổ 1 - Streetball Zone Tây Hồ', 7, 18, 1, [0], 90, 'hot', 'Sân streetball đèn sáng, nhượng lại cho nhóm nào muốn đấu 3x3.'],
+        ['RES-P2P-006', 18, 'Sân Bóng Bàn 1 - Double Fish ITTF', 8, 20, 1, [0], 75, 'deal', 'Bàn thi đấu tiêu chuẩn, nhượng lại giá mềm cho bạn nào muốn luyện tập.'],
+        ['RES-P2P-007', 21, 'Sân Bóng Chuyền 1 - Thảm Taraflex Landmark', 9, 18, 2, [0, 1], 90, 'hot', 'Nhượng lại trọn 2 giờ sân bóng chuyền thảm Taraflex cho đội cần sân tập.'],
+        ['RES-P2P-008', 24, 'Sân 11 - Sài Gòn Central BWF', 10, 20, 1, [0], 85, 'deal', 'Chuyến công tác vào Sài Gòn bị hủy nên pass lại sân cầu lông chuẩn BWF.'],
+        ['RES-P2P-009', 2, 'Sân Bóng Đá 7v7 C1 Quần Ngựa', 11, 19, 1, [0], 90, 'hot', 'Sân 7 người cỏ mới, nhượng lại vì đội nghỉ đá tuần này.'],
         // The demo customer resells the second hour and keeps the first, which stays sellable in the Sell tab.
-        ['RES-MY-001', 0, 'san-tennis-2-hard-court-tay-ho', 6, 18, 2, [1], 90, 'deal', 'Chỉ chơi được giờ đầu, nhượng lại giờ sau cho bạn nào cần sân.'],
+        ['RES-MY-001', 0, 'Sân Tennis 2 - Hard Court Pro Tây Hồ', 6, 18, 2, [1], 90, 'deal', 'Chỉ chơi được giờ đầu, nhượng lại giờ sau cho bạn nào cần sân.'],
     ];
 
-    /** Completed resales: [reservation code, seller, buyer, court slug, days ahead, start hour, asking % of the slot price, notes]. */
+    /** Completed resales: [reservation code, seller, buyer, court code, days ahead, start hour, asking % of the slot price, notes]. */
     private const SOLD = [
-        ['RES-P2P-101', 5, 11, 'san-2-tieu-chuan-cau-giay', 4, 20, 90, 'Lịch làm thêm giờ nên nhượng lại sân tối.'],
-        ['RES-P2P-102', 17, 0, 'san-pickleball-1-neon-cau-giay', 5, 19, 85, 'Bạn tập cùng bị ốm, pass lại sân cho người cần.'],
-        ['RES-P2P-103', 20, 7, 'san-tennis-1-dat-nen-tay-ho', 6, 17, 100, 'Đi công tác đột xuất, nhượng lại đúng giá gốc.'],
+        ['RES-P2P-101', 5, 11, 'Sân 2 - Tiêu Chuẩn', 4, 20, 90, 'Lịch làm thêm giờ nên nhượng lại sân tối.'],
+        ['RES-P2P-102', 17, 0, 'Sân Pickleball 1 - Aura Neon', 5, 19, 85, 'Bạn tập cùng bị ốm, pass lại sân cho người cần.'],
+        ['RES-P2P-103', 20, 7, 'Sân Tennis 1 - Đất Nện French Open Tây Hồ', 6, 17, 100, 'Đi công tác đột xuất, nhượng lại đúng giá gốc.'],
     ];
 
     private Carbon $now;
@@ -61,9 +61,9 @@ class MarketplaceSeeder extends Seeder
         $this->now = Carbon::now(config('app.timezone'))->startOfMinute();
         $marketplace = app(MarketplaceService::class);
 
-        foreach (self::RESALES as $index => [$code, $sellerNo, $slug, $daysAhead, $hour, $hours, $listed, $percent, $badge, $notes]) {
+        foreach (self::RESALES as $index => [$code, $sellerNo, $courtCode, $daysAhead, $hour, $hours, $listed, $percent, $badge, $notes]) {
             $seller = $this->customer($sellerNo);
-            $court = Court::with(['venue'])->where('slug', $slug)->first();
+            $court = Court::with(['venue'])->where('code', $courtCode)->first();
             // The code is the idempotency key: a seeded resale is never rebuilt or moved.
             if (! $seller || ! $court || Reservation::withoutGlobalScope('tenant_isolation')->where('code', $code)->exists()) {
                 continue;
@@ -78,10 +78,10 @@ class MarketplaceSeeder extends Seeder
             }
         }
 
-        foreach (self::SOLD as $index => [$code, $sellerNo, $buyerNo, $slug, $daysAhead, $hour, $percent, $notes]) {
+        foreach (self::SOLD as $index => [$code, $sellerNo, $buyerNo, $courtCode, $daysAhead, $hour, $percent, $notes]) {
             $seller = $this->customer($sellerNo);
             $buyer = $this->customer($buyerNo);
-            $court = Court::with(['venue'])->where('slug', $slug)->first();
+            $court = Court::with(['venue'])->where('code', $courtCode)->first();
             if (! $seller || ! $buyer || ! $court || Reservation::withoutGlobalScope('tenant_isolation')->where('code', $code)->exists()) {
                 continue;
             }
@@ -161,7 +161,8 @@ class MarketplaceSeeder extends Seeder
 
         return $this->atClock($listedAt, function () use ($marketplace, $entitlement, $seller, $asking, $receiver, $metadata): MarketplaceListing {
             $listing = $marketplace->list($entitlement, $seller, $asking, $receiver);
-            $listing->forceFill(['metadata' => $metadata])->saveQuietly();
+            // Keeps the max_resale_price list() stored (D23).
+            $listing->forceFill(['metadata' => [...(array) $listing->metadata, ...$metadata]])->saveQuietly();
 
             return $listing;
         });
@@ -215,6 +216,7 @@ class MarketplaceSeeder extends Seeder
                 'metadata' => [
                     'settlement_mode' => 'peer_to_peer',
                     'original_price' => (int) $entitlement->amount,
+                    'max_resale_price' => $metadata['max_resale_price'] ?? null,
                     'consideration_amount' => (int) $listing->asking_price,
                     'payment_reported_at' => $metadata['payment_reported_at'],
                 ],

@@ -38,7 +38,7 @@ const emit = defineEmits<{
 
       <div class="modal-body">
         <div class="court-summary-badge">
-          <span class="court-name">{{ reservation.court?.name || 'Aura Court' }}</span>
+          <span class="court-name">{{ reservation.court?.code || 'Aura Court' }}</span>
           <span class="venue-address">
             <span class="material-symbols-outlined loc-icon">location_on</span>
             {{ reservation.court?.venue?.name || 'Aura Court' }}

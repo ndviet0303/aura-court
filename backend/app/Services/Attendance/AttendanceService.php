@@ -3,18 +3,17 @@
 namespace App\Services\Attendance;
 
 use App\Events\CourtStatusUpdated;
+use App\Models\AffectedReservationCase;
 use App\Models\BookingAttendance;
 use App\Models\Court;
-use App\Models\CourtBlock;
 use App\Models\LegacyBookingMapping;
+use App\Models\OperationalStop;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
-use App\Models\ReservationSlot;
 use App\Models\ServiceTab;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class AttendanceService
 {
@@ -156,19 +155,12 @@ class AttendanceService
         // 6. Court operational readiness (Task 8.2 / D49)
         $court = $reservation->court;
         if ($court) {
-            if (! $court->is_active) {
+            if ($court->status !== Court::STATUS_ACTIVE) {
                 abort(422, 'Court is currently under maintenance.');
             }
 
-            $nowUtc = $now->copy()->utc();
-            $hasBlock = CourtBlock::query()
-                ->where('court_id', $court->id)
-                ->where('starts_at', '<', $nowUtc)
-                ->where('ends_at', '>', $nowUtc)
-                ->exists();
-            if ($hasBlock) {
-                abort(422, 'Court is currently under maintenance.');
-            }
+            // A stop of the court or its venue that started before its status was updated (D5, D6).
+            abort_if(OperationalStop::query()->affectingCourt($court, (int) $court->venue_id)->overlapping($now, $now)->exists(), 422, 'Court is currently under maintenance.');
 
             $cachedStatus = Cache::get("court:{$court->id}:operational_status");
             if ($cachedStatus === 'awaiting_inspection') {
@@ -356,6 +348,9 @@ class AttendanceService
         $reservation = $this->resolveReservation($codeOrId, $organizationId);
         $this->assertCanOperate($staff, $reservation, 'Unauthorized to record no-show.');
         abort_unless($reservation->status === 'confirmed', 422, 'Only confirmed bookings can be marked no-show.');
+        // Design D8: an open affected-booking case, even an unreachable one, is handled before any no-show.
+        abort_if(AffectedReservationCase::query()->where('reservation_id', $reservation->id)->open()->exists(), 409,
+            'Đơn đang có case ảnh hưởng chưa xử lý xong, không thể ghi vắng mặt.');
 
         $existing = BookingAttendance::query()
             ->where('organization_id', $organizationId)
@@ -415,80 +410,6 @@ class AttendanceService
         ];
     }
 
-    public function reassignCourt(User $staff, int $organizationId, string|int $codeOrId, int $newCourtId, string $reason): array
-    {
-        abort_if(trim($reason) === '', 422, 'Reason is required for incident reassignment.');
-
-        $reservation = $this->resolveReservation($codeOrId, $organizationId);
-        $this->assertCanOperate($staff, $reservation, 'Unauthorized to reassign court.');
-        $oldCourtId = $reservation->court_id;
-        abort_if($oldCourtId === $newCourtId, 422, 'New court must be different from current court.');
-
-        $newCourt = Court::query()->whereKey($newCourtId)->firstOrFail();
-        abort_unless((int) $newCourt->venue_id === (int) $reservation->court?->venue_id, 422, 'Target court must belong to the same venue.');
-        abort_unless($newCourt->is_active, 422, 'Target court is currently under maintenance.');
-
-        // Check if new court has overlapping slots during remaining booking time
-        foreach ($reservation->slots as $slot) {
-            $slotStartUtc = ($slot->starts_at instanceof Carbon ? $slot->starts_at->copy() : Carbon::parse($slot->starts_at, 'UTC'))->utc();
-            $slotEndUtc = ($slot->ends_at instanceof Carbon ? $slot->ends_at->copy() : Carbon::parse($slot->ends_at, 'UTC'))->utc();
-            $conflict = ReservationSlot::query()
-                ->where('court_id', $newCourtId)
-                ->whereIn('status', ['held', 'confirmed', 'active'])
-                ->where('reservation_id', '!=', $reservation->id)
-                ->where('starts_at', '<', $slotEndUtc)
-                ->where('ends_at', '>', $slotStartUtc)
-                ->exists();
-            abort_if($conflict, 409, 'Target court is already booked during this time interval.');
-        }
-
-        return DB::transaction(function () use ($reservation, $newCourt, $oldCourtId, $staff, $reason) {
-            $reservation->update(['court_id' => $newCourt->id]);
-            $reservation->slots()->update(['court_id' => $newCourt->id]);
-            $reservation->entitlements()->update(['court_id' => $newCourt->id]);
-
-            // Track incident and reassignment history in metadata
-            $meta = (array) ($reservation->metadata ?? []);
-            $incidents = (array) ($meta['incidents'] ?? []);
-            $incidents[] = [
-                'type' => 'court_reassignment',
-                'from_court_id' => $oldCourtId,
-                'to_court_id' => $newCourt->id,
-                'reason' => $reason,
-                'staff_id' => $staff->id,
-                'at' => now()->toIso8601String(),
-            ];
-            $meta['incidents'] = $incidents;
-            $reservation->update(['metadata' => $meta]);
-
-            // Update operational statuses
-            Cache::put("court:{$oldCourtId}:operational_status", 'awaiting_inspection', now()->addHours(2));
-            Cache::put("court:{$newCourt->id}:operational_status", 'occupied', now()->addHours(4));
-
-            CourtStatusUpdated::dispatch(
-                venueId: (int) $newCourt->venue_id,
-                courtId: (int) $oldCourtId,
-                status: 'awaiting_inspection',
-                metadata: ['action' => 'incident_reassigned_from', 'reason' => $reason]
-            );
-
-            CourtStatusUpdated::dispatch(
-                venueId: (int) $newCourt->venue_id,
-                courtId: (int) $newCourt->id,
-                status: 'occupied',
-                metadata: ['action' => 'incident_reassigned_to', 'reservation_id' => $reservation->id]
-            );
-
-            return [
-                'reservation' => $reservation->fresh(['court', 'slots', 'entitlements']),
-                'reassigned' => true,
-                'from_court_id' => $oldCourtId,
-                'to_court_id' => $newCourt->id,
-            ];
-        });
-    }
-
-    /** BR-21: operations run only at a venue the actor manages or is assigned to. */
     private function assertCanOperate(User $staff, Reservation $reservation, string $message): void
     {
         $venueId = $reservation->court?->venue_id;

@@ -5,6 +5,7 @@ namespace App\Services\Booking;
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Models\Court;
 use App\Models\MonthlyInvoice;
+use App\Models\OperationalStop;
 use App\Models\OwnerPaymentAllocation;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
@@ -101,7 +102,7 @@ class RecurringSeriesService
             $total = 0;
             foreach ($occurrences as $sequence => $occurrence) {
                 $start = $occurrence['starts_at'];
-                $quote = $this->quotes->create($user->id, $organizationId, $series->court_id, $this->sessionSlotStarts($court, $start, $sessionMinutes));
+                $quote = $this->quotes->createForSlots($user->id, $organizationId, $series->court_id, $this->sessionSlotStarts($court, $start, $sessionMinutes));
                 $reservation = $this->reservations->hold($user, $organizationId, [
                     'quote_id' => $quote->id,
                     'metadata' => ['type' => 'recurring_series', 'series_id' => $series->id],
@@ -235,7 +236,7 @@ class RecurringSeriesService
             foreach ($toHold as $sequence => $occurrence) {
                 $start = $occurrence['starts_at'];
                 $deadline = $this->periodDeadline($start, $graceHours, $holdTtlMinutes);
-                $quote = $this->quotes->create($user->id, $organizationId, $series->court_id, $this->sessionSlotStarts($court, $start, $sessionMinutes));
+                $quote = $this->quotes->createForSlots($user->id, $organizationId, $series->court_id, $this->sessionSlotStarts($court, $start, $sessionMinutes));
                 $reservation = $this->reservations->hold($user, $organizationId, [
                     'quote_id' => $quote->id,
                     'metadata' => ['type' => 'recurring_series', 'series_id' => $series->id],
@@ -764,18 +765,16 @@ class RecurringSeriesService
 
     private function overlapReason(Court $court, Carbon $start, Carbon $end): ?string
     {
-        $startUtc = $start->copy()->utc();
-        $endUtc = $end->copy()->utc();
-
         $conflict = ReservationSlot::query()
             ->where('court_id', $court->id)
-            ->where('starts_at', '<', $endUtc)
-            ->where('ends_at', '>', $startUtc)
+            ->where('starts_at', '<', $end->copy()->utc())
+            ->where('ends_at', '>', $start->copy()->utc())
             ->whereIn('status', ['held', 'confirmed'])
             ->whereHas('reservation', fn ($reservation) => $reservation->whereIn('status', ['held', 'confirmed']))
             ->exists();
+        $stopped = OperationalStop::query()->affectingCourt($court, (int) $court->venue_id)->overlapping($start, $end)->exists();
 
-        return $conflict ? 'court_time_conflict' : null;
+        return $stopped ? 'court_paused' : ($conflict ? 'court_time_conflict' : null);
     }
 
     private function createInvoices(RecurringSeries $series): void

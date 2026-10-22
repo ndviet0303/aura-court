@@ -37,3 +37,13 @@ export function venueDate(value?: string | null): string {
 export function venueClockRange(start?: string | null, end?: string | null): string {
   return `${venueClock(start)} - ${venueClock(end)}`
 }
+
+/** ISO instant of a venue wall-clock "YYYY-MM-DDTHH:mm"; Vietnam has no DST, so the offset is fixed. */
+export function venueInstant(local: string): string {
+  return `${local}:00+07:00`
+}
+
+/** "YYYY-MM-DD HH:mm" on the venue clock, or '' without a value. */
+export function venueDateTime(value?: string | null): string {
+  return value ? `${venueDate(value)} ${venueClock(value)}` : ''
+}

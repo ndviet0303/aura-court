@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 
 class MarketplaceService
 {
+    public function __construct(private readonly ResalePriceCap $caps) {}
+
     /**
      * Lists one booked slot. A paid listing carries the seller's own receiving account; one without it
      * (seeded or older rows) stays visible but cannot be locked until the seller adds it.
@@ -36,7 +38,9 @@ class MarketplaceService
         $cutoffHours = $policy ? (int) data_get($policy->settings, 'transfer.cutoff_hours', 2) : 2;
         $cutoffAt = $entitlement->starts_at?->copy()->subHours(max(1, $cutoffHours));
         abort_unless($cutoffAt && $cutoffAt->isFuture(), 422, 'A slot may be listed only before the venue policy cutoff.');
-        abort_unless($askingPrice >= 0 && $askingPrice <= $entitlement->amount, 422, 'Asking price cannot exceed the original price.');
+        // D23: never above what the booking paid for this slot after its discounts.
+        $maxPrice = $this->caps->forEntitlement($entitlement);
+        abort_unless($askingPrice >= 0 && $askingPrice <= $maxPrice, 422, 'Giá pass tối đa của giờ chơi này là '.number_format($maxPrice, 0, ',', '.').' ₫, bằng số tiền bạn đã trả sau giảm giá.');
         abort_if(
             $askingPrice === 0 && ! ($policy && data_get($policy->settings, 'transfer.free_transfer_allowed', false)),
             422,
@@ -52,6 +56,7 @@ class MarketplaceService
             'fee_bps' => 0,
             'status' => 'listed',
             'cutoff_at' => $cutoffAt,
+            'metadata' => ['max_resale_price' => $maxPrice],
         ]);
         if ($askingPrice > 0 && $receiver !== null) {
             $listing->setSellerReceiver($receiver);

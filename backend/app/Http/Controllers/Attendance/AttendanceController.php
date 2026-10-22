@@ -113,26 +113,6 @@ class AttendanceController extends Controller
         return response()->json($result);
     }
 
-    public function reassignCourt(Request $request): JsonResponse
-    {
-        $organization = $this->organization($request);
-        $data = $request->validate([
-            'code' => 'required|string|max:255',
-            'new_court_id' => 'required|integer',
-            'reason' => 'required|string|max:1000',
-        ]);
-
-        $result = $this->attendance->reassignCourt(
-            staff: $request->user(),
-            organizationId: $organization->id,
-            codeOrId: $data['code'],
-            newCourtId: (int) $data['new_court_id'],
-            reason: $data['reason'],
-        );
-
-        return response()->json($result);
-    }
-
     public function show(Request $request, string $code): JsonResponse
     {
         $organization = $this->organization($request);

@@ -90,6 +90,15 @@ export type ReservationAttendance = {
   checked_out_at: string | null
 }
 
+// The newest affected-booking case from a venue or court change (detail API only).
+export type ReservationAffectedCase = {
+  status: 'pending' | 'contacting' | 'unreachable' | 'moved' | 'time_changed' | 'cancelled' | 'kept'
+  source_type: string
+  source_starts_at: string | null
+  source_ends_at: string | null
+  handled_at: string | null
+}
+
 export type Reservation = {
   id: number
   code: string
@@ -119,12 +128,34 @@ export type Reservation = {
   booker?: ReservationBooker | null
   payment?: ReservationPaymentResult | null
   attendance?: ReservationAttendance | null
+  latest_affected_case?: ReservationAffectedCase | null
+  // The voucher the booking holds or used (module 3 D17); null once its use was released.
+  voucher?: ReservationVoucher | null
 }
 
+export type ReservationVoucher = { name: string | null; code: string | null; discount: number }
+
+// A voucher priced for the selected interval (GET /venues/{venue}/vouchers, module 3 D10). id is the
+// program sent as voucher_program_id; code is set for a private code only.
+export type VoucherQuote = {
+  id: number
+  name: string
+  type: 'public' | 'private'
+  code: string | null
+  ends_at: string
+  rental: number
+  discount: number
+  total: number
+}
+
+// A 422 VOUCHER_INVALID: nothing was created; rental and total are the amounts without the voucher.
+export type VoucherInvalid = { reason: string; message: string; rental: number; total: number }
+
+// One interval on the 30-minute grid (design D14); a list of slot starts is refused with 422.
 export type PriceQuotePayload = {
   court_id: number
-  slots: string[]
-  coupon_code?: string
+  starts_at: string
+  ends_at: string
 }
 
 export type HoldReservationPayload = {
@@ -133,10 +164,11 @@ export type HoldReservationPayload = {
   quote_token?: string
   quote_id?: number
   court_id?: number
-  slots?: string[]
-  coupon_code?: string
-  loyalty_points?: number
-  loyalty_policy_version?: number
+  starts_at?: string
+  ends_at?: string
+  // A public program or a private code, never both (module 3 D17).
+  voucher_program_id?: number
+  voucher_code?: string
 }
 
 // New amounts of a 409 PRICE_CHANGED: nothing was created and the customer must confirm them first.

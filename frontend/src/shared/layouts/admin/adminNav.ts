@@ -58,10 +58,22 @@ export const navGroups: NavGroup[] = [
         icon: 'location_on',
       },
       {
+        id: 'courts-affected',
+        path: '/admin/affected-bookings',
+        labelKey: 'admin.nav.affectedBookings',
+        icon: 'event_busy',
+      },
+      {
         id: 'courts-pricing',
         path: '/admin/pricing',
         labelKey: 'admin.nav.pricingMatrix',
         icon: 'price_change',
+      },
+      {
+        id: 'courts-promotions',
+        path: '/admin/promotions',
+        labelKey: 'admin.nav.promotionPrograms',
+        icon: 'sell',
       },
     ],
   },
@@ -129,6 +141,13 @@ export const navGroups: NavGroup[] = [
         icon: 'report',
         capability: 'direct_owner_payments',
       },
+      // No capability: AdminLayout shows unlisted paths to platform admins only.
+      {
+        id: 'finance-platform-fees',
+        path: '/admin/platform-fees',
+        labelKey: 'admin.nav.platformFees',
+        icon: 'sell',
+      },
     ],
   },
   {
@@ -157,12 +176,36 @@ export const navGroups: NavGroup[] = [
       },
       { id: 'org-staff', path: '/admin/staff', labelKey: 'admin.nav.staffManage', icon: 'badge' },
       {
+        id: 'org-packages',
+        path: '/admin/packages',
+        labelKey: 'admin.nav.packages',
+        icon: 'workspace_premium',
+      },
+      {
+        id: 'org-finance',
+        path: '/admin/finance',
+        labelKey: 'admin.nav.ownerFinance',
+        icon: 'monitoring',
+      },
+      {
         id: 'org-kyc',
         path: '/admin/kyc',
         labelKey: 'admin.nav.kycVerification',
         icon: 'verified_user',
       },
       { id: 'org-users', path: '/admin/users', labelKey: 'admin.nav.users', icon: 'group' },
+      {
+        id: 'org-monitoring',
+        path: '/admin/monitoring/venues',
+        labelKey: 'admin.nav.venueMonitoring',
+        icon: 'travel_explore',
+      },
+      {
+        id: 'org-remediations',
+        path: '/admin/venue-remediations',
+        labelKey: 'admin.nav.venueRemediations',
+        icon: 'fact_check',
+      },
       {
         id: 'org-disputes',
         path: '/admin/disputes',
@@ -171,4 +214,31 @@ export const navGroups: NavGroup[] = [
       },
     ],
   },
+]
+
+// Owner-only: courts, contracts, venues, pricing, promotions, membership, organization profile & staff,
+// payment exceptions, venue packages, finance
+export const OWNER_ONLY_PATHS = [
+  '/admin/manage',
+  '/admin/contracts',
+  '/admin/pricing',
+  '/admin/promotions',
+  '/admin/membership',
+  '/admin/organization',
+  '/admin/staff',
+  '/admin/payment-exceptions',
+  '/admin/packages',
+  '/admin/finance',
+]
+
+// Owner or staff: schedule, venues (staff read-only), POS, shifts, inventory, tournaments
+export const OWNER_OR_STAFF_PATHS = [
+  '/admin/schedule',
+  '/admin/venues',
+  '/admin/affected-bookings',
+  '/admin/pos',
+  '/pos',
+  '/admin/shifts',
+  '/admin/inventory',
+  '/admin/tournaments',
 ]

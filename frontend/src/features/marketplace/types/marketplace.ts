@@ -33,7 +33,7 @@ export type ApiResaleListing = {
     starts_at: string
     ends_at: string
     amount: number
-    court?: { name: string; venue?: { name: string; address?: string | null } | null } | null
+    court?: { code: string; venue?: { name: string; address?: string | null } | null } | null
   } | null
   seller?: { id: number; name: string; avatar_url?: string | null } | null
 }
@@ -105,7 +105,8 @@ export interface UserBookingSlot {
   venueName: string
   dateStr: string
   timeSlot: string
-  originalPrice: number
+  /** What the booking paid for this slot after its discounts (design D23); the listing may not ask more. */
+  maxResalePrice: number
   startsAt: string
   eligible: boolean
   ineligibleReason?: string
@@ -136,13 +137,14 @@ export interface CreateListingPayload {
 export type ResaleSourceReservation = {
   id: number
   status: string
-  court?: { name: string; venue?: { name: string } | null } | null
+  court?: { code: string; venue?: { name: string } | null } | null
   entitlements?: {
     id: number
     status: string
     starts_at: string
     ends_at: string
     amount: number | null
-    court?: { name: string; venue?: { name: string } | null } | null
+    max_resale_price?: number
+    court?: { code: string; venue?: { name: string } | null } | null
   }[]
 }

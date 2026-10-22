@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Support\Facades\Cache;
 
@@ -170,22 +169,5 @@ class Organization extends Model
     public function isTerminatedPartner(): bool
     {
         return $this->partner_status === 'terminated';
-    }
-
-    public function subscriptions(): HasMany
-    {
-        return $this->hasMany(PlatformSubscription::class);
-    }
-
-    public function activeSubscription(): HasOne
-    {
-        return $this->hasOne(PlatformSubscription::class)
-            ->whereIn('status', ['active', 'trial'])
-            ->latestOfMany();
-    }
-
-    public function hasActiveSubscription(): bool
-    {
-        return $this->activeSubscription !== null && $this->activeSubscription->isValid();
     }
 }

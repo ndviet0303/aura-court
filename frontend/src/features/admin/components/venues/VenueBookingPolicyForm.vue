@@ -6,11 +6,9 @@ import type { VenueBookingPolicySettings, VenueBookingPolicyVersion } from '../.
 
 type PolicyDraft = {
   booking: {
-    hold_ttl_minutes: string
     max_days_ahead: string
     min_duration_minutes: string
     max_duration_minutes: string
-    require_continuity: string
   }
   arrival: {
     early_minutes: string
@@ -46,11 +44,9 @@ const validationError = ref('')
 function emptyDraft(): PolicyDraft {
   return {
     booking: {
-      hold_ttl_minutes: '',
       max_days_ahead: '',
       min_duration_minutes: '',
       max_duration_minutes: '',
-      require_continuity: '',
     },
     arrival: { early_minutes: '', late_grace_minutes: '', no_show_after_minutes: '' },
     recurring: { payment_policy: '', conflict_policy: '', overdue_release_hours: '' },
@@ -68,11 +64,9 @@ watch(
     draft.value = settings
       ? {
           booking: {
-            hold_ttl_minutes: String(settings.booking.hold_ttl_minutes),
             max_days_ahead: String(settings.booking.max_days_ahead),
             min_duration_minutes: String(settings.booking.min_duration_minutes),
             max_duration_minutes: String(settings.booking.max_duration_minutes),
-            require_continuity: String(settings.booking.require_continuity),
           },
           arrival: {
             early_minutes: String(settings.arrival.early_minutes),
@@ -98,11 +92,9 @@ watch(
 function save() {
   validationError.value = ''
   const values = [
-    draft.value.booking.hold_ttl_minutes,
     draft.value.booking.max_days_ahead,
     draft.value.booking.min_duration_minutes,
     draft.value.booking.max_duration_minutes,
-    draft.value.booking.require_continuity,
     draft.value.arrival.early_minutes,
     draft.value.arrival.late_grace_minutes,
     draft.value.arrival.no_show_after_minutes,
@@ -122,11 +114,9 @@ function save() {
   const number = (value: string) => Number(value)
   const settings: VenueBookingPolicySettings = {
     booking: {
-      hold_ttl_minutes: number(draft.value.booking.hold_ttl_minutes),
       max_days_ahead: number(draft.value.booking.max_days_ahead),
       min_duration_minutes: number(draft.value.booking.min_duration_minutes),
       max_duration_minutes: number(draft.value.booking.max_duration_minutes),
-      require_continuity: draft.value.booking.require_continuity === 'true',
     },
     arrival: {
       early_minutes: number(draft.value.arrival.early_minutes),
@@ -178,15 +168,6 @@ function save() {
       <fieldset>
         <legend>{{ t('admin.venues.bookingPolicyBooking') }}</legend>
         <label
-          >{{ t('admin.venues.bookingPolicyHoldTtl')
-          }}<input
-            v-model="draft.booking.hold_ttl_minutes"
-            type="number"
-            min="1"
-            max="1440"
-            required
-        /></label>
-        <label
           >{{ t('admin.venues.bookingPolicyMaxAhead')
           }}<input v-model="draft.booking.max_days_ahead" type="number" min="1" max="365" required
         /></label>
@@ -208,14 +189,6 @@ function save() {
             max="1440"
             required
         /></label>
-        <label
-          >{{ t('admin.venues.bookingPolicyContinuity')
-          }}<select v-model="draft.booking.require_continuity" required>
-            <option value="">—</option>
-            <option value="true">{{ t('admin.venues.bookingPolicyYes') }}</option>
-            <option value="false">{{ t('admin.venues.bookingPolicyNo') }}</option>
-          </select></label
-        >
       </fieldset>
       <fieldset>
         <legend>{{ t('admin.venues.bookingPolicyArrival') }}</legend>

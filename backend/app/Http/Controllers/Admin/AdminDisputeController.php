@@ -166,7 +166,7 @@ class AdminDisputeController extends Controller
             'reservation_id' => $reservation?->id,
             'reference_type' => $reservation ? 'reservation' : ($data['reference_type'] ?? 'booking'),
             'reference_id' => $reservation ? $reservation->id : ($data['reference_id'] ?? null),
-            'court_name' => $court?->name ?? 'N/A',
+            'court_name' => $court->code ?? 'N/A',
             'facility_name' => $venue?->name ?? 'N/A',
             'facility_operator_name' => $org?->name,
             'dispute_type' => $data['dispute_type'],

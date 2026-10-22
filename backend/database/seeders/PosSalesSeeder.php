@@ -320,7 +320,6 @@ class PosSalesSeeder extends Seeder
                 'vat_breakdown' => $quote['vat_breakdown'],
                 'receipt' => $receipt,
                 'expires_at' => $isQr ? $at->copy()->addMinutes(15)->toIso8601String() : null,
-                'coupon_usage' => null,
                 'membership_snapshot' => null,
             ],
             'created_at' => $at,

@@ -59,8 +59,8 @@ defineProps<{
       </div>
     </div>
 
-    <!-- Contact & Hotline Banner -->
-    <div class="contact-support-banner">
+    <!-- Contact & Hotline Banner: the venue's saved phone and email -->
+    <div v-if="venue.phone || venue.email" class="contact-support-banner">
       <div class="cs-left">
         <span class="material-symbols-outlined cs-icon">support_agent</span>
         <div class="cs-text">
@@ -70,9 +70,13 @@ defineProps<{
           >
         </div>
       </div>
-      <a href="tel:0988123456" class="btn-hotline">
+      <a v-if="venue.phone" :href="`tel:${venue.phone}`" class="btn-hotline">
         <span class="material-symbols-outlined icon-16">call</span>
-        <span>0988 123 456</span>
+        <span>{{ venue.phone }}</span>
+      </a>
+      <a v-if="venue.email" :href="`mailto:${venue.email}`" class="btn-hotline">
+        <span class="material-symbols-outlined icon-16">mail</span>
+        <span>{{ venue.email }}</span>
       </a>
     </div>
   </div>

@@ -10,13 +10,13 @@ use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
 use App\Models\User;
 use App\Models\Venue;
-use App\Services\Booking\QuoteCouponService;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Payment\ReservationPaymentService;
 use App\Services\Payment\WalletAvailabilityService;
 use App\Services\Payment\WalletPaymentService;
+use App\Services\Promotion\VoucherUsageService;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +28,6 @@ class ReservationService
         private readonly PriceQuoteService $quotes,
         private readonly VenueOperatingCalendar $operatingCalendar,
         private readonly SlotSelectionPolicy $slotPolicy,
-        private readonly QuoteCouponService $quoteCoupons,
         private readonly ReservationIntake $intake,
     ) {}
 
@@ -45,13 +44,7 @@ class ReservationService
         return $this->transactionWithConflictHandling(function () use ($user, $organizationId, $data, $actor): Reservation {
             $quote = $this->findQuote($user->id, $organizationId, $data);
             if (! $quote) {
-                $quote = $this->quotes->create(
-                    $user->id,
-                    $organizationId,
-                    (int) ($data['court_id'] ?? 0),
-                    (array) ($data['slots'] ?? []),
-                    $data['coupon_code'] ?? null,
-                );
+                $quote = $this->quotes->create($user->id, $organizationId, (int) ($data['court_id'] ?? 0), $data['starts_at'] ?? null, $data['ends_at'] ?? null);
                 $quote = PriceQuote::query()->withoutGlobalScope('tenant_isolation')->whereKey($quote->id)->lockForUpdate()->firstOrFail();
             }
 
@@ -63,50 +56,52 @@ class ReservationService
             if ($quote->expires_at?->isPast()) {
                 abort(409, 'Price quote has expired.');
             }
-            // Step-14: re-check the quote on the locked rows; lock the subscription before the court, as quote creation does, so bookings cannot deadlock.
-            $verifier = app(VerifyEffectiveBookingEligibility::class);
-            $verifier->getEntitlement((int) $quote->organization_id);
+            // Step-14: re-check the quote on the locked rows: the court, then the venue, under whose lock the gate reads the package (D9).
             $lockedCourt = Court::query()->whereKey($quote->court_id)->lockForUpdate()->first();
-            abort_unless($lockedCourt && $lockedCourt->is_active, 409, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
+            abort_unless($lockedCourt && $lockedCourt->status === Court::STATUS_ACTIVE, 409, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
             $lockedVenue = Venue::query()->whereKey($lockedCourt->venue_id)->lockForUpdate()->firstOrFail();
             // BR-20/21: staff book for a customer only at a venue assigned to them.
             abort_if($actor !== null && ! $actor->canOperateVenue($lockedVenue), 403, 'Bạn không được giao cơ sở này.');
-            $eligibility = $verifier->execute($lockedCourt->setRelation('venue', $lockedVenue));
+            $eligibility = app(VerifyEffectiveBookingEligibility::class)->execute($lockedCourt->setRelation('venue', $lockedVenue));
             abort_unless($eligibility['eligible'], 409, $eligibility['message'] ?? '');
+            $this->intake->recheckBookingTime($lockedCourt, $quote);
             $intervals = fn (): array => collect($quote->slot_snapshot)->map(fn (array $slotSnapshot): array => [
                 'start' => $slotSnapshot['starts_at'],
                 'end' => $slotSnapshot['ends_at'],
             ])->all();
             $this->intake->releaseOverdueHolds($lockedCourt, $intervals());
+            // A voucher is locked and judged before the amounts are compared and the deadline is set (D11, D20).
+            $voucher = $this->intake->voucherChoice($data);
+            $applied = $voucher === null ? null : $this->quotes->repriceWithVoucher($quote, $lockedCourt, $voucher);
             // The client always sends the amount it showed; recurring periods price their own fresh quote.
             if (isset($data['expected_total'])) {
-                $this->quotes->reprice($quote, $lockedCourt, $user);
+                if ($voucher === null) {
+                    $this->quotes->reprice($quote, $lockedCourt);
+                }
                 $this->intake->assertAgreedAmount((int) $data['expected_total'], (int) $quote->subtotal, (int) $quote->total_amount);
             }
-            $couponUsage = $this->quoteCoupons->reserve($quote, $user, $lockedCourt);
             $directOwnerPayments = app(FeatureFlagService::class)
                 ->enabled('direct_owner_payments', (int) $lockedVenue->organization_id);
 
             $this->slotPolicy->assertAllowed($lockedCourt, $intervals());
 
             $bookingPolicySnapshot = null;
-            $holdExpiresAt = $quote->expires_at;
+            // A legacy hold keeps the quote's expiry, never past the voucher's end (D17).
+            $voucherEndsAt = $this->intake->voucherEndsAt($applied);
+            $holdExpiresAt = $voucherEndsAt !== null && $voucherEndsAt->lessThan($quote->expires_at) ? $voucherEndsAt : $quote->expires_at;
             if ($directOwnerPayments) {
                 $bookingPolicySnapshot = $this->intake->bookingPolicySnapshot($lockedVenue);
                 // Recurring periods hold until their own period deadline (design D3 leaves them out).
                 if (! empty($data['hold_expires_at_override'])) {
                     $holdExpiresAt = Carbon::parse($data['hold_expires_at_override']);
                 } elseif ((int) $quote->total_amount > 0) {
-                    $holdExpiresAt = $this->intake->paymentDeadline($quote);
+                    $holdExpiresAt = $this->intake->paymentDeadline($quote, $applied);
                 }
             }
 
             $metadata = [...(array) ($data['metadata'] ?? []), 'booker' => $this->intake->booker($user)];
             if ($quote->benefit_snapshot) {
                 $metadata['benefit_snapshot'] = $quote->benefit_snapshot;
-            }
-            if ($couponUsage !== null) {
-                $metadata['coupon_usage'] = $couponUsage;
             }
             if ($directOwnerPayments) {
                 $metadata['booking_policy_snapshot'] = $bookingPolicySnapshot;
@@ -155,6 +150,14 @@ class ReservationService
                 ]);
             }
 
+            if ($voucher !== null) {
+                // Before payment starts; only a direct 0đ booking is confirmed here and uses it at once (D11).
+                app(VoucherUsageService::class)->hold($reservation, $voucher);
+                if ($reservation->status === 'confirmed') {
+                    app(VoucherUsageService::class)->consume($reservation, now());
+                }
+            }
+
             $quote->update([
                 'status' => 'accepted',
                 'accepted_at' => now(),
@@ -176,9 +179,11 @@ class ReservationService
         });
     }
 
+    /** A voucher that no longer applies releases the booking and is thrown once that release has committed (D12). */
     public function confirm(Reservation $reservation): Reservation
     {
-        return DB::transaction(function () use ($reservation): Reservation {
+        $refused = null;
+        $confirmed = DB::transaction(function () use ($reservation, &$refused): Reservation {
             $reservation = Reservation::query()->whereKey($reservation->id)->lockForUpdate()->firstOrFail();
             if ($reservation->status === 'confirmed') {
                 return $reservation->load(['court.venue', 'quote', 'slots', 'entitlements']);
@@ -190,6 +195,11 @@ class ReservationService
             if ($reservation->hold_expires_at?->isPast()) {
                 $this->release($reservation, 'expired');
                 abort(409, 'Reservation hold has expired.');
+            }
+            // Before the wallet is debited: a refused voucher releases the booking and debits nothing.
+            $confirmedAt = now();
+            if ($refused = app(HeldReservationRelease::class)->consumeVoucher($reservation, $confirmedAt)) {
+                return $reservation;
             }
             $totalAmount = (int) $reservation->total_amount;
             if ($totalAmount > 0) {
@@ -222,19 +232,20 @@ class ReservationService
                 }
             }
 
-            $reservation->update(['status' => 'confirmed', 'confirmed_at' => now()]);
+            $reservation->update(['status' => 'confirmed', 'confirmed_at' => $confirmedAt]);
             $reservation->slots()->where('status', 'held')->update(['status' => 'confirmed']);
             $reservation->entitlements()->where('status', 'held')->update(['status' => 'active']);
 
             return $reservation->fresh(['court.venue', 'quote', 'slots', 'entitlements']);
         });
+        throw_if($refused !== null, $refused);
+
+        return $confirmed;
     }
 
     public function release(Reservation $reservation, string $status): void
     {
-        if ($reservation->status === 'held') {
-            $this->quoteCoupons->release($reservation);
-        }
+        app(VoucherUsageService::class)->release($reservation);
         $reservation->update([
             'status' => $status,
             'cancelled_at' => $status === 'cancelled' ? now() : $reservation->cancelled_at,

@@ -23,7 +23,7 @@ class WaitlistService
             throw ValidationException::withMessages(['starts_at' => 'Giờ đăng ký chờ phải bắt đầu tròn giờ và chưa qua.']);
         }
 
-        $court = Court::query()->whereKey($courtId)->where('is_active', true)->firstOrFail();
+        $court = Court::query()->whereKey($courtId)->where('status', Court::STATUS_ACTIVE)->firstOrFail();
         $startUtc = $start->copy()->utc();
         $occupied = ReservationSlot::query()
             ->where('court_id', $court->id)
@@ -61,7 +61,7 @@ class WaitlistService
             $entry->user->notify(new AuraBookingNotification(
                 'waitlist_available',
                 'Giờ bạn chờ đã trống',
-                "{$entry->court->name} lúc ".($entry->starts_at?->setTimezone(config('app.timezone'))->format('d/m H:i')).' vừa có người hủy. Hãy đặt ngay trước khi người khác giữ giờ này.',
+                "{$entry->court->code} lúc ".($entry->starts_at?->setTimezone(config('app.timezone'))->format('d/m H:i')).' vừa có người hủy. Hãy đặt ngay trước khi người khác giữ giờ này.',
                 '/courts/'.$entry->court_id.'/schedule',
             ));
         }

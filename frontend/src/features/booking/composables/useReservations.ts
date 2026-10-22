@@ -5,15 +5,8 @@ import type { Court } from '@/features/court/types/court'
 import type { Reservation, PriceQuote } from '../types/reservation'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { i18n, formatCurrency, getCurrentLocale } from '@/i18n'
-import {
-  amountPayable,
-  bookingErrorMessage,
-  displayCode,
-  displayStatus,
-  loyaltyFields,
-  type LoyaltySelection,
-} from '../utils/reservation'
-import { venueClock } from '@/core/utils/venueTime'
+import { bookingErrorMessage, displayCode, displayStatus } from '../utils/reservation'
+import { venueClock, venueInstant } from '@/core/utils/venueTime'
 import { usePriceChange } from './usePriceChange'
 
 const t = (key: string, params?: Record<string, unknown>) => i18n.global.t(key, params || {})
@@ -142,7 +135,8 @@ export function useReservations() {
     }
   }
 
-  async function calculateQuote() {
+  // One interval from the chosen start, `minutes` long, on the venue clock (design D14).
+  async function calculateQuote(minutes = 60) {
     if (!selectedCourtId.value || !selectedDate.value || !selectedTimeSlot.value) {
       error.value = t('reservations.messages.selectCourtAndTime')
       return
@@ -154,10 +148,11 @@ export function useReservations() {
     price.clear()
 
     try {
-      const slotIso = new Date(`${selectedDate.value}T${selectedTimeSlot.value}:00`).toISOString()
+      const startsAt = venueInstant(`${selectedDate.value}T${selectedTimeSlot.value}`)
       const response = await bookingApi.getPriceQuote({
         court_id: Number(selectedCourtId.value),
-        slots: [slotIso],
+        starts_at: startsAt,
+        ends_at: new Date(Date.parse(startsAt) + minutes * 60000).toISOString(),
       })
 
       if (response && response.quote) {
@@ -198,25 +193,19 @@ export function useReservations() {
     }
   }
 
-  // Sends the amount payable shown (quote total less the points discount). A resubmission at a confirmed
-  // new price (agreedTotal) has another body, so it goes under a fresh Idempotency-Key.
-  async function checkoutReservation(loyaltyPayload?: LoyaltySelection, agreedTotal?: number) {
+  // Sends the quote total shown, or the confirmed new price (agreedTotal) after PRICE_CHANGED.
+  async function checkoutReservation(agreedTotal?: number) {
     if (!activeQuote.value) return
     holdingReservation.value = true
     error.value = ''
     notice.value = ''
 
     try {
-      const { reservation } = await bookingApi.checkoutReservation(
-        {
-          quote_token: activeQuote.value.quote_token,
-          court_id: selectedCourtId.value ?? undefined,
-          expected_total:
-            agreedTotal ?? amountPayable(activeQuote.value.total_amount, loyaltyPayload),
-          ...loyaltyFields(loyaltyPayload),
-        },
-        agreedTotal === undefined ? loyaltyPayload?.idempotency_key : undefined,
-      )
+      const { reservation } = await bookingApi.checkoutReservation({
+        quote_token: activeQuote.value.quote_token,
+        court_id: selectedCourtId.value ?? undefined,
+        expected_total: agreedTotal ?? activeQuote.value.total_amount,
+      })
       const code = reservation.code
       activeQuote.value = null
       clearInterval(quoteTimerInterval)
@@ -230,7 +219,7 @@ export function useReservations() {
         activeTab.value = 'confirmed'
       }
     } catch (cause: unknown) {
-      const again = (total: number) => checkoutReservation(loyaltyPayload, total)
+      const again = (total: number) => checkoutReservation(total)
       if (!price.caught(cause, again)) {
         error.value = bookingErrorMessage(cause, t('reservations.messages.checkoutError'))
       }
@@ -266,7 +255,7 @@ export function useReservations() {
       list = list.filter(
         (r) =>
           displayCode(r).toLowerCase().includes(q) ||
-          r.court?.name?.toLowerCase().includes(q) ||
+          r.court?.code?.toLowerCase().includes(q) ||
           r.court?.venue?.name?.toLowerCase().includes(q),
       )
     }

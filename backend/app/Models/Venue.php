@@ -2,64 +2,62 @@
 
 namespace App\Models;
 
+use Database\Factories\VenueFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Spatie\Translatable\HasTranslations;
 
-#[Fillable(['organization_id', 'name', 'slug', 'address', 'city', 'district', 'ward', 'phone', 'email', 'description', 'images', 'google_maps_url', 'latitude', 'longitude', 'amenities', 'is_active', 'status', 'status_reason', 'published_at', 'approved_public_snapshot', 'current_publication_revision_id', 'current_receiving_connection_id'])]
+#[Fillable(['organization_id', 'name', 'slug', 'address', 'city', 'district', 'ward', 'phone', 'email', 'description', 'images', 'google_maps_url', 'latitude', 'longitude', 'amenities', 'status', 'status_reason', 'published_at', 'current_receiving_connection_id'])]
 class Venue extends Model
 {
-    use HasTranslations;
+    /** @use HasFactory<VenueFactory> */
+    use HasFactory, HasTranslations;
+
+    /** D3: shared with courts. Suspension is a separate record, see activeSuspension(). */
+    public const STATUS_INACTIVE = 'inactive';
+
+    public const STATUS_ACTIVE = 'active';
+
+    public const STATUS_PAUSED = 'paused';
+
+    public const STATUS_CLOSED = 'closed';
+
+    public const STATUSES = [self::STATUS_INACTIVE, self::STATUS_ACTIVE, self::STATUS_PAUSED, self::STATUS_CLOSED];
 
     public array $translatable = ['name'];
 
     protected $appends = ['share_url', 'timezone'];
 
+    /** D1: no approved public version any more; the columns stay only until the contract migration drops them. */
+    protected $hidden = ['approved_public_snapshot', 'current_publication_revision_id'];
+
     protected function casts(): array
     {
         return [
-            'is_active' => 'boolean',
             'amenities' => 'array',
             'latitude' => 'float',
             'longitude' => 'float',
             'published_at' => 'datetime',
-            'approved_public_snapshot' => 'array',
             'images' => 'array',
         ];
     }
 
+    // ponytail: read-only mirror of status for frontend views that still read is_active; drop it with the is_active column once they read status.
     public function getIsActiveAttribute(): bool
     {
-        if (isset($this->attributes['status'])) {
-            return in_array($this->attributes['status'], ['published', 'active'], true);
-        }
-
-        return (bool) ($this->attributes['is_active'] ?? false);
+        return ($this->attributes['status'] ?? null) === self::STATUS_ACTIVE;
     }
 
-    public function setIsActiveAttribute($value): void
-    {
-        $this->attributes['is_active'] = (bool) $value;
-        if ($value && (! isset($this->attributes['status']) || $this->attributes['status'] === 'temporarily_closed')) {
-            $this->attributes['status'] = 'published';
-        } elseif (! $value && in_array($this->attributes['status'] ?? null, ['published', 'active'], true)) {
-            $this->attributes['status'] = 'temporarily_closed';
-        }
-    }
-
+    /** BR-26: only what the owner declared; no saved amenities means none, never a default list. */
     public function getAmenitiesAttribute($value): array
     {
-        if ($value !== null) {
-            $decoded = is_string($value) ? json_decode($value, true) : $value;
-            if (is_array($decoded) && count($decoded) > 0) {
-                return $decoded;
-            }
-        }
+        $decoded = is_string($value) ? json_decode($value, true) : $value;
 
-        return ['parking', 'wifi', 'shower', 'cafe', 'shop', 'lounge'];
+        return is_array($decoded) ? $decoded : [];
     }
 
     public function getTimezoneAttribute(): string
@@ -75,19 +73,22 @@ class Venue extends Model
         return $this->belongsTo(Organization::class);
     }
 
+    /** @return HasMany<Court, $this> */
     public function courts(): HasMany
     {
         return $this->hasMany(Court::class);
     }
 
+    /** @return HasMany<PriceTable, $this> */
+    public function priceTables(): HasMany
+    {
+        return $this->hasMany(PriceTable::class);
+    }
+
+    // ponytail: only the legacy partner:backfill-mappings / partner:reconcile-legacy commands still read revisions; drop with venue_publication_revisions in the contract migration.
     public function publicationRevisions(): HasMany
     {
         return $this->hasMany(VenuePublicationRevision::class)->orderBy('revision_number', 'desc');
-    }
-
-    public function currentPublicationRevision(): BelongsTo
-    {
-        return $this->belongsTo(VenuePublicationRevision::class, 'current_publication_revision_id');
     }
 
     public function bookingPolicyVersions(): HasMany
@@ -107,49 +108,66 @@ class Venue extends Model
         return $this->belongsTo(ReceivingConnection::class, 'current_receiving_connection_id');
     }
 
-    public function isPublished(): bool
+    /** @return HasOne<VenuePackage, $this> */
+    public function currentPackage(): HasOne
     {
-        return in_array($this->status ?? 'draft', ['published', 'active'], true);
+        return $this->hasOne(VenuePackage::class)->latestOfMany();
     }
 
-    public function isDraft(): bool
+    /** @return HasMany<VenuePackage, $this> */
+    public function packages(): HasMany
     {
-        return ($this->status ?? 'draft') === 'draft';
+        return $this->hasMany(VenuePackage::class);
     }
 
-    public function isPendingPublication(): bool
+    /** @return HasMany<PackagePaymentRequest, $this> */
+    public function packagePaymentRequests(): HasMany
     {
-        return $this->status === 'pending_publication';
+        return $this->hasMany(PackagePaymentRequest::class);
     }
 
-    public function isRevisionRequired(): bool
+    /**
+     * The venue's weekly schedule (scope_key 'venue') and court overrides ('court:{id}').
+     *
+     * @return HasMany<VenueOperatingSchedule, $this>
+     */
+    public function operatingSchedules(): HasMany
     {
-        return $this->status === 'revision_required';
+        return $this->hasMany(VenueOperatingSchedule::class);
+    }
+
+    /** @return HasMany<VenueSuspension, $this> */
+    public function suspensions(): HasMany
+    {
+        return $this->hasMany(VenueSuspension::class);
+    }
+
+    /** @return HasOne<VenueSuspension, $this> */
+    public function activeSuspension(): HasOne
+    {
+        return $this->hasOne(VenueSuspension::class)->whereNull('lifted_at');
+    }
+
+    /** @return HasMany<OperationalStop, $this> */
+    public function operationalStops(): HasMany
+    {
+        return $this->hasMany(OperationalStop::class);
     }
 
     public function isActive(): bool
     {
-        return $this->status === 'active';
-    }
-
-    public function isTemporarilyClosed(): bool
-    {
-        return $this->status === 'temporarily_closed';
-    }
-
-    public function isSuspended(): bool
-    {
-        return $this->status === 'suspended';
+        return $this->status === self::STATUS_ACTIVE;
     }
 
     public function isClosed(): bool
     {
-        return $this->status === 'closed';
+        return $this->status === self::STATUS_CLOSED;
     }
 
-    public function isArchived(): bool
+    /** Always a fresh query, so a check under a row lock sees a suspension committed meanwhile. */
+    public function isSuspended(): bool
     {
-        return $this->status === 'archived';
+        return $this->activeSuspension()->exists();
     }
 
     public function getShareUrlAttribute(): string
@@ -160,12 +178,6 @@ class Venue extends Model
     public function toArray()
     {
         $attributes = parent::toArray();
-        $publicSnapshot = request()
-            && request()->is('api/venues', 'api/venues/*', 'api/*/venues', 'api/*/venues/*')
-            && $this->isPublished()
-            && is_array($this->approved_public_snapshot['venue'] ?? null)
-                ? $this->approved_public_snapshot['venue']
-                : null;
 
         if (request() && request()->is('api/admin/*')) {
             return $attributes;
@@ -181,10 +193,6 @@ class Venue extends Model
                     ?? ($translations['en']
                     ?? (is_array($translations) && count($translations) > 0 ? reset($translations) : ''))));
             }
-        }
-
-        if ($publicSnapshot !== null) {
-            $attributes = array_merge($attributes, $publicSnapshot);
         }
 
         return $attributes;

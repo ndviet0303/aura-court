@@ -1,5 +1,6 @@
 // Buttons
 export { default as AuraButton } from './buttons/AuraButton.vue'
+export { default as ExportButton } from './buttons/ExportButton.vue'
 
 // Forms & Inputs
 export { default as SelectDropdown } from './forms/SelectDropdown.vue'

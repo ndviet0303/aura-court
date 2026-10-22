@@ -17,8 +17,8 @@ defineProps<{
       <RouterLink to="/courts" class="bc-link">{{ $t('directions.breadcrumbCourts') }}</RouterLink>
       <template v-if="matchedCourt">
         <span class="material-symbols-outlined bc-sep">chevron_right</span>
-        <RouterLink :to="`/courts/${matchedCourt.slug || matchedCourt.id}`" class="bc-link">
-          {{ matchedCourt.name }}
+        <RouterLink :to="`/courts/${matchedCourt.id}`" class="bc-link">
+          {{ matchedCourt.code }}
         </RouterLink>
       </template>
       <span class="material-symbols-outlined bc-sep">chevron_right</span>
@@ -42,20 +42,16 @@ defineProps<{
           <span>{{ venue.address || 'Hà Nội' }}</span>
         </p>
 
-        <!-- Amenity Badges -->
-        <div class="venue-tags-row">
-          <span class="amenity-pill">
-            <span class="material-symbols-outlined icon-14">sports_tennis</span>
-            <span>{{ $t('directions.amenityBwf') }}</span>
-          </span>
-          <span class="amenity-pill">
-            <span class="material-symbols-outlined icon-14">local_parking</span>
-            <span>{{ $t('directions.amenityParking') }}</span>
-          </span>
-          <span class="amenity-pill">
-            <span class="material-symbols-outlined icon-14">ac_unit</span>
-            <span>{{ $t('directions.amenityAc') }}</span>
-          </span>
+        <!-- The venue's saved photos; its declared amenities show below the map -->
+        <div v-if="venue.images?.length" class="venue-photos-row">
+          <img
+            v-for="src in venue.images"
+            :key="src"
+            :src="src"
+            :alt="venue.name"
+            class="venue-photo"
+            loading="lazy"
+          />
         </div>
       </div>
     </div>
@@ -201,38 +197,19 @@ defineProps<{
   color: #e58e9f;
 }
 
-.venue-tags-row {
+.venue-photos-row {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
+  overflow-x: auto;
   padding-top: 4px;
 }
 
-.amenity-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
+.venue-photo {
+  width: 120px;
+  height: 80px;
+  flex-shrink: 0;
+  object-fit: cover;
   border-radius: 8px;
-  background: var(--surface-subtle, rgba(0, 0, 0, 0.04));
   border: 1px solid var(--outline);
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-:global(html.dark) .amenity-pill {
-  background: #231c20;
-  border-color: #382d33;
-  color: #c4b9be;
-}
-
-.icon-14 {
-  font-size: 14px;
-  color: var(--primary);
-}
-
-:global(html.dark) .icon-14 {
-  color: #e58e9f;
 }
 </style>

@@ -134,7 +134,7 @@ function openInvoiceDetail(inv: { id: number | string; uuid?: string } | number 
           </div>
           <div class="court-details">
             <h4 class="court-heading">
-              {{ s.court?.name || `Sân #${s.court_id}` }}
+              {{ s.court?.code || `Sân #${s.court_id}` }}
             </h4>
             <p v-if="s.court?.venue" class="venue-line">
               <span class="material-symbols-outlined loc-pin">location_on</span>

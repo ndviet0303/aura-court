@@ -121,7 +121,7 @@ function formatFrequency(freq?: string): string {
         <span class="material-symbols-outlined court-sport-icon">sports_tennis</span>
       </div>
       <div class="court-meta">
-        <h2 class="court-title">{{ invoice.series?.court?.name || 'Chưa có thông tin sân' }}</h2>
+        <h2 class="court-title">{{ invoice.series?.court?.code || 'Chưa có thông tin sân' }}</h2>
         <p class="venue-sub">
           <span class="material-symbols-outlined loc-icon">location_on</span>
           <span>{{ invoice.series?.court?.venue?.name || 'Chưa có thông tin cơ sở' }}</span>

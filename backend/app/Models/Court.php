@@ -2,54 +2,52 @@
 
 namespace App\Models;
 
-use App\Events\CourtStatusUpdated;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
 use Spatie\Translatable\HasTranslations;
 
-#[Fillable(['name', 'slug', 'venue_id', 'sport_type', 'slot_duration', 'description', 'image_url', 'amenities', 'surface_type', 'capacity', 'is_active'])]
+#[Fillable(['code', 'venue_id', 'sport_type', 'slot_duration', 'description', 'images', 'amenities', 'surface_type', 'capacity', 'status'])]
 class Court extends Model
 {
     use HasTranslations;
 
+    /** D3: the same four statuses as venues; see Venue::STATUSES and LifecycleGuard. */
+    public const STATUS_INACTIVE = Venue::STATUS_INACTIVE;
+
+    public const STATUS_ACTIVE = Venue::STATUS_ACTIVE;
+
+    public const STATUS_PAUSED = Venue::STATUS_PAUSED;
+
+    public const STATUS_CLOSED = Venue::STATUS_CLOSED;
+
+    public const STATUSES = Venue::STATUSES;
+
     public const SPORT_TYPES = ['badminton', 'football_5v5', 'football_7v7', 'tennis', 'pickleball', 'basketball', 'volleyball', 'table_tennis'];
 
-    public const SLOT_DURATIONS = [30, 45, 60, 90, 120];
+    public const SLOT_DURATIONS = [30, 60, 90, 120];
 
-    public array $translatable = ['name', 'description'];
+    public array $translatable = ['description'];
 
     /** Mirrors the column defaults so a court built in memory already has its sport and slot length. */
-    protected $attributes = ['sport_type' => 'badminton', 'slot_duration' => 60];
+    protected $attributes = ['sport_type' => 'badminton', 'slot_duration' => 60, 'images' => '[]'];
 
     protected $appends = ['timezone'];
+
+    /**
+     * D9, D11: code replaced name and slug, images replaced the single image_url; those columns stay unread until the
+     * contract step. code_normalized only backs the code's uniqueness within the venue.
+     */
+    protected $hidden = ['name', 'slug', 'image_url', 'code_normalized'];
 
     protected static function booted(): void
     {
         // Keep model-level seeders and existing integrations compatible while
-        // every persisted court still receives a real venue_id and clean slug.
+        // every persisted court still receives a real venue_id.
         static::creating(function (Court $court): void {
             if (! $court->venue_id) {
                 $court->venue_id = Venue::query()->where('slug', 'aura-court')->value('id');
-            }
-            if (! $court->slug && $court->name) {
-                $court->slug = Str::slug($court->name);
-            }
-        });
-
-        static::updating(function (Court $court): void {
-            if ($court->isDirty('name') && ! $court->slug) {
-                $court->slug = Str::slug($court->name);
-            }
-            if ($court->isDirty('is_active') && $court->venue_id) {
-                CourtStatusUpdated::dispatch(
-                    venueId: (int) $court->venue_id,
-                    courtId: (int) $court->id,
-                    status: $court->is_active ? 'available' : 'maintenance',
-                    metadata: ['court_id' => $court->id, 'is_active' => $court->is_active]
-                );
             }
         });
     }
@@ -57,11 +55,17 @@ class Court extends Model
     protected function casts(): array
     {
         return [
-            'is_active' => 'boolean',
             'amenities' => 'array',
+            'images' => 'array',
             'capacity' => 'integer',
             'slot_duration' => 'integer',
         ];
+    }
+
+    // ponytail: read-only mirror of status for frontend views that still read is_active; drop it with the is_active column once they read status.
+    public function getIsActiveAttribute(): bool
+    {
+        return ($this->attributes['status'] ?? null) === self::STATUS_ACTIVE;
     }
 
     public function getAmenitiesAttribute($value): array
@@ -76,7 +80,7 @@ class Court extends Model
             return $this->venue->amenities;
         }
 
-        return ['parking', 'wifi', 'shower', 'cafe', 'shop', 'lounge'];
+        return [];
     }
 
     public function getTimezoneAttribute(): string
@@ -86,9 +90,10 @@ class Court extends Model
             ?? 'Asia/Ho_Chi_Minh';
     }
 
-    public function priceSlots(): HasMany
+    /** @return HasMany<CourtPriceTableLink, $this> */
+    public function priceTableLinks(): HasMany
     {
-        return $this->hasMany(CourtPriceSlot::class);
+        return $this->hasMany(CourtPriceTableLink::class);
     }
 
     /** @return BelongsTo<Venue, $this> */
@@ -100,6 +105,12 @@ class Court extends Model
     public function blocks(): HasMany
     {
         return $this->hasMany(CourtBlock::class);
+    }
+
+    /** @return HasMany<OperationalStop, $this> */
+    public function operationalStops(): HasMany
+    {
+        return $this->hasMany(OperationalStop::class);
     }
 
     public function bookings(): HasMany
@@ -117,9 +128,11 @@ class Court extends Model
         return $this->hasMany(Review::class);
     }
 
+    /** D9: a court is addressed by its id only; a former slug URL is a 404, not a database error. */
     public function resolveRouteBinding($value, $field = null)
     {
-        return $this->where(ctype_digit((string) $value) ? 'id' : 'slug', $value)->first();
+        // (int) caps an id past bigint at PHP_INT_MAX, so it finds nothing instead of a PostgreSQL range error (500).
+        return ctype_digit((string) $value) ? $this->whereKey((int) $value)->first() : null;
     }
 
     public function toArray()

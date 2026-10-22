@@ -8,11 +8,10 @@ use App\Models\Journal;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
 use App\Models\OwnerRefundObligation;
+use App\Models\PackagePaymentReceipt;
 use App\Models\Payment;
-use App\Models\PlatformProviderReceipt;
 use App\Models\ProviderEvent;
 use App\Models\Reservation;
-use Illuminate\Database\QueryException;
 
 class FinancialPostingService
 {
@@ -97,7 +96,7 @@ class FinancialPostingService
         }
         $accounts = $this->ledger->systemAccounts((int) $receipt->organization_id);
 
-        return $this->postEntityJournal([
+        return $this->ledger->postOnce([
             'organization_id' => $receipt->organization_id,
             'ledger_entity' => 'owner',
             'payment_model' => 'direct_owner_v1',
@@ -120,42 +119,29 @@ class FinancialPostingService
         ]);
     }
 
-    public function postPlatformSubscriptionReceipt(PlatformProviderReceipt $receipt): Journal
+    /** D6: an applied package fee is AuraCourt's revenue in the organization's books, never booking money. */
+    public function postPackageFeeReceipt(PackagePaymentReceipt $receipt): Journal
     {
-        if (! $receipt->verified_at || (int) $receipt->amount <= 0) {
-            throw new \InvalidArgumentException('Only a verified platform subscription receipt can be posted.');
+        $request = $receipt->paymentRequest()->firstOrFail();
+        if ($receipt->outcome !== PackagePaymentReceipt::OUTCOME_APPLIED || $receipt->amount !== $request->amount) {
+            throw new \InvalidArgumentException('Only an applied package fee receipt can be posted.');
         }
+        $accounts = $this->ledger->systemAccounts($request->organization_id);
+        $source = ['source_type' => PackagePaymentReceipt::class, 'source_id' => $receipt->id];
 
-        $attempt = $receipt->paymentAttempt()->firstOrFail();
-        if (
-            $attempt->status !== 'succeeded'
-            || (int) $attempt->amount !== (int) $receipt->amount
-            || $attempt->currency !== $receipt->currency
-            || $attempt->provider !== $receipt->provider
-        ) {
-            throw new \InvalidArgumentException('Platform receipt does not match its verified payment attempt.');
-        }
-        $accounts = $this->ledger->systemAccounts((int) $attempt->organization_id);
-
-        return $this->postEntityJournal([
-            'organization_id' => $attempt->organization_id,
+        return $this->ledger->postOnce([
+            'organization_id' => $request->organization_id,
             'ledger_entity' => 'platform',
-            'payment_model' => 'platform_subscription_v1',
-            'event_type' => 'platform.subscription_receipt',
-            'event_id' => "platform-subscription-receipt:{$receipt->id}",
-            'reference' => $attempt->reference_code,
-            'currency' => $receipt->currency,
-            'description' => 'Verified platform subscription receipt',
-            'metadata' => [
-                'provider' => $receipt->provider,
-                'payment_attempt_id' => $attempt->id,
-                'subscription_id' => $attempt->subscription_id,
-                'receipt_id' => $receipt->id,
-                'commission' => 0,
-            ],
+            'payment_model' => 'venue_package_v1',
+            'event_type' => 'platform.package_fee_receipt',
+            'event_id' => "package-fee-receipt:{$receipt->id}",
+            'reference' => $request->request_code,
+            'currency' => 'VND',
+            'description' => 'Applied venue package fee receipt',
+            'metadata' => ['provider' => $receipt->provider, 'package_payment_request_id' => $request->id, 'venue_id' => $request->venue_id, 'receipt_id' => $receipt->id, 'commission' => 0],
         ], [
-            ['account_id' => $accounts['platform_bank_cash']->id, 'side' => 'debit', 'amount' => (int) $receipt->amount, 'source_type' => PlatformProviderReceipt::class, 'source_id' => $receipt->id],
-            ['account_id' => $accounts['platform_subscription_revenue']->id, 'side' => 'credit', 'amount' => (int) $receipt->amount, 'source_type' => PlatformProviderReceipt::class, 'source_id' => $receipt->id],
+            ['account_id' => $accounts['platform_bank_cash']->id, 'side' => 'debit', 'amount' => $receipt->amount] + $source,
+            ['account_id' => $accounts['platform_subscription_revenue']->id, 'side' => 'credit', 'amount' => $receipt->amount] + $source,
         ]);
     }
 
@@ -186,7 +172,7 @@ class FinancialPostingService
 
         $accounts = $this->ledger->systemAccounts((int) $refund->organization_id);
 
-        return $this->postEntityJournal([
+        return $this->ledger->postOnce([
             'organization_id' => $refund->organization_id,
             'ledger_entity' => 'owner',
             'payment_model' => 'direct_owner_v1',
@@ -522,33 +508,5 @@ class FinancialPostingService
             'description' => 'Gross payment collection',
             'metadata' => $metadata,
         ], $entries);
-    }
-
-    private function postEntityJournal(array $attributes, array $entries): Journal
-    {
-        $existing = Journal::query()
-            ->where('organization_id', $attributes['organization_id'])
-            ->where('event_type', $attributes['event_type'])
-            ->where('event_id', $attributes['event_id'])
-            ->first();
-        if ($existing) {
-            return $existing->load('entries');
-        }
-
-        try {
-            return $this->ledger->post($attributes, $entries);
-        } catch (QueryException $exception) {
-            $message = strtolower($exception->getMessage());
-            if (! str_contains($message, 'journals') || (! str_contains($message, 'unique') && ! str_contains($message, 'duplicate'))) {
-                throw $exception;
-            }
-
-            return Journal::query()
-                ->where('organization_id', $attributes['organization_id'])
-                ->where('event_type', $attributes['event_type'])
-                ->where('event_id', $attributes['event_id'])
-                ->firstOrFail()
-                ->load('entries');
-        }
     }
 }

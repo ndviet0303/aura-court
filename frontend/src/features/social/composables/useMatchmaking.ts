@@ -43,7 +43,7 @@ interface RawMatchRecord {
   category?: DropInSessionCategory
   skill_levels?: BadmintonSkillLabel[]
   bill?: DropInSessionBill
-  court?: { id?: number; name?: string; venue?: { id?: number; name?: string; city?: string } }
+  court?: { id?: number; code?: string; venue?: { id?: number; name?: string; city?: string } }
   venue?: { id?: number; name?: string; city?: string }
   creator?: { id?: number; name?: string; avatar_url?: string }
   host?: { id?: number; name?: string }
@@ -201,7 +201,7 @@ export function useMatchmaking() {
           (metadata.venue_name as string) ||
           'Aura Sport Hub'
         const court =
-          m.court?.name ||
+          m.court?.code ||
           m.court_name ||
           (availability.court_name as string) ||
           (metadata.court_name as string) ||

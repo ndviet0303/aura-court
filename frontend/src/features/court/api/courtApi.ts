@@ -19,7 +19,7 @@ export const courtApi = {
     return api.get<Court[]>('/courts', { params: cleanParams })
   },
 
-  getBySlug: (slug: string) => api.get<Court>(`/courts/${slug}`),
+  getById: (id: number | string) => api.get<Court>(`/courts/${id}`),
 
   getVenueBySlug: (slug: string) => api.get<Venue>(`/venues/${slug}`),
 

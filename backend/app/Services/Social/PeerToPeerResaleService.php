@@ -2,11 +2,13 @@
 
 namespace App\Services\Social;
 
+use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Models\Court;
 use App\Models\EntitlementTransfer;
 use App\Models\MarketplaceListing;
 use App\Models\ReservationEntitlement;
 use App\Models\User;
+use App\Models\Venue;
 use App\Notifications\AuraBookingNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -19,7 +21,7 @@ use Illuminate\Validation\ValidationException;
  */
 class PeerToPeerResaleService
 {
-    public function __construct(private readonly ResaleListingState $view) {}
+    public function __construct(private readonly ResaleListingState $view, private readonly ResalePriceCap $caps, private readonly VerifyEffectiveBookingEligibility $eligibility) {}
 
     private const LOCK_MINUTES = 15;
 
@@ -33,6 +35,7 @@ class PeerToPeerResaleService
         }
 
         $listing = DB::transaction(function () use ($listing, $buyer, $acceptFree): MarketplaceListing {
+            $this->lockSlot($listing);
             $listing = $this->locked($listing->id);
             if ($listing->lockedBy() === $buyer->id) {
                 return $listing;
@@ -44,6 +47,7 @@ class PeerToPeerResaleService
             $entitlement = $this->transferable($listing, $buyer);
             $metadata = (array) ($listing->metadata ?? []);
             $metadata['buyer_ids'] = array_values(array_unique([...($metadata['buyer_ids'] ?? []), $buyer->id]));
+            abort_if((int) $listing->asking_price > ($metadata['max_resale_price'] ?? $this->caps->forEntitlement($entitlement)), 409, 'Giá pass cao hơn số tiền người bán đã trả sau giảm giá nên không thể mua suất chơi này.');
 
             if ((int) $listing->asking_price === 0) {
                 abort_unless($acceptFree, 422, 'A free transfer needs the buyer\'s explicit acceptance.');
@@ -54,8 +58,7 @@ class PeerToPeerResaleService
             }
 
             abort_unless($listing->sellerReceiver() !== null, 409, 'The seller has not added a receiving account to this listing.');
-            $until = now()->addMinutes(self::LOCK_MINUTES);
-            $until = $listing->cutoff_at->lessThan($until) ? $listing->cutoff_at->copy() : $until;
+            $until = $listing->cutoff_at->copy()->min(now()->addMinutes(self::LOCK_MINUTES));
             $listing->update(['status' => 'checkout', 'metadata' => array_merge($metadata, [
                 'locked_by' => $buyer->id,
                 'locked_until' => $until->utc()->toIso8601String(),
@@ -192,6 +195,16 @@ class PeerToPeerResaleService
             ->update(['status' => 'withdrawn']);
     }
 
+    /** A purchase is a new booking: plan, court, venue locked in the global order before the listing; the slot keeps its price. */
+    private function lockSlot(MarketplaceListing $listing): void
+    {
+        // A purchase is a new booking: lock the court, then the venue, and recheck eligibility with the package (D9).
+        // ponytail: the court comes from an unlocked read; recheck it under the entitlement lock once D8 move-court can move a listed slot.
+        $slot = $listing->entitlement()->withoutGlobalScope('tenant_isolation')->firstOrFail();
+        $court = Court::query()->whereKey($slot->court_id)->lockForUpdate()->firstOrFail();
+        $this->eligibility->assertResalable($court->setRelation('venue', Venue::query()->whereKey($court->venue_id)->lockForUpdate()->firstOrFail()), $slot->starts_at, $slot->ends_at);
+    }
+
     private function locked(int $id): MarketplaceListing
     {
         return MarketplaceListing::query()->withoutGlobalScope('tenant_isolation')->whereKey($id)->lockForUpdate()->firstOrFail();
@@ -237,7 +250,6 @@ class PeerToPeerResaleService
         }
 
         $metadata = (array) ($listing->metadata ?? []);
-        $reference = $metadata['reference'] ?? null;
         EntitlementTransfer::create([
             'organization_id' => $listing->organization_id,
             'marketplace_listing_id' => $listing->id,
@@ -248,12 +260,13 @@ class PeerToPeerResaleService
             'buyer_amount' => (int) $listing->asking_price,
             'marketplace_fee' => 0,
             'seller_refund' => 0,
-            'buyer_payment_reference' => $reference,
+            'buyer_payment_reference' => $metadata['reference'] ?? null,
             'idempotency_key' => 'p2p:listing:'.$listing->id,
             'status' => 'completed',
             'metadata' => [
                 'settlement_mode' => 'peer_to_peer',
                 'original_price' => (int) $entitlement->amount,
+                'max_resale_price' => $metadata['max_resale_price'] ?? null,
                 'consideration_amount' => (int) $listing->asking_price,
                 'payment_reported_at' => $metadata['payment_reported_at'] ?? null,
             ],

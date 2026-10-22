@@ -1,103 +1,64 @@
-export interface PlatformPlan {
+import type { ApiError } from '@/core/types/api'
+import type { PackageTermDays, PackageTermPrice } from '@/features/platform-fees/types/platformFee'
+
+/** A venue's package status, derived by the server at the time of reading (D1). */
+export type PackageStatus = 'none' | 'active' | 'expired' | 'terminated'
+
+/** A pending request past its deadline already reads as expired (D7). */
+export type PackagePaymentRequestStatus = 'pending' | 'paid' | 'expired'
+
+export type VenuePackage = {
   id: number
-  code: string
-  name: string
-  version: number
-  price: number
-  price_formatted: string
-  currency: string
-  billing_cycle: string
-  trial_days: number
-  trial_enabled: boolean
-  quotas: { max_venues: number; max_courts: number; max_staff: number }
-  features: string[]
-  terms: { version: string; text: string | null }
-  fee_disclosure: { tax_note: string; payment_processing_fee: string; refund_policy: string }
-  status: string
-  is_active: boolean
-  published_at: string | null
-  retired_at: string | null
+  venue_id: number
+  term_days: PackageTermDays
+  starts_at: string
+  ends_at: string
+  status: PackageStatus
+  terminated_at: string | null
 }
 
-export interface PlatformSubscription {
-  id: number
-  organization_id: number
-  plan_id: number
-  plan_name: string | null
-  plan_code: string | null
-  plan_version: number
-  status: string
-  is_valid: boolean
-  is_trial: boolean
-  price: number
-  currency: string
-  billing_cycle: string
-  starts_at: string | null
-  ends_at: string | null
-  trial_starts_at: string | null
-  trial_ends_at: string | null
-  trial_days_remaining: number
-  auto_renew: boolean
-  accepted_terms_version: string | null
-  quotas: { max_venues: number; max_courts: number; max_staff: number }
-  features: string[]
+/** AuraCourt's receiving account for package fees (D5). */
+export type PackageReceiver = {
+  bank_code: string
+  account_number: string | null
+  account_name: string
 }
 
-export interface SubscriptionQuotaUsage {
-  venues_count: number
-  max_venues: number
-  courts_count: number
-  max_courts: number
-  staff_count: number
-  max_staff: number
-}
-
-export interface PaymentAttempt {
-  id: number
-  organization_id: number
-  plan_id: number
-  plan_version: number
-  reference_code: string
-  status: 'pending' | 'succeeded' | 'failed' | 'expired' | string
+/** A package payment request; its term, amount and deadline never change (D4). */
+export type PackagePaymentRequest = {
+  request_code: string
+  payment_code: string
+  venue_id: number
+  kind: 'purchase' | 'renewal'
+  term_days: PackageTermDays
+  days: number
   amount: number
-  currency: string
-  provider: string
-  checkout_url: string | null
-  qr_code: string | null
-  created_at: string
+  status: PackagePaymentRequestStatus
+  expires_at: string
+  paid_at: string | null
+  period_starts_at: string | null
+  period_ends_at: string | null
+  receiver: PackageReceiver
+  /** VietQR image of the amount and payment code; null while AuraCourt's account is not configured. */
+  qr_url: string | null
 }
 
-export interface SelectPlanPayload {
-  plan_id: number
-  accepted_terms_version: string
+/** One venue on the owner's package screen. */
+export type VenuePackageOverview = {
+  venue_id: number
+  venue_name: string
+  venue_status: 'inactive' | 'active' | 'paused' | 'closed'
+  package_status: PackageStatus
+  package: VenuePackage | null
+  pending_request: PackagePaymentRequest | null
+  /** Newest first, the live pending request included. */
+  requests: PackagePaymentRequest[]
 }
 
-export interface PlanSelectionSnapshot {
-  organization_id: number
-  plan_id: number
-  plan_name: string
-  plan_version: number
-  price: number
-  currency: string
-  billing_cycle: string
-  accepted_terms_version: string
-  trial_available: boolean
-  trial_days: number
+export type VenuePackagesOverview = {
+  venues: VenuePackageOverview[]
+  terms: PackageTermPrice[]
 }
 
-export type ActivateTrialPayload = SelectPlanPayload
-
-export interface InitiatePaymentPayload extends SelectPlanPayload {
-  return_url?: string
-  cancel_url?: string
-}
-
-export type CurrentSubscriptionResponse = {
-  data: PlatformSubscription | null
-  has_active_subscription: boolean
-  has_used_trial: boolean
-  trial_eligible: boolean
-  can_take_bookings: boolean
-  payment_attempt: PaymentAttempt | null
-  quotas: SubscriptionQuotaUsage
-}
+/** A 409 PACKAGE_REQUEST_PENDING carries the venue's live pending request in `data`. */
+export type PackageRequestError = ApiError & { data?: PackagePaymentRequest }

@@ -92,7 +92,7 @@ function sendTo(url: string, options: RequestInit): Promise<Response> {
   })
 }
 
-async function requestAt<T>(url: string, options: RequestInit = {}): Promise<T> {
+async function fetchAt(url: string, options: RequestInit = {}): Promise<Response> {
   await runtimeConfigReady
   let response: Response
   try {
@@ -123,8 +123,8 @@ async function requestAt<T>(url: string, options: RequestInit = {}): Promise<T> 
     }
   }
 
-  const data = await response.json().catch(() => ({}))
   if (!response.ok) {
+    const data = await response.json().catch(() => ({}))
     let code = data?.code
     if (!code) {
       if (response.status === 401) code = 'UNAUTHORIZED'
@@ -143,7 +143,12 @@ async function requestAt<T>(url: string, options: RequestInit = {}): Promise<T> 
       ...data,
     } as ApiError
   }
-  return data as T
+  return response
+}
+
+async function requestAt<T>(url: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetchAt(url, options)
+  return (await response.json().catch(() => ({}))) as T
 }
 
 export function idempotencyKey(): string {
@@ -225,5 +230,20 @@ export const api = {
       method: 'DELETE',
       headers: buildHeaders(opts, true),
     })
+  },
+  // Fetches a file with the session cookie and saves it; a failed export throws the usual ApiError.
+  download: async (path: string, fileName: string, options?: ApiRequestOptions) => {
+    const opts = parseOptions(options)
+    const response = await fetchAt(apiUrl(path, opts.params), {
+      ...opts,
+      method: 'GET',
+      headers: buildHeaders(opts),
+    })
+    const url = URL.createObjectURL(await response.blob())
+    const link = document.createElement('a')
+    link.href = url
+    link.download = fileName
+    link.click()
+    URL.revokeObjectURL(url)
   },
 }

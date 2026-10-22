@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useAdminSchedule } from '../composables/useAdminSchedule'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { ErrorModal } from '@/shared/components'
+import { useAdminSchedule, type CourtStop } from '../composables/useAdminSchedule'
+import { useLifecycleCommands } from '../composables/useLifecycleCommands'
 
 import ScheduleHeader from '../components/schedule/ScheduleHeader.vue'
 import ScheduleKpiBar from '../components/schedule/ScheduleKpiBar.vue'
 import WeeklyScheduleCard from '../components/schedule/WeeklyScheduleCard.vue'
 import MaintenanceScheduleCard from '../components/schedule/MaintenanceScheduleCard.vue'
 import SpecialDatesCard from '../components/schedule/SpecialDatesCard.vue'
-import DowntimeScheduleModal from '../components/schedule/DowntimeScheduleModal.vue'
+import OperationalStopDialog from '../components/lifecycle/OperationalStopDialog.vue'
+import AffectedBookingsDialog from '../components/affected/AffectedBookingsDialog.vue'
 import SpecialDateModal from '../components/schedule/SpecialDateModal.vue'
 import ScheduleAuditLogsModal from '../components/schedule/ScheduleAuditLogsModal.vue'
 import CourtUnlockConfirmModal from '../components/schedule/CourtUnlockConfirmModal.vue'
@@ -24,30 +27,45 @@ const {
   selectedScheduleCourtId,
   weeklySchedule,
   specialDates,
-  showDowntimeModal,
   showSpecialDateModal,
   showAuditLogsModal,
-  showUnlockConfirmModal,
-  blockToUnlock,
+  affected,
   filteredCourts,
-  filteredMaintenanceBlocks,
+  filteredStops,
   totalVenuesCount,
   totalCourtsCount,
   activeCourtsCount,
-  totalBlocksCount,
   specialDatesCount,
   loadData,
+  showNotice,
   addShift,
   removeShift,
   toggleDayOpen,
   copySchedule,
   saveWeeklySchedule,
-  addDowntime,
-  promptUnlockCourt,
-  confirmUnlockCourt,
   addSpecialDate,
   deleteSpecialDate,
 } = useAdminSchedule()
+
+const stopToResume = ref<CourtStop | null>(null)
+const lifecycle = reactive(
+  useLifecycleCommands(async (message) => {
+    stopToResume.value = null
+    await loadData()
+    showNotice(message)
+  }),
+)
+// Only an active court can be paused.
+const pausableCourts = computed(() => filteredCourts.value.filter((c) => c.status === 'active'))
+// The business kind needs the owner of every listed court; a staff venue in the list limits it to maintenance.
+const ownsPausable = computed(() =>
+  pausableCourts.value.every((c) => lifecycle.isOwnerOf(c.venue?.organization_id)),
+)
+
+function confirmResume() {
+  const courtId = stopToResume.value?.court_id
+  if (courtId) void lifecycle.run({ type: 'court', id: courtId }, 'resume')
+}
 
 onMounted(() => {
   loadData()
@@ -80,7 +98,7 @@ onMounted(() => {
       :total-venues="totalVenuesCount"
       :total-courts="totalCourtsCount"
       :active-courts="activeCourtsCount"
-      :total-blocks="totalBlocksCount"
+      :total-stops="filteredStops.length"
       :special-dates="specialDatesCount"
       :loading="loading"
     />
@@ -98,10 +116,11 @@ onMounted(() => {
     <!-- Court Maintenance & Special Dates Grid -->
     <div class="schedule-sub-grid">
       <MaintenanceScheduleCard
-        :blocks="filteredMaintenanceBlocks"
+        :stops="filteredStops"
+        :owner-of="lifecycle.isOwnerOf"
         :loading="loading"
-        @schedule-downtime="showDowntimeModal = true"
-        @unlock-court="promptUnlockCourt"
+        @schedule-downtime="lifecycle.requestStop('pause')"
+        @resume-court="stopToResume = $event"
       />
 
       <SpecialDatesCard
@@ -113,13 +132,17 @@ onMounted(() => {
     </div>
 
     <!-- Modals -->
-    <DowntimeScheduleModal
-      :show="showDowntimeModal"
-      :courts="filteredCourts"
-      :loading="loading"
-      @close="showDowntimeModal = false"
-      @submit="addDowntime"
+    <OperationalStopDialog
+      :command="lifecycle.stopRequest?.command ?? null"
+      target="court"
+      :owner="ownsPausable"
+      :courts="pausableCourts"
+      :loading="lifecycle.busy"
+      @close="lifecycle.closeStop"
+      @submit="lifecycle.submitStop"
     />
+    <AffectedBookingsDialog :state="lifecycle.affected" />
+    <AffectedBookingsDialog :state="affected" />
 
     <SpecialDateModal
       :show="showSpecialDateModal"
@@ -134,11 +157,15 @@ onMounted(() => {
     />
 
     <CourtUnlockConfirmModal
-      :show="showUnlockConfirmModal"
-      :block="blockToUnlock"
-      :loading="loading"
-      @close="showUnlockConfirmModal = false"
-      @confirm="confirmUnlockCourt"
+      :block="stopToResume"
+      :loading="lifecycle.busy"
+      @close="stopToResume = null"
+      @confirm="confirmResume"
+    />
+    <ErrorModal
+      :open="lifecycle.failureOpen"
+      v-bind="lifecycle.failureModal"
+      @close="lifecycle.closeFailure"
     />
   </div>
 </template>

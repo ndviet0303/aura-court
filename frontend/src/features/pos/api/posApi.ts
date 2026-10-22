@@ -44,7 +44,6 @@ export const posApi = {
     customer_id?: number | null
     reservation_id?: number | null
     venue_id?: number | null
-    coupon_code?: string
     discount_amount?: number
     payment_method?: 'cash' | 'qr' | 'wallet'
     cash_tendered?: number
@@ -69,7 +68,6 @@ export const posApi = {
       payment_method: 'cash' | 'qr' | 'wallet'
       payment_reference?: string
       discount_amount?: number
-      coupon_code?: string
       cash_tendered?: number
       rounding_amount?: number
       offline?: boolean
@@ -175,17 +173,13 @@ export const posApi = {
       const res = await api.get<{ data?: any[] } | any[]>('/reservations?status=confirmed')
       const list = Array.isArray(res) ? res : res?.data || []
       return list.map((r: any) => {
-        let courtName = r.court?.name
-        if (typeof courtName === 'object' && courtName !== null) {
-          courtName = courtName.vi || courtName.en || Object.values(courtName)[0]
-        }
         const timeSlot = r.slots?.[0]
           ? venueClockRange(r.slots[0].starts_at, r.slots[r.slots.length - 1]?.ends_at)
           : r.time_slot || '18:00 - 20:00'
 
         return {
           id: r.id,
-          court_name: (courtName as string) || `Sân #${r.court_id || 1}`,
+          court_name: r.court?.code || `Sân #${r.court_id || 1}`,
           court_number: r.court?.id || r.court_id || 1,
           // The contact recorded when the booking was made, never the account's current profile.
           customer_name: r.booker?.name || 'Khách vãng lai',

@@ -27,7 +27,7 @@ class PrivatePartnerDocumentStorage implements PartnerDocumentStorageInterface
         $this->disk = $disk ?? (string) config('filesystems.private_disk', 'local');
     }
 
-    public function storePrivate(UploadedFile $file, int $userId, string $documentType): array
+    public function storePrivate(UploadedFile $file, int $userId, string $documentType, string $prefix = 'private/kyc'): array
     {
         $this->validateFile($file);
 
@@ -36,7 +36,7 @@ class PrivatePartnerDocumentStorage implements PartnerDocumentStorageInterface
         $timestamp = time();
         $safeType = preg_replace('/[^a-zA-Z0-9_\-]/', '', $documentType);
 
-        $relativePath = "private/kyc/{$userId}/{$safeType}_{$timestamp}_{$random}.{$ext}";
+        $relativePath = "{$prefix}/{$userId}/{$safeType}_{$timestamp}_{$random}.{$ext}";
 
         $hash = hash_file('sha256', $file->getRealPath());
 

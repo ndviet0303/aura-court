@@ -45,7 +45,7 @@ const emit = defineEmits<{
         <div class="summary-section">
           <div class="info-group">
             <span class="info-label">{{ t('reservations.modal.courtInfo') }}</span>
-            <strong class="info-value">{{ reservation.court?.name || 'Aura Court' }}</strong>
+            <strong class="info-value">{{ reservation.court?.code || 'Aura Court' }}</strong>
             <span class="info-sub"
               >{{ reservation.court?.venue?.name || 'Aura Court' }} ·
               {{ reservation.court?.venue?.address || '' }}</span
@@ -81,7 +81,7 @@ const emit = defineEmits<{
         <!-- Total Breakdown -->
         <div class="total-breakdown-card">
           <div
-            v-for="line in quoteDiscounts(reservation.quote?.benefit_snapshot)"
+            v-for="line in quoteDiscounts(reservation.quote?.benefit_snapshot, reservation.voucher)"
             :key="line.label"
             class="breakdown-subline discount"
           >

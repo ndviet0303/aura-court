@@ -1,16 +1,34 @@
 import { api } from '@/core/api/client'
-import type { Court, Venue, PriceSlot, CourtBlock } from '@/features/court/types/court'
-import type { Coupon } from '@/features/booking/types/booking'
-import type { CourtForm, PriceForm, BlockForm, VenueForm } from '../types/admin'
+import type { Court, OperationalStop, Venue } from '@/features/court/types/court'
+import type { CourtForm, VenueForm } from '../types/admin'
+import type { LifecycleCommand, StopPayload } from '../types/lifecycle'
+import type { CourtDetail } from '../types/venueDetail'
 import type { VenueBookingPolicySettings, VenueBookingPolicyVersion } from '../types/admin'
 
 export const adminApi = {
   // Venues
   getVenues: () => api.get<Venue[]>('/admin/venues'),
-  createVenue: (payload: VenueForm) => api.post<Venue>('/admin/venues', payload),
-  updateVenue: (id: number, payload: Partial<VenueForm> | { is_active?: boolean }) =>
-    api.patch<Venue>(`/admin/venues/${id}`, payload),
-  deleteVenue: (id: number) => api.delete(`/admin/venues/${id}`),
+  // D12: the partner path is the only venue write path; an update sends the full venue information.
+  createVenue: (organizationId: number, payload: VenueForm) =>
+    api.post<{ data: Venue; message: string }>(
+      `/partner/organizations/${organizationId}/venues`,
+      payload,
+    ),
+  updateVenue: (organizationId: number, venueId: number, payload: VenueForm) =>
+    api.put<{ data: Venue; message: string }>(
+      `/partner/organizations/${organizationId}/venues/${venueId}`,
+      payload,
+    ),
+  venueCommand: (
+    organizationId: number,
+    venueId: number,
+    command: LifecycleCommand,
+    payload?: StopPayload,
+  ) =>
+    api.post<{ data: Venue; stop?: OperationalStop; message: string }>(
+      `/partner/organizations/${organizationId}/venues/${venueId}/${command}`,
+      payload,
+    ),
   getVenueBookingPolicy: (organizationId: number, venueId: number) =>
     api.get<{ data: VenueBookingPolicyVersion | null }>(
       `/partner/organizations/${organizationId}/venues/${venueId}/booking-policy`,
@@ -39,14 +57,28 @@ export const adminApi = {
       `/partner/organizations/${organizationId}/venues/${venueId}/schedule-exceptions`,
       { params: courtId ? { court_id: courtId } : undefined },
     ),
+  // Read-only detail for the owner and assigned staff.
+  getPartnerVenue: (organizationId: number, venueId: number) =>
+    api.get<{ data: Venue }>(`/partner/organizations/${organizationId}/venues/${venueId}`),
+  getPartnerCourt: (organizationId: number, venueId: number, courtId: number) =>
+    api.get<{ data: CourtDetail }>(
+      `/partner/organizations/${organizationId}/venues/${venueId}/courts/${courtId}`,
+    ),
   saveScheduleException: (organizationId: number, venueId: number, payload: any) =>
     api.put<{ data: any }>(
       `/partner/organizations/${organizationId}/venues/${venueId}/schedule-exceptions`,
       payload,
     ),
-  deleteScheduleException: (organizationId: number, venueId: number, exceptionId: number) =>
+  // DELETE carries no body; the backend reads the design D7 acknowledgement from the query.
+  deleteScheduleException: (
+    organizationId: number,
+    venueId: number,
+    exceptionId: number,
+    acknowledge = false,
+  ) =>
     api.delete(
       `/partner/organizations/${organizationId}/venues/${venueId}/schedule-exceptions/${exceptionId}`,
+      { params: acknowledge ? { acknowledge_affected: 1 } : undefined },
     ),
 
   // Courts
@@ -55,32 +87,15 @@ export const adminApi = {
   createCourt: (payload: CourtForm) => api.post<Court>('/admin/courts', payload),
   updateCourt: (id: number, payload: Partial<CourtForm>) =>
     api.patch<Court>(`/admin/courts/${id}`, payload),
-  deleteCourt: (id: number) => api.delete(`/admin/courts/${id}`),
+  courtCommand: (courtId: number, command: LifecycleCommand, payload?: StopPayload) =>
+    api.post<{ data: Court; stop?: OperationalStop; message: string }>(
+      `/admin/courts/${courtId}/${command}`,
+      payload,
+    ),
 
   // Upload
   uploadImage: (formData: FormData) =>
     api.post<{ url: string; filename: string }>('/admin/upload', formData),
-
-  // Price slots
-  getCourtPrices: (courtId: number) => api.get<PriceSlot[]>(`/admin/courts/${courtId}/prices`),
-  createPrice: (courtId: number, payload: PriceForm) =>
-    api.post(`/admin/courts/${courtId}/prices`, payload),
-  bulkCreatePrices: <T = { message: string; slots?: PriceSlot[] }>(courtId: number, payload: any) =>
-    api.post<T>(`/admin/courts/${courtId}/prices/bulk`, payload),
-  updatePrice: (
-    courtId: number,
-    priceId: number,
-    payload: Partial<PriceForm> | { price: number },
-  ) => api.patch(`/admin/courts/${courtId}/prices/${priceId}`, payload),
-  deletePrice: (courtId: number, priceId: number) =>
-    api.delete(`/admin/courts/${courtId}/prices/${priceId}`),
-
-  // Blocks
-  createBlock: (courtId: number, payload: BlockForm) =>
-    api.post(`/admin/courts/${courtId}/blocks`, payload),
-  getBlocks: (courtId: number) => api.get<CourtBlock[]>(`/admin/courts/${courtId}/blocks`),
-  deleteBlock: (courtId: number, blockId: number) =>
-    api.delete(`/admin/courts/${courtId}/blocks/${blockId}`),
 
   // Reservations & Payments
   getReservations: <T = unknown>(params?: {
@@ -91,34 +106,7 @@ export const adminApi = {
   }) => api.get<T>('/admin/reservations', { params }),
   getPayments: <T = any>() => api.get<T>('/admin/payments'),
 
-  // Coupons
-  getCoupons: <T = Coupon[]>(organizationId?: number) =>
-    api.get<T>(`/admin/coupons${organizationId ? `?organization_id=${organizationId}` : ''}`),
-  createCoupon: (payload: Record<string, unknown>) => api.post<Coupon>('/admin/coupons', payload),
-  updateCoupon: (id: number, payload: Record<string, unknown>) =>
-    api.patch<{ coupon: Coupon }>(`/admin/coupons/${id}`, payload),
-  transitionCoupon: (
-    id: number,
-    action: 'activate' | 'suspend' | 'retire',
-    organizationId?: number,
-  ) =>
-    api.post<{ coupon: Coupon }>(`/admin/coupons/${id}/${action}`, {
-      organization_id: organizationId,
-    }),
-  getPromotionCampaigns: <T = unknown>(organizationId?: number) =>
-    api.get<T>(`/admin/promotions${organizationId ? `?organization_id=${organizationId}` : ''}`),
-  createPromotionCampaign: (payload: Record<string, unknown>) =>
-    api.post('/admin/promotions', payload),
-  updatePromotionCampaign: (id: number, payload: Record<string, unknown>) =>
-    api.patch(`/admin/promotions/${id}`, payload),
-  transitionPromotionCampaign: (
-    id: number,
-    action: 'activate' | 'suspend' | 'retire',
-    organizationId?: number,
-  ) => api.post(`/admin/promotions/${id}/${action}`, { organization_id: organizationId }),
-
-  // Reports & Logs
-  getReports: <T = any>(query?: string) => api.get<T>(`/admin/reports${query ? `?${query}` : ''}`),
+  // Logs
   getAuditLogs: <T = unknown>() => api.get<T>('/admin/audit-logs'),
 
   // Organizations
@@ -148,15 +136,6 @@ export const adminApi = {
   revokeOrgInvitation: <T = any>(orgId: number | string, invitationId: number | string) =>
     api.post<T>(`/organizations/${orgId}/invitations/${invitationId}/revoke`),
 
-  // Pricing Rules Calendar
-  getPriceRules: <T = { rules: any[] }>(params?: Record<string, any>) =>
-    api.get<T>('/price-rules', { params }),
-  getPricingCalendar: <T = { rules: any[] }>(params?: Record<string, any>) =>
-    api.get<T>('/pricing/calendar', { params }),
-  createPriceRule: <T = { rule: any }>(payload: any) => api.post<T>('/price-rules', payload),
-  updatePriceRule: <T = { rule: any }>(id: number | string, payload: any) =>
-    api.patch<T>(`/price-rules/${id}`, payload),
-  deletePriceRule: (id: number | string) => api.delete(`/price-rules/${id}`),
   quotePrice: <T = { quote: any }>(payload: { court_id: number; slots: string[] }) =>
     api.post<T>('/price-quotes', payload),
 }

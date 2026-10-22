@@ -245,7 +245,7 @@ class MatchmakingSeeder extends Seeder
         [$start, $end] = [$booking['start'], $booking['end']];
         $hostSkill = $this->skill[$booking['user_id']];
         [$min, $max] = [max(1, $hostSkill - 1), min(5, $hostSkill + 1)];
-        $courtName = $court->getTranslation('name', 'vi');
+        $courtName = $court->code;
         $details = [
             'sport' => $sport['ui'],
             'sport_name' => $sport['name'],
@@ -330,7 +330,7 @@ class MatchmakingSeeder extends Seeder
             ->with('venue')
             ->whereHas('venue', fn ($q) => $q->where('organization_id', $this->orgId)->whereIn('slug', $venues))
             ->where('sport_type', 'badminton')
-            ->orderBy('slug')
+            ->orderBy('code')
             ->get()
             ->sortBy(fn (Court $court) => array_search($court->venue->slug, $venues, true))
             ->values();
@@ -396,7 +396,7 @@ class MatchmakingSeeder extends Seeder
             'status' => $status,
             'availability' => ['description' => sprintf(
                 'Chủ sân mở %s từ %s đến %s, %s %s. Có sẵn cầu thi đấu, tiền sân và cầu chia đều theo số người đến chơi.',
-                $court->getTranslation('name', 'vi'), $start->format('H:i'), $end->format('H:i'), self::WEEKDAYS[$start->dayOfWeekIso], $start->format('d/m')
+                $court->code, $start->format('H:i'), $end->format('H:i'), self::WEEKDAYS[$start->dayOfWeekIso], $start->format('d/m')
             )],
             'metadata' => [
                 'is_owner_hosted' => true,

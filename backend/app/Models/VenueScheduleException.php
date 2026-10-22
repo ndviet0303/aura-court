@@ -11,7 +11,8 @@ class VenueScheduleException extends Model
 {
     protected function casts(): array
     {
-        return ['exception_date' => 'date', 'intervals' => 'array'];
+        // A plain 'date' serializes as UTC midnight, e.g. 2026-10-21T17:00Z for 2026-10-22 in Asia/Ho_Chi_Minh.
+        return ['exception_date' => 'date:Y-m-d', 'intervals' => 'array'];
     }
 
     public function venue(): BelongsTo

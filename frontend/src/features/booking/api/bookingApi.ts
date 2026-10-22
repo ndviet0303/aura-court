@@ -36,9 +36,6 @@ export const bookingApi = {
 
   getWalletBalance: () => api.get<{ balance: number; currency?: string }>('/wallet/balance'),
 
-  previewLoyalty: (payload: import('../types/loyalty').LoyaltyPreviewPayload) =>
-    api.post<import('../types/loyalty').LoyaltyPreviewResponse>('/loyalty/preview', payload),
-
   submitReview: (reservationCode: string, payload: { rating: number; body?: string }) =>
     api.post('/reviews', { reservation_code: reservationCode, ...payload }),
 
@@ -73,10 +70,25 @@ export const bookingApi = {
     payload: import('../types/reservation').HoldReservationPayload,
   ) => api.post<T>('/reservations', payload),
 
+  // Public vouchers that apply to the interval, default first (module 3 D10); neither call holds a use.
+  getVouchers: (venueId: number, params: import('../types/reservation').PriceQuotePayload) =>
+    api.get<{
+      data: import('../types/reservation').VoucherQuote[]
+      default_program_id: number | null
+    }>(`/venues/${venueId}/vouchers`, { params }),
+
+  checkVoucherCode: (
+    venueId: number,
+    params: import('../types/reservation').PriceQuotePayload & { code: string },
+  ) =>
+    api.get<{ data: import('../types/reservation').VoucherQuote }>(
+      `/venues/${venueId}/vouchers/check`,
+      { params },
+    ),
+
   checkoutReservation: <T = { reservation: import('../types/reservation').Reservation }>(
     payload: import('../types/reservation').HoldReservationPayload,
-    key?: string,
-  ) => api.post<T>('/reservations/checkout', payload, key ? { idempotencyKey: key } : undefined),
+  ) => api.post<T>('/reservations/checkout', payload),
 
   confirmReservation: <T = { reservation: import('../types/reservation').Reservation }>(
     code: string,

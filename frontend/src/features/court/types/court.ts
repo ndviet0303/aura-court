@@ -12,11 +12,34 @@ export const SPORT_TYPES = [
 
 export type SportType = (typeof SPORT_TYPES)[number]
 
+/** Status shared by venues and courts; a suspension is a separate record (active_suspension). */
+export const OPERATING_STATUSES = ['inactive', 'active', 'paused', 'closed'] as const
+
+export type OperatingStatus = (typeof OPERATING_STATUSES)[number]
+
+export type VenueSuspension = {
+  id: number
+  reason: string
+  suspended_at: string
+}
+
+export type OperationalStop = {
+  id: number
+  venue_id: number
+  court_id: number | null
+  kind: 'maintenance' | 'business' | 'closure'
+  reason: string
+  starts_at: string
+  expected_end_at: string | null
+  ended_at: string | null
+}
+
 export type Venue = {
   id: number
   organization_id?: number
   payment_model?: 'direct_owner_v1' | 'legacy_wallet_v1'
-  status?: string
+  status?: OperatingStatus
+  active_suspension?: VenueSuspension | null
   name: string
   slug: string
   address: string | null
@@ -39,24 +62,6 @@ export type Venue = {
   timezone?: string
 }
 
-export type CourtBlock = {
-  id: number
-  court_id: number
-  starts_at: string
-  ends_at: string
-  reason?: string
-}
-
-export type PriceSlot = {
-  id?: number
-  court_id?: number
-  weekday: number
-  starts_at: string
-  ends_at: string
-  price: number
-  is_active?: boolean
-}
-
 export type AvailabilitySlot = {
   startsAt: string
   endsAt: string
@@ -66,18 +71,21 @@ export type AvailabilitySlot = {
 
 export type Court = {
   id: number
-  name: string
-  slug?: string
+  /** The court's display name (BR-27); courts are always addressed by id. */
+  code: string
   venue_id?: number
   venue: Venue
   sport_type: SportType
   slot_duration: number
   description?: string
-  image_url?: string
+  /** Uploaded or built-in images only, at most 10. */
+  images?: string[]
   is_active?: boolean
-  price_slots?: PriceSlot[]
-  price_slots_count?: number
-  blocks?: CourtBlock[]
+  status?: OperatingStatus
+  /** Lowest hourly price a booking can pay now; null when the court has no price. */
+  from_price?: number | null
+  /** Open stops (ended_at null), eager-loaded on the admin court list. */
+  operational_stops?: OperationalStop[]
   reviews_count?: number
   reviews_avg_rating?: number | null
   amenities?: string[]

@@ -1,27 +1,30 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AuraButton } from '@/shared/components'
+import { AuraButton, ErrorModal } from '@/shared/components'
+import { OPERATING_STATUSES } from '@/features/court/types/court'
 import { useAdminVenues, type AdminVenueItem } from '../composables/useAdminVenues'
-import type { VenueForm } from '../types/admin'
-import type { VenueBookingPolicySettings } from '../types/admin'
+import { useLifecycleCommands } from '../composables/useLifecycleCommands'
+import type { LifecycleCommand } from '../types/lifecycle'
 
 import VenueKpiBar from '../components/venues/VenueKpiBar.vue'
 import VenueCard from '../components/venues/VenueCard.vue'
 import VenueCardSkeleton from '../components/venues/VenueCardSkeleton.vue'
 import VenueFormModal from '../components/venues/VenueFormModal.vue'
 import VenueQrModal from '../components/venues/VenueQrModal.vue'
-import VenueReadinessModal from '../components/venues/VenueReadinessModal.vue'
+import VenueReceivingConnectionModal from '../components/venues/VenueReceivingConnectionModal.vue'
+import OperationalStopDialog from '../components/lifecycle/OperationalStopDialog.vue'
+import AffectedBookingsDialog from '../components/affected/AffectedBookingsDialog.vue'
 
 const { t } = useI18n()
-const showReadinessModal = ref(false)
-const selectedVenueForReadiness = ref<AdminVenueItem | null>(null)
+const receivingVenue = ref<AdminVenueItem | null>(null)
 
 const {
   loading,
   saving,
   notice,
   error,
+  fieldErrors,
   searchQuery,
   statusFilter,
   showVenueModal,
@@ -36,42 +39,29 @@ const {
   activeVenuesCount,
   totalCourtsCount,
   mapsLinkedCount,
+  canCreateVenue,
   loadData,
+  showNotice,
+  openVenueForm,
   saveVenue,
-  loadBookingPolicy,
   saveBookingPolicy,
-  toggleVenueActive,
 } = useAdminVenues()
 
-function handleStartCreate() {
-  editingVenue.value = null
-  bookingPolicy.value = null
-  showVenueModal.value = true
-}
+const lifecycle = reactive(
+  useLifecycleCommands(async (message) => {
+    await loadData()
+    showNotice(message)
+  }),
+)
 
-function handleStartEdit(venue: AdminVenueItem) {
-  editingVenue.value = venue
-  bookingPolicy.value = null
-  showVenueModal.value = true
-  void loadBookingPolicy(venue)
+function handleCommand(venue: AdminVenueItem, command: LifecycleCommand) {
+  const organizationId = venue.organization_id
+  if (organizationId) void lifecycle.run({ type: 'venue', id: venue.id, organizationId }, command)
 }
 
 function handleShowQr(venue: AdminVenueItem) {
   selectedVenueForQr.value = venue
   showQrModal.value = true
-}
-
-function handleShowReadiness(venue: AdminVenueItem) {
-  selectedVenueForReadiness.value = venue
-  showReadinessModal.value = true
-}
-
-async function handleSaveVenue(payload: VenueForm) {
-  await saveVenue(payload)
-}
-
-async function handleSaveBookingPolicy(settings: VenueBookingPolicySettings) {
-  await saveBookingPolicy(settings)
 }
 
 onMounted(() => {
@@ -98,7 +88,7 @@ onMounted(() => {
           >
           <span>{{ t('admin.venues.refreshBtn') }}</span>
         </AuraButton>
-        <AuraButton variant="primary" @click="handleStartCreate">
+        <AuraButton v-if="canCreateVenue" variant="primary" @click="openVenueForm(null)">
           <span class="material-symbols-outlined icon-18">add_business</span>
           <span>{{ t('admin.venues.addNewVenue') }}</span>
         </AuraButton>
@@ -142,8 +132,9 @@ onMounted(() => {
       <div class="toolbar-right">
         <select v-model="statusFilter" class="status-filter-select">
           <option value="all">{{ t('admin.venues.allStatuses') }}</option>
-          <option value="active">{{ t('admin.venues.statusActive') }}</option>
-          <option value="inactive">{{ t('admin.venues.statusInactive') }}</option>
+          <option v-for="status in OPERATING_STATUSES" :key="status" :value="status">
+            {{ t(`admin.lifecycle.status.${status}`) }}
+          </option>
         </select>
         <span v-if="!loading" class="results-count-badge">
           {{ t('admin.venues.resultsCount', { count: filteredVenues.length }) }}
@@ -159,9 +150,13 @@ onMounted(() => {
     <!-- Empty Venues State -->
     <div v-else-if="filteredVenues.length === 0" class="empty-venues-state">
       <span class="material-symbols-outlined empty-icon">domain_disabled</span>
-      <h3 class="empty-title">{{ t('admin.venues.noVenuesFound') }}</h3>
-      <p class="empty-sub">{{ t('admin.venues.noVenuesSub') }}</p>
-      <AuraButton variant="primary" class="mt-4" @click="handleStartCreate">
+      <h3 class="empty-title">
+        {{ t(totalVenuesCount ? 'admin.venues.noVenuesFound' : 'admin.venues.emptyTitle') }}
+      </h3>
+      <p class="empty-sub">
+        {{ t(totalVenuesCount ? 'admin.venues.noVenuesSub' : 'admin.venues.emptySub') }}
+      </p>
+      <AuraButton v-if="canCreateVenue" variant="primary" class="mt-4" @click="openVenueForm(null)">
         <span class="material-symbols-outlined icon-18">add_business</span>
         <span>{{ t('admin.venues.addNewVenue') }}</span>
       </AuraButton>
@@ -173,10 +168,12 @@ onMounted(() => {
         v-for="v in filteredVenues"
         :key="v.id"
         :venue="v"
-        @toggle-active="toggleVenueActive"
-        @edit="handleStartEdit"
+        :owner="lifecycle.isOwnerOf(v.organization_id)"
+        :busy="lifecycle.busy"
+        @command="handleCommand"
+        @edit="openVenueForm"
         @show-qr="handleShowQr"
-        @show-readiness="handleShowReadiness"
+        @show-receiving="(venue) => (receivingVenue = venue)"
       />
     </div>
 
@@ -185,23 +182,33 @@ onMounted(() => {
       :show="showVenueModal"
       :venue="editingVenue"
       :saving="saving"
+      :error="error"
+      :field-errors="fieldErrors"
       :booking-policy="bookingPolicy"
       :loading-booking-policy="loadingBookingPolicy"
       :saving-booking-policy="savingBookingPolicy"
       @close="showVenueModal = false"
-      @save="handleSaveVenue"
-      @save-policy="handleSaveBookingPolicy"
+      @save="saveVenue"
+      @save-policy="saveBookingPolicy"
     />
 
     <VenueQrModal :show="showQrModal" :venue="selectedVenueForQr" @close="showQrModal = false" />
 
-    <VenueReadinessModal
-      :venue="selectedVenueForReadiness"
-      :organization-id="selectedVenueForReadiness?.organization_id || 0"
-      :is-open="showReadinessModal"
-      @close="showReadinessModal = false"
-      @submitted="loadData"
-      @status-changed="loadData"
+    <VenueReceivingConnectionModal :venue="receivingVenue" @close="receivingVenue = null" />
+
+    <OperationalStopDialog
+      :command="lifecycle.stopRequest?.command ?? null"
+      target="venue"
+      owner
+      :loading="lifecycle.busy"
+      @close="lifecycle.closeStop"
+      @submit="lifecycle.submitStop"
+    />
+    <AffectedBookingsDialog :state="lifecycle.affected" />
+    <ErrorModal
+      :open="lifecycle.failureOpen"
+      v-bind="lifecycle.failureModal"
+      @close="lifecycle.closeFailure"
     />
   </div>
 </template>
@@ -255,7 +262,8 @@ onMounted(() => {
   gap: 10px;
 }
 
-.alert-pill {
+.alert-pill,
+.alert-pill-error {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -265,20 +273,10 @@ onMounted(() => {
   color: #fff;
   font-size: 13px;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
 .alert-pill-error {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 10px;
   background: #ef4444;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
 
 .venues-toolbar {
@@ -400,15 +398,6 @@ onMounted(() => {
 
 .spin-icon {
   animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .icon-16 {

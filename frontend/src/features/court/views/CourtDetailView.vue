@@ -8,16 +8,7 @@ import CourtReviewsSection from '../components/detail/CourtReviewsSection.vue'
 import CourtStickyBookingCard from '../components/detail/CourtStickyBookingCard.vue'
 import CourtGalleryModal from '../components/detail/CourtGalleryModal.vue'
 
-const {
-  court,
-  reviews,
-  reviewsLoading,
-  selectedDuration,
-  isGalleryOpen,
-  basePrice,
-  estimatedTotal,
-  durationOptions,
-} = useCourtDetail()
+const { court, reviews, reviewsLoading, isGalleryOpen, basePrice } = useCourtDetail()
 </script>
 
 <template>
@@ -29,7 +20,11 @@ const {
         <CourtDetailHero :court="court" @open-gallery="isGalleryOpen = true" />
 
         <!-- Technical Specs -->
-        <CourtSpecsGrid :sport-type="court.sport_type" />
+        <CourtSpecsGrid
+          :sport-type="court.sport_type"
+          :surface-type="court.surface_type"
+          :capacity="court.capacity"
+        />
 
         <!-- Amenities -->
         <CourtAmenitiesGrid :amenities="court.amenities" />
@@ -40,14 +35,7 @@ const {
 
       <!-- Right Column (Sticky Booking Widget) -->
       <div class="sidebar-sticky-col">
-        <CourtStickyBookingCard
-          :court="court"
-          :base-price="basePrice"
-          :selected-duration="selectedDuration"
-          :estimated-total="estimatedTotal"
-          :duration-options="durationOptions"
-          @update:selected-duration="selectedDuration = $event"
-        />
+        <CourtStickyBookingCard :court="court" :base-price="basePrice" />
       </div>
     </div>
 

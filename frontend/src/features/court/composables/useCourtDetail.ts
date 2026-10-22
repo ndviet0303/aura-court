@@ -8,13 +8,12 @@ export function useCourtDetail() {
   const route = useRoute()
   const bookingStore = useBookingStore()
 
-  const selectedDuration = ref<number>(1.0)
   const isGalleryOpen = ref(false)
   const loading = ref(false)
   const reviewsLoading = ref(false)
   const reviews = ref<CourtReview[]>([])
 
-  const slugOrId = computed(() => String(route.params.slug || route.params.id || ''))
+  const courtId = computed(() => String(route.params.id || ''))
   const fetchedCourt = ref<Court | null>(null)
 
   async function loadCourt() {
@@ -31,11 +30,11 @@ export function useCourtDetail() {
   }
 
   const court = computed<Court | null>(() => {
-    const key = slugOrId.value
+    const key = courtId.value
     if (!key) return bookingStore.courts[0] || null
     return (
       fetchedCourt.value ||
-      bookingStore.courts.find((c) => c.slug === key || String(c.id) === key) ||
+      bookingStore.courts.find((c) => String(c.id) === key) ||
       bookingStore.courts[0] ||
       null
     )
@@ -65,19 +64,8 @@ export function useCourtDetail() {
     { immediate: true },
   )
 
-  // No invented price: a court without a configured price shows none.
-  const basePrice = computed(() => court.value?.price_slots?.[0]?.price ?? null)
-
-  const estimatedTotal = computed(() =>
-    basePrice.value === null ? null : basePrice.value * selectedDuration.value,
-  )
-
-  const durationOptions = [
-    { value: 1.0, label: '1.0h' },
-    { value: 1.5, label: '1.5h' },
-    { value: 2.0, label: '2.0h' },
-    { value: 3.0, label: '3.0h' },
-  ]
+  // No invented price: a court without a price shows none.
+  const basePrice = computed(() => court.value?.from_price ?? null)
 
   onMounted(() => {
     loadCourt()
@@ -88,11 +76,8 @@ export function useCourtDetail() {
     court,
     reviews,
     reviewsLoading,
-    selectedDuration,
     isGalleryOpen,
     basePrice,
-    estimatedTotal,
-    durationOptions,
     loadCourt,
     loadReviews,
   }

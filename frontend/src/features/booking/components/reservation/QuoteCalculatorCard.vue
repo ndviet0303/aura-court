@@ -3,14 +3,14 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { DatePicker, SelectDropdown, type DropdownOption } from '@/shared/components'
 import { useAuthStore } from '@/features/auth/stores/authStore'
-import LoyaltyPointSelector from '../LoyaltyPointSelector.vue'
+import { venueClockRange } from '@/core/utils/venueTime'
 import BookingAgreement from '../BookingAgreement.vue'
 
 const { t } = useI18n()
 const auth = useAuthStore()
 import type { Court } from '@/features/court/types/court'
 import type { PriceChange, PriceQuote } from '../../types/reservation'
-import { amountPayable, validBookerPhone, type LoyaltySelection } from '../../utils/reservation'
+import { formatDuration, validBookerPhone } from '../../utils/reservation'
 
 const props = defineProps<{
   courts: Court[]
@@ -28,18 +28,12 @@ const emit = defineEmits<{
   (e: 'update:selectedCourtId', value: number): void
   (e: 'update:selectedDate', value: string): void
   (e: 'update:selectedTimeSlot', value: string): void
-  (e: 'calculate'): void
+  (e: 'calculate', minutes: number): void
   (e: 'hold'): void
-  (e: 'checkout', loyaltyPayload?: LoyaltySelection): void
-  (e: 'loyaltyChange', payload: LoyaltySelection): void
+  (e: 'checkout'): void
   (e: 'confirmPrice'): void
 }>()
 
-const currentLoyaltyPayload = ref<LoyaltySelection>(null)
-function onLoyaltyChange(data: LoyaltySelection) {
-  currentLoyaltyPayload.value = data
-  emit('loyaltyChange', data)
-}
 const getLocalDateString = (offsetDays = 0): string => {
   const d = new Date()
   d.setDate(d.getDate() + offsetDays)
@@ -53,27 +47,14 @@ const todayStr = getLocalDateString(0)
 const tomorrowStr = getLocalDateString(1)
 const dayAfterStr = getLocalDateString(2)
 
-const availableTimeSlots = [
-  '06:00',
-  '07:00',
-  '08:00',
-  '09:00',
-  '10:00',
-  '11:00',
-  '14:00',
-  '15:00',
-  '16:00',
-  '17:00',
-  '18:00',
-  '19:00',
-  '20:00',
-  '21:00',
-]
+const availableTimeSlots = [6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 21].map(
+  (hour) => `${String(hour).padStart(2, '0')}:00`,
+)
 
 const courtOptions = computed<DropdownOption[]>(() =>
   props.courts.map((c) => ({
     value: c.id,
-    label: c.name,
+    label: c.code,
     sublabel: c.venue?.name ? `· ${c.venue.name}` : undefined,
     icon: 'stadium',
   })),
@@ -84,10 +65,12 @@ const selectedCourtObj = computed(() => props.courts.find((c) => c.id === props.
 const blocked = computed(
   () => props.holding || !validBookerPhone(auth.user?.phone) || !!props.priceChange,
 )
-
-function setDatePreset(date: string) {
-  emit('update:selectedDate', date)
-}
+// Booking length from the hourly start, so the end stays on the 30-minute grid (design D14).
+const duration = ref(60)
+const quotedRange = computed(() => {
+  const parts = props.activeQuote?.slot_snapshot ?? []
+  return venueClockRange(parts[0]?.starts_at, parts[parts.length - 1]?.ends_at)
+})
 </script>
 
 <template>
@@ -136,7 +119,7 @@ function setDatePreset(date: string) {
             type="button"
             class="preset-btn"
             :class="{ active: selectedDate === todayStr }"
-            @click="setDatePreset(todayStr)"
+            @click="emit('update:selectedDate', todayStr)"
           >
             {{ t('reservations.calculator.today') }}
           </button>
@@ -144,7 +127,7 @@ function setDatePreset(date: string) {
             type="button"
             class="preset-btn"
             :class="{ active: selectedDate === tomorrowStr }"
-            @click="setDatePreset(tomorrowStr)"
+            @click="emit('update:selectedDate', tomorrowStr)"
           >
             {{ t('reservations.calculator.tomorrow') }}
           </button>
@@ -152,7 +135,7 @@ function setDatePreset(date: string) {
             type="button"
             class="preset-btn"
             :class="{ active: selectedDate === dayAfterStr }"
-            @click="setDatePreset(dayAfterStr)"
+            @click="emit('update:selectedDate', dayAfterStr)"
           >
             {{ t('reservations.calculator.dayAfter') }}
           </button>
@@ -183,6 +166,19 @@ function setDatePreset(date: string) {
             {{ time }}
           </button>
         </div>
+        <span class="field-label">{{ t('reservations.calculator.durationLabel') }}</span>
+        <div class="slots-pill-grid">
+          <button
+            v-for="minutes in [30, 60, 90, 120]"
+            :key="minutes"
+            type="button"
+            class="slot-chip"
+            :class="{ active: duration === minutes }"
+            @click="duration = minutes"
+          >
+            {{ formatDuration(minutes) }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -191,7 +187,7 @@ function setDatePreset(date: string) {
       <button
         class="btn btn-primary btn-calculate"
         :disabled="calculating || !selectedCourtId"
-        @click="emit('calculate')"
+        @click="emit('calculate', duration)"
       >
         <span class="material-symbols-outlined" :class="{ spinning: calculating }">
           {{ calculating ? 'refresh' : 'price_change' }}
@@ -221,14 +217,11 @@ function setDatePreset(date: string) {
         <div class="quote-breakdown-box">
           <div class="quote-row">
             <span class="row-label">{{ t('reservations.calculator.courtRow') }}</span>
-            <span class="row-value font-bold">{{ selectedCourtObj?.name || 'Aura Court' }}</span>
+            <span class="row-value font-bold">{{ selectedCourtObj?.code || 'Aura Court' }}</span>
           </div>
           <div class="quote-row">
             <span class="row-label">{{ t('reservations.calculator.timeRow') }}</span>
-            <span class="row-value font-mono">
-              {{ selectedDate }} · {{ selectedTimeSlot }} -
-              {{ String(Number(selectedTimeSlot.slice(0, 2)) + 1).padStart(2, '0') }}:00
-            </span>
+            <span class="row-value font-mono">{{ selectedDate }} · {{ quotedRange }}</span>
           </div>
           <div class="quote-row">
             <span class="row-label">{{ t('reservations.calculator.tokenRow') }}</span>
@@ -238,13 +231,9 @@ function setDatePreset(date: string) {
           </div>
         </div>
 
-        <!-- Customer Loyalty Point Selector -->
-        <LoyaltyPointSelector :quote-token="activeQuote.quote_token" @change="onLoyaltyChange" />
-
         <BookingAgreement
           :rental="activeQuote.subtotal ?? activeQuote.total_amount"
-          :coupon-code="activeQuote.benefit_snapshot?.coupon_code"
-          :payable="amountPayable(activeQuote.total_amount, currentLoyaltyPayload)"
+          :payable="activeQuote.total_amount"
           :price-change="priceChange"
           :busy="holding"
           @confirm-price="emit('confirmPrice')"
@@ -255,11 +244,7 @@ function setDatePreset(date: string) {
             {{ t('reservations.calculator.instantNote') }}
           </p>
           <div class="quote-action-buttons">
-            <button
-              class="btn btn-checkout-slot"
-              :disabled="blocked"
-              @click="emit('checkout', currentLoyaltyPayload)"
-            >
+            <button class="btn btn-checkout-slot" :disabled="blocked" @click="emit('checkout')">
               <span class="material-symbols-outlined" :class="{ spinning: holding }">
                 {{ holding ? 'hourglass_top' : 'account_balance_wallet' }}
               </span>

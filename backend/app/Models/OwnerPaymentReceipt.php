@@ -70,6 +70,12 @@ class OwnerPaymentReceipt extends Model
         ];
     }
 
+    /** @return BelongsTo<Venue, $this> the venue of the receiving connection */
+    public function venue(): BelongsTo
+    {
+        return $this->belongsTo(Venue::class);
+    }
+
     public function attempt(): BelongsTo
     {
         return $this->belongsTo(OwnerPaymentAttempt::class, 'payment_attempt_id');

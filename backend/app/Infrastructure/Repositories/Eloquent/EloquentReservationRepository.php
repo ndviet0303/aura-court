@@ -4,8 +4,11 @@ namespace App\Infrastructure\Repositories\Eloquent;
 
 use App\Contracts\Repositories\ReservationRepositoryInterface;
 use App\Models\Reservation;
+use App\Models\ReservationSlot;
 use App\Models\Review;
+use App\Models\VoucherUse;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 class EloquentReservationRepository implements ReservationRepositoryInterface
 {
@@ -53,6 +56,24 @@ class EloquentReservationRepository implements ReservationRepositoryInterface
             ->when($venueIds !== null, fn ($q) => $q->whereHas('court', fn ($c) => $c->whereIn('venue_id', $venueIds)))
             ->latest()
             ->paginate($perPage);
+    }
+
+    public function unreleasedSlots(int $reservationId): Collection
+    {
+        return ReservationSlot::query()->withoutGlobalScope(self::TENANT_SCOPE)
+            ->where('reservation_id', $reservationId)
+            ->whereIn('status', ['held', 'confirmed'])
+            ->orderBy('starts_at')
+            ->get();
+    }
+
+    public function heldWithVoucherOf(int $programId): Collection
+    {
+        return Reservation::query()->withoutGlobalScope(self::TENANT_SCOPE)
+            ->where('status', 'held')
+            ->whereIn('id', VoucherUse::query()->select('reservation_id')->where('program_id', $programId)->where('status', VoucherUse::STATUS_HELD))
+            ->orderBy('id')
+            ->get(['id', 'code']);
     }
 
     private function unscoped(): \Closure

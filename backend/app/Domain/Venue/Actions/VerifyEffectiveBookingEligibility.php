@@ -2,30 +2,27 @@
 
 namespace App\Domain\Venue\Actions;
 
-use App\Domain\Partner\Services\PartnerRolloutService;
-use App\Domain\Subscription\Actions\EvaluatePlatformEntitlement;
+use App\Contracts\Repositories\VenuePackageRepositoryInterface;
+use App\Domain\Package\Enums\PackageStatus;
 use App\Models\Court;
+use App\Models\ReceivingConnection;
 use App\Models\Venue;
+use App\Services\Infrastructure\FeatureFlagService;
+use App\Services\Pricing\PriceCoverageService;
 use App\Services\Reservation\CourtPriceRuleService;
+use App\Services\Reservation\SlotSelectionPolicy;
+use Carbon\CarbonInterface;
 use Illuminate\Validation\ValidationException;
 
 class VerifyEffectiveBookingEligibility
 {
-    private array $entitlementCache = [];
-
     public function __construct(
-        private readonly EvaluatePlatformEntitlement $entitlementEvaluator,
+        private readonly VenuePackageRepositoryInterface $packages,
         private readonly CourtPriceRuleService $priceRules,
+        private readonly PriceCoverageService $coverage,
+        private readonly SlotSelectionPolicy $slots,
+        private readonly FeatureFlagService $features,
     ) {}
-
-    public function getEntitlement(int $orgId): array
-    {
-        if (! isset($this->entitlementCache[$orgId])) {
-            $this->entitlementCache[$orgId] = $this->entitlementEvaluator->execute($orgId);
-        }
-
-        return $this->entitlementCache[$orgId];
-    }
 
     public function execute(Court|int $court): array
     {
@@ -33,7 +30,7 @@ class VerifyEffectiveBookingEligibility
             ? $court->loadMissing(['venue.organization'])
             : Court::with(['venue.organization'])->find($court);
 
-        if (! $courtModel || ! $courtModel->is_active) {
+        if (! $courtModel || $courtModel->status !== Court::STATUS_ACTIVE) {
             return [
                 'eligible' => false,
                 'reason' => 'COURT_INACTIVE',
@@ -54,7 +51,7 @@ class VerifyEffectiveBookingEligibility
         if (! $venueEligibility['eligible']) {
             return $venueEligibility + [
                 'court' => $courtModel,
-                'is_nonpublic' => ! $courtModel->venue->isPublished() || ! $courtModel->venue->is_active,
+                'is_nonpublic' => ! $courtModel->venue->isActive() || $courtModel->venue->isSuspended(),
             ];
         }
 
@@ -63,6 +60,17 @@ class VerifyEffectiveBookingEligibility
                 'eligible' => false,
                 'reason' => 'COURT_UNPRICED',
                 'message' => 'Sân chưa được cấu hình giá.',
+                'court' => $courtModel,
+                'is_nonpublic' => true,
+            ];
+        }
+
+        // BR-41, BR-47: a gap anywhere in the effective service schedule stops every booking of the court, priced times included.
+        if ($this->coverage->missingItems($courtModel, now()) !== []) {
+            return [
+                'eligible' => false,
+                'reason' => 'COURT_UNPRICED',
+                'message' => 'Bảng giá của sân chưa phủ kín lịch phục vụ nên sân chưa nhận đặt.',
                 'court' => $courtModel,
                 'is_nonpublic' => true,
             ];
@@ -86,15 +94,12 @@ class VerifyEffectiveBookingEligibility
         }
 
         $org = $venueModel->organization;
-        $rollout = app(PartnerRolloutService::class);
-        $enforcePublication = $org ? $rollout->shouldEnforce($org, 'publication') : false;
-        $enforceSubscription = $org ? $rollout->shouldEnforce($org, 'subscription') : false;
 
-        if (! $venueModel->is_active || ! $venueModel->isPublished()) {
+        if (! $venueModel->isActive() || $venueModel->isSuspended()) {
             return [
                 'eligible' => false,
                 'reason' => 'VENUE_NOT_OPERATIONAL',
-                'message' => 'Cơ sở thể thao chưa được xuất bản hoặc đang tạm ngừng hoạt động.',
+                'message' => 'Cơ sở thể thao chưa mở hoạt động hoặc đang tạm ngừng.',
                 'is_nonpublic' => true,
             ];
         }
@@ -115,7 +120,7 @@ class VerifyEffectiveBookingEligibility
             ];
         }
 
-        if (($enforcePublication || $venueModel->isPublished()) && ! $org->isApprovedPartner()) {
+        if (! $org->isApprovedPartner()) {
             return [
                 'eligible' => false,
                 'reason' => 'PARTNER_NOT_ELIGIBLE',
@@ -123,18 +128,22 @@ class VerifyEffectiveBookingEligibility
             ];
         }
 
-        if ($enforceSubscription) {
-            $entitlement = $this->getEntitlement($org->id);
-            if (! $entitlement['can_take_bookings']) {
-                return [
-                    'eligible' => false,
-                    'reason' => 'SUBSCRIPTION_INELIGIBLE',
-                    'message' => 'Gói dịch vụ nền tảng của câu lạc bộ đã hết hạn hoặc chưa kích hoạt. Không thể nhận lịch đặt mới.',
-                ];
-            }
-        } elseif (config('partner.shadow_mode', false)) {
-            $entitlement = $this->getEntitlement($org->id);
-            $rollout->recordShadowComparison($venueModel, 'booking_eligibility', true, (bool) ($entitlement['can_take_bookings'] ?? false));
+        // D9: the venue's own package at now; booking paths call this after locking the venue row, which every package change locks first.
+        if ($this->packages->statusAt($venueModel->id, now()) !== PackageStatus::Active) {
+            return [
+                'eligible' => false,
+                'reason' => 'package_inactive',
+                'message' => 'Cơ sở chưa có gói nền tảng còn hiệu lực nên tạm thời không nhận lịch đặt mới.',
+            ];
+        }
+
+        // D2: only direct-owner organizations collect through the owner's connection; the legacy wallet cohort has none.
+        if ($this->features->enabled('direct_owner_payments', (int) $org->id) && ! $this->hasVerifiedConnection($venueModel)) {
+            return [
+                'eligible' => false,
+                'reason' => 'RECEIVING_CONNECTION_REQUIRED',
+                'message' => 'Cơ sở chưa có tài khoản nhận tiền đã xác minh nên chưa nhận đặt sân mới. Chủ cơ sở cần thêm và xác minh tài khoản nhận tiền cho cơ sở.',
+            ];
         }
 
         return [
@@ -149,9 +158,9 @@ class VerifyEffectiveBookingEligibility
         $result = $this->execute($court);
 
         if (! $result['eligible']) {
-            if ($result['reason'] === 'SUBSCRIPTION_INELIGIBLE') {
+            if ($result['reason'] === 'package_inactive') {
                 throw ValidationException::withMessages([
-                    'subscription' => [$result['message']],
+                    'package' => [$result['message']],
                 ]);
             }
 
@@ -160,6 +169,7 @@ class VerifyEffectiveBookingEligibility
                     'partner' => [$result['message']],
                 ]);
             }
+            abort_if($result['reason'] === 'RECEIVING_CONNECTION_REQUIRED', 409, $result['message']);
             if ($publicFacing || ($result['is_nonpublic'] ?? false)) {
                 abort(404, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
             }
@@ -170,5 +180,34 @@ class VerifyEffectiveBookingEligibility
         }
 
         return $result['court'];
+    }
+
+    /**
+     * Slot resale (design "Kiểm eligibility dưới lock"): the narrower check on a court and venue the caller has locked.
+     * The slot keeps its recorded time and price, so price, booking policy and service time are not rechecked.
+     */
+    public function assertResalable(Court $lockedCourt, CarbonInterface $start, CarbonInterface $end): void
+    {
+        abort_unless($lockedCourt->status === Court::STATUS_ACTIVE, 409, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
+        $venue = $this->evaluateVenue($lockedCourt->venue);
+        abort_unless($venue['eligible'], 409, $venue['message']);
+        $this->slots->assertNoStop($lockedCourt, $start, $end);
+    }
+
+    /** Re-read through the relation query so a public court or venue payload never carries the connection. */
+    private function hasVerifiedConnection(Venue $venue): bool
+    {
+        $receiver = $venue->currentReceivingConnection()->first();
+
+        return $receiver !== null
+            && (int) $receiver->organization_id === (int) $venue->organization_id
+            && (int) $receiver->venue_id === (int) $venue->id
+            && $receiver->owner_attested_at !== null
+            && $receiver->status === ReceivingConnection::STATUS_VERIFIED
+            && $receiver->webhook_secret_ciphertext !== null
+            && (int) $receiver->credential_version > 0
+            && $receiver->verified_at !== null && ! $receiver->verified_at->isFuture()
+            && $receiver->effective_from !== null && ! $receiver->effective_from->isFuture()
+            && ($receiver->effective_until === null || $receiver->effective_until->isFuture());
     }
 }

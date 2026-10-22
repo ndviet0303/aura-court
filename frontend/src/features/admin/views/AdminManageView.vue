@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
+import { ErrorModal } from '@/shared/components'
+import type { Court } from '@/features/court/types/court'
 import { useAdminManageCourts } from '../composables/useAdminManageCourts'
-import { useAdminPricingMatrix } from '../composables/useAdminPricingMatrix'
+import { useLifecycleCommands } from '../composables/useLifecycleCommands'
+import type { LifecycleCommand } from '../types/lifecycle'
 
 import ManageHeader from '../components/manage/ManageHeader.vue'
 import ManageKpiBar from '../components/manage/ManageKpiBar.vue'
 import AdminCourtsTable from '../components/manage/AdminCourtsTable.vue'
 import CourtFormModal from '../components/manage/CourtFormModal.vue'
-import CourtPricingModal from '../components/manage/CourtPricingModal.vue'
-import CourtBlockModal from '../components/manage/CourtBlockModal.vue'
-import CouponManagerModal from '../components/manage/CouponManagerModal.vue'
+import OperationalStopDialog from '../components/lifecycle/OperationalStopDialog.vue'
+import AffectedBookingsDialog from '../components/affected/AffectedBookingsDialog.vue'
 
 // Courts and Main Operations Composable
 const {
   venues,
-  courts,
-  coupons,
   error,
   notice,
   saving,
@@ -26,54 +26,34 @@ const {
   showCourtModal,
   editingCourtId,
   courtForm,
-  showBlockModal,
-  selectedCourtForBlock,
-  blockSaving,
-  showCouponModal,
-  couponSaving,
+  courtErrors,
+  courtVenueOptions,
   filteredCourts,
   totalCourtsCount,
   activeCourtsCount,
-  totalBlocksCount,
+  pausedCourtsCount,
   venueFilterOptions,
   statusFilterOptions,
   load,
-  toggleCourtStatus,
   openCreateCourtModal,
   openEditCourtModal,
   saveCourt,
-  openBlockModal,
-  addBlock,
-  deleteBlock,
-  openCouponModal,
-  createCoupon,
-  updateCoupon,
-  transitionCoupon,
-  transitionCampaign,
 } = useAdminManageCourts()
 
-// Pricing Matrix Composable
-const {
-  selectedCourtForPrice,
-  showPriceModal,
-  selectedWeekdayTab,
-  bulkScope,
-  bulkStartHour,
-  bulkEndHour,
-  bulkPrice,
-  bulkSaving,
-  priceError,
-  priceNotice,
-  weekdayList,
-  morningSlots,
-  afternoonSlots,
-  peakSlots,
-  nightSlots,
-  modalPricingStats,
-  openPriceModal,
-  applyBulkPricing,
-  deletePriceSlot,
-} = useAdminPricingMatrix()
+const lifecycle = reactive(
+  useLifecycleCommands(async (message) => {
+    await load()
+    notice.value = message
+  }),
+)
+
+// The stop dialog offers the business kind only to the owner of this court's organization.
+const commandCourt = ref<Court | null>(null)
+
+function handleCommand(court: Court, command: LifecycleCommand) {
+  commandCourt.value = court
+  void lifecycle.run({ type: 'court', id: court.id }, command)
+}
 
 onMounted(() => {
   load()
@@ -83,13 +63,13 @@ onMounted(() => {
 <template>
   <div class="admin-manage-page">
     <!-- Top Header -->
-    <ManageHeader :coupons-count="coupons.length" @open-coupons="openCouponModal" @refresh="load" />
+    <ManageHeader @refresh="load" />
 
     <!-- KPI Stats Cards -->
     <ManageKpiBar
       :total-courts-count="totalCourtsCount"
       :active-courts-count="activeCourtsCount"
-      :total-blocks-count="totalBlocksCount"
+      :paused-courts-count="pausedCourtsCount"
       :loading="loading"
     />
 
@@ -107,80 +87,47 @@ onMounted(() => {
       :venue-filter-options="venueFilterOptions"
       :status-filter-options="statusFilterOptions"
       :loading="loading"
+      :owner-of="lifecycle.isOwnerOf"
+      :busy="lifecycle.busy"
       @update:selected-venue-filter="selectedVenueFilter = $event"
       @update:status-filter="statusFilter = $event"
       @update:search-query="searchQuery = $event"
       @create-court="openCreateCourtModal"
       @edit-court="openEditCourtModal"
-      @open-price-modal="openPriceModal"
-      @open-block-modal="openBlockModal"
-      @toggle-status="toggleCourtStatus"
+      @command="handleCommand"
     />
 
     <!-- Modals -->
     <CourtFormModal
-      v-model:name="courtForm.name"
-      v-model:address="courtForm.address"
+      v-model:code="courtForm.code"
+      v-model:venue-id="courtForm.venue_id"
       v-model:sport-type="courtForm.sport_type"
       v-model:surface-type="courtForm.surface_type"
       v-model:capacity="courtForm.capacity"
-      v-model:is-active="courtForm.is_active"
       v-model:description="courtForm.description"
-      v-model:image-url="courtForm.image_url"
+      v-model:images="courtForm.images"
       :show="showCourtModal"
       :editing-court-id="editingCourtId"
       :saving="saving"
+      :venue-options="courtVenueOptions"
+      :errors="courtErrors"
       @close="showCourtModal = false"
       @save="saveCourt"
     />
 
-    <CourtPricingModal
-      :show="showPriceModal"
-      :court="selectedCourtForPrice"
-      :selected-weekday-tab="selectedWeekdayTab"
-      :bulk-scope="bulkScope"
-      :bulk-start-hour="bulkStartHour"
-      :bulk-end-hour="bulkEndHour"
-      :bulk-price="bulkPrice"
-      :bulk-saving="bulkSaving"
-      :price-notice="priceNotice"
-      :price-error="priceError"
-      :weekday-list="weekdayList"
-      :morning-slots="morningSlots"
-      :afternoon-slots="afternoonSlots"
-      :peak-slots="peakSlots"
-      :night-slots="nightSlots"
-      :pricing-stats="modalPricingStats"
-      @close="showPriceModal = false"
-      @update:selected-weekday-tab="selectedWeekdayTab = $event"
-      @update:bulk-scope="bulkScope = $event"
-      @update:bulk-start-hour="bulkStartHour = $event"
-      @update:bulk-end-hour="bulkEndHour = $event"
-      @update:bulk-price="bulkPrice = $event"
-      @apply-bulk="applyBulkPricing(load)"
-      @delete-slot="deletePriceSlot($event, load)"
+    <OperationalStopDialog
+      :command="lifecycle.stopRequest?.command ?? null"
+      target="court"
+      :owner="lifecycle.isOwnerOf(commandCourt?.venue?.organization_id)"
+      :loading="lifecycle.busy"
+      @close="lifecycle.closeStop"
+      @submit="lifecycle.submitStop"
     />
-
-    <CourtBlockModal
-      :show="showBlockModal"
-      :court="selectedCourtForBlock"
-      :saving="blockSaving"
-      @close="showBlockModal = false"
-      @add-block="addBlock"
-      @delete-block="deleteBlock"
-    />
-
-    <CouponManagerModal
-      :show="showCouponModal"
-      :coupons="coupons"
-      :venues="venues"
-      :courts="courts"
-      :saving="couponSaving"
-      @close="showCouponModal = false"
-      @create-coupon="createCoupon"
-      @update-coupon="updateCoupon"
-      @transition-coupon="transitionCoupon"
-      @transition-campaign="transitionCampaign"
+    <AffectedBookingsDialog :state="lifecycle.affected" />
+    <ErrorModal
+      :open="lifecycle.failureOpen"
+      v-bind="lifecycle.failureModal"
+      @close="lifecycle.closeFailure"
     />
   </div>
 </template>

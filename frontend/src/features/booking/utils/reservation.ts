@@ -1,7 +1,7 @@
 import type { ApiError } from '@/core/types/api'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { i18n } from '@/i18n'
-import type { HoldReservationPayload, PriceQuote, Reservation } from '../types/reservation'
+import type { PriceQuote, Reservation } from '../types/reservation'
 
 type Displayable = Pick<Reservation, 'code' | 'status' | 'legacy_mapping' | 'metadata'>
 
@@ -31,6 +31,10 @@ export const statusLabel = (r: Displayable, t: (key: string) => string): string 
   if (status === 'cancelled' && r.metadata?.release_reason === 'customer_payment_cancel') {
     return t('booking.statusPaymentCancelled')
   }
+  // Design D8: the venue cancelled it over an operational change, with the customer's agreement.
+  if (status === 'cancelled' && r.metadata?.release_reason === 'operator_affected_booking') {
+    return t('booking.statusOperatorCancelled')
+  }
   const key = STATUS_LABELS[status]
   return key ? t(`booking.${key}`) : status
 }
@@ -43,43 +47,35 @@ export const showsQr = (r: Displayable): boolean =>
 export const canReview = (r: Displayable): boolean =>
   ['confirmed', 'in_use', 'completed', 'no_show'].includes(displayStatus(r))
 
-// The discount lines (i18n label and amount) a priced quote carries, for the price breakdowns.
-export const quoteDiscounts = (snapshot?: PriceQuote['benefit_snapshot']) =>
+// The discount lines (i18n label and amount) of a booking, for the price breakdowns: its voucher
+// (module 3 D17), or the coupon and membership discounts an older booking's quote recorded.
+export const quoteDiscounts = (
+  snapshot?: PriceQuote['benefit_snapshot'],
+  voucher?: Reservation['voucher'],
+) =>
   (
     [
+      ['reservations.calculator.voucherDiscount', voucher?.discount],
       ['reservations.calculator.membershipDiscount', snapshot?.membership_discount_amount],
       ['reservations.calculator.couponDiscount', snapshot?.coupon_discount_amount],
     ] as const
   ).flatMap(([label, amount]) => (amount ? [{ label, amount }] : []))
 
-export type LoyaltySelection = {
-  loyalty_points?: number
-  loyalty_policy_version?: number | null
-  // Stable per court/slots from LoyaltyPointSelector; sent as the Idempotency-Key so a retry replays.
-  idempotency_key?: string
-  discount_vnd?: number
-} | null
-
-// The checkout API rejects loyalty_points < 1, so loyalty fields are sent only for a real redemption.
-export function loyaltyFields(
-  selection?: LoyaltySelection,
-): Pick<HoldReservationPayload, 'loyalty_points' | 'loyalty_policy_version'> {
-  const points = selection?.loyalty_points ?? 0
-  if (points <= 0) return {}
-  return {
-    loyalty_points: points,
-    loyalty_policy_version: selection?.loyalty_policy_version ?? undefined,
-  }
-}
-
-// The amount payable shown before submitting and sent as expected_total: the priced total less the
-// loyalty discount of a real redemption.
-export const amountPayable = (total: number, loyalty?: LoyaltySelection): number =>
-  Math.max(0, total - ((loyalty?.loyalty_points ?? 0) > 0 ? (loyalty?.discount_vnd ?? 0) : 0))
-
 // Same rule as the backend User::PHONE_PATTERN; without it a booking is refused with PHONE_REQUIRED.
 export const validBookerPhone = (phone?: string | null): boolean =>
   /^(0\d{9}|\+84\d{9})$/.test(phone ?? '')
+
+// A booking's length in words, "1 giờ 30 phút" (design D14), never a count of slots.
+export function formatDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60)
+  const rest = minutes % 60
+  return [
+    hours ? i18n.global.t('common.durationHours', { count: hours }) : '',
+    rest ? i18n.global.t('common.durationMinutes', { count: rest }) : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+}
 
 const BOOKING_ERROR_KEYS: Record<string, string> = {
   PHONE_REQUIRED: 'reservations.messages.phoneRequired',
