@@ -31,6 +31,10 @@ export const statusLabel = (r: Displayable, t: (key: string) => string): string 
   if (status === 'cancelled' && r.metadata?.release_reason === 'customer_payment_cancel') {
     return t('booking.statusPaymentCancelled')
   }
+  // Design D8: the venue cancelled it over an operational change, with the customer's agreement.
+  if (status === 'cancelled' && r.metadata?.release_reason === 'operator_affected_booking') {
+    return t('booking.statusOperatorCancelled')
+  }
   const key = STATUS_LABELS[status]
   return key ? t(`booking.${key}`) : status
 }

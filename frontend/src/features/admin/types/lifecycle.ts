@@ -11,6 +11,8 @@ export type StopPayload = {
   starts_at?: string
   expected_end_at?: string
   kind?: 'maintenance' | 'business'
+  /** Design D7: sent only after the actor acknowledged the affected bookings. */
+  acknowledge_affected?: true
 }
 
 /** One unmet opening condition from a 422; the backend already localizes message. */

@@ -352,6 +352,16 @@ const router = createRouter({
           },
         },
         {
+          path: 'affected-bookings',
+          name: 'admin-affected-bookings',
+          component: () => import('@/features/admin/views/AdminAffectedBookingsView.vue'),
+          meta: {
+            orgRoles: ['organization_owner', 'staff'],
+            titleKey: 'seo.adminAffectedBookingsTitle',
+            indexable: false,
+          },
+        },
+        {
           path: 'organizations/:organizationId(\\d+)/venues/:venueId(\\d+)',
           name: 'admin-venue-detail',
           component: () => import('@/features/admin/views/AdminVenueDetailView.vue'),

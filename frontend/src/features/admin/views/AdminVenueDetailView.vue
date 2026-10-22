@@ -10,6 +10,7 @@ import { useLifecycleCommands } from '../composables/useLifecycleCommands'
 import type { LifecycleCommand } from '../types/lifecycle'
 import OperatingStatusBadge from '../components/lifecycle/OperatingStatusBadge.vue'
 import OperationalStopDialog from '../components/lifecycle/OperationalStopDialog.vue'
+import AffectedBookingsDialog from '../components/affected/AffectedBookingsDialog.vue'
 import VenueInfoCard from '../components/detail/VenueInfoCard.vue'
 import WeeklyHoursList from '../components/detail/WeeklyHoursList.vue'
 import ScheduleExceptionsList from '../components/detail/ScheduleExceptionsList.vue'
@@ -98,6 +99,7 @@ onMounted(load)
       @close="lifecycle.closeStop"
       @submit="lifecycle.submitStop"
     />
+    <AffectedBookingsDialog :state="lifecycle.affected" />
     <ErrorModal
       :open="lifecycle.failureOpen"
       v-bind="lifecycle.failureModal"

@@ -14,6 +14,7 @@ import VenueFormModal from '../components/venues/VenueFormModal.vue'
 import VenueQrModal from '../components/venues/VenueQrModal.vue'
 import VenueReceivingConnectionModal from '../components/venues/VenueReceivingConnectionModal.vue'
 import OperationalStopDialog from '../components/lifecycle/OperationalStopDialog.vue'
+import AffectedBookingsDialog from '../components/affected/AffectedBookingsDialog.vue'
 
 const { t } = useI18n()
 const receivingVenue = ref<AdminVenueItem | null>(null)
@@ -203,6 +204,7 @@ onMounted(() => {
       @close="lifecycle.closeStop"
       @submit="lifecycle.submitStop"
     />
+    <AffectedBookingsDialog :state="lifecycle.affected" />
     <ErrorModal
       :open="lifecycle.failureOpen"
       v-bind="lifecycle.failureModal"

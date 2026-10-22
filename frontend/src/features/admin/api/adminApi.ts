@@ -69,9 +69,16 @@ export const adminApi = {
       `/partner/organizations/${organizationId}/venues/${venueId}/schedule-exceptions`,
       payload,
     ),
-  deleteScheduleException: (organizationId: number, venueId: number, exceptionId: number) =>
+  // DELETE carries no body; the backend reads the design D7 acknowledgement from the query.
+  deleteScheduleException: (
+    organizationId: number,
+    venueId: number,
+    exceptionId: number,
+    acknowledge = false,
+  ) =>
     api.delete(
       `/partner/organizations/${organizationId}/venues/${venueId}/schedule-exceptions/${exceptionId}`,
+      { params: acknowledge ? { acknowledge_affected: 1 } : undefined },
     ),
 
   // Courts
