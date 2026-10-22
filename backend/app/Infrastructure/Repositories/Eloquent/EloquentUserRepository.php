@@ -54,4 +54,18 @@ class EloquentUserRepository implements UserRepositoryInterface
             ->map(fn ($id) => (int) $id)
             ->all();
     }
+
+    public function activeVenueOperatorIds(int $organizationId, int $venueId): array
+    {
+        $staffIds = OrganizationMember::query()
+            ->where('organization_id', $organizationId)
+            ->where('role', OrganizationMember::ROLE_STAFF)
+            ->where('status', 'active')
+            ->whereHas('user', fn ($query) => $query->where('status', 'active'))
+            ->get()
+            ->filter(fn (OrganizationMember $member) => in_array($venueId, $member->assignedVenueIds(), true))
+            ->map(fn (OrganizationMember $member) => (int) $member->user_id);
+
+        return collect($this->activeOwnerIds($organizationId))->merge($staffIds)->unique()->sort()->values()->all();
+    }
 }

@@ -22,4 +22,12 @@ interface UserRepositoryInterface
      * @return list<int>
      */
     public function activeOwnerIds(?int $organizationId = null): array;
+
+    /**
+     * Module 06 D9: the venue's active operators, each once: the organization's active owners and its active staff
+     * assigned to the venue, read when called so a revoked assignment stops at once.
+     *
+     * @return list<int>
+     */
+    public function activeVenueOperatorIds(int $organizationId, int $venueId): array;
 }

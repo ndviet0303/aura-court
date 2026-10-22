@@ -68,8 +68,8 @@ class ReservationController extends Controller
 
         // legacy_mapping lets a deep link to a V1 mirror show the original booking code and status.
         $legacyMapping = fn ($q) => $q->withoutGlobalScope('tenant_isolation')->select('id', 'reservation_id', 'legacy_code', 'legacy_status');
-        // Check-in and check-out times only; staff notes stay with the venue.
-        $attendance = fn ($q) => $q->select('id', 'reservation_id', 'status', 'checked_in_at', 'checked_out_at');
+        // Check-in, check-out and no-show times only; staff notes stay with the venue.
+        $attendance = fn ($q) => $q->select('id', 'reservation_id', 'status', 'checked_in_at', 'checked_out_at', 'no_show_at');
         // Incident handling: status and source window only; contact channel and notes stay with the venue.
         $affectedCase = fn ($q) => $q->select(array_map(fn (string $column): string => 'affected_reservation_cases.'.$column, ['id', 'reservation_id', 'source_type', 'source_starts_at', 'source_ends_at', 'status', 'handled_at']));
         $record->load(['court.venue', 'quote', 'slots', 'entitlements', 'legacyMapping' => $legacyMapping, 'attendance' => $attendance, 'latestAffectedCase' => $affectedCase]);

@@ -37,15 +37,20 @@ trait RecordsOwnerPayments
         ]);
     }
 
-    protected function attendance(Reservation $booking, string $status, CarbonInterface $checkedInAt, ?CarbonInterface $checkedOutAt = null): void
+    /** $at is the check-in time, or the record time of a no-show, which has no check-in (module 06 BR-135). */
+    protected function attendance(Reservation $booking, string $status, CarbonInterface $at, ?CarbonInterface $checkedOutAt = null): void
     {
+        $noShow = $status === BookingAttendance::STATUS_NO_SHOW;
+        $actorId = User::factory()->create()->id;
         DB::table('booking_attendances')->insert([
             'organization_id' => $booking->organization_id,
             'reservation_id' => $booking->id,
             'status' => $status,
-            'checked_in_at' => $this->wallTime($checkedInAt),
-            'checked_in_by' => User::factory()->create()->id,
-            'checked_out_at' => $status === BookingAttendance::STATUS_CHECKED_OUT ? $this->wallTime($checkedOutAt ?? $checkedInAt) : null,
+            'checked_in_at' => $noShow ? null : $this->wallTime($at),
+            'checked_in_by' => $noShow ? null : $actorId,
+            'no_show_at' => $noShow ? $this->wallTime($at) : null,
+            'no_show_by' => $noShow ? $actorId : null,
+            'checked_out_at' => $status === BookingAttendance::STATUS_CHECKED_OUT ? $this->wallTime($checkedOutAt ?? $at) : null,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

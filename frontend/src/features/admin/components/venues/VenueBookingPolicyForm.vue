@@ -10,11 +10,6 @@ type PolicyDraft = {
     min_duration_minutes: string
     max_duration_minutes: string
   }
-  arrival: {
-    early_minutes: string
-    late_grace_minutes: string
-    no_show_after_minutes: string
-  }
   recurring: {
     payment_policy: string
     conflict_policy: string
@@ -48,7 +43,6 @@ function emptyDraft(): PolicyDraft {
       min_duration_minutes: '',
       max_duration_minutes: '',
     },
-    arrival: { early_minutes: '', late_grace_minutes: '', no_show_after_minutes: '' },
     recurring: { payment_policy: '', conflict_policy: '', overdue_release_hours: '' },
     transfer: { cutoff_hours: '', max_consideration_percent: '', free_transfer_allowed: '' },
   }
@@ -67,11 +61,6 @@ watch(
             max_days_ahead: String(settings.booking.max_days_ahead),
             min_duration_minutes: String(settings.booking.min_duration_minutes),
             max_duration_minutes: String(settings.booking.max_duration_minutes),
-          },
-          arrival: {
-            early_minutes: String(settings.arrival.early_minutes),
-            late_grace_minutes: String(settings.arrival.late_grace_minutes),
-            no_show_after_minutes: String(settings.arrival.no_show_after_minutes),
           },
           recurring: {
             payment_policy: settings.recurring.payment_policy,
@@ -95,9 +84,6 @@ function save() {
     draft.value.booking.max_days_ahead,
     draft.value.booking.min_duration_minutes,
     draft.value.booking.max_duration_minutes,
-    draft.value.arrival.early_minutes,
-    draft.value.arrival.late_grace_minutes,
-    draft.value.arrival.no_show_after_minutes,
     draft.value.recurring.payment_policy,
     draft.value.recurring.conflict_policy,
     draft.value.recurring.overdue_release_hours,
@@ -117,11 +103,6 @@ function save() {
       max_days_ahead: number(draft.value.booking.max_days_ahead),
       min_duration_minutes: number(draft.value.booking.min_duration_minutes),
       max_duration_minutes: number(draft.value.booking.max_duration_minutes),
-    },
-    arrival: {
-      early_minutes: number(draft.value.arrival.early_minutes),
-      late_grace_minutes: number(draft.value.arrival.late_grace_minutes),
-      no_show_after_minutes: number(draft.value.arrival.no_show_after_minutes),
     },
     recurring: {
       payment_policy: draft.value.recurring
@@ -186,31 +167,6 @@ function save() {
             v-model="draft.booking.max_duration_minutes"
             type="number"
             min="15"
-            max="1440"
-            required
-        /></label>
-      </fieldset>
-      <fieldset>
-        <legend>{{ t('admin.venues.bookingPolicyArrival') }}</legend>
-        <label
-          >{{ t('admin.venues.bookingPolicyEarlyArrival')
-          }}<input v-model="draft.arrival.early_minutes" type="number" min="0" max="1440" required
-        /></label>
-        <label
-          >{{ t('admin.venues.bookingPolicyLateGrace')
-          }}<input
-            v-model="draft.arrival.late_grace_minutes"
-            type="number"
-            min="0"
-            max="1440"
-            required
-        /></label>
-        <label
-          >{{ t('admin.venues.bookingPolicyNoShowAfter')
-          }}<input
-            v-model="draft.arrival.no_show_after_minutes"
-            type="number"
-            min="1"
             max="1440"
             required
         /></label>

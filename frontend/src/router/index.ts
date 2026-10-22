@@ -362,6 +362,16 @@ const router = createRouter({
           },
         },
         {
+          path: 'operations',
+          name: 'admin-operations',
+          component: () => import('@/features/operations/views/OperationsView.vue'),
+          meta: {
+            orgRoles: ['organization_owner', 'staff'],
+            titleKey: 'seo.adminOperationsTitle',
+            indexable: false,
+          },
+        },
+        {
           path: 'organizations/:organizationId(\\d+)/venues/:venueId(\\d+)',
           name: 'admin-venue-detail',
           component: () => import('@/features/admin/views/AdminVenueDetailView.vue'),

@@ -168,6 +168,7 @@ class Reservation extends Model
         return $this->hasOne(SplitGroup::class);
     }
 
+    /** @return HasOne<BookingAttendance, $this> */
     public function attendance(): HasOne
     {
         return $this->hasOne(BookingAttendance::class);

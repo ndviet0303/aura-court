@@ -17,6 +17,9 @@ interface AffectedReservationCaseRepositoryInterface
 
     public function find(int $id, bool $lock = false): ?AffectedReservationCase;
 
+    /** Design D8: true while the booking has a case that is not yet handled. */
+    public function hasOpen(int $reservationId): bool;
+
     /** @param  array<string, mixed>  $attributes */
     public function update(AffectedReservationCase $case, array $attributes): AffectedReservationCase;
 }

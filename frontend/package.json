@@ -18,6 +18,7 @@
     "format:check": "prettier --check --experimental-cli --no-cache src/ '*.{ts,json,jsonc}' '.*.json'"
   },
   "dependencies": {
+    "jsqr": "^1.4.0",
     "laravel-echo": "^2.4.0",
     "pinia": "^4.0.2",
     "pusher-js": "^8.6.0",
