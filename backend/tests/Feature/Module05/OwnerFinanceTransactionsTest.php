@@ -10,7 +10,7 @@ use Tests\Concerns\BuildsVenues;
 use Tests\Concerns\RecordsOwnerPayments;
 use Tests\TestCase;
 
-/** UC-5.12, FR-94, BR-89, BR-106, BR-107: the owner reconciles received transfers against their bookings. */
+/** UC-5.10, FR-94, BR-89, BR-106, BR-107: the owner reconciles received transfers against their bookings. */
 class OwnerFinanceTransactionsTest extends TestCase
 {
     use BuildsVenues;

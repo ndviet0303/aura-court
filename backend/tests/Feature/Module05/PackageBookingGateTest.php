@@ -16,7 +16,7 @@ use Tests\Concerns\BuildsVenues;
 use Tests\Concerns\PaysPackages;
 use Tests\TestCase;
 
-/** UC-5.10, FR-89, FR-92, BR-103, BR-104: only a venue with an active package takes new bookings. */
+/** UC-5.7, FR-89, FR-92, BR-103, BR-104: only a venue with an active package takes new bookings. */
 class PackageBookingGateTest extends TestCase
 {
     use BuildsVenues;
@@ -78,7 +78,7 @@ class PackageBookingGateTest extends TestCase
         $this->assertTrue(Reservation::query()->withoutGlobalScopes()->findOrFail($held['id'])->hold_expires_at->eq($deadline));
     }
 
-    public function test_br_103_br_89_after_expiry_the_owner_still_sees_the_package_and_finance_and_can_buy(): void
+    public function test_fr_89_br_103_after_expiry_the_owner_still_sees_the_package_and_finance_and_can_buy(): void
     {
         $court = $this->courtWithPackage(['starts_at' => now()->subDays(31)]);
         $this->packagePrice(PackageTerm::Days30, 300000, now()->subMonth());
@@ -87,7 +87,11 @@ class PackageBookingGateTest extends TestCase
         $base = "/api/partner/organizations/{$venue->organization_id}";
 
         $packages = $this->actingAs($owner)->getJson("{$base}/packages")->assertOk()->json('data.venues');
-        $this->assertSame('expired', collect($packages)->firstWhere('venue_id', $venue->id)['package']['status']);
+        // FR-89: term, start, end and status of each venue's package.
+        $package = collect($packages)->firstWhere('venue_id', $venue->id)['package'];
+        $this->assertSame([30, 'expired'], [$package['term_days'], $package['status']]);
+        $this->assertSame(now()->subDays(31)->utc()->toISOString(), $package['starts_at']);
+        $this->assertSame(now()->subDay()->utc()->toISOString(), $package['ends_at']);
         $this->actingAs($owner)->getJson("{$base}/finance/report?from=2026-11-01&to=2026-11-01")->assertOk();
         $this->actingAs($owner)->getJson("{$base}/finance/transactions?from=2026-11-01&to=2026-11-01")->assertOk();
         $this->actingAs($owner)->postJson("{$base}/venues/{$venue->id}/package-requests", ['term_days' => 30])->assertCreated();

@@ -11,7 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\PaysPackages;
 use Tests\TestCase;
 
-/** UC-5.13..UC-5.15, FR-97, FR-98, BR-89, BR-115, BR-116: the platform admin follows package requests and venue packages. */
+/** UC-5.13..UC-5.16, FR-97, FR-98, BR-89, BR-115, BR-116: the platform admin follows package requests and venue packages. */
 class PlatformFeeAdminTest extends TestCase
 {
     use PaysPackages;

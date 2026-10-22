@@ -16,7 +16,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\PaysPackages;
 use Tests\TestCase;
 
-/** UC-5.6, UC-5.7, UC-5.8 (payment side), FR-87, FR-88, FR-90, BR-90..BR-92, BR-96..BR-100, BR-102. */
+/** UC-5.6, UC-5.8 (payment side), FR-87, FR-88, FR-90, BR-90..BR-92, BR-96..BR-100, BR-102. */
 class PackageActivationTest extends TestCase
 {
     use PaysPackages;

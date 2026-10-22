@@ -11,7 +11,7 @@ use Tests\Concerns\BuildsVenues;
 use Tests\Concerns\RecordsOwnerPayments;
 use Tests\TestCase;
 
-/** UC-5.12, FR-95, BR-89, BR-108..BR-113, BR-118: five separate metrics, each with its own time and unique booking count. */
+/** UC-5.11, FR-95, BR-89, BR-108..BR-113, BR-118: five separate metrics, each with its own time and unique booking count. */
 class OwnerFinanceReportTest extends TestCase
 {
     use BuildsVenues;

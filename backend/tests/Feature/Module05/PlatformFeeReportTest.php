@@ -12,7 +12,7 @@ use Tests\Concerns\PaysPackages;
 use Tests\Concerns\ReadsExcelExports;
 use Tests\TestCase;
 
-/** UC-5.16..UC-5.18, FR-99, FR-100, BR-90, BR-114, BR-115, BR-117: fees collected and the admin's Excel exports. */
+/** UC-5.17, UC-5.18, FR-99, FR-100, BR-90, BR-114, BR-115, BR-117: fees collected and the admin's Excel exports. */
 class PlatformFeeReportTest extends TestCase
 {
     use PaysPackages;

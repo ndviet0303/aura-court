@@ -13,7 +13,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
-/** UC-5.11, FR-93, BR-105: reminders 7, 3 and 1 day before the end and at the end, in-app and by email. */
+/** FR-93 (automatic, no use case), BR-105: reminders 7, 3 and 1 day before the end and at the end, in-app and by email. */
 class PackageExpiryReminderTest extends TestCase
 {
     use RefreshDatabase;
