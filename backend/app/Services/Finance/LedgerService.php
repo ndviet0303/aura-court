@@ -4,6 +4,7 @@ namespace App\Services\Finance;
 
 use App\Models\Account;
 use App\Models\Journal;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -60,6 +61,35 @@ class LedgerService
 
             return $journal->load('entries');
         });
+    }
+
+    /** Posts once per organization, event type and event id; a retry or a concurrent duplicate gets the stored journal. */
+    public function postOnce(array $attributes, array $entries): Journal
+    {
+        $existing = Journal::query()
+            ->where('organization_id', $attributes['organization_id'])
+            ->where('event_type', $attributes['event_type'])
+            ->where('event_id', $attributes['event_id'])
+            ->first();
+        if ($existing) {
+            return $existing->load('entries');
+        }
+
+        try {
+            return $this->post($attributes, $entries);
+        } catch (QueryException $exception) {
+            $message = strtolower($exception->getMessage());
+            if (! str_contains($message, 'journals') || (! str_contains($message, 'unique') && ! str_contains($message, 'duplicate'))) {
+                throw $exception;
+            }
+
+            return Journal::query()
+                ->where('organization_id', $attributes['organization_id'])
+                ->where('event_type', $attributes['event_type'])
+                ->where('event_id', $attributes['event_id'])
+                ->firstOrFail()
+                ->load('entries');
+        }
     }
 
     public function systemAccounts(?int $organizationId): array

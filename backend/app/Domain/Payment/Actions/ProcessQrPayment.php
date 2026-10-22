@@ -2,6 +2,7 @@
 
 namespace App\Domain\Payment\Actions;
 
+use App\Domain\Package\Actions\ApplyPackagePayment;
 use App\Models\Payment;
 use App\Models\PaymentIntent;
 use App\Models\User;
@@ -14,12 +15,23 @@ class ProcessQrPayment
     public function __construct(
         private readonly WalletPaymentService $walletPayments,
         private readonly FinancialPostingService $financials,
+        private readonly ApplyPackagePayment $packagePayments,
     ) {}
 
     public function execute(array $data, string $raw): void
     {
         $externalId = (string) ($data['id'] ?? '');
         if ($externalId === '') {
+            return;
+        }
+
+        // D5: a package fee is never a wallet top-up, even with an unknown code or a memo that also names a wallet.
+        if (preg_match('/\bPKG([A-Z0-9]{8})\b/i', ($data['content'] ?? '').' '.($data['code'] ?? ''), $package)) {
+            // An outgoing transfer quoting the code, such as a manual refund, pays nothing.
+            if (($data['transferType'] ?? 'in') === 'in') {
+                $this->packagePayments->execute('PKG'.strtoupper($package[1]), $data, $raw);
+            }
+
             return;
         }
 

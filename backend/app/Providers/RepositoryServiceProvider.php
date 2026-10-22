@@ -11,6 +11,8 @@ use App\Contracts\Repositories\FinanceExceptionRepositoryInterface;
 use App\Contracts\Repositories\HostKycRepositoryInterface;
 use App\Contracts\Repositories\LoyaltyRuleRepositoryInterface;
 use App\Contracts\Repositories\OrganizationLockRepositoryInterface;
+use App\Contracts\Repositories\PackagePaymentReceiptRepositoryInterface;
+use App\Contracts\Repositories\PackagePaymentRequestRepositoryInterface;
 use App\Contracts\Repositories\PackagePriceRepositoryInterface;
 use App\Contracts\Repositories\PaymentRepositoryInterface;
 use App\Contracts\Repositories\PlatformPlanRepositoryInterface;
@@ -34,6 +36,8 @@ use App\Infrastructure\Repositories\Eloquent\EloquentFinanceExceptionRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentHostKycRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentLoyaltyRuleRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentOrganizationLockRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentPackagePaymentReceiptRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentPackagePaymentRequestRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPackagePriceRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPaymentRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPlatformPlanRepository;
@@ -82,6 +86,8 @@ class RepositoryServiceProvider extends ServiceProvider
         UserRepositoryInterface::class => EloquentUserRepository::class,
         VenuePackageRepositoryInterface::class => EloquentVenuePackageRepository::class,
         PackagePriceRepositoryInterface::class => EloquentPackagePriceRepository::class,
+        PackagePaymentRequestRepositoryInterface::class => EloquentPackagePaymentRequestRepository::class,
+        PackagePaymentReceiptRepositoryInterface::class => EloquentPackagePaymentReceiptRepository::class,
     ];
 
     public function register(): void

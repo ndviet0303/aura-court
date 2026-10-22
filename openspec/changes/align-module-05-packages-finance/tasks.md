@@ -80,7 +80,7 @@ Pha 2–6 làm trên nhánh `feat/module05-packages-finance` và chỉ vào main
 
 ## 3. Pha 3 – Yêu cầu thanh toán, kích hoạt và chấm dứt (D4, D5, D6, D7, D8)
 
-- [ ] 3.1 Tạo và mở lại yêu cầu (D4):
+- [x] 3.1 Tạo và mở lại yêu cầu (D4): (test: chưa làm)
   - `POST partner/organizations/{org}/venues/{venue}/package-requests` và `GET partner/organizations/{org}/package-requests/{code}`, middleware `RequireOrganizationRole:organization_owner`.
   - Action `CreatePackagePaymentRequest`:
     - Khoá `venues`, chuyển yêu cầu quá hạn của cơ sở sang `expired`, rồi xét theo D4.
@@ -91,14 +91,14 @@ Pha 2–6 làm trên nhánh `feat/module05-packages-finance` và chỉ vào main
     - Scenario "Purchase for a venue without a package", "Reopening a pending request", "Another term while a request is pending", "Renewal with another term", "Price change after creation", "Deadline passes without payment".
     - Staff → 403. Owner tổ chức khác → 403. Cơ sở đã đóng → 422.
     - Thiếu cấu hình SePay → 503 và không có dòng mới.
-- [ ] 3.2 Nhánh `PKG` trong `ProcessQrPayment::execute` (D5):
+- [x] 3.2 Nhánh `PKG` trong `ProcessQrPayment::execute` (D5): (test: chưa làm)
   - Chạy sau khi đọc id giao dịch, trước mọi nhánh nạp ví.
   - Nội dung khớp `/\bPKG([A-Z0-9]{8})\b/i` → gọi `ApplyPackagePayment` rồi `return`.
   - Test: `PackagePaymentWebhookTest`, gọi `POST /api/webhooks/sepay` có chữ ký hợp lệ.
     - Giao dịch `PKG` không tạo `Payment` hay `PaymentIntent`, kể cả khi mã không tồn tại.
     - Nội dung có cả `PKG…` và `NAP…` → chỉ đi nhánh gói, ví không đổi.
     - Giao dịch nạp ví không có `PKG` chạy như cũ.
-- [ ] 3.3 `ApplyPackagePayment` (D6):
+- [x] 3.3 `ApplyPackagePayment` (D6): (test: chưa làm)
   - Chèn receipt; khoá `venues` rồi khoá yêu cầu.
   - Thời điểm trả lấy từ `transactionDate`, parse như `OwnerPaymentAttemptService:189`.
   - Xét outcome đúng thứ tự D6. Khi `applied`: gia hạn hoặc tạo gói, ghi kết quả vào yêu cầu, báo owner in-app sau commit.
@@ -106,24 +106,41 @@ Pha 2–6 làm trên nhánh `feat/module05-packages-finance` và chỉ vào main
     - Scenario "First purchase paid on time", "Renewal paid before the end", "Renewal paid after the end", "Late transfer", "Different amount", "Repeated notification", "Transfer with an unknown code", "Paused venue renews".
     - `transactionDate` đúng bằng `expires_at` → `late`; một giây trước đó → `applied`.
     - Gia hạn một cơ sở không đổi gói của cơ sở khác cùng tổ chức.
-- [ ] 3.4 Ledger: `FinancialPostingService::postPackageFeeReceipt(PackagePaymentReceipt)`.
+- [x] 3.4 Ledger: `FinancialPostingService::postPackageFeeReceipt(PackagePaymentReceipt)`. (test: chưa làm)
   - Debit `platform_bank_cash`, credit `platform_subscription_revenue`, `event_id = package-fee-receipt:{id}`. Chỉ gọi khi outcome là `applied`.
   - Test: sửa `FinancialEntityPostingTest`. Webhook tới hai lần chỉ ghi một bút toán; outcome khác không ghi.
-- [ ] 3.5 Chấm dứt (D8): `POST partner/organizations/{org}/venues/{venue}/package/terminate` nhận `{confirm_consequences: true}`, chỉ owner.
+- [x] 3.5 Chấm dứt (D8): `POST partner/organizations/{org}/venues/{venue}/package/terminate` nhận `{confirm_consequences: true}`, chỉ owner. (test: chưa làm)
   - Test: `PackageTerminationTest`.
     - Scenario "Confirmed termination", "Termination without confirmation", "New term after termination", "Pending renewal paid after termination".
     - Gói không `active` → 409 `PACKAGE_NOT_ACTIVE`. Receipt và ledger không đổi.
-- [ ] 3.6 Màn owner (requirement "Owner view of venue packages"): `GET partner/organizations/{org}/packages`, chỉ owner.
+- [x] 3.6 Màn owner (requirement "Owner view of venue packages"): `GET partner/organizations/{org}/packages`, chỉ owner. (test: chưa làm)
   - Mỗi cơ sở có kỳ, bắt đầu, kết thúc, tình trạng tại now, thời điểm chấm dứt, yêu cầu đang chờ và lịch sử yêu cầu.
   - Kèm bốn kỳ với giá đang áp dụng và giá đã lên lịch tiếp theo.
   - Test: `OwnerVenuePackageViewTest`. Scenario "Expired package view", "Pending request shown". Staff → 403.
-- [ ] 3.7 Frontend `/partner/subscription`, viết lại trong `features/platform-subscriptions/`:
+- [x] 3.7 Frontend `/partner/subscription`, viết lại trong `features/platform-subscriptions/`: (test: chưa làm)
   - Danh sách cơ sở với tình trạng gói. Nút mua hoặc gia hạn; khi gia hạn thì kỳ bị khoá.
   - Mở lại yêu cầu đang chờ: đếm ngược, tài khoản, số tiền, mã thanh toán và QR.
   - Hộp xác nhận chấm dứt ghi rõ: mất thời gian còn lại, không hoàn tiền, không chuyển sang gói khác.
   - Thông báo cho `PACKAGE_REQUEST_PENDING`, `PACKAGE_TERM_LOCKED`, `PACKAGE_PRICE_UNAVAILABLE`, `PACKAGE_NOT_ACTIVE`, `TERMINATION_NOT_CONFIRMED` trong `ERROR_CODE_MAP`, vi/en.
   - Xoá `PlanCatalogCard.vue`, `SubscriptionStatusCard.vue` và phần plan/trial trong `types`, `api`, `composables`.
   - Viết lại `platformSubscriptionApi.spec.ts` và `PlatformSubscriptions.spec.ts`. Staff không thấy menu gói.
+
+- Ghi chú Pha 3 (2026-10-22, chỉ implement, chưa chạy test hay migrate):
+  - Trước Pha 3 đã merge local `feat/module04-phase5` (nhánh này đã chứa tip của `feat/module02-venue-court-alignment` và `feat/module03-price-tables`), commit `cd020ecd`. Pha 3 cần mô hình trạng thái cơ sở của module 2 (cơ sở `closed` → 422). Coordinator yêu cầu merge trước Pha 4, nên merge sớm hơn vẫn đúng yêu cầu.
+  - Quyền owner được kiểm theo tổ chức trên path, trong `authorize()` của FormRequest hoặc ngay trong controller, không dùng `RequireOrganizationRole`. Middleware đó trả 400 khi không có tenant context, cùng vấn đề D13 ghi cho nhóm `admin`. Staff hoặc owner tổ chức khác → 403; cơ sở hay mã yêu cầu của tổ chức khác → 404.
+  - Thêm hai mã lỗi: `VENUE_CLOSED` (422) và `PACKAGE_PAYMENT_UNAVAILABLE` (503), có trong `ERROR_CODE_MAP` vi/en.
+  - Nhánh `PKG` dò regex trên cả `content` và `code`, bỏ qua giao dịch chuyển ra (`transferType` khác `in`). Receipt gắn yêu cầu với mọi outcome trừ `unknown_code`.
+  - Webhook đến trễ sau khi một gói mới hơn đã được áp dụng: gói hiện tại được xét tại thời điểm muộn hơn giữa thời điểm trả và `starts_at` của gói. Cùng kỳ thì cộng tiếp từ `ends_at`, khác kỳ thì `term_conflict`. Nhờ vậy không có dòng nào bắt đầu trước gói hiện tại, và owner không mất kỳ đã trả.
+  - `FinancialPostingService` chạm trần 554 dòng, nên `postEntityJournal` chuyển sang `LedgerService::postOnce`. Hành vi của các nơi gọi giữ nguyên.
+  - Frontend đặt trang gói ở `/admin/packages`, trong khung admin. `/partner/subscription` redirect về đó, nên `action_url` cũ vẫn mở được.
+  - Sửa kèm:
+    - `RecheckHeldReservationsAtNewPrice` (module 4) truyền `channels` qua tham số; trước đó 2.4 ghi đè `payload.channels` nên mail đổi giá bị rơi.
+    - `AdminController` rút về 575 dòng, dưới trần 578. Merge Pha 0 với module 4 từng đẩy file lên 582.
+  - Cho Pha 4 và lane test:
+    - Thứ tự lock của Pha 3 là unique key của receipt → `venues` → yêu cầu → `venue_packages`. Chấm dứt khoá `venues` rồi sửa `venue_packages`. Task 4.1 (cổng D9 khoá `venue_packages` trước) phải chốt một thứ tự chung để tránh deadlock.
+    - `frontend/src/features/admin/composables/usePriceTables.ts:184` còn xử lý mã cũ `SUBSCRIPTION_EXPIRED`/`NO_ACTIVE_SUBSCRIPTION`.
+    - `platformSubscriptionApi.spec.ts` và `PlatformSubscriptions.spec.ts` không còn compile vì import code plan/trial đã xoá; lane test viết lại.
+    - Có thể hạ trần allowlist của `FinancialPostingService` từ 554 xuống 552.
 
 ## 4. Pha 4 – Cổng luôn bật, nhắc hạn và xoá gói cũ (D7, D9, D10, D11)
 

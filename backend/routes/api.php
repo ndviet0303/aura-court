@@ -33,6 +33,7 @@ use App\Http\Controllers\Partner\PartnerDocumentController;
 use App\Http\Controllers\Partner\PartnerVenueController;
 use App\Http\Controllers\Partner\PartnerVenueScheduleController;
 use App\Http\Controllers\Partner\ReceivingConnectionController;
+use App\Http\Controllers\Partner\VenuePackageController;
 use App\Http\Controllers\POS\PosController;
 use App\Http\Controllers\POS\ServiceTabController;
 use App\Http\Controllers\Pricing\CourtPricingController;
@@ -203,7 +204,12 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
         Route::post('{venueId}/submit-publication', [PartnerVenueController::class, 'submitPublication']);
         Route::post('{venueId}/operational-status', [PartnerVenueController::class, 'transitionLifecycle']);
         Route::post('{venueId}/lifecycle', [PartnerVenueController::class, 'transitionLifecycle']);
+        // D16: demo owners only simulate package changes.
+        Route::post('{venueId}/package-requests', [VenuePackageController::class, 'storeRequest'])->middleware(SimulateDemoMutations::class);
+        Route::post('{venueId}/package/terminate', [VenuePackageController::class, 'terminate'])->middleware(SimulateDemoMutations::class);
     });
+    Route::get('partner/organizations/{organizationId}/packages', [VenuePackageController::class, 'index']);
+    Route::get('partner/organizations/{organizationId}/package-requests/{code}', [VenuePackageController::class, 'showRequest']);
     Route::get('partner/organizations/{organizationId}/venues/{venueId}/receiving-connection', [ReceivingConnectionController::class, 'show']);
     Route::post('partner/organizations/{organizationId}/venues/{venueId}/receiving-connection', [ReceivingConnectionController::class, 'store']);
     Route::post('partner/organizations/{organizationId}/venues/{venueId}/receiving-connection/{connectionId}/credential', [ReceivingConnectionController::class, 'rotateCredential']);

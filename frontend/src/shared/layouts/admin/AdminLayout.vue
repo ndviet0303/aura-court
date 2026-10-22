@@ -7,7 +7,7 @@ import { setAppLocale, type AppLocale } from '@/i18n'
 import { applySeo } from '@/lib/seo'
 import { useTenantCapabilities } from '@/features/admin/composables/useTenantCapabilities'
 import CapabilityRouteView from './CapabilityRouteView.vue'
-import { dashboardItem, navGroups, type NavGroup, type NavItem } from './adminNav'
+import { dashboardItem, navGroups, ownerOnlyPaths, type NavGroup, type NavItem } from './adminNav'
 
 const { t, locale } = useI18n()
 const auth = useAuthStore()
@@ -54,21 +54,7 @@ function isItemPermitted(item: NavItem): boolean {
     userAny.capabilities?.can_manage_venues === true
   const isStaff = activeOrgs.some((o: any) => o.role === 'staff')
 
-  // Owner-only: courts, contracts, venues, pricing, membership, organization profile & staff, payment exceptions
-  if (
-    [
-      '/admin/manage',
-      '/admin/contracts',
-      '/admin/venues',
-      '/admin/pricing',
-      '/admin/membership',
-      '/admin/organization',
-      '/admin/staff',
-      '/admin/payment-exceptions',
-    ].includes(item.path)
-  ) {
-    return isOwner
-  }
+  if (ownerOnlyPaths.includes(item.path)) return isOwner
   // Owner or staff: schedule, POS, shifts, inventory, tournaments
   if (
     [

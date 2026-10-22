@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Casts\UtcDateTime;
 use App\Domain\Package\Enums\PackageTerm;
+use Carbon\CarbonInterface;
 use Database\Factories\PackagePaymentRequestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -38,6 +39,12 @@ class PackagePaymentRequest extends Model
             'period_starts_at' => UtcDateTime::class,
             'period_ends_at' => UtcDateTime::class,
         ];
+    }
+
+    /** D7: a pending request reads as expired from its deadline on, before any job writes it. */
+    public function statusAt(CarbonInterface $at): string
+    {
+        return $this->status === self::STATUS_PENDING && $at->gte($this->expires_at) ? self::STATUS_EXPIRED : $this->status;
     }
 
     /** @return BelongsTo<Organization, $this> */

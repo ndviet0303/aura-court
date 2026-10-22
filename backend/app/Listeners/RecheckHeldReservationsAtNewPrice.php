@@ -68,13 +68,13 @@ class RecheckHeldReservationsAtNewPrice
                 'title' => 'Giá sân đã thay đổi',
                 'body' => "Giá sân của đơn {$locked->code} đã thay đổi nên yêu cầu đặt sân này không còn hiệu lực. Vui lòng xem giá mới và gửi lại yêu cầu.",
                 'action_url' => '/booking',
-                'channels' => ['database', 'mail'],
                 'delivered_channels' => [],
                 'mail_view' => 'emails.booking-notification',
                 'aggregate_type' => Reservation::class,
                 'aggregate_id' => $locked->id,
             ],
             orgId: (int) $locked->organization_id,
+            channels: ['database', 'mail'],
         );
         DB::afterCommit(fn () => $slots->each(fn ($slot) => $this->waitlists->notifyForSlot((int) $slot->court_id, $slot->starts_at)));
     }

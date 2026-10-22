@@ -41,13 +41,14 @@ class EloquentUserRepository implements UserRepositoryInterface
     }
 
     /** @return list<int> */
-    public function activeOwnerIds(): array
+    public function activeOwnerIds(?int $organizationId = null): array
     {
         return User::query()
             ->where('status', 'active')
             ->whereHas('organizationMembers', fn ($query) => $query
                 ->where('role', OrganizationMember::ROLE_ORGANIZATION_OWNER)
-                ->where('status', 'active'))
+                ->where('status', 'active')
+                ->when($organizationId !== null, fn ($query) => $query->where('organization_id', $organizationId)))
             ->orderBy('id')
             ->pluck('id')
             ->map(fn ($id) => (int) $id)

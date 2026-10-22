@@ -455,7 +455,7 @@ class AdminController extends Controller
             : now($timezone)->endOfMonth();
 
         $user = $request->user();
-        $scopedVenueIds = null;
+        $scopedVenueIds = $request->filled('venue_id') ? [(int) $request->input('venue_id')] : null;
         if ($user && ! $user->isPlatformAdmin()) {
             // BR-89: aggregated finance belongs to owners only, scoped to the organizations they own (not ones they staff).
             $ownedOrganizationIds = $user->organizationMembers()->where('status', 'active')
@@ -464,15 +464,8 @@ class AdminController extends Controller
             $authorizedVenueIds = $ownedOrganizationIds
                 ->flatMap(fn ($organizationId) => $user->getAuthorizedVenueIds((int) $organizationId))
                 ->unique()->values()->all();
-            if ($request->filled('venue_id')) {
-                $requestedVenueId = (int) $request->input('venue_id');
-                abort_unless(in_array($requestedVenueId, $authorizedVenueIds, true), 403, 'Unauthorized venue report.');
-                $scopedVenueIds = [$requestedVenueId];
-            } else {
-                $scopedVenueIds = $authorizedVenueIds;
-            }
-        } elseif ($request->filled('venue_id')) {
-            $scopedVenueIds = [(int) $request->input('venue_id')];
+            abort_if($scopedVenueIds !== null && ! in_array($scopedVenueIds[0], $authorizedVenueIds, true), 403, 'Unauthorized venue report.');
+            $scopedVenueIds ??= $authorizedVenueIds;
         }
 
         // 1. Bookings are reservations. A 'legacy' mirror counts by its V1 status, any other mirror by its own: V1 writers keep it current, and a V1 no-show stays confirmed as in V2.

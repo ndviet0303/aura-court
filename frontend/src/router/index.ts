@@ -92,16 +92,10 @@ const router = createRouter({
       },
     },
     {
+      // Kept for notification links (package paid, price scheduled); the page lives in the admin shell.
       path: '/partner/subscription',
-      name: 'partner-subscription',
-      component: () =>
-        import('@/features/platform-subscriptions/views/PlatformSubscriptionView.vue'),
-      meta: {
-        auth: true,
-        titleKey: 'seo.partnerSubscriptionTitle',
-        descriptionKey: 'seo.partnerSubscriptionDesc',
-        indexable: false,
-      },
+      redirect: '/admin/packages',
+      meta: { indexable: false },
     },
     {
       path: '/forgot-password',
@@ -361,6 +355,18 @@ const router = createRouter({
           meta: {
             platformAdmin: true,
             titleKey: 'seo.adminVenuePublicationTitle',
+            indexable: false,
+          },
+        },
+        {
+          path: 'packages',
+          name: 'admin-packages',
+          component: () =>
+            import('@/features/platform-subscriptions/views/PlatformSubscriptionView.vue'),
+          meta: {
+            orgRoles: ['organization_owner'],
+            titleKey: 'seo.partnerSubscriptionTitle',
+            descriptionKey: 'seo.partnerSubscriptionDesc',
             indexable: false,
           },
         },
