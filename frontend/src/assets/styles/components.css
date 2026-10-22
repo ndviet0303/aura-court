@@ -407,10 +407,24 @@ html.dark .slot.selected small {
   display: none !important;
 }
 
-/* Keep the time badge and the actions on one row; the summary yields its width first. */
+/* Card rows: time badge and clear button, then the agreement, then a full-width proceed button. */
 .floating-booking.with-agreement .dock-summary {
   flex: 1 1 0 !important;
   min-width: 0;
+}
+
+.floating-booking.with-agreement .dock-actions {
+  display: contents !important;
+}
+
+.floating-booking.with-agreement .dock-btn-clear {
+  order: 2;
+}
+
+.floating-booking.with-agreement .btn-floating-proceed {
+  order: 4;
+  flex: 1 0 100% !important;
+  justify-content: center;
 }
 
 .floating-booking .dock-badge {

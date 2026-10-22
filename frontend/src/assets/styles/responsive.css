@@ -212,11 +212,6 @@
     font-size: 14px !important;
   }
 
-  /* The card's top row also holds the actions; drop the clock so the time range fits. */
-  .floating-booking.with-agreement .dock-badge .material-symbols-outlined {
-    display: none !important;
-  }
-
   .floating-booking .dock-total-box {
     display: inline-flex !important;
     align-items: baseline !important;
