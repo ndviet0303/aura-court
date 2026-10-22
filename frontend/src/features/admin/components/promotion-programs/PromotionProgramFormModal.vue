@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { resolveLocalizedText } from '@/i18n'
 import { AuraButton, CurrencyInput, DateTimePicker, SelectDropdown } from '@/shared/components'
 import { venueClock, venueDate, venueInstant } from '@/core/utils/venueTime'
 import type { Court } from '@/features/court/types/court'
@@ -106,7 +105,7 @@ const payload = computed<CreatePromotionProgramPayload>(() => ({
 const reviewCourtNames = computed(() =>
   props.courts
     .filter((court) => draft.courtIds.includes(court.id))
-    .map((court) => resolveLocalizedText(court.name)),
+    .map((court) => court.code),
 )
 
 // The second click of a double-click on "Xem lại" lands on the confirm button, so it stays disabled for a moment.
@@ -240,7 +239,7 @@ function submit() {
             </p>
             <label v-for="court in courts" :key="court.id" class="court-option">
               <input v-model="draft.courtIds" type="checkbox" :value="court.id" />
-              <span>{{ resolveLocalizedText(court.name) }}</span>
+              <span>{{ court.code }}</span>
             </label>
             <span v-for="m in errorsOf('court_ids')" :key="m" class="form-error">{{ m }}</span>
           </fieldset>

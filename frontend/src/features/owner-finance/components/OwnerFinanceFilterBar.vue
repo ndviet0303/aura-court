@@ -75,7 +75,7 @@ function step(direction: 1 | -1) {
       <span class="form-label">{{ t('admin.ownerFinance.filters.court') }}</span>
       <SelectDropdown
         :model-value="filters.courtId"
-        :options="filters.venueId ? optionsOf(courts, 'admin.ownerFinance.filters.allCourts') : []"
+        :options="filters.venueId ? optionsOf(courts.map((court) => ({ id: court.id, name: court.code })), 'admin.ownerFinance.filters.allCourts') : []"
         variant="bordered"
         :disabled="!filters.venueId"
         :placeholder="t('admin.ownerFinance.filters.pickVenueFirst')"
