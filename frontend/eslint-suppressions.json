@@ -1,9 +1,4 @@
 {
-  "playwright.config.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
   "src/core/composables/useApiCall.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
@@ -17,31 +12,6 @@
   "src/core/utils/errorMessage.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
-    }
-  },
-  "src/features/admin/__tests__/AdminKycVerificationView.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/features/admin/__tests__/AdminMembershipView.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    }
-  },
-  "src/features/admin/__tests__/AdminPayoutsView.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/features/admin/__tests__/AdminScheduleView.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    }
-  },
-  "src/features/admin/__tests__/VenuePublicationReviewViews.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 9
     }
   },
   "src/features/admin/api/adminApi.ts": {
@@ -184,31 +154,6 @@
       "count": 1
     }
   },
-  "src/features/auth/__tests__/OnboardingView.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/features/auth/__tests__/guestNavigation.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    }
-  },
-  "src/features/booking/__tests__/BookingDetailLoyalty.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/features/booking/__tests__/BookingView.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 6
-    }
-  },
-  "src/features/booking/__tests__/LoyaltyPointSelector.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/features/booking/composables/useRecurringBooking.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
@@ -239,26 +184,6 @@
       "count": 5
     }
   },
-  "src/features/home/__tests__/HomeAvailability.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "src/features/home/__tests__/HomeView.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "src/features/partner-registration/__tests__/PartnerApplicationStatusView.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 14
-    }
-  },
-  "src/features/partner-registration/__tests__/PartnerWizardComponents.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
   "src/features/partner-registration/components/BusinessInfoStep.vue": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
@@ -267,11 +192,6 @@
   "src/features/platform-subscriptions/views/PlatformSubscriptionView.vue": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    }
-  },
-  "src/features/pos/__tests__/PosScopedAccessAndCapabilities.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
     }
   },
   "src/features/pos/api/posApi.ts": {
@@ -304,11 +224,6 @@
       "count": 9
     }
   },
-  "src/features/social/__tests__/CommunityFeedAndConnections.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 7
-    }
-  },
   "src/features/social/api/socialApi.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 10
@@ -332,11 +247,6 @@
   "src/features/social/composables/useCreateMatch.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 5
-    }
-  },
-  "src/features/tournament/__tests__/tournament-regressions.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
     }
   },
   "src/features/tournament/api/tournamentApi.ts": {
@@ -380,11 +290,6 @@
     }
   },
   "src/i18n/index.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/lib/__tests__/seo.spec.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
     }
