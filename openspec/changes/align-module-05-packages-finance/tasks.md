@@ -35,6 +35,7 @@ Nhánh riêng, merge và deploy độc lập với các pha sau.
     - Tạo sân (task 1.16) và tạo cơ sở vẫn gọi `EnforcePlanQuota`.
     - Mở, tạm dừng, mở lại, đóng cơ sở và sân (task 1.5–1.8) không kiểm plan/trial.
   - Module 3 trả lời 2026-10-22: tự bỏ điều kiện quyền kinh doanh trong change và code của module 3 (`CreatePriceTable`, `PublishPriceTableVersion`, tạo/sửa chương trình khuyến mãi), trên `feat/module03-price-tables`, sau workflow Pha 4 đang chạy. Sẽ báo commit hash. `PriceTableManagementTest` và `AvailabilityFromPriceTablesTest` còn ca entitlement cho tới lúc module 3 làm test. Module 5 không cần MODIFIED cho module 3.
+  - Module 3 báo 2026-10-22: đã gỡ điều kiện quyền kinh doanh ở commit `5e582c57` (`feat/module03-price-tables`, chưa merge). Phần này trùng Pha 4 (`98f4b473`); khi merge giữ bản đã xoá. Module 5 đã trả lời.
 - [ ] 1.3 Người dùng trả lời và ghi vào Open Questions của design:
   - Q1 (thư viện Excel), cần trước Pha 5. Đã chốt 2026-10-22: A (`openspout/openspout`), kiểm `ext-zip` trước.
   - Q2 (giá trị `SEPAY_*`, URL webhook trên dashboard SePay, scheduler và queue worker trên prod), cần trước Pha 7.
