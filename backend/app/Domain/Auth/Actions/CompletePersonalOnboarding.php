@@ -34,7 +34,7 @@ class CompletePersonalOnboarding
                 abort(400, 'Tài khoản đã hoàn tất thiết lập ban đầu.');
             }
 
-            // Customer identity is preserved. Role remains customer; never self-grant admin!
+            // BR-ACC-05/08: onboarding never changes the account role; owner rights come only from partner approval.
             $updatePayload = [
                 'onboarded' => true,
             ];
@@ -45,11 +45,6 @@ class CompletePersonalOnboarding
 
             if ($data->playLevel !== null) {
                 $updatePayload['play_level'] = $data->playLevel;
-            }
-
-            // Ensure role is customer if not already an existing platform admin
-            if ($user->role !== 'admin') {
-                $updatePayload['role'] = 'customer';
             }
 
             $updatedUser = $this->userRepo->update($user, $updatePayload);
