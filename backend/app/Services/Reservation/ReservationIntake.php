@@ -2,6 +2,8 @@
 
 namespace App\Services\Reservation;
 
+use App\Domain\Pricing\DTOs\RentalQuote;
+use App\Domain\Pricing\DTOs\VoucherChoice;
 use App\Models\Court;
 use App\Models\PriceQuote;
 use App\Models\Reservation;
@@ -76,6 +78,25 @@ class ReservationIntake
         ], 422));
     }
 
+    /** The voucher a booking request names (design D17); the request rules refuse naming both. */
+    public function voucherChoice(array $data): ?VoucherChoice
+    {
+        if (! empty($data['voucher_program_id'])) {
+            return VoucherChoice::program((int) $data['voucher_program_id']);
+        }
+        $code = trim((string) ($data['voucher_code'] ?? ''));
+
+        return $code === '' ? null : VoucherChoice::code($code);
+    }
+
+    /** The applied voucher's end on the app clock, which bounds the booking's payment deadline (design D17); null without one. */
+    public function voucherEndsAt(?RentalQuote $applied): ?Carbon
+    {
+        $endsAt = $applied?->snapshot['voucher']['ends_at'] ?? null;
+
+        return $endsAt === null ? null : Carbon::parse($endsAt)->setTimezone(config('app.timezone'));
+    }
+
     /** @return array{name: string, phone: string, email: string} */
     public function booker(User $user): array
     {
@@ -134,16 +155,20 @@ class ReservationIntake
     }
 
     /**
-     * Earlier of the hold time plus ten minutes and the booking start (design D3); 422 PAYMENT_WINDOW_CLOSED when
-     * that leaves no time to pay.
+     * Earliest of the hold time plus ten minutes, the booking start (design D3) and the applied voucher's end (module 3
+     * D17); 422 PAYMENT_WINDOW_CLOSED when that leaves no time to pay.
      */
-    public function paymentDeadline(PriceQuote $quote): Carbon
+    public function paymentDeadline(PriceQuote $quote, ?RentalQuote $applied = null): Carbon
     {
         $deadline = now()->addMinutes(self::PAYMENT_WINDOW_MINUTES);
         $startsAt = collect((array) $quote->slot_snapshot)->map(fn (array $slot): Carbon => Carbon::parse($slot['starts_at']))->min();
         if ($startsAt !== null && $startsAt->lessThan($deadline)) {
             // The datetime cast stores the clock as-is, so keep the app timezone (slot times come back in UTC).
             $deadline = Carbon::instance($startsAt)->setTimezone($deadline->getTimezone());
+        }
+        $voucherEndsAt = $this->voucherEndsAt($applied);
+        if ($voucherEndsAt !== null && $voucherEndsAt->lessThan($deadline)) {
+            $deadline = $voucherEndsAt;
         }
         if ($deadline->lessThanOrEqualTo(now())) {
             abort(response()->json([

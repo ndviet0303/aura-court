@@ -3,8 +3,8 @@
 namespace App\Domain\Promotion\Actions;
 
 use App\Contracts\Repositories\PromotionProgramRepositoryInterface;
-use App\Domain\Promotion\DTOs\PromotionProgramChange;
 use App\Domain\Promotion\DTOs\UpdatePromotionProgramData;
+use App\Events\PromotionProgramChanged;
 use App\Models\Court;
 use App\Models\PromotionProgram;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +15,7 @@ use Illuminate\Validation\ValidationException;
  * Lock order follows checkout (D11): every court of a submitted set FOR SHARE in id order, not only those that differ
  * before the lock (another update may commit first), then the program row FOR UPDATE, which waits for a checkout
  * holding it (D17); new court rows lock their courts through the key. Three attempts, as on creation.
- * Re-pricing the bookings pending payment after the commit (D19) belongs to task 6.2 and keys on $termsChanged.
+ * Every committed update, a rename too, then re-checks the bookings pending payment that hold its voucher (D19).
  */
 class UpdatePromotionProgram
 {
@@ -23,9 +23,9 @@ class UpdatePromotionProgram
         private readonly PromotionProgramRepositoryInterface $programs,
     ) {}
 
-    public function execute(UpdatePromotionProgramData $data): PromotionProgramChange
+    public function execute(UpdatePromotionProgramData $data): PromotionProgram
     {
-        return DB::transaction(function () use ($data): PromotionProgramChange {
+        $program = DB::transaction(function () use ($data): PromotionProgram {
             $courts = $data->courtIds === null ? null : $this->programs->lockCourts($data->courtIds);
             $program = $this->programs->findForUpdate($data->programId) ?? abort(404);
             if ($program->stopped_at !== null) {
@@ -38,13 +38,15 @@ class UpdatePromotionProgram
             $this->assertWindowAndUses($program, $data->terms);
 
             $this->programs->update($program, $data->terms);
-            $termsChanged = $program->wasChanged(PromotionProgram::PRICING_TERMS);
             if ($data->courtIds !== null) {
-                $termsChanged = $this->programs->syncCourts($program, $data->courtIds) || $termsChanged;
+                $this->programs->syncCourts($program, $data->courtIds);
             }
 
-            return new PromotionProgramChange($program, $termsChanged);
+            return $program;
         }, 3);
+        PromotionProgramChanged::dispatch((int) $program->id);
+
+        return $program;
     }
 
     /** @param  array<string, mixed>  $terms */

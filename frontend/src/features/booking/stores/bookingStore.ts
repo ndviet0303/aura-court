@@ -4,6 +4,7 @@ import { i18n } from '@/i18n'
 import { bookingApi } from '../api/bookingApi'
 import type { Court, AvailabilitySlot } from '@/features/court/types/court'
 import { usePriceChange } from '../composables/usePriceChange'
+import { useVoucherChoice } from '../composables/useVoucherChoice'
 
 export const useBookingStore = defineStore('booking', () => {
   const courts = ref<Court[]>([])
@@ -132,6 +133,9 @@ export const useBookingStore = defineStore('booking', () => {
     price.clear,
   )
 
+  // The voucher the booking form applies; BookingVoucherPicker loads it for the selection (module 3 D10).
+  const vouchers = useVoucherChoice()
+
   // Checks out the selected interval at the amount payable the customer was shown; the server prices
   // it in the same transaction.
   async function checkoutReservation(expectedTotal: number) {
@@ -140,6 +144,7 @@ export const useBookingStore = defineStore('booking', () => {
       starts_at: selection.value?.startsAt,
       ends_at: selection.value?.endsAt,
       expected_total: expectedTotal,
+      ...vouchers.payload(),
     })
     return reservation
   }
@@ -163,6 +168,20 @@ export const useBookingStore = defineStore('booking', () => {
     priceChange: price.priceChange,
     catchPriceChange: price.caught,
     confirmPrice: price.confirm,
+    vouchers: vouchers.vouchers,
+    voucher: vouchers.voucher,
+    vouchersLoading: vouchers.loading,
+    voucherDropped: vouchers.dropped,
+    voucherCodeError: vouchers.codeError,
+    voucherInvalid: vouchers.invalid,
+    loadVouchers: vouchers.load,
+    chooseVoucher: vouchers.choose,
+    enterVoucherCode: vouchers.enterCode,
+    setVoucherLink: vouchers.setLink,
+    catchVoucherInvalid: vouchers.caught,
+    continueWithoutVoucher: vouchers.continueWithout,
+    chooseOtherVoucher: vouchers.chooseOther,
+    clearVouchers: vouchers.clear,
     fetchWalletBalance,
   }
 })

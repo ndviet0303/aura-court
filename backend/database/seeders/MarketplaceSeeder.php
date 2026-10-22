@@ -161,7 +161,8 @@ class MarketplaceSeeder extends Seeder
 
         return $this->atClock($listedAt, function () use ($marketplace, $entitlement, $seller, $asking, $receiver, $metadata): MarketplaceListing {
             $listing = $marketplace->list($entitlement, $seller, $asking, $receiver);
-            $listing->forceFill(['metadata' => $metadata])->saveQuietly();
+            // Keeps the max_resale_price list() stored (D23).
+            $listing->forceFill(['metadata' => [...(array) $listing->metadata, ...$metadata]])->saveQuietly();
 
             return $listing;
         });
@@ -215,6 +216,7 @@ class MarketplaceSeeder extends Seeder
                 'metadata' => [
                     'settlement_mode' => 'peer_to_peer',
                     'original_price' => (int) $entitlement->amount,
+                    'max_resale_price' => $metadata['max_resale_price'] ?? null,
                     'consideration_amount' => (int) $listing->asking_price,
                     'payment_reported_at' => $metadata['payment_reported_at'],
                 ],

@@ -81,7 +81,7 @@ const emit = defineEmits<{
         <!-- Total Breakdown -->
         <div class="total-breakdown-card">
           <div
-            v-for="line in quoteDiscounts(reservation.quote?.benefit_snapshot)"
+            v-for="line in quoteDiscounts(reservation.quote?.benefit_snapshot, reservation.voucher)"
             :key="line.label"
             class="breakdown-subline discount"
           >

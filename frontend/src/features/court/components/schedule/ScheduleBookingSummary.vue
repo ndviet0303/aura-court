@@ -8,6 +8,7 @@ import { venueClockRange } from '@/core/utils/venueTime'
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { useBookingStore } from '@/features/booking/stores/bookingStore'
 import BookingAgreement from '@/features/booking/components/BookingAgreement.vue'
+import BookingVoucherPicker from '@/features/booking/components/BookingVoucherPicker.vue'
 import { useSelectionQuote } from '@/features/booking/composables/useSelectionQuote'
 import { formatDuration, validBookerPhone } from '@/features/booking/utils/reservation'
 import type { Court, AvailabilitySlot } from '../../types/court'
@@ -141,7 +142,6 @@ const formattedDate = computed(() => {
       <p class="notice-msg">{{ notice }}</p>
     </div>
 
-    <!-- Error Feedback Alert -->
     <div v-if="error" class="summary-error-box" role="alert">
       <div class="error-header">
         <div class="error-header-left">
@@ -190,7 +190,6 @@ const formattedDate = computed(() => {
       </div>
     </div>
 
-    <!-- Summary Total & Checkout -->
     <div class="summary-footer">
       <div class="price-breakdown">
         <div class="breakdown-row">
@@ -223,6 +222,7 @@ const formattedDate = computed(() => {
         </div>
       </div>
 
+      <BookingVoucherPicker v-if="auth.user && selectedSlots.length > 0" />
       <BookingAgreement
         v-if="auth.user && selectedSlots.length > 0"
         :rental="quote.rental"

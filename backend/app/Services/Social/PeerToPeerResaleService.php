@@ -21,7 +21,7 @@ use Illuminate\Validation\ValidationException;
  */
 class PeerToPeerResaleService
 {
-    public function __construct(private readonly ResaleListingState $view) {}
+    public function __construct(private readonly ResaleListingState $view, private readonly ResalePriceCap $caps) {}
 
     private const LOCK_MINUTES = 15;
 
@@ -52,6 +52,7 @@ class PeerToPeerResaleService
             $entitlement = $this->transferable($listing, $buyer);
             $metadata = (array) ($listing->metadata ?? []);
             $metadata['buyer_ids'] = array_values(array_unique([...($metadata['buyer_ids'] ?? []), $buyer->id]));
+            abort_if((int) $listing->asking_price > ($metadata['max_resale_price'] ?? $this->caps->forEntitlement($entitlement)), 409, 'Giá pass cao hơn số tiền người bán đã trả sau giảm giá nên không thể mua suất chơi này.');
 
             if ((int) $listing->asking_price === 0) {
                 abort_unless($acceptFree, 422, 'A free transfer needs the buyer\'s explicit acceptance.');
@@ -62,8 +63,7 @@ class PeerToPeerResaleService
             }
 
             abort_unless($listing->sellerReceiver() !== null, 409, 'The seller has not added a receiving account to this listing.');
-            $until = now()->addMinutes(self::LOCK_MINUTES);
-            $until = $listing->cutoff_at->lessThan($until) ? $listing->cutoff_at->copy() : $until;
+            $until = $listing->cutoff_at->copy()->min(now()->addMinutes(self::LOCK_MINUTES));
             $listing->update(['status' => 'checkout', 'metadata' => array_merge($metadata, [
                 'locked_by' => $buyer->id,
                 'locked_until' => $until->utc()->toIso8601String(),
@@ -245,7 +245,6 @@ class PeerToPeerResaleService
         }
 
         $metadata = (array) ($listing->metadata ?? []);
-        $reference = $metadata['reference'] ?? null;
         EntitlementTransfer::create([
             'organization_id' => $listing->organization_id,
             'marketplace_listing_id' => $listing->id,
@@ -256,12 +255,13 @@ class PeerToPeerResaleService
             'buyer_amount' => (int) $listing->asking_price,
             'marketplace_fee' => 0,
             'seller_refund' => 0,
-            'buyer_payment_reference' => $reference,
+            'buyer_payment_reference' => $metadata['reference'] ?? null,
             'idempotency_key' => 'p2p:listing:'.$listing->id,
             'status' => 'completed',
             'metadata' => [
                 'settlement_mode' => 'peer_to_peer',
                 'original_price' => (int) $entitlement->amount,
+                'max_resale_price' => $metadata['max_resale_price'] ?? null,
                 'consideration_amount' => (int) $listing->asking_price,
                 'payment_reported_at' => $metadata['payment_reported_at'] ?? null,
             ],

@@ -572,6 +572,7 @@ export default {
       totalCost: 'Total Quote Cost:',
       membershipDiscount: 'Membership discount:',
       couponDiscount: 'Coupon discount:',
+      voucherDiscount: 'Voucher:',
       instantNote:
         '* Instant payment via wallet balance confirms reservation and activates entry entitlement immediately.',
       paying: 'Processing Payment...',
@@ -655,6 +656,18 @@ export default {
       paymentWindowClosed:
         'There is no time left to pay for this booking. Please choose another time.',
       notPending: 'This booking is no longer pending payment, so it cannot be cancelled.',
+    },
+    voucher: {
+      title: 'Voucher',
+      none: 'No voucher',
+      codePlaceholder: 'Enter a voucher code',
+      apply: 'Apply',
+      remove: 'Remove code',
+      dropped: 'Voucher {voucher} no longer applies to this court or time, so it was removed.',
+      invalidTitle: 'This voucher cannot be applied',
+      withoutTotal: 'Without a voucher, the amount payable is {total}.',
+      continueWithout: 'Continue without a voucher',
+      chooseOther: 'Choose another voucher',
     },
     agreement: {
       booker: 'Booker',
@@ -1297,6 +1310,7 @@ export default {
       freeListingNote:
         'A price of 0 ₫ is a free transfer. The venue may not allow it; you will be told if so.',
       buyerPaysYou: 'The buyer pays you directly',
+      priceAboveMax: 'The price must be between 0 and {amount} ₫, what you paid for this hour.',
     },
   },
   splitBill: {
@@ -2115,6 +2129,21 @@ export default {
       usedLabel: 'Used',
       heldLabel: 'Held for bookings pending payment',
       remainingLabel: 'Left',
+      usage: {
+        heldTitle: 'Bookings pending payment holding a use ({count})',
+        usedTitle: 'Bookings that used the voucher ({count})',
+        empty: 'No bookings yet.',
+        colBooking: 'Booking',
+        colCustomer: 'Customer',
+        colCourtTime: 'Court and time',
+        colDiscount: 'Discount',
+        colAt: {
+          held: 'Held at',
+          used: 'Confirmed at',
+        },
+        cancelled: 'Cancelled after confirmation, still counted as used',
+        loadMore: 'Show more',
+      },
       createdNotice: 'Program "{name}" issued.',
       updatedNotice: 'Program changes saved.',
       stoppedNotice: 'Program stopped.',
@@ -2160,9 +2189,12 @@ export default {
         downloadQr: 'Download QR',
         copied: 'Copied.',
         summary: 'Available {available} · Held {held} · Used {used}',
+        summaryClosed: 'No longer usable {unusable} · Held {held} · Used {used}',
+        booking: 'Booking {code}',
         empty: 'This program has no codes.',
         state: {
           available: 'Available',
+          unusable: 'No longer usable',
           held: 'Held',
           used: 'Used',
         },

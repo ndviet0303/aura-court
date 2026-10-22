@@ -9,6 +9,7 @@ use App\Domain\Pricing\DTOs\RentalQuote;
 use App\Domain\Pricing\DTOs\VoucherChoice;
 use App\Exceptions\VoucherNoLongerApplies;
 use App\Models\Court;
+use App\Models\PromotionProgram;
 use App\Models\Reservation;
 use App\Models\VoucherUse;
 use App\Services\Pricing\RentalPriceCalculator;
@@ -88,23 +89,35 @@ class VoucherUsageService
             if ($use === null) {
                 return;
             }
-            $program = $this->programs->findForShare((int) $use->program_id);
-            $court = $this->courtOf($reservation);
-            try {
-                $base = $this->rentalOf($reservation, $court, $confirmedAt);
-            } catch (ValidationException) {
-                throw new VoucherNoLongerApplies('discount_changed', $this->recordedRental($reservation));
-            }
-            $quote = $this->eligibility->check($program, $use->voucherCode, $court, $base, $confirmedAt, $reservation);
-            if ($quote->discount !== (int) $use->discount) {
-                throw new VoucherNoLongerApplies('discount_changed', $base);
-            }
+            [, $base] = $this->recheck($reservation, $use, $confirmedAt);
 
             if (! $this->uses->markUsed($use, $confirmedAt) && $this->uses->forReservation((int) $reservation->id)?->status !== VoucherUse::STATUS_USED) {
                 // Released under us (a caller that skipped the reservation lock): the booking no longer holds it.
                 throw new VoucherNoLongerApplies('discount_changed', $base);
             }
         });
+    }
+
+    /**
+     * D19, after the owner changed the program: consume's check judged now, and the booking's payment deadline not
+     * after the program's end. True without a held use, which leaves nothing to check, and once the deadline has
+     * passed: the deadline sweep expires it, or consume judges a transfer made in time at its own time (an edit to a
+     * program that has just ended must not expire it). Run under the reservation lock.
+     */
+    public function stillHolds(Reservation $reservation): bool
+    {
+        $use = $this->heldUse($reservation);
+        if ($use === null || $reservation->hold_expires_at?->isPast()) {
+            return true;
+        }
+        try {
+            [$program] = $this->recheck($reservation, $use, now());
+        } catch (VoucherNoLongerApplies) {
+            return false;
+        }
+
+        // No deadline would let a transfer arrive after the end, so it fails too.
+        return $reservation->hold_expires_at !== null && $reservation->hold_expires_at->lte($program->ends_at);
     }
 
     public function holdsVoucher(Reservation $reservation): bool
@@ -128,6 +141,31 @@ class VoucherUsageService
         $use = $this->uses->forReservation((int) $reservation->id);
 
         return $use?->status === VoucherUse::STATUS_HELD ? $use : null;
+    }
+
+    /**
+     * The check consume and stillHolds share (D11, D19), under the program's FOR SHARE lock: the voucher applies at $at
+     * to the booking's current court and unreleased slots priced as confirmed at $at (D6), its own use counted as its
+     * own, with the discount recorded on the use. discount_changed when that discount cannot be confirmed: it differs
+     * or the time lost its price. Returns the program and the booking's rental without a voucher.
+     *
+     * @return array{0: PromotionProgram, 1: RentalQuote}
+     */
+    private function recheck(Reservation $reservation, VoucherUse $use, CarbonInterface $at): array
+    {
+        $program = $this->programs->findForShare((int) $use->program_id);
+        $court = $this->courtOf($reservation);
+        try {
+            $base = $this->rentalOf($reservation, $court, $at);
+        } catch (ValidationException) {
+            throw new VoucherNoLongerApplies('discount_changed', $this->recordedRental($reservation));
+        }
+        $quote = $this->eligibility->check($program, $use->voucherCode, $court, $base, $at, $reservation);
+        if ($quote->discount !== (int) $use->discount) {
+            throw new VoucherNoLongerApplies('discount_changed', $base);
+        }
+
+        return [$program, $base];
     }
 
     /** Read by id, not through a loaded relation that may predate a court change. */

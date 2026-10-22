@@ -12,6 +12,7 @@ use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
 use App\Models\ServiceTab;
 use App\Models\User;
+use App\Services\Promotion\VoucherUsageService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -423,6 +424,8 @@ class AttendanceService
         $this->assertCanOperate($staff, $reservation, 'Unauthorized to reassign court.');
         $oldCourtId = $reservation->court_id;
         abort_if($oldCourtId === $newCourtId, 422, 'New court must be different from current court.');
+        // Module 3 D11: a held booking's voucher use is checked against its court at confirmation; cancel it instead.
+        abort_if(app(VoucherUsageService::class)->holdsVoucher($reservation), 409, 'Đơn đang giữ lượt voucher chờ thanh toán nên không đổi sân được; hãy huỷ đơn thay vì đổi sân.');
 
         $newCourt = Court::query()->whereKey($newCourtId)->firstOrFail();
         abort_unless((int) $newCourt->venue_id === (int) $reservation->court?->venue_id, 422, 'Target court must belong to the same venue.');

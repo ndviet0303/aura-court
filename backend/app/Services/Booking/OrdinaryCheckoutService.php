@@ -16,6 +16,7 @@ use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Payment\ReservationPaymentService;
 use App\Services\Payment\WalletPaymentService;
+use App\Services\Promotion\VoucherUsageService;
 use App\Services\Reservation\PriceQuoteService;
 use App\Services\Reservation\ReservationIntake;
 use App\Services\Reservation\SlotSelectionPolicy;
@@ -31,6 +32,7 @@ class OrdinaryCheckoutService
         private readonly PriceQuoteService $quotes,
         private readonly SlotSelectionPolicy $slotPolicy,
         private readonly ReservationIntake $intake,
+        private readonly VoucherUsageService $voucherUses,
     ) {}
 
     /**
@@ -63,13 +65,16 @@ class OrdinaryCheckoutService
                 $this->intake->releaseOverdueHolds($court, $intervals());
                 // The client always sends the amount it showed; internal callers have nothing to compare.
                 $expectedTotal = isset($data['expected_total']) ? (int) $data['expected_total'] : null;
-                if ($expectedTotal !== null) {
+                // A voucher is locked and judged before the amounts are compared and the deadline is set (D11, D20).
+                $voucher = $this->intake->voucherChoice($data);
+                $applied = $voucher === null ? null : $this->quotes->repriceWithVoucher($quote, $court, $voucher);
+                if ($voucher === null && $expectedTotal !== null) {
                     $this->quotes->reprice($quote, $court);
                 }
                 $slotSnapshots = (array) $quote->slot_snapshot;
                 $directOwnerPayments = app(FeatureFlagService::class)->enabled('direct_owner_payments', (int) $lockedVenue->organization_id);
                 $bookingPolicySnapshot = $directOwnerPayments ? $this->intake->bookingPolicySnapshot($lockedVenue) : null;
-                // Only the rental is payable: no coupon, membership discount or points on court bookings (design D21).
+                // The rental less the voucher, P = T − D: no coupon, membership discount or points (design D21).
                 $netPayable = (int) $quote->total_amount;
                 if ($expectedTotal !== null) {
                     $this->intake->assertAgreedAmount($expectedTotal, (int) $quote->subtotal, $netPayable);
@@ -88,7 +93,7 @@ class OrdinaryCheckoutService
 
                 // Check court blocks
                 $this->slotPolicy->assertAllowed($court, $intervals());
-                $holdExpiresAt = $directOwnerPayments && $netPayable > 0 ? $this->intake->paymentDeadline($quote) : null;
+                $holdExpiresAt = $directOwnerPayments && $netPayable > 0 ? $this->intake->paymentDeadline($quote, $applied) : null;
 
                 $metadata = (array) ($data['metadata'] ?? []);
                 if ($actor !== null && $actor->id !== $user->id) {
@@ -147,6 +152,14 @@ class OrdinaryCheckoutService
                         'amount' => $slot->unit_price,
                         'status' => $directOwnerPayments && $netPayable > 0 ? 'held' : 'active',
                     ]);
+                }
+
+                if ($voucher !== null) {
+                    // Before payment starts; a booking confirmed here (0đ or legacy wallet) uses it at once (D11).
+                    $this->voucherUses->hold($reservation, $voucher);
+                    if ($reservation->status === 'confirmed') {
+                        $this->voucherUses->consume($reservation, now());
+                    }
                 }
 
                 // Debit wallet if netPayable > 0

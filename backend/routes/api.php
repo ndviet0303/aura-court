@@ -599,13 +599,14 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::post('price-tables/{table}/retire', [PriceTableController::class, 'retire']);
             Route::post('courts/{court}/price-table-links/end', [CourtPricingController::class, 'endLink']);
             Route::get('courts/{court}/price-coverage', [CourtPricingController::class, 'coverage']);
-            // Promotion programs and their codes (D7, D8, D14); programs are never deleted.
+            // Promotion programs, their codes and usage (D7, D8, D14, FR-68); programs are never deleted.
             Route::get('venues/{venue}/promotion-programs', [PromotionProgramController::class, 'index']);
             Route::post('venues/{venue}/promotion-programs', [PromotionProgramController::class, 'store']);
             Route::get('promotion-programs/{program}', [PromotionProgramController::class, 'show']);
             Route::patch('promotion-programs/{program}', [PromotionProgramController::class, 'update']);
             Route::post('promotion-programs/{program}/stop', [PromotionProgramController::class, 'stop']);
             Route::get('promotion-programs/{program}/codes', [PromotionProgramController::class, 'codes']);
+            Route::get('promotion-programs/{program}/usage', [PromotionProgramController::class, 'usage']);
         });
     });
 

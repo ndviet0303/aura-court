@@ -4,6 +4,7 @@ import type {
   PromotionProgram,
   PromotionProgramCodes,
   PromotionProgramTerms,
+  PromotionProgramUsage,
 } from '../types/promotionProgram'
 
 export const promotionProgramApi = {
@@ -19,4 +20,8 @@ export const promotionProgramApi = {
     api.post<{ data: PromotionProgram }>(`/admin/promotion-programs/${programId}/stop`),
   codes: (programId: number) =>
     api.get<{ data: PromotionProgramCodes }>(`/admin/promotion-programs/${programId}/codes`),
+  usage: (programId: number, page: number) =>
+    api.get<PromotionProgramUsage>(`/admin/promotion-programs/${programId}/usage`, {
+      params: { page },
+    }),
 }

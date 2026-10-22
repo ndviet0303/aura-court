@@ -105,7 +105,8 @@ export interface UserBookingSlot {
   venueName: string
   dateStr: string
   timeSlot: string
-  originalPrice: number
+  /** What the booking paid for this slot after its discounts (design D23); the listing may not ask more. */
+  maxResalePrice: number
   startsAt: string
   eligible: boolean
   ineligibleReason?: string
@@ -143,6 +144,7 @@ export type ResaleSourceReservation = {
     starts_at: string
     ends_at: string
     amount: number | null
+    max_resale_price?: number
     court?: { name: string; venue?: { name: string } | null } | null
   }[]
 }

@@ -31,4 +31,11 @@ interface ReservationRepositoryInterface
      * @return Collection<int, ReservationSlot>
      */
     public function unreleasedSlots(int $reservationId): Collection;
+
+    /**
+     * Bookings pending payment that hold a use of the program (design D19), by id, with only id and code.
+     *
+     * @return Collection<int, Reservation>
+     */
+    public function heldWithVoucherOf(int $programId): Collection;
 }

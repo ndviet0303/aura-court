@@ -2,12 +2,16 @@
 
 namespace App\Services\Reservation;
 
+use App\Domain\Pricing\DTOs\RentalQuote;
+use App\Domain\Pricing\DTOs\VoucherChoice;
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
+use App\Exceptions\VoucherNoLongerApplies;
 use App\Models\Court;
 use App\Models\CourtBlock;
 use App\Models\PriceQuote;
 use App\Models\ReservationSlot;
 use App\Services\Pricing\RentalPriceCalculator;
+use App\Services\Promotion\VoucherEligibility;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
@@ -20,6 +24,7 @@ class PriceQuoteService
         private readonly VenueOperatingCalendar $operatingCalendar,
         private readonly RentalPriceCalculator $rentals,
         private readonly ReservationIntake $intake,
+        private readonly VoucherEligibility $vouchers,
     ) {}
 
     /** A customer's quote: one interval on the 30-minute grid, priced and later stored as one slot (design D14, D15). */
@@ -104,6 +109,25 @@ class PriceQuoteService
         $duration = intdiv(Carbon::parse($slots->first()['ends_at'])->getTimestamp() - $times[0]->getTimestamp(), 60);
 
         $quote->forceFill($this->priceAttributes($court, $times, $duration))->save();
+    }
+
+    /**
+     * reprice() for a booking that names a voucher (design D11, D17, D20): the program is locked FOR UPDATE first,
+     * after releaseOverdueHolds, so its terms and uses stay put until commit; the quote then totals T − D. Judged
+     * before any amount is compared: VoucherNoLongerApplies with the voucher-less amounts when it does not apply.
+     */
+    public function repriceWithVoucher(PriceQuote $quote, Court $court, VoucherChoice $choice): RentalQuote
+    {
+        $resolved = $this->vouchers->resolve($court, $choice, forUpdate: true);
+        $this->reprice($quote, $court);
+        $rental = (int) $quote->subtotal;
+        $parts = collect((array) $quote->slot_snapshot)->flatMap(fn (array $slot): array => $slot['parts'] ?? [])->values()->all();
+        $base = new RentalQuote(rental: $rental, discount: 0, total: $rental, snapshot: ['parts' => $parts, 'voucher' => null]);
+        [$program, $code] = $resolved ?? throw new VoucherNoLongerApplies('not_found', $base);
+        $applied = $this->vouchers->check($program, $code, $court, $base, now());
+        $quote->forceFill(['total_amount' => $applied->total])->save();
+
+        return $applied;
     }
 
     /**

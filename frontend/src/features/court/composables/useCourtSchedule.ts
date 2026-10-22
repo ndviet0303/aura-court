@@ -138,6 +138,8 @@ export function useCourtSchedule() {
     store.selectedCourt = null
     store.selectedSlots = []
     store.slots = []
+    // A QR deep link fills in its private code (module 3 D9); it is checked against the chosen court.
+    if (typeof route.query.voucher === 'string') store.setVoucherLink(route.query.voucher)
     try {
       if (store.courts.length === 0) {
         await store.loadCourts()
@@ -247,7 +249,7 @@ export function useCourtSchedule() {
       router.push({ name: 'reservations', params: { code: reservation.code } })
     } catch (cause) {
       const again = (total: number) => proceedToBooking(total)
-      if (!store.catchPriceChange(cause, again)) {
+      if (!store.catchPriceChange(cause, again) && !store.catchVoucherInvalid(cause, again)) {
         error.value = bookingErrorMessage(
           cause,
           'Không thể khởi tạo đơn đặt sân. Vui lòng thử lại.',

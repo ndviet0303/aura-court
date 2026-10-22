@@ -70,9 +70,14 @@ class ReservationService
                 'end' => $slotSnapshot['ends_at'],
             ])->all();
             $this->intake->releaseOverdueHolds($lockedCourt, $intervals());
+            // A voucher is locked and judged before the amounts are compared and the deadline is set (D11, D20).
+            $voucher = $this->intake->voucherChoice($data);
+            $applied = $voucher === null ? null : $this->quotes->repriceWithVoucher($quote, $lockedCourt, $voucher);
             // The client always sends the amount it showed; recurring periods price their own fresh quote.
             if (isset($data['expected_total'])) {
-                $this->quotes->reprice($quote, $lockedCourt);
+                if ($voucher === null) {
+                    $this->quotes->reprice($quote, $lockedCourt);
+                }
                 $this->intake->assertAgreedAmount((int) $data['expected_total'], (int) $quote->subtotal, (int) $quote->total_amount);
             }
             $directOwnerPayments = app(FeatureFlagService::class)
@@ -81,14 +86,16 @@ class ReservationService
             $this->slotPolicy->assertAllowed($lockedCourt, $intervals());
 
             $bookingPolicySnapshot = null;
-            $holdExpiresAt = $quote->expires_at;
+            // A legacy hold keeps the quote's expiry, never past the voucher's end (D17).
+            $voucherEndsAt = $this->intake->voucherEndsAt($applied);
+            $holdExpiresAt = $voucherEndsAt !== null && $voucherEndsAt->lessThan($quote->expires_at) ? $voucherEndsAt : $quote->expires_at;
             if ($directOwnerPayments) {
                 $bookingPolicySnapshot = $this->intake->bookingPolicySnapshot($lockedVenue);
                 // Recurring periods hold until their own period deadline (design D3 leaves them out).
                 if (! empty($data['hold_expires_at_override'])) {
                     $holdExpiresAt = Carbon::parse($data['hold_expires_at_override']);
                 } elseif ((int) $quote->total_amount > 0) {
-                    $holdExpiresAt = $this->intake->paymentDeadline($quote);
+                    $holdExpiresAt = $this->intake->paymentDeadline($quote, $applied);
                 }
             }
 
@@ -141,6 +148,14 @@ class ReservationService
                     'amount' => $slot->unit_price,
                     'status' => $directOwnerPayments && (int) $quote->total_amount === 0 ? 'active' : 'held',
                 ]);
+            }
+
+            if ($voucher !== null) {
+                // Before payment starts; only a direct 0đ booking is confirmed here and uses it at once (D11).
+                app(VoucherUsageService::class)->hold($reservation, $voucher);
+                if ($reservation->status === 'confirmed') {
+                    app(VoucherUsageService::class)->consume($reservation, now());
+                }
             }
 
             $quote->update([

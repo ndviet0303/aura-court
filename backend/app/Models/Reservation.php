@@ -179,6 +179,12 @@ class Reservation extends Model
         return $this->hasOne(AffectedReservationCase::class)->latestOfMany();
     }
 
+    /** The booking's voucher use (module 3 D11, D17), whatever its status. */
+    public function voucherUse(): HasOne
+    {
+        return $this->hasOne(VoucherUse::class);
+    }
+
     public function serviceTabs(): HasMany
     {
         return $this->hasMany(ServiceTab::class);
