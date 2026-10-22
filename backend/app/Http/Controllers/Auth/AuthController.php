@@ -266,8 +266,8 @@ class AuthController extends Controller
                 return redirect("{$frontendUrl}/onboarding");
             }
 
-            if ($user->role === 'admin') {
-                return redirect("{$frontendUrl}/admin/organization");
+            if ($user->isPlatformAdmin()) {
+                return redirect("{$frontendUrl}/admin");
             }
 
             return redirect("{$frontendUrl}/");

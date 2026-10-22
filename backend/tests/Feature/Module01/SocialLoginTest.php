@@ -52,6 +52,14 @@ class SocialLoginTest extends TestCase
         $this->assertSame(1, User::count());
     }
 
+    public function test_fr_acc_03_a_platform_admin_lands_on_the_admin_area(): void
+    {
+        User::factory()->create(['email' => 'admin@gmail.com', 'role' => 'platform_admin', 'social_provider' => 'google', 'social_id' => 'g-admin', 'onboarded' => true]);
+        $this->fakeProvider('g-admin', 'admin@gmail.com');
+
+        $this->get('/api/v1/auth/google/callback')->assertRedirect(self::FRONTEND.'/admin');
+    }
+
     public function test_br_acc_04_facebook_sign_in_creates_a_customer_whose_email_still_needs_verification(): void
     {
         $this->fakeProvider('fb-1', 'c@example.com');
