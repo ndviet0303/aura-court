@@ -4,6 +4,7 @@ namespace Tests\Feature\Module02;
 
 use App\Models\User;
 use App\Models\Venue;
+use App\Models\VenueBookingPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -130,5 +131,11 @@ class VenueInformationTest extends TestCase
         }
         $this->actingAs($owner)->putJson($url, ['settings' => $settings])->assertSuccessful();
         $this->assertSame($settings['booking'], $this->actingAs($owner)->getJson($url)->assertOk()->json('data.settings.booking'));
+
+        // Policy changes after booking: a save adds a version and keeps the earlier one for bookings that captured it.
+        $settings['booking']['max_days_ahead'] = 60;
+        $this->actingAs($owner)->putJson($url, ['settings' => $settings])->assertSuccessful();
+        $this->assertSame([30, 60], VenueBookingPolicy::query()->where('venue_id', $venue->id)->orderBy('version')->get()->map(fn ($p) => $p->settings['booking']['max_days_ahead'])->all());
+        $this->actingAs($owner)->getJson($url)->assertJsonPath('data.settings.booking.max_days_ahead', 60);
     }
 }

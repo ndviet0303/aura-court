@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Module02;
 
+use App\Events\CourtStatusUpdated;
 use App\Models\AffectedReservationCase;
 use App\Models\AuditLog;
 use App\Models\Court;
@@ -11,6 +12,7 @@ use App\Models\User;
 use App\Models\WalletTransaction;
 use App\Services\Promotion\VoucherUsageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\Concerns\BuildsVenues;
 use Tests\Feature\Module02\Concerns\SeedsBookings;
 use Tests\TestCase;
@@ -196,6 +198,23 @@ class AffectedBookingCommandsTest extends TestCase
         $this->assertSame('active', $court->fresh()->status);
         $this->assertSame('cancelled', $booking->fresh()->status);
         $this->assertSame('cancelled', AffectedReservationCase::sole()->status);
+    }
+
+    public function test_br_39_commands_publish_inventory_after_commit_and_refusals_publish_nothing(): void
+    {
+        $court = $this->bookableCourt();
+        $target = $this->sibling($court);
+        $booking = $this->booking($court, $this->tomorrowAt(10));
+        $owner = $this->ownerOf($court->venue->organization);
+        Event::fake([CourtStatusUpdated::class]);
+
+        $this->command($owner, $booking, 'move-court', self::AGREED + ['court_id' => $target->id])->assertStatus(409);
+        Event::assertNotDispatched(CourtStatusUpdated::class);
+
+        $this->openCase($booking);
+        $this->command($owner, $booking, 'move-court', self::AGREED + ['court_id' => $target->id])->assertOk();
+        Event::assertDispatched(CourtStatusUpdated::class, fn (CourtStatusUpdated $e) => $e->courtId === $court->id && $e->status === 'available');
+        Event::assertDispatched(CourtStatusUpdated::class, fn (CourtStatusUpdated $e) => $e->courtId === $target->id && $e->status === 'booked');
     }
 
     public function test_br_39_reassign_court_is_retired(): void
