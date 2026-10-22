@@ -36,14 +36,14 @@ const sportTypeFilter = ref('all')
 
 const sportCategories = [
   { id: 'all', name: 'Tất cả môn', icon: 'apps' },
-  { id: 'badminton', name: 'Cầu lông', icon: 'sports_tennis' },
+  { id: 'badminton', name: 'Cầu lông', icon: 'badminton' },
   { id: 'football_5v5', name: 'Bóng đá 5v5', icon: 'sports_soccer' },
   { id: 'football_7v7', name: 'Bóng đá 7v7', icon: 'sports_soccer' },
   { id: 'tennis', name: 'Tennis', icon: 'sports_tennis' },
-  { id: 'pickleball', name: 'Pickleball', icon: 'sports_tennis' },
+  { id: 'pickleball', name: 'Pickleball', icon: 'pickleball' },
   { id: 'basketball', name: 'Bóng rổ', icon: 'sports_basketball' },
   { id: 'volleyball', name: 'Bóng chuyền', icon: 'sports_volleyball' },
-  { id: 'table_tennis', name: 'Bóng bàn', icon: 'table_restaurant' },
+  { id: 'table_tennis', name: 'Bóng bàn', icon: 'sports_tennis' },
 ]
 
 const courtsChipsScrollRef = ref<HTMLElement | null>(null)
@@ -170,16 +170,6 @@ async function selectSportCategory(sportId: string) {
     /* store handles error */
   }
 }
-const areaOptions = computed(() => [
-  { value: 'all', label: `${t('home.search.allAreas')} (${store.courts.length} sân)` },
-  ...areas.value.map((a) => ({ value: a.key, label: `${a.label} (${a.count} sân)` })),
-])
-
-const selectedAreaValue = computed<string | number>({
-  get: () => selectedArea.value ?? 'all',
-  set: selectArea,
-})
-
 const timeOptions = computed(() => [
   { value: 'all', label: t('home.search.allSlots') },
   { value: 'morning', label: t('home.search.morning') },
@@ -207,12 +197,17 @@ const selectedCourtName = computed(
   () => selectedCourtObj.value?.code || (selected.value ? `Sân ${selected.value}` : ''),
 )
 const availabilitySummary = computed(() =>
-  date.value
-    ? t('home.availability.summary', {
-        date: formatAvailabilityDate(date.value, locale.value),
-        count: visibleSlots.value.filter((slot: AvailabilitySlot) => slot.available).length,
-      })
-    : '',
+  [
+    selectedCourtObj.value?.venue?.name,
+    date.value
+      ? t('home.availability.summary', {
+          date: formatAvailabilityDate(date.value, locale.value),
+          count: visibleSlots.value.filter((slot: AvailabilitySlot) => slot.available).length,
+        })
+      : '',
+  ]
+    .filter(Boolean)
+    .join(' · '),
 )
 
 let localRequestId = 0
@@ -316,16 +311,6 @@ onMounted(async () => {
       <!-- Main Search Strip -->
       <div class="search-strip">
         <div class="search-field">
-          <label>{{ t('home.search.court') }}</label>
-          <SelectDropdown
-            v-model="selectedAreaValue"
-            :options="areaOptions"
-            :placeholder="t('home.search.court')"
-            :aria-label="t('home.search.court')"
-            @change="selectArea"
-          />
-        </div>
-        <div class="search-field">
           <label>{{ t('home.search.date') }}</label>
           <DatePicker v-model="date" @change="loadAvailability" />
         </div>
@@ -369,7 +354,7 @@ onMounted(async () => {
     <p v-if="store.error" class="error">{{ store.error }}</p>
     <!-- Clean Beside-the-slots controls: area tabs, quick search, date & court selector -->
     <div class="availability-beside-bar">
-      <!-- Clean Control Header: Area tabs on left, Date & Quick search on right -->
+      <!-- Area tabs on the left, court search on the right -->
       <div class="availability-bar-header">
         <CourtAreaTabs
           :areas="areas"
@@ -382,13 +367,8 @@ onMounted(async () => {
           @locate="locateNearest"
         />
 
-        <!-- Quick actions: Search + DatePicker -->
         <div class="availability-quick-actions">
           <CourtSearchBox v-model="courtSearchQuery" />
-
-          <div class="availability-date-wrapper">
-            <DatePicker v-model="date" @change="loadAvailability" />
-          </div>
         </div>
       </div>
 
@@ -585,37 +565,6 @@ onMounted(async () => {
   font-size: 14px;
   font-weight: 500;
   color: var(--muted);
-}
-
-.availability-date-wrapper {
-  display: flex;
-  align-items: center;
-}
-
-/* The shared picker is an underlined form field; here it sits beside pills. */
-.availability-date-wrapper :deep(.date-picker) {
-  min-width: 0;
-}
-
-.availability-date-wrapper :deep(.date-picker-trigger) {
-  height: 34px;
-  box-sizing: border-box;
-  padding: 0 12px;
-  gap: 8px;
-  border: 1px solid var(--outline);
-  border-radius: 999px;
-  background: var(--surface-subtle);
-  font-size: 12.5px;
-  font-weight: 600;
-}
-
-.availability-date-wrapper :deep(.date-picker-trigger .material-symbols-outlined) {
-  font-size: 16px;
-  color: var(--muted);
-}
-
-.availability-date-wrapper :deep(.date-picker-trigger:hover) {
-  border-color: var(--accent);
 }
 
 .no-filtered-courts {

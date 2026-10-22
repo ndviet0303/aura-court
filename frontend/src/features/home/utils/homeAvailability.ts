@@ -109,6 +109,7 @@ export function getCourtIcon(court: Court): string {
   if (sport === 'football_5v5' || sport === 'football_7v7') return 'sports_soccer'
   if (sport === 'basketball') return 'sports_basketball'
   if (sport === 'volleyball') return 'sports_volleyball'
-  if (sport === 'table_tennis') return 'table_restaurant'
+  if (sport === 'badminton') return 'badminton'
+  if (sport === 'pickleball') return 'pickleball'
   return 'sports_tennis'
 }

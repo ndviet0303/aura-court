@@ -38,13 +38,13 @@ const props = withDefaults(
         id: 'badminton',
         labelKey: 'courts.sportBadminton',
         defaultLabel: 'Cầu lông',
-        icon: 'sports_tennis',
+        icon: 'badminton',
       },
       {
         id: 'pickleball',
         labelKey: 'courts.sportPickleball',
         defaultLabel: 'Pickleball',
-        icon: 'sports_tennis',
+        icon: 'pickleball',
       },
       {
         id: 'tennis',
@@ -68,7 +68,7 @@ const props = withDefaults(
         id: 'table_tennis',
         labelKey: 'courts.sportTableTennis',
         defaultLabel: 'Bóng bàn',
-        icon: 'table_restaurant',
+        icon: 'sports_tennis',
       },
       {
         id: 'volleyball',

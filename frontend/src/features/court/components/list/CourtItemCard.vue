@@ -17,7 +17,8 @@ const sportIcon = computed(() => {
   const type = props.court.sport_type
   if (type === 'basketball') return 'sports_basketball'
   if (type.startsWith('football')) return 'sports_soccer'
-  if (type === 'table_tennis') return 'table_restaurant'
+  if (type === 'badminton') return 'badminton'
+  if (type === 'pickleball') return 'pickleball'
   if (type === 'volleyball') return 'sports_volleyball'
   return 'sports_tennis'
 })

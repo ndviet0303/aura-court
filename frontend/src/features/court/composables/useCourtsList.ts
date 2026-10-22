@@ -38,13 +38,13 @@ export function useCourtsList() {
       id: 'badminton',
       labelKey: 'courts.sportBadminton',
       defaultLabel: 'Cầu lông',
-      icon: 'sports_tennis',
+      icon: 'badminton',
     },
     {
       id: 'pickleball',
       labelKey: 'courts.sportPickleball',
       defaultLabel: 'Pickleball',
-      icon: 'sports_tennis',
+      icon: 'pickleball',
     },
     { id: 'tennis', labelKey: 'courts.sportTennis', defaultLabel: 'Tennis', icon: 'sports_tennis' },
     {
@@ -63,7 +63,7 @@ export function useCourtsList() {
       id: 'table_tennis',
       labelKey: 'courts.sportTableTennis',
       defaultLabel: 'Bóng bàn',
-      icon: 'table_restaurant',
+      icon: 'sports_tennis',
     },
     {
       id: 'volleyball',
@@ -75,9 +75,9 @@ export function useCourtsList() {
 
   const sportOptions = [
     { value: 'all', label: 'Tất cả môn thể thao', icon: 'sports' },
-    { value: 'badminton', label: 'Cầu lông', icon: 'sports_tennis' },
+    { value: 'badminton', label: 'Cầu lông', icon: 'badminton' },
     { value: 'tennis', label: 'Tennis', icon: 'sports_tennis' },
-    { value: 'pickleball', label: 'Pickleball', icon: 'sports_tennis' },
+    { value: 'pickleball', label: 'Pickleball', icon: 'pickleball' },
   ]
 
   const venueOptions = computed(() => {

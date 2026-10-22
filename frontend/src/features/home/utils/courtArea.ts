@@ -83,11 +83,10 @@ export function filterCourts(
   )
 }
 
-/** Chip subtitle, e.g. "Cầu Giấy · 2.1 km". */
+/** Chip subtitle, e.g. "Aura Court Cầu Giấy · 2.1 km"; court codes repeat across venues, so name the venue. */
 export function describeCourtPlace(court: Court, origin: LatLng | null): string {
   const key = courtAreaKey(court)
+  const place = court.venue?.name?.trim() || (key === OTHER_AREA ? '' : key)
   const distance = courtDistanceKm(court, origin)
-  return [key === OTHER_AREA ? '' : key, distance === null ? '' : `${distance.toFixed(1)} km`]
-    .filter(Boolean)
-    .join(' · ')
+  return [place, distance === null ? '' : `${distance.toFixed(1)} km`].filter(Boolean).join(' · ')
 }
