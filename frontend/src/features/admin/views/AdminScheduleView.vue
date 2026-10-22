@@ -10,6 +10,7 @@ import WeeklyScheduleCard from '../components/schedule/WeeklyScheduleCard.vue'
 import MaintenanceScheduleCard from '../components/schedule/MaintenanceScheduleCard.vue'
 import SpecialDatesCard from '../components/schedule/SpecialDatesCard.vue'
 import OperationalStopDialog from '../components/lifecycle/OperationalStopDialog.vue'
+import AffectedBookingsDialog from '../components/affected/AffectedBookingsDialog.vue'
 import SpecialDateModal from '../components/schedule/SpecialDateModal.vue'
 import ScheduleAuditLogsModal from '../components/schedule/ScheduleAuditLogsModal.vue'
 import CourtUnlockConfirmModal from '../components/schedule/CourtUnlockConfirmModal.vue'
@@ -28,6 +29,7 @@ const {
   specialDates,
   showSpecialDateModal,
   showAuditLogsModal,
+  affected,
   filteredCourts,
   filteredStops,
   totalVenuesCount,
@@ -139,6 +141,8 @@ onMounted(() => {
       @close="lifecycle.closeStop"
       @submit="lifecycle.submitStop"
     />
+    <AffectedBookingsDialog :state="lifecycle.affected" />
+    <AffectedBookingsDialog :state="affected" />
 
     <SpecialDateModal
       :show="showSpecialDateModal"

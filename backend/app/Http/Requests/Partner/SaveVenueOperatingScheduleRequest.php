@@ -32,6 +32,7 @@ class SaveVenueOperatingScheduleRequest extends FormRequest
     {
         return [
             'court_id' => ['nullable', 'integer'],
+            'acknowledge_affected' => ['sometimes', 'boolean'],
             'timezone' => ['required', 'timezone'],
             'weekly_hours' => ['required', 'array'],
             'weekly_hours.1' => ['required', 'array:closed,intervals'],

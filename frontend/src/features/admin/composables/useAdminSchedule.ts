@@ -1,6 +1,7 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminApi } from '../api/adminApi'
+import { useAffectedConfirm } from './useAffectedConfirm'
 import { errorMessage } from '@/core/utils/errorMessage'
 import type { Court, OperatingStatus, OperationalStop, Venue } from '@/features/court/types/court'
 
@@ -52,6 +53,10 @@ export function useAdminSchedule() {
   const selectedVenueFilter = ref<number | 'all'>('all')
 
   const showSpecialDateModal = ref(false)
+  // Hours, closed days and dated exceptions answer 409 with the bookings they touch until acknowledged (D7).
+  const affected = useAffectedConfirm()
+  const acknowledgement = (acknowledge: boolean) =>
+    acknowledge ? { acknowledge_affected: true } : {}
   const showAuditLogsModal = ref(false)
 
   const weeklySchedule = ref<WeekdaySchedule[]>(emptyWeeklySchedule())
@@ -206,7 +211,8 @@ export function useAdminSchedule() {
         error.value = t('admin.schedule.selectVenueToSave')
         return
       }
-      await adminApi.saveOperatingSchedule(venue.organization_id, venue.id, {
+      const organizationId = venue.organization_id
+      const payload = {
         ...(typeof selectedScheduleCourtId.value === 'number'
           ? { court_id: selectedScheduleCourtId.value }
           : {}),
@@ -222,8 +228,14 @@ export function useAdminSchedule() {
             },
           ]),
         ),
-      })
-      if (notify) {
+      }
+      const saved = await affected.guard((acknowledge) =>
+        adminApi.saveOperatingSchedule(organizationId, venue.id, {
+          ...payload,
+          ...acknowledgement(acknowledge),
+        }),
+      )
+      if (saved && notify) {
         showNotice(t('admin.schedule.saveNotice'))
       }
     } catch (cause: unknown) {
@@ -253,8 +265,9 @@ export function useAdminSchedule() {
       error.value = t('admin.schedule.invalidHours')
       return
     }
+    const organizationId = venue.organization_id
     try {
-      await adminApi.saveScheduleException(venue.organization_id, venue.id, {
+      const payload = {
         ...(typeof selectedScheduleCourtId.value === 'number'
           ? { court_id: selectedScheduleCourtId.value }
           : {}),
@@ -263,7 +276,14 @@ export function useAdminSchedule() {
         type: item.type,
         timezone: venue.timezone || 'Asia/Ho_Chi_Minh',
         intervals: intervals.filter(Boolean),
-      })
+      }
+      const saved = await affected.guard((acknowledge) =>
+        adminApi.saveScheduleException(organizationId, venue.id, {
+          ...payload,
+          ...acknowledgement(acknowledge),
+        }),
+      )
+      if (!saved) return
       await loadCalendarSettings()
       showSpecialDateModal.value = false
       showNotice(t('admin.schedule.specialDateAdded', { name: item.name }))
@@ -274,9 +294,13 @@ export function useAdminSchedule() {
 
   async function deleteSpecialDate(id: number) {
     const venue = selectedVenue.value
-    if (!venue?.organization_id) return
+    const organizationId = venue?.organization_id
+    if (!venue || !organizationId) return
     try {
-      await adminApi.deleteScheduleException(venue.organization_id, venue.id, id)
+      const deleted = await affected.guard((acknowledge) =>
+        adminApi.deleteScheduleException(organizationId, venue.id, id, acknowledge),
+      )
+      if (!deleted) return
       specialDates.value = specialDates.value.filter((item) => item.id !== id)
       showNotice(t('admin.schedule.specialDateDeleted'))
     } catch (cause: unknown) {
@@ -334,6 +358,7 @@ export function useAdminSchedule() {
     specialDates,
     showSpecialDateModal,
     showAuditLogsModal,
+    affected,
     filteredCourts,
     filteredStops,
     totalVenuesCount,

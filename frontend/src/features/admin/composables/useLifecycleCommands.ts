@@ -4,6 +4,7 @@ import type { ApiError } from '@/core/types/api'
 import type { OperationalStop } from '@/features/court/types/court'
 import { useAuthStore } from '@/stores/auth'
 import { adminApi } from '../api/adminApi'
+import { useAffectedConfirm } from './useAffectedConfirm'
 import type {
   LifecycleCommand,
   LifecycleTarget,
@@ -20,32 +21,29 @@ type LifecycleError = ApiError & { missing_items?: MissingItem[] }
  */
 export function useLifecycleCommands(onDone: (message: string) => void | Promise<void>) {
   const { t } = useI18n()
-  const auth = useAuthStore()
+  const isOwnerOf = useOwnerCheck()
   // target null: the dialog picks the court (schedule view).
   const stopRequest = ref<{ command: StopCommand; target: LifecycleTarget | null } | null>(null)
   const busy = ref(false)
   const failure = ref<LifecycleError | null>(null)
-
-  // ponytail: UI-only role check; the backend still answers 403 for the wrong role or organization.
-  // An unknown organization is never owned, so no owner action shows for it.
-  function isOwnerOf(organizationId?: number | null): boolean {
-    return (auth.user?.organizations ?? []).some(
-      (o) =>
-        o.status === 'active' &&
-        o.role === 'organization_owner' &&
-        organizationId != null &&
-        (o.organization_id ?? o.id) === organizationId,
-    )
-  }
+  // Pause and close answer 409 with the bookings they touch until the actor acknowledges them.
+  const affected = useAffectedConfirm()
 
   async function send(target: LifecycleTarget, command: LifecycleCommand, payload?: StopPayload) {
     busy.value = true
     try {
-      const result =
-        target.type === 'venue'
-          ? await adminApi.venueCommand(target.organizationId, target.id, command, payload)
-          : await adminApi.courtCommand(target.id, command, payload)
-      await onDone(result.message)
+      let message = ''
+      const saved = await affected.guard(async (acknowledge) => {
+        const body =
+          acknowledge && payload ? { ...payload, acknowledge_affected: true as const } : payload
+        const result =
+          target.type === 'venue'
+            ? await adminApi.venueCommand(target.organizationId, target.id, command, body)
+            : await adminApi.courtCommand(target.id, command, body)
+        message = result.message
+      })
+      if (!saved) return false
+      await onDone(message)
       return true
     } catch (cause) {
       failure.value = cause as LifecycleError
@@ -89,6 +87,7 @@ export function useLifecycleCommands(onDone: (message: string) => void | Promise
     busy,
     failureOpen: computed(() => failure.value !== null),
     failureModal,
+    affected,
     closeFailure: () => (failure.value = null),
     closeStop: () => (stopRequest.value = null),
     isOwnerOf,
@@ -96,6 +95,20 @@ export function useLifecycleCommands(onDone: (message: string) => void | Promise
     requestStop,
     submitStop,
   }
+}
+
+/** ponytail: UI-only role check; the backend still answers 403 for the wrong role or organization.
+ * An unknown organization is never owned, so no owner action shows for it. */
+export function useOwnerCheck() {
+  const auth = useAuthStore()
+  return (organizationId?: number | null): boolean =>
+    (auth.user?.organizations ?? []).some(
+      (o) =>
+        o.status === 'active' &&
+        o.role === 'organization_owner' &&
+        organizationId != null &&
+        (o.organization_id ?? o.id) === organizationId,
+    )
 }
 
 /** A court holds at most one open pause; staff may resume only a maintenance pause. */

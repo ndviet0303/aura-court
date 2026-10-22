@@ -9,6 +9,7 @@ use App\Contracts\Repositories\DisputeRepositoryInterface;
 use App\Contracts\Repositories\FinanceExceptionRepositoryInterface;
 use App\Contracts\Repositories\HostKycRepositoryInterface;
 use App\Contracts\Repositories\LoyaltyRuleRepositoryInterface;
+use App\Contracts\Repositories\AffectedReservationCaseRepositoryInterface;
 use App\Contracts\Repositories\OperationalStatusRepositoryInterface;
 use App\Contracts\Repositories\OperationalStopRepositoryInterface;
 use App\Contracts\Repositories\OrganizationLockRepositoryInterface;
@@ -30,7 +31,9 @@ use App\Contracts\Repositories\TenantMembershipPlanRepositoryInterface;
 use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
 use App\Contracts\Repositories\VenuePackageRepositoryInterface;
+use App\Contracts\Repositories\VenueMonitoringRepositoryInterface;
 use App\Contracts\Repositories\VenueRepositoryInterface;
+use App\Contracts\Repositories\VenueSuspensionRepositoryInterface;
 use App\Contracts\Repositories\VoucherUseRepositoryInterface;
 use App\Contracts\Storage\FileStorageServiceInterface;
 use App\Contracts\Storage\PartnerDocumentStorageInterface;
@@ -40,6 +43,7 @@ use App\Infrastructure\Repositories\Eloquent\EloquentDisputeRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentFinanceExceptionRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentHostKycRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentLoyaltyRuleRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentAffectedReservationCaseRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentOperationalStatusRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentOperationalStopRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentOrganizationLockRepository;
@@ -61,7 +65,9 @@ use App\Infrastructure\Repositories\Eloquent\EloquentTenantMembershipPlanReposit
 use App\Infrastructure\Repositories\Eloquent\EloquentUserRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueLifecycleRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenuePackageRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentVenueMonitoringRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentVenueSuspensionRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVoucherUseRepository;
 use App\Infrastructure\Services\DurableNotificationService;
 use App\Infrastructure\Storage\FileStorageService;
@@ -81,6 +87,7 @@ class RepositoryServiceProvider extends ServiceProvider
         VoucherUseRepositoryInterface::class => EloquentVoucherUseRepository::class,
         OperationalStopRepositoryInterface::class => EloquentOperationalStopRepository::class,
         OperationalStatusRepositoryInterface::class => EloquentOperationalStatusRepository::class,
+        AffectedReservationCaseRepositoryInterface::class => EloquentAffectedReservationCaseRepository::class,
         ReservationRepositoryInterface::class => EloquentReservationRepository::class,
         PaymentRepositoryInterface::class => EloquentPaymentRepository::class,
         FinanceExceptionRepositoryInterface::class => EloquentFinanceExceptionRepository::class,
@@ -93,6 +100,8 @@ class RepositoryServiceProvider extends ServiceProvider
         LoyaltyRuleRepositoryInterface::class => EloquentLoyaltyRuleRepository::class,
         FileStorageServiceInterface::class => FileStorageService::class,
         VenueLifecycleRepositoryInterface::class => EloquentVenueLifecycleRepository::class,
+        VenueSuspensionRepositoryInterface::class => EloquentVenueSuspensionRepository::class,
+        VenueMonitoringRepositoryInterface::class => EloquentVenueMonitoringRepository::class,
         OrganizationLockRepositoryInterface::class => EloquentOrganizationLockRepository::class,
         PartnerDocumentStorageInterface::class => PrivatePartnerDocumentStorage::class,
         DurableNotificationServiceInterface::class => DurableNotificationService::class,

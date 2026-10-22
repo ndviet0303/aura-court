@@ -6,6 +6,8 @@ use App\Models\AuditLog;
 use App\Models\Booking;
 use App\Models\HostKyc;
 use App\Models\OutboxMessage;
+use App\Models\SuspensionRemediation;
+use App\Models\VenueSuspension;
 use Illuminate\Database\Eloquent\Model;
 
 interface DurableNotificationServiceInterface
@@ -40,4 +42,11 @@ interface DurableNotificationServiceInterface
 
 
     public function notifyBooking(Booking $booking, string $event, string $title, string $body, ?string $actionUrl = '/booking'): OutboxMessage;
+
+    /** D13/D14 notifications below go to every active owner of the venue's organization, or every platform admin. */
+    public function notifyVenueSuspended(VenueSuspension $suspension): void;
+
+    public function notifyRemediationSubmitted(SuspensionRemediation $remediation): void;
+
+    public function notifyRemediationReviewed(SuspensionRemediation $remediation): void;
 }

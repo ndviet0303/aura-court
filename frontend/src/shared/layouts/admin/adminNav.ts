@@ -58,6 +58,12 @@ export const navGroups: NavGroup[] = [
         icon: 'location_on',
       },
       {
+        id: 'courts-affected',
+        path: '/admin/affected-bookings',
+        labelKey: 'admin.nav.affectedBookings',
+        icon: 'event_busy',
+      },
+      {
         id: 'courts-pricing',
         path: '/admin/pricing',
         labelKey: 'admin.nav.pricingMatrix',
@@ -189,6 +195,18 @@ export const navGroups: NavGroup[] = [
       },
       { id: 'org-users', path: '/admin/users', labelKey: 'admin.nav.users', icon: 'group' },
       {
+        id: 'org-monitoring',
+        path: '/admin/monitoring/venues',
+        labelKey: 'admin.nav.venueMonitoring',
+        icon: 'travel_explore',
+      },
+      {
+        id: 'org-remediations',
+        path: '/admin/venue-remediations',
+        labelKey: 'admin.nav.venueRemediations',
+        icon: 'fact_check',
+      },
+      {
         id: 'org-disputes',
         path: '/admin/disputes',
         labelKey: 'admin.nav.disputes',
@@ -217,6 +235,7 @@ export const OWNER_ONLY_PATHS = [
 export const OWNER_OR_STAFF_PATHS = [
   '/admin/schedule',
   '/admin/venues',
+  '/admin/affected-bookings',
   '/admin/pos',
   '/pos',
   '/admin/shifts',

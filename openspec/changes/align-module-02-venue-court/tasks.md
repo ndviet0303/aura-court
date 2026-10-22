@@ -141,7 +141,7 @@
   - Cơ sở đích phải chưa `closed`, nên cơ sở `inactive` nhận được sân đầu tiên.
   - Cơ sở của tổ chức khác trả 403.
   - Test: viết lại `DraftVenueCourtSetupTest`. Scenario: "Operator creates a court", "Court on an inactive or closed venue".
-- [ ] 1.17 Viết lại test đang dựa vào giá trị trạng thái cũ:
+- [x] 1.17 Viết lại test đang dựa vào giá trị trạng thái cũ:
   - `NewRepositoriesAndLocksIntegrationTest`, `VenueLifecycleAndPublicationPersistenceTest`, `VenueLifecycleTransitionsTest`, `ReliabilityRealtimeAndSchedulerReadinessTest`, `BlockedCommandsInvariantsTest`.
   - Giữ `VenueBookingPolicyVersioningTest` xanh. Scenario: "Policy changes after booking".
 - [x] 1.18 Frontend cho trạng thái: (test: chưa làm)
@@ -251,7 +251,7 @@
   - Test: vitest cho modal. Scenario: "Field errors in the form".
 - [x] 2.15 Liên hệ, ảnh, bề mặt và sức chứa sau khi lưu hiện ngay ở chi tiết của owner và staff, và ở trang công khai của cơ sở `active`. (test: chưa làm)
   - Test: viết lại `VenueProfilePersistenceTest`. Scenario: "Catalog persistence".
-- [ ] 2.16 Bỏ `hold_ttl_minutes` và `require_continuity` khỏi form và request chính sách cơ sở (yêu cầu của module 4, D3 và D6 của module 4).
+- [x] 2.16 Bỏ `hold_ttl_minutes` và `require_continuity` khỏi form và request chính sách cơ sở (yêu cầu của module 4, D3 và D6 của module 4).
   - Làm sau khi module 4 merge phần bỏ đọc hai trường này. Không xoá cột trong change này.
   - Test: `VenueBookingPolicyVersioningTest` xanh; vitest cho form chính sách.
 - [x] 2.17 Kiểm dữ liệu dịch theo `localization/database-i18n` "Bilingual Data Validation" (D9, D12): (test: chưa làm)
@@ -296,7 +296,7 @@
 
 ## 4. Pha 5 – Đơn bị ảnh hưởng (design D7, D8)
 
-- [ ] 4.1 `AffectedReservationQuery` là query BR-38 duy nhất.
+- [x] 4.1 `AffectedReservationQuery` là query BR-38 duy nhất.
   - Lấy đơn `held`, `confirmed` hoặc đang sử dụng (`in_use`, hoặc `confirmed` có `metadata.operational_status = in_use`), chưa `cancelled`, `expired`, `completed`, `no_show`, và có `ends_at > now`.
   - Đơn bị ảnh hưởng khi chồng cửa sổ stop theo D5, hoặc không còn nằm trọn trong thời gian phục vụ mới.
   - Stop chưa có `ended_at` thì chỉ dùng `starts_at`. Không bao giờ dùng `expected_end_at`.
@@ -308,13 +308,13 @@
   - Trạng thái mở: `pending`, `contacting`, `unreachable`. Trạng thái đóng: `moved`, `time_changed`, `cancelled`, `kept`.
   - Backfill case `pending` cho mọi stop đang mở và mọi đình chỉ đang hiệu lực. Backfill idempotent.
   - Test: test migration. Chạy backfill hai lần vẫn chỉ có một case.
-- [ ] 4.3 Endpoint xem trước, không lưu gì, cho mọi thay đổi chạm đơn:
+- [x] 4.3 Endpoint xem trước, không lưu gì, cho mọi thay đổi chạm đơn:
   - giờ hoạt động và ngày đóng;
   - ngoại lệ của cơ sở hoặc sân, gồm tạo, sửa và xoá;
   - lịch sân;
   - mọi loại stop.
   - Test: `AffectedReservationsListTest`. Scenario: "Deleted special-hours exception", phần xem trước.
-- [ ] 4.4 Lưu kèm xác nhận:
+- [x] 4.4 Lưu kèm xác nhận:
   - Danh sách ảnh hưởng không rỗng thì cần `acknowledge_affected: true`. Thiếu thì trả 409 kèm danh sách và không lưu.
   - Khi lưu: khoá các sân bị ảnh hưởng (id tăng dần) rồi cơ sở, theo thứ tự toàn cục (design "Kiểm eligibility dưới lock"); tính lại danh sách dưới lock, lưu thay đổi, rồi mở case. `SaveVenueOperatingSchedule` và `SaveVenueScheduleException` bỏ thứ tự cơ sở → sân hiện có.
   - Lưu lại cùng thay đổi không tạo case thứ hai.
@@ -323,21 +323,21 @@
     - Viết lại `CalendarClosureAndUnifiedAvailabilityTest:68-150` và `VenueOperatingCalendarTest:306-333`.
     - Scenario: "Save without acknowledgement", "Deleted special-hours exception", "Existing bookings".
     - `OperationalStopTest`: scenario "Incident stop over a confirmed booking", "Repeated save", "Close a venue with outstanding bookings" (đóng cơ sở còn đơn đã xác nhận, kèm xem trước và `acknowledge_affected`; đơn giữ nguyên, nhân viên vẫn phục vụ được).
-- [ ] 4.5 Danh sách case `GET /admin/affected-reservations`:
+- [x] 4.5 Danh sách case `GET /admin/affected-reservations`:
   - Owner thấy case của mọi cơ sở trong tổ chức. Staff chỉ thấy case của cơ sở được phân công.
   - Cột: mã đơn, tên và SĐT khách, mã sân, giờ sử dụng, trạng thái thanh toán, nguồn kèm khung giờ, trạng thái xử lý.
   - Lọc theo cơ sở, sân, nguồn và trạng thái xử lý. Mặc định chỉ hiện case mở.
   - Bỏ đơn đã huỷ, hết hạn hoặc đã hoàn tất.
   - Cơ sở ngoài phạm vi trả 403.
   - Test: `AffectedReservationsListTest`. Scenario: "Staff of another venue", "Expired hold leaves the case list".
-- [ ] 4.6 `PATCH` ghi kết quả `contacting`, `unreachable` hoặc `kept`:
+- [x] 4.6 `PATCH` ghi kết quả `contacting`, `unreachable` hoặc `kept`:
   - Kèm kênh (`phone`, `zalo`, `chat`) và ghi chú. Ghi actor và thời điểm.
   - Không đổi gì trên đơn.
   - `moved`, `time_changed` và `cancelled` chỉ đặt được qua lệnh ở 4.7–4.10.
   - Chỉ owner ghi được ghi chú hoàn tiền ngoài nền tảng; staff nhận 403.
   - Không tạo dòng tiền hay bản ghi hoàn tiền.
   - Test: `AffectedReservationsListTest`. Scenario: "Unreachable customer", "Refund note by staff".
-- [ ] 4.7 Phần chung của ba lệnh D8:
+- [x] 4.7 Phần chung của ba lệnh D8:
   - Owner hoặc staff được phân công dùng được, chỉ khi đơn còn case mở.
   - Thiếu `customer_agreed` hoặc kênh liên hệ thì trả 422.
   - Đơn không có case mở, hoặc không ở `held`, `confirmed` hay đang sử dụng, hoặc đã `completed` hay `no_show`, thì trả 409.
@@ -353,7 +353,7 @@
     - Scenario "Final bookings and released availability": "Operator change without an open affected-booking case".
     - Scenario: "Booking with two open cases", "Booking changed before the lock".
     - Test đồng thời: lệnh huỷ đơn `held` chạy cùng khởi tạo thanh toán và cùng xử lý biên nhận của chính đơn đó. Không deadlock; đúng một bên thắng.
-- [ ] 4.8 Lệnh `move-court`: giữ giờ, sân đích cùng tổ chức và cùng môn. Khác môn trả 422.
+- [x] 4.8 Lệnh `move-court`: giữ giờ, sân đích cùng tổ chức và cùng môn. Khác môn trả 422.
   - Test: `AffectedBookingCommandsTest`.
     - Scenario: "Owner moves an affected booking to another court", "Move to a court of another sport", "Concurrent moves into the same court-time".
     - Scenario "Checked-in booking during an incident stop": chuyển đơn đang sử dụng.
@@ -363,10 +363,10 @@
     - Nếu task 5.4 của module 3 merge lúc `ponytail:` còn đó, họ thay nó bằng kiểm này và viết test scenario trong `HeldVoucherMoveBlockedTest`; khi đó chỉ giữ test đó xanh.
     - Test scenario "Held booking with a voucher" (`AffectedBookingCommandsTest`, hoặc `HeldVoucherMoveBlockedTest` nếu module 3 đã viết).
   - Nếu task 6.1 của module 3 đã có trên main trước 4.8–4.9: test thêm ca đơn đã xác nhận có voucher chuyển sân hoặc đổi giờ vẫn giữ lượt `used` và không thêm lượt (BR-70 của module 3; 6.1 của họ khi đó chỉ test ca huỷ).
-- [ ] 4.9 Lệnh `change-time`: giữ sân và tổng thời lượng. Khác thời lượng trả 422.
+- [x] 4.9 Lệnh `change-time`: giữ sân và tổng thời lượng. Khác thời lượng trả 422.
   - Thêm lại tham số loại trừ slot của chính đơn cho `SlotSelectionPolicy::assertAllowed`.
   - Test: `AffectedBookingCommandsTest`. Scenario: "Time change on the same court", "Time change with a different duration".
-- [ ] 4.10 Lệnh `cancel`:
+- [x] 4.10 Lệnh `cancel`:
   - Giải phóng slot chưa kết thúc, đúng một lần.
   - Đơn chờ thanh toán: gọi `releaseHeld($locked, 'cancelled', 'operator_affected_booking')` của module 4 (design D8). Hàm này kết thúc nghĩa vụ thanh toán và nhả lượt voucher đang giữ đúng một lần. Chuyển khoản tới sau thành finance exception.
   - Đơn đã trả hoặc đang sử dụng: tự đặt `cancelled` và ghi cùng `metadata.release_reason = operator_affected_booking`.
@@ -376,19 +376,19 @@
     - Scenario: "Cancel a paid affected booking", "Cancel an affected booking that is still awaiting payment", "Refund note".
     - Với đơn chờ, assert việc `releaseHeld` làm: đơn `cancelled`, `release_reason`, slot nhả một lần, attempt chờ hết hạn, chuyển khoản tới sau thành ngoại lệ. Seed dòng `voucher_uses` `held` và assert nhả một lần chỉ khi task 5.5 của module 4 đã merge; trước đó dựa vào `HeldReservationReleaseTest` của module 4. Không seed coupon.
     - Scenario "Final bookings and released availability": "Operator cancels an affected booking".
-- [ ] 4.11 `markNoShow` trả 409 khi đơn còn case mở, kể cả case `unreachable`.
+- [x] 4.11 `markNoShow` trả 409 khi đơn còn case mở, kể cả case `unreachable`.
   - Test: `AffectedBookingCommandsTest`. Scenario "No-show on an open case" (`venue-court-operations`); `on-site-attendance` "Booking attendance lifecycle" trỏ về quy tắc này.
   - Test: giữ xanh scenario "No-show", "Repeated scan", "Invalid scan", "Outstanding ancillary amount", "Readiness inspection" của "Booking attendance lifecycle".
-- [ ] 4.12 Xoá `attendance/reassign-court`; gọi route cũ trả 404.
+- [x] 4.12 Xoá `attendance/reassign-court`; gọi route cũ trả 404.
   - Đổi sân do sự cố đi qua stop `maintenance` rồi `move-court`.
   - Sửa `AttendanceOperationsAndReadinessTest` và `OnSiteAttendanceAndTabJourneyTest`.
   - Nếu task 5.4 của module 3 đã thêm 409 cho đơn `held` giữ lượt vào route này, xoá kiểm đó và ca `reassign-court` trong `HeldVoucherMoveBlockedTest` cùng route.
   - Test:
     - Scenario: "Retired on-site reassignment", "Incident reassignment" (lịch sử ghi nguồn case làm lý do).
     - Giữ xanh scenario "Extension overlaps next booking" và "Extra hour on a free court".
-- [ ] 4.13 Khôi phục không đưa đơn đã xử lý về lịch cũ.
+- [x] 4.13 Khôi phục không đưa đơn đã xử lý về lịch cũ.
   - Test: `AffectedBookingCommandsTest`. Scenario: "Handled bookings are not restored".
-- [ ] 4.14 Frontend cho đơn bị ảnh hưởng:
+- [x] 4.14 Frontend cho đơn bị ảnh hưởng: (test: chưa làm)
   - `AdminAffectedBookingsView`, có route cho owner và staff.
   - Dialog xác nhận khách đã đồng ý và kênh liên hệ.
   - Mọi dialog dừng vận hành và đổi lịch hiện danh sách ảnh hưởng và gửi `acknowledge_affected`.
@@ -398,7 +398,7 @@
   - `RecurringDirectOwnerSeriesTest`. Scenario: "Recurring contract ends".
   - `AutomaticUnpaidExpiryTest`. Scenario: "Expired unpaid hold".
   - `VenueBookingPolicyVersioningTest`. Scenario: "Legacy policy".
-- [ ] 4.16 Giữ xanh test hiện có cho "Unversioned reservation API" và "Trigger real-time status hooks" của `reservations-and-pricing`.
+- [x] 4.16 Giữ xanh test hiện có cho "Unversioned reservation API" và "Trigger real-time status hooks" của `reservations-and-pricing`.
   - Test: `AffectedBookingCommandsTest`. Scenario "Operator commands through the reservation API".
   - Test: ba lệnh D8, stop, resume và đình chỉ phát cập nhật inventory sau commit; lệnh bị từ chối không phát.
 - [ ] 4.17 Trang đơn theo `api-alignment` "Policy-aware changes and truthful finance interfaces":
@@ -406,7 +406,7 @@
   - Trang đơn của khách và chính sách vi/en giữ nguyên: không huỷ, hoàn, dời; vẫn gợi ý bán lại.
   - Test: vitest cho trang đơn của owner và staff. Scenario "Operator page for an affected booking".
   - Test: giữ xanh scenario "Cancellation request", "Change request", "Provider not ready".
-- [ ] 4.18 Ví cũ theo `wallet-payment` "Legacy wallet conservation during booking changes":
+- [x] 4.18 Ví cũ theo `wallet-payment` "Legacy wallet conservation during booking changes":
   - Ba lệnh D8 không tạo bút toán ví, nghĩa vụ thanh toán hay nghĩa vụ hoàn tiền. Khách huỷ hoặc dời vẫn bị từ chối.
   - Test: `AffectedBookingCommandsTest` đếm dòng ví và nghĩa vụ trước và sau lệnh. Scenario "Direct cancellation", "Direct reschedule".
   - Test: giữ xanh `RetiredRefundAndRescheduleRoutesTest` và test hiện có của scenario "Historical refund viewed", "Unpaid expiry".
@@ -420,27 +420,27 @@
 
 ## 5. Pha 6 – Giám sát, đình chỉ, khắc phục (design D13, D14)
 
-- [ ] 5.1 Đình chỉ: `POST /admin/venues/{venue}/suspensions`, cho mọi platform admin không bị khoá.
+- [x] 5.1 Đình chỉ: `POST /admin/venues/{venue}/suspensions`, cho mọi platform admin không bị khoá.
   - Lý do 10–1000 ký tự sau trim.
   - Cơ sở đang bị đình chỉ thì trả 409.
   - Ghi cơ sở, lý do, thời điểm và admin. Khoá dòng cơ sở trước.
   - Không đổi trạng thái của cơ sở hay sân. Mở case như 4.4.
   - Có endpoint xem trước: số sân, và mã đơn, sân, giờ của đơn bị ảnh hưởng. Không có liên hệ khách.
   - Test: `VenueSuspensionTest`. Scenario: "Suspension reason length", "Already suspended", "Suspension keeps statuses and bookings".
-- [ ] 5.2 Owner trong thời gian đình chỉ:
+- [x] 5.2 Owner trong thời gian đình chỉ:
   - Vẫn sửa được thông tin, ảnh, lịch và xử lý đơn.
   - Open và resume của owner trả 422 và liệt kê đình chỉ. Staff resume sân từ bảo trì của mình cũng trả 422. Yêu cầu đổi trạng thái khác của staff trả 403.
   - Owner và staff không có đường nào để gỡ đình chỉ.
   - Test: `VenueSuspensionTest`. Scenario: "Owner during suspension", "Restore suspended venue".
-- [ ] 5.3 Owner xem quyết định đình chỉ qua `GET .../venues/{venue}/suspensions[/{id}]`.
+- [x] 5.3 Owner xem quyết định đình chỉ qua `GET .../venues/{venue}/suspensions[/{id}]`.
   - Gồm lý do, thời điểm, admin, thông tin gỡ và kết luận.
   - Mỗi lần gửi khắc phục, cũ trước: nội dung, file minh chứng qua link có hạn, trạng thái, phản hồi của admin, thời điểm gửi và phản hồi.
   - Staff, khách và tổ chức khác nhận 403.
   - Chi tiết cơ sở của owner hiện đình chỉ đang hiệu lực, kèm lý do và link tới quyết định.
   - Test: `VenueSuspensionTest`. Scenario: "Owner tracks a remediation request".
-- [ ] 5.4 Tham số hoá prefix của `PrivatePartnerDocumentStorage`: `private/kyc` cho KYC, `private/remediations` cho khắc phục.
+- [x] 5.4 Tham số hoá prefix của `PrivatePartnerDocumentStorage`: `private/kyc` cho KYC, `private/remediations` cho khắc phục.
   - Test: test KYC hiện có vẫn xanh.
-- [ ] 5.5 Bảng `suspension_remediations` (D14), có partial unique `(venue_suspension_id) WHERE status = 'pending'`.
+- [x] 5.5 Bảng `suspension_remediations` (D14), có partial unique `(venue_suspension_id) WHERE status = 'pending'`.
   - `POST .../remediations` cho owner đang hoạt động của tổ chức.
   - Nội dung 10–5000 ký tự sau trim. 1–10 file PDF, JPG, JPEG hoặc PNG, mỗi file tối đa 10 MB.
   - Sai thì trả 422, không lưu dòng nào và không lưu file nào.
@@ -451,32 +451,32 @@
     - Biên BR-44: 9/10/5000/5001 ký tự; 0/1/10/11 file; file .docx; file 11 MB.
     - Scenario: "Remediation validation", "Pending request blocks a new submission", "Resubmission keeps history", "Not the owner".
     - Hai lần gửi đồng thời chỉ tạo một dòng `pending`.
-- [ ] 5.6 Admin xem yêu cầu khắc phục qua `GET /admin/venue-remediations`.
+- [x] 5.6 Admin xem yêu cầu khắc phục qua `GET /admin/venue-remediations`.
   - Lọc theo trạng thái, yêu cầu chờ lên trước, cũ trước.
   - Chi tiết gồm quyết định, lý do, mọi lần gửi, minh chứng và phản hồi trước.
   - Test: `SuspensionRemediationTest`.
-- [ ] 5.7 Admin duyệt qua `POST /admin/venue-remediations/{id}/review` với `request_more_info`, `reject` hoặc `approve`.
+- [x] 5.7 Admin duyệt qua `POST /admin/venue-remediations/{id}/review` với `request_more_info`, `reject` hoặc `approve`.
   - Phản hồi bắt buộc; thiếu thì trả 422.
   - Yêu cầu không còn `pending` thì trả 409.
   - `approve` gỡ đình chỉ trong cùng transaction và không đổi trạng thái.
   - Test: `SuspensionRemediationTest`.
     - Scenario: "Review rules", "Approval lifts without reopening", "Approval at an active venue". Approve phải nguyên tử.
   - Test: `VenueSuspensionTest`. Scenario: "Suspension does not rewrite status".
-- [ ] 5.8 Thông báo, đều kèm `action_url`:
+- [x] 5.8 Thông báo, đều kèm `action_url`:
   - `notifyVenueSuspended` và `notifyRemediationReviewed` gửi mọi owner đang hoạt động.
   - `notifyRemediationSubmitted` gửi mọi platform admin.
   - Không gửi staff hay khách.
   - Test: `SuspensionRemediationTest`. Scenario: "Notification recipients".
-- [ ] 5.9 Giám sát qua `GET /admin/monitoring/venues[/{id}]`:
+- [x] 5.9 Giám sát qua `GET /admin/monitoring/venues[/{id}]`:
   - Lọc theo tổ chức, trạng thái, đình chỉ và từ khoá.
   - Chi tiết đủ các trường của requirement.
   - Chỉ đọc. Mỗi lần xem ghi một dòng audit.
   - Người không phải admin nhận 403. Admin sửa thông tin, giờ hay giá cũng nhận 403.
   - Test: `PlatformVenueMonitoringTest`.
     - Scenario: "Cross-organization list and detail", "Audited view", "No editing through monitoring", "Non-admin access".
-- [ ] 5.10 Frontend cho admin: trang giám sát (platformAdmin), dialog đình chỉ kèm xem trước, hàng đợi và màn duyệt khắc phục.
+- [x] 5.10 Frontend cho admin: trang giám sát (platformAdmin), dialog đình chỉ kèm xem trước, hàng đợi và màn duyệt khắc phục. (test: chưa làm)
   - Test: vitest.
-- [ ] 5.11 Frontend cho owner: banner đình chỉ, form khắc phục, trang lịch sử quyết định.
+- [x] 5.11 Frontend cho owner: banner đình chỉ, form khắc phục, trang lịch sử quyết định. (test: chưa làm)
   - Test: vitest.
 
 ## 6. Pha 7 – Nghiệm thu và triển khai

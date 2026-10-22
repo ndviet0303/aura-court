@@ -90,6 +90,23 @@ class AffectedReservationCase extends Model
         return $this->belongsTo(User::class, 'handled_by');
     }
 
+    /** The source stop; read only when source_type is operational_stop. @return BelongsTo<OperationalStop, $this> */
+    public function stop(): BelongsTo
+    {
+        return $this->belongsTo(OperationalStop::class, 'source_id');
+    }
+
+    /** The source suspension; read only when source_type is venue_suspension. @return BelongsTo<VenueSuspension, $this> */
+    public function suspension(): BelongsTo
+    {
+        return $this->belongsTo(VenueSuspension::class, 'source_id');
+    }
+
+    public function isOpen(): bool
+    {
+        return in_array($this->status, self::OPEN_STATUSES, true);
+    }
+
     public function scopeOpen(Builder $query): Builder
     {
         return $query->whereIn('status', self::OPEN_STATUSES);

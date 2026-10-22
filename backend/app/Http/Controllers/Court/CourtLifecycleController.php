@@ -35,6 +35,17 @@ class CourtLifecycleController extends Controller
         return $this->stopped($action, $request, $court, 'Đã ghi nhận ngừng kinh doanh sân.');
     }
 
+    /** D7: the bookings a pause would touch, saving nothing. */
+    public function previewPause(PauseRequest $request, Court $court, StopCourt $action): JsonResponse
+    {
+        return response()->json(['data' => $action->preview((int) $court->id, OperationalStopData::fromRequest($request))]);
+    }
+
+    public function previewClose(PauseRequest $request, Court $court, StopCourt $action): JsonResponse
+    {
+        return $this->previewPause($request, $court, $action);
+    }
+
     private function stopped(StopCourt $action, PauseRequest $request, Court $court, string $message): JsonResponse
     {
         $stop = $action->execute((int) $court->id, OperationalStopData::fromRequest($request));

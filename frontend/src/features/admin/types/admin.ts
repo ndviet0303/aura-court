@@ -30,11 +30,9 @@ export type VenueForm = {
 
 export type VenueBookingPolicySettings = {
   booking: {
-    hold_ttl_minutes: number
     max_days_ahead: number
     min_duration_minutes: number
     max_duration_minutes: number
-    require_continuity: boolean
   }
   arrival: {
     early_minutes: number

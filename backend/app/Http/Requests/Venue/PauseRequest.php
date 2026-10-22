@@ -43,6 +43,7 @@ class PauseRequest extends FormRequest
         return [
             'reason' => ['required', 'string', 'min:10', 'max:1000'],
             'starts_at' => ['nullable', 'date'],
+            'acknowledge_affected' => ['sometimes', 'boolean'],
             'expected_end_at' => $closing ? ['prohibited'] : ['nullable', 'date'],
             'kind' => match (true) {
                 $closing => ['prohibited'],
@@ -86,7 +87,7 @@ class PauseRequest extends FormRequest
 
     public function isClosure(): bool
     {
-        return $this->route()?->getActionMethod() === 'close';
+        return in_array($this->route()?->getActionMethod(), ['close', 'previewClose'], true);
     }
 
     /** The stop kind this request records. */

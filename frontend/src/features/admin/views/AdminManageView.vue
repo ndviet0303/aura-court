@@ -11,6 +11,7 @@ import ManageKpiBar from '../components/manage/ManageKpiBar.vue'
 import AdminCourtsTable from '../components/manage/AdminCourtsTable.vue'
 import CourtFormModal from '../components/manage/CourtFormModal.vue'
 import OperationalStopDialog from '../components/lifecycle/OperationalStopDialog.vue'
+import AffectedBookingsDialog from '../components/affected/AffectedBookingsDialog.vue'
 
 // Courts and Main Operations Composable
 const {
@@ -122,6 +123,7 @@ onMounted(() => {
       @close="lifecycle.closeStop"
       @submit="lifecycle.submitStop"
     />
+    <AffectedBookingsDialog :state="lifecycle.affected" />
     <ErrorModal
       :open="lifecycle.failureOpen"
       v-bind="lifecycle.failureModal"

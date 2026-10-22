@@ -8,7 +8,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 interface PartnerDocumentStorageInterface
 {
     /**
-     * Store a private document file and return metadata.
+     * Store a private document file under $prefix (private/kyc for KYC, private/remediations for remediation evidence).
      *
      * @return array{
      *     file_path: string,
@@ -18,7 +18,7 @@ interface PartnerDocumentStorageInterface
      *     file_hash: string
      * }
      */
-    public function storePrivate(UploadedFile $file, int $userId, string $documentType): array;
+    public function storePrivate(UploadedFile $file, int $userId, string $documentType, string $prefix = 'private/kyc'): array;
 
     /**
      * Generate a scoped temporary URL for authorized reading.
