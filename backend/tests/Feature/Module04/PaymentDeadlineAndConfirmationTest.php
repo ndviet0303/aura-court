@@ -196,4 +196,19 @@ class PaymentDeadlineAndConfirmationTest extends TestCase
         $this->assertSame('voucher_changed', OwnerPaymentReceipt::value('exception_code'));
         $this->assertSame(VoucherUse::STATUS_RELEASED, VoucherUse::value('status'));
     }
+
+    public function test_br_83_transfer_made_before_the_voucher_ended_confirms_even_when_processed_later(): void
+    {
+        $court = $this->payableCourt();
+        $program = $this->publicVoucher($court, Carbon::parse('2026-11-03 09:02:00'));
+        $code = $this->checkout($this->customer(), $court, '2026-11-03 18:00', '2026-11-03 19:00', 80000, ['voucher_program_id' => $program->id])
+            ->assertCreated()->json('reservation.code');
+
+        // Judged at the transfer's own time (09:01), not when the receipt is processed (09:04, after the end).
+        Carbon::setTestNow('2026-11-03 09:04:00');
+        $this->transfer($court, $this->paymentCode($code), 80000, Carbon::parse('2026-11-03 09:01:00'))->assertOk();
+
+        $this->assertSame('confirmed', Reservation::where('code', $code)->value('status'));
+        $this->assertSame(VoucherUse::STATUS_USED, VoucherUse::value('status'));
+    }
 }
