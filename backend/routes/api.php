@@ -28,6 +28,7 @@ use App\Http\Controllers\Loyalty\LoyaltyController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Organization\InvitationResponseController;
 use App\Http\Controllers\Organization\OrganizationController;
+use App\Http\Controllers\Partner\OwnerFinanceController;
 use App\Http\Controllers\Partner\PartnerApplicationController;
 use App\Http\Controllers\Partner\PartnerDocumentController;
 use App\Http\Controllers\Partner\PartnerVenueController;
@@ -198,6 +199,8 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
     });
     Route::get('partner/organizations/{organizationId}/packages', [VenuePackageController::class, 'index']);
     Route::get('partner/organizations/{organizationId}/package-requests/{code}', [VenuePackageController::class, 'showRequest']);
+    Route::get('partner/organizations/{organizationId}/finance/transactions', [OwnerFinanceController::class, 'transactions']);
+    Route::get('partner/organizations/{organizationId}/finance/report', [OwnerFinanceController::class, 'report']);
     Route::get('partner/organizations/{organizationId}/venues/{venueId}/receiving-connection', [ReceivingConnectionController::class, 'show']);
     Route::post('partner/organizations/{organizationId}/venues/{venueId}/receiving-connection', [ReceivingConnectionController::class, 'store']);
     Route::post('partner/organizations/{organizationId}/venues/{venueId}/receiving-connection/{connectionId}/credential', [ReceivingConnectionController::class, 'rotateCredential']);

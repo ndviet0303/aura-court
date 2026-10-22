@@ -495,6 +495,16 @@ const router = createRouter({
           },
         },
         {
+          path: 'finance',
+          name: 'admin-finance',
+          component: () => import('@/features/owner-finance/views/OwnerFinanceView.vue'),
+          meta: {
+            orgRoles: ['organization_owner'],
+            titleKey: 'seo.ownerFinanceTitle',
+            indexable: false,
+          },
+        },
+        {
           path: 'reconciliation',
           name: 'admin-reconciliation',
           component: () => import('@/features/admin/views/AdminFinancialReconciliationView.vue'),

@@ -17,7 +17,7 @@ export interface NavGroup {
   items: NavItem[]
 }
 
-/** Sidebar paths only organization owners see; staff never see venue setup, packages or payment exceptions. */
+/** Sidebar paths only organization owners see; staff never see venue setup, packages, payment exceptions or finance. */
 export const ownerOnlyPaths = [
   '/admin/manage',
   '/admin/contracts',
@@ -28,6 +28,7 @@ export const ownerOnlyPaths = [
   '/admin/staff',
   '/admin/payment-exceptions',
   '/admin/packages',
+  '/admin/finance',
 ]
 
 // Standalone top item
@@ -181,6 +182,12 @@ export const navGroups: NavGroup[] = [
         path: '/admin/packages',
         labelKey: 'admin.nav.packages',
         icon: 'workspace_premium',
+      },
+      {
+        id: 'org-finance',
+        path: '/admin/finance',
+        labelKey: 'admin.nav.ownerFinance',
+        icon: 'monitoring',
       },
       {
         id: 'org-kyc',

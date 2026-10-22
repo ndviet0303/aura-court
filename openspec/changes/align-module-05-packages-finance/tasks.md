@@ -222,28 +222,40 @@ Pha 2–6 làm trên nhánh `feat/module05-packages-finance` và chỉ vào main
 
 ## 5. Pha 5 – Tài chính của chủ cơ sở (D12, D14)
 
-- [ ] 5.1 Thư viện Excel (D14, Q1):
+- [ ] 5.1 Thư viện Excel (D14, Q1): **chặn — `ext-zip` của image prod chưa xác minh** (không truy cập được image; chờ coordinator/người dùng chạy `php -m` trên image hoặc container prod).
   - Kiểm `ext-zip` của image chạy prod `registry.gitlab.com/bantool/devops/frankenphp:latest` (`devops/build/booking.prod.Dockerfile:3`) bằng `php -m`, chạy trên image đó hoặc trong container backend (chỉ đọc, không chạy artisan).
   - Chưa có Q1 thì dừng, không cài package.
   - A được duyệt và có `ext-zip` → `composer require openspout/openspout`. Không có `ext-zip` → báo người dùng, chuyển B (`write-excel-file`) hoặc thêm extension vào image.
-- [ ] 5.2 `GET partner/organizations/{org}/finance/transactions` (D12), chỉ owner.
+- [x] 5.2 `GET partner/organizations/{org}/finance/transactions` (D12), chỉ owner. (test: chưa làm)
   - Test: `OwnerFinanceTransactionsTest`.
     - Scenario "Matched payment", "Short transfer", "Transfer without a code".
     - Pᵢ giữ nguyên sau khi đơn đổi sân hoặc đổi giờ. Lọc theo cơ sở. Staff → 403.
-- [ ] 5.3 `GET partner/organizations/{org}/finance/report` (D12), chỉ owner.
+- [x] 5.3 `GET partner/organizations/{org}/finance/report` (D12), chỉ owner. (test: chưa làm)
   - Test: `OwnerFinanceReportTest`.
     - Scenario "Metrics kept separate", "Unfinished booking completes later", "No-show and incident", "Free booking", "Court filter", "Midnight boundary", "Calendar month".
     - S không gồm đơn huỷ trước khi thanh toán và đơn đã dời sân hoặc giờ.
     - Số mã đơn đếm duy nhất. Response không có tổng doanh thu.
-- [ ] 5.4 Xuất Excel báo cáo owner theo Q1:
+- [ ] 5.4 Xuất Excel báo cáo owner theo Q1: **chặn bởi 5.1**.
   - Dùng lại đúng query của task 5.3.
   - Đầu file ghi tên báo cáo, cơ sở và sân, kỳ, thời điểm xuất (giờ VN). Sheet "Tổng hợp" và "Chi tiết".
   - Test: `OwnerFinanceExportTest`. Scenario "Export matches the screen", "Staff access", "Another organization".
-- [ ] 5.5 Frontend `/admin/finance` cho owner:
+- [ ] 5.5 Frontend `/admin/finance` cho owner: đã làm mọi phần trừ nút xuất (chờ 5.4). Vitest chưa làm.
   - Hai tab "Giao dịch" và "Báo cáo".
   - Lọc theo cơ sở, sân, và kỳ theo ngày, tháng, quý hoặc năm lịch VN.
   - Năm thẻ chỉ số, không có tổng. Danh sách chi tiết của từng chỉ số. Nút xuất.
   - Staff không thấy menu. i18n vi/en, Vitest đi kèm.
+
+- Ghi chú Pha 5 (2026-10-22, chỉ implement, chưa chạy test):
+  - Kỳ lọc là ngày lịch VN `[from 00:00, to + 1 ngày 00:00)`. Cột tài chính của module 04 lưu giờ treo tường theo `APP_TIMEZONE` (Asia/Ho_Chi_Minh), nên mốc được đổi sang múi giờ app thay vì UTC như spec viết. Không đổi cách lưu của module 04. `from` phải từ 2000-01-01 (PostgreSQL không có năm 0).
+  - Quyền: chỉ owner của tổ chức trên path. `venue_id` hoặc `court_id` ngoài tổ chức → 403 dù có tồn tại hay không (scenario "Another organization", không lộ sự tồn tại). Sân của tổ chức nhưng không thuộc cơ sở đã chọn → 422.
+  - Giao dịch (5.2): receipt của mục đích `booking`, `recurring_period`, `split_share` và receipt chưa có mục đích (không mã, mã lạ, bị từ chối sớm), vì đó chính là thứ owner cần đối soát. Bỏ POS, giải đấu và chuyển khoản ra. Phân trang tối đa 100 dòng. `payable` (Pᵢ) và `delta` chỉ có khi xác định được đơn. Không trả `reference_code` vì module 04 cố ý ẩn mã giao dịch ngân hàng.
+  - Báo cáo (5.3): năm chỉ số tách riêng, mỗi chỉ số `{amount, count, bookings[]}`, không có tổng.
+    - R gồm phân bổ `booking`, `split_share`, `recurring_period`, theo `event_at` của receipt.
+    - Hoàn thành tính attendance `checked_out`; vắng mặt tính `no_show` theo `checked_in_at`.
+    - S đọc `metadata->release_reason = operator_affected_booking` và thời điểm huỷ, nên luôn bằng 0 cho tới khi module 02 làm task 4.8–4.12 (ghi lý do đó và `cancelled_at`).
+  - Frontend (5.5): `useApiCall` thêm đánh số request, chỉ nhận kết quả của lần gọi mới nhất (`reset()` cũng bỏ kết quả đang chờ). Mọi nơi đang dùng đều là loader danh sách nên an toàn. Menu nằm trong nhóm "Tổ chức" (không thêm nhóm mới vì `AdminLayout.spec` đếm số nhóm), route có `orgRoles: ['organization_owner']`. Không gắn cờ tính năng.
+  - Để sau: xem cả năm chưa phân trang danh sách chi tiết; nút "Hôm nay" dùng ngày của trình duyệt.
+  - Cho lane test: `OwnerFinanceTransactionsTest`, `OwnerFinanceReportTest` (các scenario ở 5.2, 5.3, cộng 403 khi cơ sở hoặc sân thuộc tổ chức khác), Vitest cho `OwnerFinanceView`, hai tab, bộ lọc, `financePeriod` và `useApiCall`.
 
 ## 6. Pha 6 – Quản trị phí nền tảng (D13, D15)
 
