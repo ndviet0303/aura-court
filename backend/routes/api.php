@@ -6,7 +6,6 @@ use App\Http\Controllers\Admin\AdminDisputeController;
 use App\Http\Controllers\Admin\AdminKycController;
 use App\Http\Controllers\Admin\AdminMembershipController;
 use App\Http\Controllers\Admin\AdminUserController;
-use App\Http\Controllers\Admin\AdminVenuePublicationController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\PartnerReviewController;
 use App\Http\Controllers\Admin\PlatformFeePriceController;
@@ -21,6 +20,7 @@ use App\Http\Controllers\Booking\AvailabilityController;
 use App\Http\Controllers\Booking\ResaleListingController;
 use App\Http\Controllers\Booking\WaitlistController;
 use App\Http\Controllers\Court\CourtController;
+use App\Http\Controllers\Court\CourtLifecycleController;
 use App\Http\Controllers\Court\ReviewController;
 use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Finance\FinanceController;
@@ -35,9 +35,11 @@ use App\Http\Controllers\Partner\OwnerFinanceController;
 use App\Http\Controllers\Partner\PartnerApplicationController;
 use App\Http\Controllers\Partner\PartnerDocumentController;
 use App\Http\Controllers\Partner\PartnerVenueController;
+use App\Http\Controllers\Partner\PartnerVenueCourtController;
 use App\Http\Controllers\Partner\PartnerVenueScheduleController;
 use App\Http\Controllers\Partner\ReceivingConnectionController;
 use App\Http\Controllers\Partner\VenuePackageController;
+use App\Http\Controllers\Partner\VenueLifecycleController;
 use App\Http\Controllers\POS\PosController;
 use App\Http\Controllers\POS\ServiceTabController;
 use App\Http\Controllers\Pricing\CourtPricingController;
@@ -116,6 +118,11 @@ Route::get('availability', AvailabilityController::class);
 // D10, D20: what a booking form offers before checkout; neither route holds or consumes a voucher use.
 Route::get('venues/{venue}/vouchers', [VoucherChoiceController::class, 'index'])->whereNumber('venue');
 Route::get('venues/{venue}/vouchers/check', [VoucherChoiceController::class, 'check'])->whereNumber('venue')->middleware('throttle:voucher-check');
+// Venues and courts are never deleted and venues are written only on the partner path (spec "Retired write
+// endpoints", D12). Without these routes the live GET admin/venues and PATCH/PUT admin/courts/{court} would answer
+// the retired calls with 405 instead of 404; admin/venues/{venue} has no route left, so it answers 404 by itself.
+Route::post('admin/venues', fn () => abort(404));
+Route::delete('admin/courts/{court}', fn () => abort(404));
 // Google, Facebook and SePay consoles have these URLs registered, so they keep their pre-unversioning v1 paths.
 Route::prefix('v1')->group(function () {
     Route::get('auth/{provider}/callback', [AuthController::class, 'handleProviderCallback'])->middleware('web');
@@ -186,10 +193,10 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
     });
     Route::prefix('partner/organizations/{organizationId}/venues')->group(function () {
         Route::get('', [PartnerVenueController::class, 'index']);
-        Route::post('', [PartnerVenueController::class, 'store']);
+        // D12: the one venue write path; demo owners only simulate it, as on the retired admin/venues routes.
+        Route::post('', [PartnerVenueController::class, 'store'])->middleware(SimulateDemoMutations::class);
         Route::get('{venueId}', [PartnerVenueController::class, 'show']);
-        Route::put('{venueId}', [PartnerVenueController::class, 'update']);
-        Route::get('{venueId}/readiness', [PartnerVenueController::class, 'readiness']);
+        Route::put('{venueId}', [PartnerVenueController::class, 'update'])->middleware(SimulateDemoMutations::class);
         Route::get('{venueId}/booking-policy', [PartnerVenueScheduleController::class, 'bookingPolicy']);
         Route::put('{venueId}/booking-policy', [PartnerVenueScheduleController::class, 'saveBookingPolicy']);
         Route::get('{venueId}/operating-schedule', [PartnerVenueScheduleController::class, 'operatingSchedule']);
@@ -197,12 +204,14 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
         Route::get('{venueId}/schedule-exceptions', [PartnerVenueScheduleController::class, 'scheduleExceptions']);
         Route::put('{venueId}/schedule-exceptions', [PartnerVenueScheduleController::class, 'saveScheduleException']);
         Route::delete('{venueId}/schedule-exceptions/{exceptionId}', [PartnerVenueScheduleController::class, 'deleteScheduleException']);
-        Route::post('{venueId}/submit-publication', [PartnerVenueController::class, 'submitPublication']);
-        Route::post('{venueId}/operational-status', [PartnerVenueController::class, 'transitionLifecycle']);
-        Route::post('{venueId}/lifecycle', [PartnerVenueController::class, 'transitionLifecycle']);
         // D16: demo owners only simulate package changes.
         Route::post('{venueId}/package-requests', [VenuePackageController::class, 'storeRequest'])->middleware(SimulateDemoMutations::class);
         Route::post('{venueId}/package/terminate', [VenuePackageController::class, 'terminate'])->middleware(SimulateDemoMutations::class);
+        Route::get('{venueId}/courts/{courtId}', [PartnerVenueCourtController::class, 'show']);
+        Route::post('{venueId}/open', [VenueLifecycleController::class, 'open']);
+        Route::post('{venueId}/pause', [VenueLifecycleController::class, 'pause']);
+        Route::post('{venueId}/resume', [VenueLifecycleController::class, 'resume']);
+        Route::post('{venueId}/close', [VenueLifecycleController::class, 'close']);
     });
     Route::get('partner/organizations/{organizationId}/packages', [VenuePackageController::class, 'index']);
     Route::get('partner/organizations/{organizationId}/package-requests/{code}', [VenuePackageController::class, 'showRequest']);
@@ -321,12 +330,6 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             Route::get('platform-fees/venues/{venueId}', [PlatformFeeVenueController::class, 'show'])->whereNumber('venueId');
             Route::get('platform-fees/report', [PlatformFeeReportController::class, 'show']);
             Route::get('platform-fees/report/export', [PlatformFeeReportController::class, 'export']);
-            Route::prefix('venues')->group(function () {
-                Route::get('publication-queue', [AdminVenuePublicationController::class, 'queue']);
-                Route::get('revisions/{revisionId}', [AdminVenuePublicationController::class, 'show']);
-                Route::post('revisions/{revisionId}/review', [AdminVenuePublicationController::class, 'review']);
-                Route::post('{venueId}/lifecycle', [AdminVenuePublicationController::class, 'transitionLifecycle']);
-            });
             Route::get('payments', [AdminController::class, 'payments']);
             Route::patch('payments/{payment}', [AdminController::class, 'reviewPayment']);
             Route::get('audit-logs', [AuditLogController::class, 'index']);
@@ -348,14 +351,12 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
         // BR-23: organization operations need an owner or staff membership; platform admin rights do not stand in.
         Route::middleware(['venue_admin'])->group(function () {
             Route::get('venues', [AdminController::class, 'venues']);
-            Route::post('venues', [AdminController::class, 'storeVenue']);
-            Route::patch('venues/{venue}', [AdminController::class, 'updateVenue']);
-            Route::delete('venues/{venue}', [AdminController::class, 'destroyVenue']);
             Route::get('courts', [CourtController::class, 'adminIndex']);
-            Route::apiResource('courts', CourtController::class)->except(['index', 'show']);
-            Route::post('courts/{court}/blocks', [AdminController::class, 'blocks']);
-            Route::get('courts/{court}/blocks', [AdminController::class, 'blocksIndex']);
-            Route::delete('courts/{court}/blocks/{block}', [AdminController::class, 'destroyBlock']);
+            Route::apiResource('courts', CourtController::class)->except(['index', 'show', 'destroy']);
+            Route::post('courts/{court}/open', [CourtLifecycleController::class, 'open']);
+            Route::post('courts/{court}/pause', [CourtLifecycleController::class, 'pause']);
+            Route::post('courts/{court}/resume', [CourtLifecycleController::class, 'resume']);
+            Route::post('courts/{court}/close', [CourtLifecycleController::class, 'close']);
             Route::get('contracts', [AdminContractController::class, 'index']);
             Route::get('contracts/{id}', [AdminContractController::class, 'show']);
             Route::post('contracts/{id}/cancel', [AdminContractController::class, 'cancel']);

@@ -15,21 +15,20 @@ export function useVenueDirections() {
   const directVenue = ref<Venue | null>(null)
   const matchedCourt = ref<Court | null>(null)
 
-  const slug = computed(() => String(route.params.slug || ''))
+  // A court id, or a venue slug from the venue QR and card links.
+  const key = computed(() => String(route.params.id || ''))
 
   const venue = computed<Venue | null>(() => {
     if (directVenue.value) return directVenue.value
     if (matchedCourt.value?.venue) return matchedCourt.value.venue
 
-    // Check store courts by slug or venue slug
-    const key = slug.value.toLowerCase()
-    const courtMatch = store.courts.find(
-      (c) => c.slug?.toLowerCase() === key || String(c.id) === key,
-    )
+    // Check store courts by court id, then by venue slug or id
+    const lookup = key.value.toLowerCase()
+    const courtMatch = store.courts.find((c) => String(c.id) === lookup)
     if (courtMatch?.venue) return courtMatch.venue
 
     const venueMatch = store.courts.find(
-      (c) => c.venue?.slug?.toLowerCase() === key || String(c.venue?.id) === key,
+      (c) => c.venue?.slug?.toLowerCase() === lookup || String(c.venue?.id) === lookup,
     )
     if (venueMatch?.venue) return venueMatch.venue
 
@@ -49,10 +48,10 @@ export function useVenueDirections() {
         await store.loadCourts()
       }
 
-      const key = slug.value
-      if (key) {
+      const lookup = key.value
+      if (lookup) {
         // 1. Try finding in store courts
-        const foundCourt = store.courts.find((c) => c.slug === key || String(c.id) === key)
+        const foundCourt = store.courts.find((c) => String(c.id) === lookup)
         if (foundCourt) {
           matchedCourt.value = foundCourt
           if (foundCourt.venue) {
@@ -63,7 +62,7 @@ export function useVenueDirections() {
 
         // 2. Try fetching venue from API
         try {
-          const v = await courtApi.getVenueBySlug(encodeURIComponent(key))
+          const v = await courtApi.getVenueBySlug(encodeURIComponent(lookup))
           if (v) {
             directVenue.value = v
             return
@@ -73,7 +72,8 @@ export function useVenueDirections() {
         }
 
         try {
-          const c = await courtApi.getBySlug(encodeURIComponent(key))
+          if (!/^\d+$/.test(lookup)) return
+          const c = await courtApi.getById(lookup)
           if (c) {
             matchedCourt.value = c
             if (c.venue) {
@@ -144,7 +144,7 @@ export function useVenueDirections() {
     resolveVenue()
   })
 
-  watch(slug, () => {
+  watch(key, () => {
     resolveVenue()
   })
 

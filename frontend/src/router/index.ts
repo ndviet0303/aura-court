@@ -136,7 +136,8 @@ const router = createRouter({
       meta: { titleKey: 'seo.courtsTitle', descriptionKey: 'seo.courtsDesc' },
     },
     {
-      path: '/courts/:slug',
+      // Courts are addressed by id only; old slug URLs fall through to not-found.
+      path: '/courts/:id(\\d+)',
       name: 'court-detail',
       component: CourtDetailView,
       meta: {
@@ -146,13 +147,14 @@ const router = createRouter({
       },
     },
     {
-      path: '/courts/:slug/schedule',
+      path: '/courts/:id(\\d+)/schedule',
       name: 'schedule',
       component: ScheduleView,
       meta: { titleKey: 'seo.scheduleTitle', descriptionKey: 'seo.scheduleDesc', indexable: false },
     },
     {
-      path: '/courts/:slug/directions',
+      // A court id, or a venue slug from the venue QR and card links.
+      path: '/courts/:id/directions',
       name: 'court-directions',
       component: VenueDirectionsView,
       meta: {
@@ -343,18 +345,29 @@ const router = createRouter({
           name: 'admin-venues',
           component: AdminVenuesView,
           meta: {
-            orgRoles: ['organization_owner'],
+            // Staff list their assigned venues read-only (the API scopes the list).
+            orgRoles: ['organization_owner', 'staff'],
             titleKey: 'seo.adminVenuesTitle',
             indexable: false,
           },
         },
         {
-          path: 'venues/publication-queue',
-          name: 'admin-venue-publication-queue',
-          component: () => import('@/features/admin/views/AdminPublicationQueueView.vue'),
+          path: 'organizations/:organizationId(\\d+)/venues/:venueId(\\d+)',
+          name: 'admin-venue-detail',
+          component: () => import('@/features/admin/views/AdminVenueDetailView.vue'),
           meta: {
-            platformAdmin: true,
-            titleKey: 'seo.adminVenuePublicationTitle',
+            orgRoles: ['organization_owner', 'staff'],
+            titleKey: 'seo.adminVenuesTitle',
+            indexable: false,
+          },
+        },
+        {
+          path: 'organizations/:organizationId(\\d+)/venues/:venueId(\\d+)/courts/:courtId(\\d+)',
+          name: 'admin-court-detail',
+          component: () => import('@/features/admin/views/AdminCourtDetailView.vue'),
+          meta: {
+            orgRoles: ['organization_owner', 'staff'],
+            titleKey: 'seo.adminVenuesTitle',
             indexable: false,
           },
         },

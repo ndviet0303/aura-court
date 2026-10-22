@@ -111,7 +111,7 @@ export function useCourtsList() {
       const q = searchQuery.value.trim().toLowerCase()
       const matchSearch =
         !q ||
-        c.name.toLowerCase().includes(q) ||
+        c.code.toLowerCase().includes(q) ||
         (c.venue?.name && c.venue.name.toLowerCase().includes(q)) ||
         (c.venue?.address && c.venue.address.toLowerCase().includes(q)) ||
         i18n.global.t(`sportTypes.${c.sport_type}`).toLowerCase().includes(q)
@@ -137,7 +137,7 @@ export function useCourtsList() {
       case 'rating_desc':
         return sorted.sort((a, b) => (b.reviews_avg_rating || 0) - (a.reviews_avg_rating || 0))
       case 'name_asc':
-        return sorted.sort((a, b) => a.name.localeCompare(b.name, 'vi'))
+        return sorted.sort((a, b) => a.code.localeCompare(b.code, 'vi'))
       case 'popular':
       default:
         return sorted

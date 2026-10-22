@@ -3,6 +3,7 @@
 use App\Domain\Booking\Actions\ExpirePendingBookings;
 use App\Domain\Package\Actions\ExpirePackagePaymentRequests;
 use App\Domain\Package\Actions\SendPackageExpiryReminders;
+use App\Domain\Venue\Actions\ApplyStartedOperationalStops;
 use App\Jobs\RunDailyReconciliation;
 use App\Models\Organization;
 use App\Services\Booking\RecurringSeriesService;
@@ -75,6 +76,13 @@ Schedule::call(fn () => app(SendPackageExpiryReminders::class)->execute())
     ->withoutOverlapping(10)
     ->everyMinute()
     ->onFailure($reportScheduleFailure('packages:send-expiry-reminders'));
+// 1e. Operational stops (design D6): a started stop moves its court or venue to paused/closed. Booking is blocked
+// from the moment the stop is saved, so a late run only delays the status label.
+Schedule::call(fn () => app(ApplyStartedOperationalStops::class)->execute())
+    ->name('venues:apply-started-stops')
+    ->withoutOverlapping(10)
+    ->everyMinute()
+    ->onFailure($reportScheduleFailure('venues:apply-started-stops'));
 
 // 2. Worker-free failure recovery for outbox and provider events
 Schedule::call(fn () => app(ScheduledRecoveryService::class)->recoverOutbox())

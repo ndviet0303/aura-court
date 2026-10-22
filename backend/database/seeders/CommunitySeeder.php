@@ -227,7 +227,7 @@ class CommunitySeeder extends Seeder
             $this->addPost($this->owner, sprintf(
                 '%s %s, CLB mở buổi giao lưu cầu lông tại %s (%s), %s-%s. Có sẵn cầu thi đấu, tiền sân và cầu chia đều theo số người đến chơi. Ai rảnh vào mục Ghép trận để giữ chỗ nhé!',
                 ucfirst(MatchmakingSeeder::when($start)), $start->format('d/m'), $open->court->venue->getTranslation('name', 'vi'),
-                $open->court->getTranslation('name', 'vi'), $start->format('H:i'), $this->local($open->ends_at)->format('H:i')
+                $open->court->code, $start->format('H:i'), $this->local($open->ends_at)->format('H:i')
             ), $at, $comments);
         }
 
@@ -293,7 +293,7 @@ class CommunitySeeder extends Seeder
             $this->addPost($primary, sprintf(
                 'Kèo %s (%s, %s-%s, %s) còn thiếu %d bạn%s. Ai rảnh vào mục Ghép trận tham gia cùng mình nhé!',
                 lcfirst($hosted->title), $start->format('d/m'), $start->format('H:i'), $end->format('H:i'),
-                $hosted->court->getTranslation('name', 'vi'), $hosted->required_participants - $hosted->joined_count, $skill
+                $hosted->court->code, $hosted->required_participants - $hosted->joined_count, $skill
             ), $at, $comments);
         }
 
@@ -525,7 +525,7 @@ class CommunitySeeder extends Seeder
             $this->addNotification($primary, "booking/{$booking->id}/payment_confirmed", OutboxNotification::class, [
                 'event' => 'payment_confirmed',
                 'title' => 'Đặt sân thành công',
-                'body' => "Booking {$booking->code} tại {$booking->court->name} đã được thanh toán thành công.",
+                'body' => "Booking {$booking->code} tại {$booking->court->code} đã được thanh toán thành công.",
                 'action_url' => '/booking',
                 'booking_id' => $booking->id,
                 'booking_code' => $booking->code,

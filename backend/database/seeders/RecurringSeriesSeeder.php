@@ -25,18 +25,18 @@ class RecurringSeriesSeeder extends Seeder
     use PaysVenueOwner;
 
     /**
-     * [contract no, club, club phone, contact (khachNN), court slug, ISO weekdays, start hour, hours, first month (relative to this month), months, state].
+     * [contract no, club, club phone, contact (khachNN), court code, ISO weekdays, start hour, hours, first month (relative to this month), months, state].
      * active: paid up to the coming period, later periods pending; overdue: this month's invoice went unpaid, so its sessions were released;
      * cancelled: ended early like RecurringReleaseService::cancelSeries, so paid periods stay booked, the unpaid sessions after
      * them were released and nothing was invoiced after the cancellation. Paid invoices were paid to the venue owner's connection.
      */
     private const CONTRACTS = [
-        [1, 'CLB Cầu Lông Tân Bình Pro', '0908 123 456', 22, 'san-11-sai-gon-central-bwf', [1, 3], 19, 2, -2, 4, 'active'],
-        [2, 'Học Viện Pickleball Trẻ Hà Nội', '0912 345 678', 11, 'san-pickleball-2-dynamic-cau-giay', [6, 7], 8, 2, -1, 3, 'active'],
-        [3, 'CLB Tennis Doanh Nhân Westlake', '0988 999 888', 16, 'san-tennis-2-hard-court-tay-ho', [2, 4], 6, 2, -2, 3, 'overdue'],
-        [4, 'FC Công Nghệ FPT', '0977 112 233', 19, 'san-bong-da-5v5-a2-quan-ngua', [3], 18, 2, -1, 3, 'active'],
-        [5, 'CLB Pickleball Saigon Smashers', '0933 445 566', 2, 'san-pickleball-pmh-2', [2], 18, 2, -2, 4, 'active'],
-        [6, 'CLB Cầu Lông Đại Học Y Dược', '0903 667 788', 8, 'san-7-tieu-chuan-quan-ngua', [7], 15, 2, -2, 4, 'cancelled'],
+        [1, 'CLB Cầu Lông Tân Bình Pro', '0908 123 456', 22, 'Sân 11 - Sài Gòn Central BWF', [1, 3], 19, 2, -2, 4, 'active'],
+        [2, 'Học Viện Pickleball Trẻ Hà Nội', '0912 345 678', 11, 'Sân Pickleball 2 - Dynamic Pro', [6, 7], 8, 2, -1, 3, 'active'],
+        [3, 'CLB Tennis Doanh Nhân Westlake', '0988 999 888', 16, 'Sân Tennis 2 - Hard Court Pro Tây Hồ', [2, 4], 6, 2, -2, 3, 'overdue'],
+        [4, 'FC Công Nghệ FPT', '0977 112 233', 19, 'Sân Bóng Đá 5v5 A2 Quần Ngựa', [3], 18, 2, -1, 3, 'active'],
+        [5, 'CLB Pickleball Saigon Smashers', '0933 445 566', 2, 'Sân Pickleball PMH 2 - Thi Đấu', [2], 18, 2, -2, 4, 'active'],
+        [6, 'CLB Cầu Lông Đại Học Y Dược', '0903 667 788', 8, 'Sân 7 - Tiêu Chuẩn Quần Ngựa', [7], 15, 2, -2, 4, 'cancelled'],
     ];
 
     public function run(): void
@@ -47,11 +47,11 @@ class RecurringSeriesSeeder extends Seeder
         $quotes = app(PriceQuoteService::class);
         $recurring = app(RecurringSeriesService::class);
 
-        foreach (self::CONTRACTS as [$no, $club, $phone, $contactNo, $slug, $weekdays, $hour, $hours, $firstMonth, $months, $state]) {
+        foreach (self::CONTRACTS as [$no, $club, $phone, $contactNo, $courtCode, $weekdays, $hour, $hours, $firstMonth, $months, $state]) {
             $from = $thisMonth->copy()->addMonths($firstMonth);
             $contractCode = sprintf('CTR-%d-%03d', $from->year, $no);
             $contact = User::where('email', sprintf('khach%02d@demo.auracourt.vn', $contactNo))->first();
-            $court = Court::with(['venue'])->where('slug', $slug)->first();
+            $court = Court::with(['venue'])->where('code', $courtCode)->first();
             // The contract code is the idempotency key: a seeded contract is never rebuilt or moved.
             if (! $contact || ! $court || RecurringSeries::withoutGlobalScope('tenant_isolation')->where('metadata->contract_code', $contractCode)->exists()) {
                 continue;

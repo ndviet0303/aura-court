@@ -204,7 +204,7 @@ const visibleSlots = computed(() =>
   }),
 )
 const selectedCourtName = computed(
-  () => selectedCourtObj.value?.name || (selected.value ? `Sân ${selected.value}` : ''),
+  () => selectedCourtObj.value?.code || (selected.value ? `Sân ${selected.value}` : ''),
 )
 const availabilitySummary = computed(() =>
   date.value
@@ -424,12 +424,12 @@ onMounted(async () => {
             :aria-checked="selected === c.id"
             class="court-chip"
             :class="{ active: selected === c.id }"
-            :title="c.name"
+            :title="c.code"
             @click="chooseCourt(c.id)"
           >
             <span class="material-symbols-outlined icon-16 court-icon">{{ getCourtIcon(c) }}</span>
             <span class="court-chip-text">
-              <span class="court-chip-name">{{ formatCourtChipName(c.name) }}</span>
+              <span class="court-chip-name">{{ formatCourtChipName(c.code) }}</span>
               <span class="court-chip-place">{{ describeCourtPlace(c, origin) }}</span>
             </span>
           </button>
@@ -493,17 +493,17 @@ onMounted(async () => {
         <RouterLink
           v-for="(court, index) in displayedCourts"
           :key="court.id"
-          :to="`/courts/${court.slug || court.id}`"
+          :to="`/courts/${court.id}`"
           class="court-card"
         >
           <div class="court-card-image">
-            <img :src="image(index)" :alt="court.name" loading="lazy" decoding="async" />
+            <img :src="image(index)" :alt="court.code" loading="lazy" decoding="async" />
             <span v-if="court.from_price != null" class="tag">
               {{ t('courts.from') }} {{ formatCurrency(court.from_price) }}{{ t('common.perHour') }}
             </span>
           </div>
           <div class="court-info">
-            <h3>{{ court.name }}</h3>
+            <h3>{{ court.code }}</h3>
             <p class="muted">
               <span class="material-symbols-outlined">location_on</span>
               {{ court.description || t('courts.defaultLocation') }}

@@ -38,7 +38,7 @@ const emit = defineEmits<{
         }}</span>
       </div>
       <h3 class="held-title">
-        {{ reservation.court?.name || 'Aura Court' }} ·
+        {{ reservation.court?.code || 'Aura Court' }} ·
         {{ reservation.court?.venue?.name || 'Aura Sports Club' }}
       </h3>
       <div class="held-meta">

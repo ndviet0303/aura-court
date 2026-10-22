@@ -147,7 +147,7 @@ const totalHours = computed(() => {
             <div class="col-court">
               <span class="material-symbols-outlined court-bullet-icon">sports_tennis</span>
               <span class="court-name">{{
-                occ.court_name || invoice?.series?.court?.name || 'VIP 01'
+                occ.court_name || invoice?.series?.court?.code || 'VIP 01'
               }}</span>
             </div>
 

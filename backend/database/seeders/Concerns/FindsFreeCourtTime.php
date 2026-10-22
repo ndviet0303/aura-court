@@ -4,8 +4,8 @@ namespace Database\Seeders\Concerns;
 
 use App\Models\BookingSlot;
 use App\Models\Court;
-use App\Models\CourtBlock;
 use App\Models\MatchPost;
+use App\Models\OperationalStop;
 use App\Models\ReservationSlot;
 use Carbon\Carbon;
 
@@ -13,7 +13,7 @@ use Carbon\Carbon;
 trait FindsFreeCourtTime
 {
     /**
-     * First court and start hour accepted by $fits: the given court, then the venue's other courts of the same sport by slug;
+     * First court and start hour accepted by $fits: the given court, then the venue's other courts of the same sport by code;
      * on each court the requested hour, later hours, then earlier ones, keeping the session within 06:00-23:00.
      *
      * @param  callable(Court, int): bool  $fits
@@ -25,7 +25,7 @@ trait FindsFreeCourtTime
             ->where('venue_id', $court->venue_id)
             ->where('sport_type', $court->sport_type)
             ->whereKeyNot($court->id)
-            ->orderBy('slug')
+            ->orderBy('code')
             ->get()
             ->prepend($court);
         $startHours = [];
@@ -44,16 +44,16 @@ trait FindsFreeCourtTime
             }
         }
 
-        throw new \RuntimeException("No free {$hours}h court time near {$court->slug} from {$hour}:00.");
+        throw new \RuntimeException("No free {$hours}h court time near {$court->code} from {$hour}:00.");
     }
 
-    /** No active booking, reservation, block or match on the court, nor an active reservation of the player, overlaps [from, to). */
+    /** No active booking, reservation, stop of the court or its venue, or match on the court, nor an active reservation of the player, overlaps [from, to). */
     protected function isFree(int $courtId, Carbon $from, Carbon $to, ?int $userId = null): bool
     {
         $overlapping = fn ($query): bool => $query->where('starts_at', '<', $to->copy()->utc())->where('ends_at', '>', $from->copy()->utc())->exists();
 
         return ! $overlapping(BookingSlot::where('court_id', $courtId)->whereIn('status', ['held', 'confirmed']))
-            && ! $overlapping(CourtBlock::where('court_id', $courtId))
+            && ! OperationalStop::query()->affectingCourt($courtId, (int) Court::whereKey($courtId)->value('venue_id'))->overlapping($from, $to)->exists()
             && ! $overlapping(MatchPost::withoutGlobalScope('tenant_isolation')->where('court_id', $courtId)->whereIn('status', ['open', 'active', 'full']))
             && ! $overlapping(ReservationSlot::withoutGlobalScope('tenant_isolation')
                 ->whereIn('status', ['held', 'confirmed'])

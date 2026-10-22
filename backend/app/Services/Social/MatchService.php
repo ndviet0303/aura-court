@@ -4,7 +4,6 @@ namespace App\Services\Social;
 
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Models\Court;
-use App\Models\CourtBlock;
 use App\Models\MatchBill;
 use App\Models\MatchInvitation;
 use App\Models\MatchParticipation;
@@ -15,8 +14,10 @@ use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
 use App\Models\User;
+use App\Models\Venue;
 use App\Services\Infrastructure\OutboxService;
 use App\Services\Pricing\RentalPriceCalculator;
+use App\Services\Reservation\SlotSelectionPolicy;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -994,12 +995,7 @@ class MatchService
         $startsAtUtc = $startsAt->copy()->utc();
         $endsAtUtc = $endsAt->copy()->utc();
 
-        $blockExists = CourtBlock::query()
-            ->where('court_id', $court->id)
-            ->where('starts_at', '<', $endsAtUtc)
-            ->where('ends_at', '>', $startsAtUtc)
-            ->exists();
-        abort_if($blockExists, 409, 'Sân đang có lịch bảo trì hoặc tạm đóng trong khoảng thời gian đã chọn.');
+        app(SlotSelectionPolicy::class)->assertNoStop($court, $startsAt, $endsAt);
 
         $reservationExists = ReservationSlot::query()
             ->where('court_id', $court->id)
@@ -1022,7 +1018,11 @@ class MatchService
     private function assertCourtCanHostSession(Court $court): void
     {
         // BR-37: no new session on a paused, closed or suspended venue; a session sets its own price, so an unpriced court may host one.
-        $eligibility = app(VerifyEffectiveBookingEligibility::class)->execute($court);
+        // Global lock order (plan, court, venue) so a stop or suspension committed meanwhile is seen.
+        $verifier = app(VerifyEffectiveBookingEligibility::class);
+        $verifier->getEntitlement((int) $court->venue->organization_id);
+        $locked = Court::query()->whereKey($court->id)->lockForUpdate()->firstOrFail();
+        $eligibility = $verifier->execute($locked->setRelation('venue', Venue::query()->whereKey($locked->venue_id)->lockForUpdate()->firstOrFail()));
         abort_unless($eligibility['eligible'] || $eligibility['reason'] === 'COURT_UNPRICED', 409, $eligibility['message'] ?? '');
     }
 

@@ -6,7 +6,9 @@ import { resolveLocalizedText } from '@/i18n'
 import { AuraButton } from '@/shared/components'
 import SelectDropdown, { type DropdownOption } from '@/shared/components/forms/SelectDropdown.vue'
 import SkeletonLoader from '@/shared/components/feedback/SkeletonLoader.vue'
+import { OPERATING_STATUSES, type OperatingStatus } from '@/features/court/types/court'
 import type { OrgVenue } from '../../composables/useOrganizationOwner'
+import OperatingStatusBadge from '../lifecycle/OperatingStatusBadge.vue'
 
 const props = defineProps<{
   venues: OrgVenue[]
@@ -17,13 +19,12 @@ const { t } = useI18n()
 const router = useRouter()
 
 const searchQuery = ref('')
-const statusFilter = ref<'all' | 'active' | 'inactive'>('all')
+const statusFilter = ref<'all' | OperatingStatus>('all')
 
-const statusOptions: DropdownOption[] = [
-  { value: 'all', label: 'Tất cả trạng thái', icon: 'filter_list' },
-  { value: 'active', label: 'Hoạt động (Active)', icon: 'check_circle' },
-  { value: 'inactive', label: 'Tạm dừng (Inactive)', icon: 'cancel' },
-]
+const statusOptions = computed<DropdownOption[]>(() => [
+  { value: 'all', label: t('admin.lifecycle.allStatuses'), icon: 'filter_list' },
+  ...OPERATING_STATUSES.map((value) => ({ value, label: t(`admin.lifecycle.status.${value}`) })),
+])
 
 const filteredVenues = computed(() => {
   return props.venues.filter((v) => {
@@ -36,8 +37,7 @@ const filteredVenues = computed(() => {
     }
 
     // Status filter
-    if (statusFilter.value === 'active' && !v.is_active) return false
-    if (statusFilter.value === 'inactive' && v.is_active) return false
+    if (statusFilter.value !== 'all' && v.status !== statusFilter.value) return false
 
     return true
   })
@@ -115,9 +115,7 @@ function goToVenuesManagement() {
             {{ t('admin.org.courtsScale', { count: v.courts_count || 0 }) }}
           </span>
 
-          <span class="status-chip" :class="v.is_active ? 'status-active' : 'status-inactive'">
-            ● {{ v.is_active ? t('admin.org.statusActive') : t('admin.org.statusInactive') }}
-          </span>
+          <OperatingStatusBadge :status="v.status" :suspension="v.active_suspension" />
 
           <AuraButton variant="secondary" size="sm" @click="goToVenuesManagement">
             <span class="material-symbols-outlined icon-16">settings</span>
@@ -329,23 +327,6 @@ function goToVenuesManagement() {
   background: var(--surface);
   border: 1px solid var(--outline);
   color: var(--ink);
-}
-
-.status-chip {
-  font-size: 11.5px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 6px;
-}
-
-.status-active {
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
-}
-
-.status-inactive {
-  background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
 }
 
 .empty-venues-state {

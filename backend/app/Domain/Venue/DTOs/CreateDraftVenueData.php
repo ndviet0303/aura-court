@@ -2,7 +2,7 @@
 
 namespace App\Domain\Venue\DTOs;
 
-use App\Http\Requests\Venue\CreateDraftVenueRequest;
+use App\Http\Requests\Venue\SaveVenueRequest;
 
 readonly class CreateDraftVenueData
 {
@@ -24,7 +24,7 @@ readonly class CreateDraftVenueData
         public array $images = [],
     ) {}
 
-    public static function fromRequest(CreateDraftVenueRequest $request, int $organizationId): self
+    public static function fromRequest(SaveVenueRequest $request, int $organizationId): self
     {
         return new self(
             organizationId: $organizationId,

@@ -140,7 +140,7 @@ export function useResaleMarketplace() {
         }
         return {
           id: item.id,
-          courtName: court?.name ?? '',
+          courtName: court?.code ?? '',
           venueName: court?.venue?.name ?? '',
           venueAddress: court?.venue?.address ?? '',
           dateStr: formatDateStr(startsAt),
@@ -175,7 +175,7 @@ export function useResaleMarketplace() {
         return {
           id: item.id,
           entitlementId: item.reservation_entitlement_id,
-          courtName: court?.name ?? '',
+          courtName: court?.code ?? '',
           venueName: court?.venue?.name ?? '',
           dateStr: formatDateStr(startsAt),
           timeSlot: formatTimeSlot(startsAt, item.entitlement?.ends_at),
@@ -214,7 +214,7 @@ export function useResaleMarketplace() {
           slots.push({
             id: ent.id,
             reservationId: reservation.id,
-            courtName: court?.name ?? '',
+            courtName: court?.code ?? '',
             venueName: court?.venue?.name ?? '',
             dateStr: formatDateStr(ent.starts_at),
             timeSlot: formatTimeSlot(ent.starts_at, ent.ends_at),

@@ -21,7 +21,7 @@ use Illuminate\Validation\ValidationException;
  */
 class PeerToPeerResaleService
 {
-    public function __construct(private readonly ResaleListingState $view, private readonly ResalePriceCap $caps) {}
+    public function __construct(private readonly ResaleListingState $view, private readonly ResalePriceCap $caps, private readonly VerifyEffectiveBookingEligibility $eligibility) {}
 
     private const LOCK_MINUTES = 15;
 
@@ -35,12 +35,7 @@ class PeerToPeerResaleService
         }
 
         $listing = DB::transaction(function () use ($listing, $buyer, $acceptFree): MarketplaceListing {
-            // A purchase is a new booking: lock the court, then the venue, and recheck eligibility with the package (D9) before the listing.
-            $court = Court::query()->whereKey($listing->entitlement()->withoutGlobalScope('tenant_isolation')->value('court_id'))->lockForUpdate()->firstOrFail();
-            $venue = Venue::query()->whereKey($court->venue_id)->lockForUpdate()->firstOrFail();
-            $eligibility = app(VerifyEffectiveBookingEligibility::class)->execute($court->setRelation('venue', $venue));
-            // The slot keeps its recorded price, so an unpriced court does not block the purchase.
-            abort_unless($eligibility['eligible'] || $eligibility['reason'] === 'COURT_UNPRICED', 409, $eligibility['message'] ?? '');
+            $this->lockSlot($listing);
             $listing = $this->locked($listing->id);
             if ($listing->lockedBy() === $buyer->id) {
                 return $listing;
@@ -198,6 +193,16 @@ class PeerToPeerResaleService
             ->where('status', 'listed')
             ->where('cutoff_at', '<=', now())
             ->update(['status' => 'withdrawn']);
+    }
+
+    /** A purchase is a new booking: plan, court, venue locked in the global order before the listing; the slot keeps its price. */
+    private function lockSlot(MarketplaceListing $listing): void
+    {
+        // A purchase is a new booking: lock the court, then the venue, and recheck eligibility with the package (D9).
+        // ponytail: the court comes from an unlocked read; recheck it under the entitlement lock once D8 move-court can move a listed slot.
+        $slot = $listing->entitlement()->withoutGlobalScope('tenant_isolation')->firstOrFail();
+        $court = Court::query()->whereKey($slot->court_id)->lockForUpdate()->firstOrFail();
+        $this->eligibility->assertResalable($court->setRelation('venue', Venue::query()->whereKey($court->venue_id)->lockForUpdate()->firstOrFail()), $slot->starts_at, $slot->ends_at);
     }
 
     private function locked(int $id): MarketplaceListing

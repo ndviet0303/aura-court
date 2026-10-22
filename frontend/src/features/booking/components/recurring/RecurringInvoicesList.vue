@@ -162,7 +162,7 @@ function openInvoiceDetail(inv: RecurringInvoice) {
           <div class="inv-venue-info" v-if="inv.series?.court">
             <span class="material-symbols-outlined court-icon">sports_tennis</span>
             <div class="venue-texts">
-              <span class="court-title">{{ inv.series.court.name }}</span>
+              <span class="court-title">{{ inv.series.court.code }}</span>
               <span v-if="inv.series.court.venue" class="venue-sub">{{
                 inv.series.court.venue.name
               }}</span>

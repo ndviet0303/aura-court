@@ -4,6 +4,7 @@ import VenueDirectionsHero from '../components/directions/VenueDirectionsHero.vu
 import VenueMapActionCard from '../components/directions/VenueMapActionCard.vue'
 import VenueTransportGuide from '../components/directions/VenueTransportGuide.vue'
 import VenueCourtsGrid from '../components/directions/VenueCourtsGrid.vue'
+import CourtAmenitiesGrid from '../components/detail/CourtAmenitiesGrid.vue'
 
 const {
   venue,
@@ -36,6 +37,9 @@ const {
         @copy-address="copyAddress"
         @share="shareLocation"
       />
+
+      <!-- Amenities the owner declared -->
+      <CourtAmenitiesGrid :amenities="venue.amenities" />
 
       <!-- Transport, Parking & Hotline -->
       <VenueTransportGuide :venue="venue" />

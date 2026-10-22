@@ -3,21 +3,25 @@
 namespace App\Http\Controllers\Court;
 
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
+use App\Domain\Venue\Rules\CourtInformationRules;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Court\StoreCourtRequest;
+use App\Http\Requests\Court\UpdateCourtRequest;
 use App\Models\Court;
 use App\Models\Venue;
 use App\Services\Infrastructure\FeatureFlagService;
+use App\Services\Pricing\PriceCoverageService;
 use App\Services\Reservation\CourtPriceRuleService;
+use Closure;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class CourtController extends Controller
 {
-    // Draft, paused and suspended venues still take court setup and fixes; only ended venues refuse it.
-    private const CLOSED_VENUE_STATUSES = [Venue::STATUS_CLOSED];
-
     public function index(Request $request)
     {
         // Database cache counters must exist before mutations can increment them.
@@ -25,8 +29,8 @@ class CourtController extends Controller
         Cache::add('venues_version', 1, now()->addYears(10));
         $courtsVersion = Cache::get('courts_version', 1);
         $venuesVersion = Cache::get('venues_version', 1);
-        // v2: entries cached before price tables carry the old price slots and no from_price.
-        $cacheKey = "courts:v2:c{$courtsVersion}:v{$venuesVersion}:".md5(json_encode($request->only(['sport_type', 'venue_id'])));
+        // v3: entries cached before D9/D11 carry name, slug and image_url instead of code and images.
+        $cacheKey = "courts:v3:c{$courtsVersion}:v{$venuesVersion}:".md5(json_encode($request->only(['sport_type', 'venue_id'])));
         $courts = Cache::remember($cacheKey, 300, function () use ($request) {
             $courtsQuery = Court::where('status', Court::STATUS_ACTIVE)
                 ->whereHas('venue', fn ($query) => $query->where('status', Venue::STATUS_ACTIVE)->whereDoesntHave('activeSuspension'))
@@ -48,6 +52,8 @@ class CourtController extends Controller
             $filteredCourts = [];
             $priceRules = app(CourtPriceRuleService::class);
             $pricedCourtIds = $priceRules->pricedCourtIds($courtsQuery);
+            // BR-41, BR-47: one batch coverage check for the whole list; a court with any unpriced service time is hidden.
+            $pricedCourtIds = array_diff_key($pricedCourtIds, array_flip(app(PriceCoverageService::class)->uncoveredCourtIds(array_keys($pricedCourtIds), now())));
             $fromPrices = $priceRules->fromPrices($courtsQuery);
 
             foreach ($courtsQuery as $court) {
@@ -115,10 +121,8 @@ class CourtController extends Controller
             $scopedVenueIds = [(int) $request->query('venue_id')];
         }
 
-        $query = Court::with([
-            'venue',
-            'blocks' => fn ($query) => $query->latest('starts_at'),
-        ])
+        // Open stops and the venue suspension drive the admin status badges and the resume buttons.
+        $query = Court::with(['venue.activeSuspension', 'operationalStops' => fn ($q) => $q->open()])
             ->when($scopedVenueIds !== null, fn ($q) => $q->whereIn('venue_id', $scopedVenueIds))
             ->when($request->query('sport_type'), fn ($q, $sportType) => $q->where('sport_type', $sportType))
             ->orderBy('id');
@@ -126,94 +130,46 @@ class CourtController extends Controller
         return $query->get();
     }
 
-    public function store(Request $request)
+    public function store(StoreCourtRequest $request)
     {
-        if (is_string($request->input('name'))) {
-            $request->merge(['name' => ['vi' => $request->input('name'), 'en' => $request->input('name')]]);
-        }
-        if (is_string($request->input('description'))) {
-            $request->merge(['description' => ['vi' => $request->input('description'), 'en' => $request->input('description')]]);
-        }
+        $data = CourtInformationRules::toAttributes($request->validated());
 
-        $data = $request->validate([
-            'name' => 'required|array',
-            'name.*' => 'string|max:120',
-            'venue_id' => ['required', 'integer', Rule::exists('venues', 'id')->whereNotIn('status', self::CLOSED_VENUE_STATUSES)],
-            'sport_type' => ['required', Rule::in(Court::SPORT_TYPES)],
-            'slot_duration' => ['sometimes', 'integer', Rule::in(Court::SLOT_DURATIONS)],
-            'description' => 'nullable|array',
-            'description.*' => 'string',
-            'image_url' => 'nullable|url',
-            'amenities' => 'nullable|array',
-            'amenities.*' => 'string',
-            'surface_type' => ['nullable', Rule::in(['wood', 'synthetic', 'acrylic', 'concrete', 'grass', 'clay', 'hard', 'other'])],
-            'capacity' => 'nullable|integer|min:1|max:100',
-            'is_active' => 'boolean',
-        ]);
-        $user = $request->user();
-        if ($user) {
-            abort_unless($user->canManageVenue((int) $data['venue_id']), 403, 'Unauthorized venue.');
-        }
+        $court = self::uniqueCode(fn () => DB::transaction(function () use ($data) {
+            // Locked, so a closure of the venue cannot slip in before the court exists.
+            $venue = Venue::query()->lockForUpdate()->findOrFail($data['venue_id']);
+            if ($venue->isClosed()) {
+                throw ValidationException::withMessages(['venue_id' => 'Không thể thêm sân vào cơ sở đã ngừng kinh doanh.']);
+            }
+            // D3: a new court starts inactive, also at an inactive venue, and opens only through OpenCourt.
+            $court = Court::create([...$data, 'status' => Court::STATUS_INACTIVE])->load(['venue']);
+            Cache::increment('courts_version');
 
-        $court = Court::create($data)->load(['venue']);
-        Cache::increment('courts_version');
+            return $court;
+        }));
 
         return response()->json($court, 201);
     }
 
-    public function update(Request $request, Court $court)
+    public function update(UpdateCourtRequest $request, Court $court)
     {
-        $user = $request->user();
-        if ($user) {
-            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
-        }
+        // D10: venue and sport were only checked against the stored values; they never change here.
+        $data = CourtInformationRules::toAttributes(Arr::except($request->validated(), ['venue_id', 'sport_type']));
 
-        if (is_string($request->input('name'))) {
-            $request->merge(['name' => ['vi' => $request->input('name'), 'en' => $request->input('name')]]);
-        }
-        if (is_string($request->input('description'))) {
-            $request->merge(['description' => ['vi' => $request->input('description'), 'en' => $request->input('description')]]);
-        }
-
-        $data = $request->validate([
-            'name' => 'sometimes|required|array',
-            'name.*' => 'string|max:120',
-            'venue_id' => ['sometimes', 'required', 'integer', Rule::exists('venues', 'id')->whereNotIn('status', self::CLOSED_VENUE_STATUSES)],
-            'sport_type' => ['sometimes', 'required', Rule::in(Court::SPORT_TYPES)],
-            'slot_duration' => ['sometimes', 'integer', Rule::in(Court::SLOT_DURATIONS)],
-            'description' => 'nullable|array',
-            'description.*' => 'string',
-            'image_url' => 'nullable|url',
-            'amenities' => 'nullable|array',
-            'amenities.*' => 'string',
-            'surface_type' => ['sometimes', 'nullable', Rule::in(['wood', 'synthetic', 'acrylic', 'concrete', 'grass', 'clay', 'hard', 'other'])],
-            'capacity' => 'sometimes|nullable|integer|min:1|max:100',
-            'is_active' => 'boolean',
-        ]);
-
-        if (isset($data['venue_id']) && $user) {
-            abort_unless($user->canManageVenue((int) $data['venue_id']), 403, 'Unauthorized venue.');
-        }
-
-        DB::transaction(function () use ($court, $data) {
+        self::uniqueCode(fn () => DB::transaction(function () use ($court, $data) {
             $court->update($data);
-            abort_if($court->is_active && $court->venue()->whereIn('status', self::CLOSED_VENUE_STATUSES)->exists(), 422, 'Không thể mở sân tại cơ sở đã ngừng kinh doanh.');
             Cache::increment('courts_version');
-        });
+        }));
 
         return $court->fresh(['venue']);
     }
 
-    public function destroy(Court $court)
+    /** A concurrent save of the same code passes validation twice; the unique index refuses the second as a 422. */
+    private static function uniqueCode(Closure $save): mixed
     {
-        $user = request()->user();
-        if ($user) {
-            abort_unless($user->canManageVenue($court->venue_id), 403, 'Unauthorized court venue.');
+        try {
+            return $save();
+        } catch (UniqueConstraintViolationException) {
+            throw ValidationException::withMessages(['code' => 'Mã sân đã có ở một sân khác của cơ sở này.']);
         }
-
-        $court->update(['is_active' => false]);
-        Cache::increment('courts_version');
-
-        return ['message' => 'Đã ngừng mở sân.'];
     }
 }

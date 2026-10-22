@@ -1,12 +1,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
+import type { OperatingStatus, VenueSuspension } from '@/features/court/types/court'
 
 export interface OrgVenue {
   id: number
   name: string
   address?: string
-  is_active: boolean
+  status?: OperatingStatus
+  active_suspension?: VenueSuspension | null
   courts_count?: number
 }
 
@@ -94,7 +96,7 @@ export function useOrganizationOwner() {
   // Computed KPIs
   const totalVenuesCount = computed(() => currentOrg.value.venues?.length || 0)
   const activeVenuesCount = computed(
-    () => currentOrg.value.venues?.filter((v) => v.is_active).length || 0,
+    () => currentOrg.value.venues?.filter((v) => v.status === 'active').length || 0,
   )
   const totalCourtsCount = computed(() =>
     (currentOrg.value.venues || []).reduce((acc, v) => acc + (v.courts_count || 0), 0),
@@ -172,7 +174,8 @@ export function useOrganizationOwner() {
           id: v.id,
           name: v.name,
           address: v.address,
-          is_active: v.is_active ?? true,
+          status: v.status,
+          active_suspension: v.active_suspension,
           courts_count: Array.isArray(v.courts) ? v.courts.length : v.courts_count || 0,
         }))
       }

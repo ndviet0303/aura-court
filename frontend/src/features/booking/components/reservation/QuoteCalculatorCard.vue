@@ -54,7 +54,7 @@ const availableTimeSlots = [6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 21].
 const courtOptions = computed<DropdownOption[]>(() =>
   props.courts.map((c) => ({
     value: c.id,
-    label: c.name,
+    label: c.code,
     sublabel: c.venue?.name ? `· ${c.venue.name}` : undefined,
     icon: 'stadium',
   })),
@@ -217,7 +217,7 @@ const quotedRange = computed(() => {
         <div class="quote-breakdown-box">
           <div class="quote-row">
             <span class="row-label">{{ t('reservations.calculator.courtRow') }}</span>
-            <span class="row-value font-bold">{{ selectedCourtObj?.name || 'Aura Court' }}</span>
+            <span class="row-value font-bold">{{ selectedCourtObj?.code || 'Aura Court' }}</span>
           </div>
           <div class="quote-row">
             <span class="row-label">{{ t('reservations.calculator.timeRow') }}</span>

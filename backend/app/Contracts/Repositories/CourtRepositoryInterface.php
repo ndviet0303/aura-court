@@ -16,4 +16,7 @@ interface CourtRepositoryInterface
     public function create(array $attributes): Court;
 
     public function update(Court $court, array $attributes): bool;
+
+    /** BR-27: another court of the venue already has this code after trimming, case-insensitively. */
+    public function codeTaken(int $venueId, string $code, ?int $exceptCourtId = null): bool;
 }

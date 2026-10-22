@@ -25,10 +25,15 @@ final class LifecycleGuard
         Venue::STATUS_CLOSED => 'Ngừng kinh doanh',
     ];
 
+    public static function allows(string $from, string $to): bool
+    {
+        return in_array($to, self::ALLOWED[$from] ?? [], true);
+    }
+
     /** @throws ValidationException rendered as 422 under the "status" key */
     public static function assertTransition(string $from, string $to): void
     {
-        if (in_array($to, self::ALLOWED[$from] ?? [], true)) {
+        if (self::allows($from, $to)) {
             return;
         }
 
@@ -39,5 +44,24 @@ final class LifecycleGuard
                 self::LABELS[$to] ?? $to,
             ),
         ]);
+    }
+
+    /**
+     * Open and resume both lead to active, but open applies only to inactive and resume only to paused.
+     *
+     * @throws ValidationException rendered as 422 under the "status" key
+     */
+    public static function assertCommandSource(string $from, string $source, string $to): void
+    {
+        self::assertTransition($from, $to);
+        if ($from !== $source) {
+            throw ValidationException::withMessages([
+                'status' => sprintf(
+                    'Lệnh này chỉ áp dụng cho trạng thái "%s"; trạng thái hiện tại là "%s".',
+                    self::LABELS[$source] ?? $source,
+                    self::LABELS[$from] ?? $from,
+                ),
+            ]);
+        }
     }
 }

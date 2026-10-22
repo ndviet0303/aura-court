@@ -20,7 +20,7 @@ defineProps<{
     </div>
 
     <!-- Book CTA -->
-    <RouterLink :to="`/courts/${court.slug || court.id}/schedule`" class="btn-book-now">
+    <RouterLink :to="`/courts/${court.id}/schedule`" class="btn-book-now">
       {{ $t('courtDetail.confirmAndBook') }}
     </RouterLink>
   </div>

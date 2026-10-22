@@ -112,7 +112,7 @@ export interface MonthlyInvoiceData {
     ends_at?: string
     court?: {
       id: number
-      name: string
+      code: string
       venue?: { id: number; name: string; address?: string; google_maps_url?: string }
     }
   }

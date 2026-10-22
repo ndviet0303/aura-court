@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests\Partner;
 
+use App\Contracts\Repositories\OperationalStatusRepositoryInterface;
+use App\Domain\Venue\Rules\ServiceIntervalRules;
 use App\Models\OrganizationMember;
 use App\Models\Venue;
+use App\Services\Reservation\VenueOperatingCalendar;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -48,20 +51,26 @@ class SaveVenueOperatingScheduleRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
-            foreach ($this->input('weekly_hours', []) as $day => $schedule) {
-                $intervals = $schedule['intervals'] ?? [];
-                if (! ($schedule['closed'] ?? false) && count($intervals) === 0) {
-                    $validator->errors()->add("weekly_hours.{$day}.intervals", 'An open day must contain at least one operating interval.');
+            // The interval checks read well-formed H:i times only.
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+            // BR-31: a court schedule lies inside the venue's weekly hours; the venue's own hours have no outer bound.
+            $forCourt = $this->input('court_id') !== null;
+            $venueHours = $forCourt ? app(OperationalStatusRepositoryInterface::class)->venueSchedule((int) $this->route('venueId')) : null;
+            foreach ($this->input('weekly_hours') as $day => $schedule) {
+                if ($schedule['closed']) {
+                    continue;
                 }
+                $label = ServiceIntervalRules::WEEKDAYS[(int) $day] ?? "Thứ {$day}";
+                if ($schedule['intervals'] === []) {
+                    $validator->errors()->add("weekly_hours.{$day}.intervals", "{$label}: ngày mở cửa phải có ít nhất một khung giờ.");
 
-                $sorted = collect($intervals)->sortBy('start')->values();
-                foreach ($sorted as $index => $interval) {
-                    if (($interval['end'] ?? '') <= ($interval['start'] ?? '')) {
-                        $validator->errors()->add("weekly_hours.{$day}.intervals.{$index}.end", 'End time must be later than start time.');
-                    }
-                    if ($index > 0 && ($interval['start'] ?? '') < ($sorted[$index - 1]['end'] ?? '')) {
-                        $validator->errors()->add("weekly_hours.{$day}.intervals.{$index}.start", 'Operating intervals must not overlap.');
-                    }
+                    continue;
+                }
+                $venueMinutes = $forCourt ? VenueOperatingCalendar::openMinutes($venueHours, null, (int) $day) : null;
+                foreach (ServiceIntervalRules::errors($schedule['intervals'], "weekly_hours.{$day}.intervals", $label, $venueMinutes) as [$field, $message]) {
+                    $validator->errors()->add($field, $message);
                 }
             }
         });

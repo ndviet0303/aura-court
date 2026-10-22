@@ -36,7 +36,7 @@ const hoveredRating = ref<number | null>(null)
 
       <div class="modal-body">
         <div class="court-summary-box">
-          <strong class="court-name">{{ booking.court?.name || 'Sân Aura Court' }}</strong>
+          <strong class="court-name">{{ booking.court?.code || 'Sân Aura Court' }}</strong>
           <span class="venue-name">
             <span class="material-symbols-outlined loc-icon">location_on</span>
             {{ booking.court?.venue?.name || 'Aura Badminton Center' }}

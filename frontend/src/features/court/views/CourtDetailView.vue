@@ -20,7 +20,11 @@ const { court, reviews, reviewsLoading, isGalleryOpen, basePrice } = useCourtDet
         <CourtDetailHero :court="court" @open-gallery="isGalleryOpen = true" />
 
         <!-- Technical Specs -->
-        <CourtSpecsGrid :sport-type="court.sport_type" />
+        <CourtSpecsGrid
+          :sport-type="court.sport_type"
+          :surface-type="court.surface_type"
+          :capacity="court.capacity"
+        />
 
         <!-- Amenities -->
         <CourtAmenitiesGrid :amenities="court.amenities" />

@@ -6,7 +6,7 @@ defineProps<{
   totalVenues: number
   totalCourts: number
   activeCourts: number
-  totalBlocks: number
+  totalStops: number
   specialDates: number
   loading?: boolean
 }>()
@@ -48,9 +48,9 @@ const { t } = useI18n()
       <div class="kpi-card text-yellow">
         <div class="kpi-top-row">
           <span class="material-symbols-outlined kpi-icon text-yellow">build</span>
-          <span class="kpi-lbl">{{ t('admin.schedule.kpiMaintenanceBlocks') }}</span>
+          <span class="kpi-lbl">{{ t('admin.schedule.kpiOpenStops') }}</span>
         </div>
-        <strong class="kpi-num">{{ totalBlocks }}</strong>
+        <strong class="kpi-num">{{ totalStops }}</strong>
       </div>
 
       <div class="kpi-card text-pink">

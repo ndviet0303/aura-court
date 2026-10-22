@@ -64,7 +64,7 @@ export function useSocialTournament() {
           id: m.id,
           title: m.title || `Kèo giao lưu #${m.id}`,
           venue_name: m.venue?.name || m.venue_name || 'Cơ sở Aura',
-          court_name: m.court?.name || m.court_name || 'Sân tiêu chuẩn',
+          court_name: m.court?.code || m.court_name || 'Sân tiêu chuẩn',
           city: m.venue?.city || 'Hồ Chí Minh',
           starts_at: formattedTime,
           joined_count: m.joined_count || m.participants?.length || 1,

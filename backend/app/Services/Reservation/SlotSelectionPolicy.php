@@ -3,11 +3,12 @@
 namespace App\Services\Reservation;
 
 use App\Models\Court;
-use App\Models\CourtBlock;
 use App\Models\MatchPost;
+use App\Models\OperationalStop;
 use App\Models\ReservationSlot;
 use App\Models\Venue;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
@@ -68,16 +69,9 @@ class SlotSelectionPolicy
             }
         }
 
-        // 3. Court maintenance blocks (true-interval).
+        // 3. Stops of the court or its venue (D5).
         foreach ($slots as $slot) {
-            $blocked = CourtBlock::query()
-                ->where('court_id', $court->id)
-                ->where('starts_at', '<', $slot['end']->copy()->utc())
-                ->where('ends_at', '>', $slot['start']->copy()->utc())
-                ->exists();
-            if ($blocked) {
-                abort(409, 'Sân đang bị khóa trong khoảng thời gian đã chọn.');
-            }
+            $this->assertNoStop($court, $slot['start'], $slot['end']);
         }
 
         $booking = $this->livePolicyBooking($venue);
@@ -139,6 +133,13 @@ class SlotSelectionPolicy
                 abort(409, 'Court interval is reserved for a community/hosted activity.');
             }
         }
+    }
+
+    /** D5: a stop of the court or its venue blocks [starts_at, ended_at ?? infinity); callers read it after their court and venue locks. */
+    public function assertNoStop(Court $court, CarbonInterface $start, CarbonInterface $end): void
+    {
+        $stopped = OperationalStop::query()->affectingCourt($court, (int) $court->venue_id)->overlapping($start, $end)->exists();
+        abort_if($stopped, 409, 'Sân đang tạm ngừng hoặc ngừng kinh doanh trong khoảng thời gian đã chọn.');
     }
 
     /**

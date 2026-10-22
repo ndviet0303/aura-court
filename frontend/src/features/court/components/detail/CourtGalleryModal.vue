@@ -19,7 +19,7 @@ const galleryImages = computed(() => getCourtGalleryImages(props.court))
   <div v-if="show" class="modal-backdrop gallery-modal" @click.self="emit('close')">
     <div class="modal-card modal-lg">
       <div class="modal-header">
-        <h3 class="modal-title">📷 Thư Viện Hình Ảnh: {{ court.name }}</h3>
+        <h3 class="modal-title">📷 Thư Viện Hình Ảnh: {{ court.code }}</h3>
         <button class="modal-close-btn" @click="emit('close')">✕</button>
       </div>
 
@@ -29,7 +29,7 @@ const galleryImages = computed(() => getCourtGalleryImages(props.court))
             v-for="(img, idx) in galleryImages"
             :key="idx"
             :src="img"
-            :alt="`${court.name} - Ảnh ${idx + 1}`"
+            :alt="`${court.code} - Ảnh ${idx + 1}`"
             class="gallery-item-img"
           />
         </div>

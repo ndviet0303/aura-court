@@ -203,7 +203,6 @@ export const navGroups: NavGroup[] = [
 export const OWNER_ONLY_PATHS = [
   '/admin/manage',
   '/admin/contracts',
-  '/admin/venues',
   '/admin/pricing',
   '/admin/promotions',
   '/admin/membership',
@@ -214,9 +213,10 @@ export const OWNER_ONLY_PATHS = [
   '/admin/finance',
 ]
 
-// Owner or staff: schedule, POS, shifts, inventory, tournaments
+// Owner or staff: schedule, venues (staff read-only), POS, shifts, inventory, tournaments
 export const OWNER_OR_STAFF_PATHS = [
   '/admin/schedule',
+  '/admin/venues',
   '/admin/pos',
   '/pos',
   '/admin/shifts',

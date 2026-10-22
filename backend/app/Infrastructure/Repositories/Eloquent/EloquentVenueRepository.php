@@ -6,7 +6,6 @@ use App\Contracts\Repositories\VenueRepositoryInterface;
 use App\Models\Court;
 use App\Models\Venue;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Cache;
 
 class EloquentVenueRepository implements VenueRepositoryInterface
 {
@@ -36,26 +35,5 @@ class EloquentVenueRepository implements VenueRepositoryInterface
     public function findById(int $id): ?Venue
     {
         return Venue::find($id);
-    }
-
-    public function create(array $attributes): Venue
-    {
-        $venue = Venue::create($attributes);
-        Cache::increment('venues_version');
-
-        return $venue;
-    }
-
-    public function update(Venue $venue, array $attributes): bool
-    {
-        $updated = $venue->update($attributes);
-        Cache::increment('venues_version');
-
-        return $updated;
-    }
-
-    public function existsBySlug(string $slug): bool
-    {
-        return Venue::where('slug', $slug)->exists();
     }
 }

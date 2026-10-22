@@ -71,7 +71,7 @@ export function useAdminContracts() {
       phone: item.phone || meta.phone || user.phone || '—',
       email: item.email || user.email,
       court_id: court.id || item.court_id,
-      court_name: item.court_name || court.name || 'Sân tiêu chuẩn',
+      court_name: item.court_name || court.code || 'Sân tiêu chuẩn',
       venue_name: item.venue_name || venue.name || 'Cơ sở chính',
       venue_id: item.venue_id || venue.id,
       time_slot:

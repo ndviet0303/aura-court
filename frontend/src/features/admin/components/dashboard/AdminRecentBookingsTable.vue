@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import SelectDropdown from '@/shared/components/forms/SelectDropdown.vue'
-import { resolveLocalizedText, formatSlotRange, formatCurrency } from '@/i18n'
+import { formatSlotRange, formatCurrency } from '@/i18n'
 import {
   RESERVATION_STATUSES,
   bookerContact,
@@ -127,7 +127,7 @@ const statusOptions = computed(() => [
               <span class="email-sub">{{ bookerContact(b) }}</span>
             </div>
             <div class="court-col">
-              <strong>{{ resolveLocalizedText(b.court?.name) }}</strong>
+              <strong>{{ b.court?.code }}</strong>
               <span class="slot-sub font-mono">
                 {{ formatSlotRange(b.slots?.[0]?.starts_at, b.slots?.[0]?.ends_at) }}
               </span>

@@ -45,7 +45,7 @@ const emit = defineEmits<{
         <div class="summary-section">
           <div class="info-group">
             <span class="info-label">{{ t('reservations.modal.courtInfo') }}</span>
-            <strong class="info-value">{{ reservation.court?.name || 'Aura Court' }}</strong>
+            <strong class="info-value">{{ reservation.court?.code || 'Aura Court' }}</strong>
             <span class="info-sub"
               >{{ reservation.court?.venue?.name || 'Aura Court' }} ·
               {{ reservation.court?.venue?.address || '' }}</span

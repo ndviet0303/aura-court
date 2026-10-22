@@ -26,83 +26,83 @@ class BookingPaymentSeeder extends Seeder
 
     /**
      * One row per booking DEMO-BK-NNN, in play-time order:
-     * [court slug, customer (0 = user@example.com, N = khachNN), day offset from today or 'weekend', start hour, hours, kind, review rating, waitlist customers].
+     * [court code, customer (0 = user@example.com, N = khachNN), day offset from today or 'weekend', start hour, hours, kind, review rating, waitlist customers].
      * Kinds: played, no_show, expired (checkout never paid), today (played once it has ended), upcoming.
      * Paid bookings were paid by bank transfer straight to the venue owner; there is no cancellation, refund or reschedule.
      */
     private const SCHEDULE = [
-        ['san-pickleball-3-sunset-tay-ho', 1, -22, 17, 2, 'played', 5],
-        ['san-10-yonex-pro-landmark', 8, -20, 18, 2, 'played'],
-        ['san-bong-ban-1-double-fish-cau-giay', 15, -19, 10, 1, 'played'],
-        ['san-tennis-2-hard-court-tay-ho', 22, -18, 16, 1, 'played', 4],
-        ['san-bong-chuyen-1-taraflex-landmark', 5, -17, 18, 2, 'played', 5],
-        ['san-bong-da-5v5-a1-quan-ngua', 0, -16, 19, 1, 'played', 4],
-        ['san-bong-ro-in-house-nba-landmark', 12, -15, 19, 2, 'played', 5],
-        ['san-pickleball-1-neon-cau-giay', 19, -14, 8, 1, 'played', 3],
-        ['san-tennis-pmh-ho-ban-nguyet', 2, -13, 7, 2, 'played'],
-        ['san-9-tham-victor-tay-ho', 9, -12, 7, 1, 'played', 5],
-        ['san-bong-da-5v5-sai-gon-central', 16, -12, 18, 1, 'played'],
-        ['san-bong-da-mini-pmh', 23, -11, 18, 1, 'played'],
-        ['san-6-khan-dai-quan-ngua', 6, -11, 20, 1, 'expired'],
-        ['san-pickleball-pmh-2', 13, -10, 18, 2, 'played'],
-        ['san-bong-ro-1-streetball-tay-ho', 20, -10, 19, 2, 'no_show'],
-        ['san-tennis-3-mat-cung-landmark', 3, -9, 17, 1, 'played', 5],
-        ['san-1-tham-bwf-cau-giay', 0, -9, 7, 1, 'played'],
-        ['san-8-pro-replay-quan-ngua', 10, -8, 19, 2, 'played', 4],
-        ['san-bong-ban-2-stiga-master-quan-ngua', 17, -8, 18, 1, 'played'],
-        ['san-bong-da-5v5-sai-gon-central', 24, -7, 20, 1, 'played', 5],
-        ['san-bong-ban-2-stiga-master-quan-ngua', 7, -7, 15, 2, 'played', 4],
-        ['san-bong-da-7v7-c1-quan-ngua', 14, -6, 19, 2, 'played', 5],
-        ['san-pickleball-2-dynamic-cau-giay', 21, -6, 19, 1, 'no_show'],
-        ['san-pickleball-1-neon-cau-giay', 0, -6, 18, 1, 'played'],
-        ['san-6-khan-dai-quan-ngua', 4, -5, 17, 1, 'played'],
-        ['san-pickleball-pmh-1', 11, -5, 16, 1, 'played', 5],
-        ['san-bong-da-7v7-c1-quan-ngua', 18, -5, 18, 1, 'expired'],
-        ['san-5-vip-tournament-cau-giay', 1, -4, 20, 2, 'played', 5],
-        ['san-tennis-1-dat-nen-tay-ho', 8, -4, 6, 2, 'played', 4],
-        ['san-11-sai-gon-central-bwf', 15, -4, 19, 1, 'played'],
-        ['san-pickleball-4-rooftop-saigon', 22, -3, 19, 2, 'played', 5],
-        ['san-bong-chuyen-1-taraflex-landmark', 5, -3, 19, 2, 'played', 4],
-        ['san-tennis-2-hard-court-tay-ho', 0, -3, 18, 2, 'played', 5],
-        ['san-3-tieu-chuan-cau-giay', 12, -2, 6, 2, 'played', 5],
-        ['san-bong-da-5v5-a2-quan-ngua', 19, -2, 19, 1, 'played', 3],
-        ['san-bong-ro-1-streetball-tay-ho', 2, -2, 18, 2, 'played', 5],
-        ['san-7-tieu-chuan-quan-ngua', 9, -2, 20, 1, 'no_show'],
-        ['san-tennis-3-mat-cung-landmark', 16, -2, 7, 1, 'expired'],
-        ['san-2-tieu-chuan-cau-giay', 23, -1, 18, 1, 'played', 4],
-        ['san-pickleball-2-dynamic-cau-giay', 6, -1, 7, 1, 'played', 5],
-        ['san-bong-ban-1-double-fish-cau-giay', 13, -1, 20, 1, 'played', 3],
-        ['san-1-tham-bwf-cau-giay', 20, 0, 6, 1, 'today'],
-        ['san-pickleball-1-neon-cau-giay', 3, 0, 18, 2, 'today'],
-        ['san-bong-da-5v5-a1-quan-ngua', 10, 0, 19, 1, 'today'],
-        ['san-tennis-2-hard-court-tay-ho', 17, 0, 20, 1, 'today'],
-        ['san-4-vip-cau-giay', 0, 1, 19, 2, 'upcoming'],
-        ['san-pickleball-3-sunset-tay-ho', 0, 'weekend', 8, 2, 'upcoming'],
-        ['san-2-tieu-chuan-cau-giay', 24, 1, 6, 2, 'upcoming'],
-        ['san-pickleball-2-dynamic-cau-giay', 7, 1, 18, 2, 'upcoming'],
-        ['san-tennis-1-dat-nen-tay-ho', 14, 1, 6, 2, 'upcoming'],
-        ['san-5-vip-tournament-cau-giay', 21, 2, 19, 2, 'upcoming'],
-        ['san-bong-da-5v5-a2-quan-ngua', 4, 2, 20, 1, 'upcoming'],
-        ['san-bong-ban-1-double-fish-cau-giay', 11, 2, 18, 1, 'upcoming'],
-        ['san-3-tieu-chuan-cau-giay', 18, 2, 7, 1, 'expired'],
-        ['san-8-pro-replay-quan-ngua', 1, 3, 18, 1, 'upcoming', null, [6]],
-        ['san-bong-da-mini-pmh', 8, 3, 19, 1, 'upcoming'],
-        ['san-bong-ro-in-house-nba-landmark', 15, 3, 19, 2, 'upcoming', null, [20]],
-        ['san-bong-ban-2-stiga-master-quan-ngua', 22, 3, 19, 1, 'upcoming'],
-        ['san-pickleball-pmh-1', 5, 4, 17, 2, 'upcoming'],
-        ['san-bong-da-7v7-c1-quan-ngua', 12, 4, 19, 2, 'upcoming', null, [0, 17]],
-        ['san-bong-da-5v5-a1-quan-ngua', 19, 4, 18, 1, 'upcoming'],
-        ['san-11-sai-gon-central-bwf', 2, 5, 20, 2, 'upcoming'],
-        ['san-tennis-3-mat-cung-landmark', 9, 5, 17, 2, 'upcoming', null, [14]],
-        ['san-pickleball-4-rooftop-saigon', 16, 6, 19, 1, 'upcoming'],
-        ['san-bong-chuyen-1-taraflex-landmark', 23, 6, 19, 2, 'upcoming'],
-        ['san-9-tham-victor-tay-ho', 6, 6, 19, 1, 'upcoming'],
-        ['san-pickleball-pmh-2', 13, 7, 18, 2, 'upcoming'],
-        ['san-bong-da-5v5-sai-gon-central', 20, 8, 18, 1, 'upcoming'],
-        ['san-bong-ro-1-streetball-tay-ho', 3, 8, 17, 1, 'upcoming'],
-        ['san-tennis-pmh-ho-ban-nguyet', 10, 9, 7, 1, 'upcoming'],
-        ['san-bong-chuyen-1-taraflex-landmark', 17, 9, 18, 2, 'expired'],
-        ['san-bong-ro-1-streetball-tay-ho', 24, 10, 18, 2, 'upcoming'],
+        ['Sân Pickleball 3 - Sunset View Hồ Tây', 1, -22, 17, 2, 'played', 5],
+        ['Sân 10 - Yonex Pro Landmark', 8, -20, 18, 2, 'played'],
+        ['Sân Bóng Bàn 1 - Double Fish ITTF', 15, -19, 10, 1, 'played'],
+        ['Sân Tennis 2 - Hard Court Pro Tây Hồ', 22, -18, 16, 1, 'played', 4],
+        ['Sân Bóng Chuyền 1 - Thảm Taraflex Landmark', 5, -17, 18, 2, 'played', 5],
+        ['Sân Bóng Đá 5v5 A1 Quần Ngựa', 0, -16, 19, 1, 'played', 4],
+        ['Sân Bóng Rổ Trong Nhà NBA Landmark', 12, -15, 19, 2, 'played', 5],
+        ['Sân Pickleball 1 - Aura Neon', 19, -14, 8, 1, 'played', 3],
+        ['Sân Tennis PMH - Hồ Bán Nguyệt', 2, -13, 7, 2, 'played'],
+        ['Sân 9 - Thảm Victor Tây Hồ', 9, -12, 7, 1, 'played', 5],
+        ['Sân Bóng Đá 5v5 Sài Gòn Central', 16, -12, 18, 1, 'played'],
+        ['Sân Bóng Đá Mini PMH', 23, -11, 18, 1, 'played'],
+        ['Sân 6 - Khán Đài Quần Ngựa', 6, -11, 20, 1, 'expired'],
+        ['Sân Pickleball PMH 2 - Thi Đấu', 13, -10, 18, 2, 'played'],
+        ['Sân Bóng Rổ 1 - Streetball Zone Tây Hồ', 20, -10, 19, 2, 'no_show'],
+        ['Sân Tennis 3 - Mặt Cứng US Open Landmark', 3, -9, 17, 1, 'played', 5],
+        ['Sân 1 - Thảm BWF Tiêu Chuẩn', 0, -9, 7, 1, 'played'],
+        ['Sân 8 - Pro Replay Quần Ngựa', 10, -8, 19, 2, 'played', 4],
+        ['Sân Bóng Bàn 2 - Stiga Master Quần Ngựa', 17, -8, 18, 1, 'played'],
+        ['Sân Bóng Đá 5v5 Sài Gòn Central', 24, -7, 20, 1, 'played', 5],
+        ['Sân Bóng Bàn 2 - Stiga Master Quần Ngựa', 7, -7, 15, 2, 'played', 4],
+        ['Sân Bóng Đá 7v7 C1 Quần Ngựa', 14, -6, 19, 2, 'played', 5],
+        ['Sân Pickleball 2 - Dynamic Pro', 21, -6, 19, 1, 'no_show'],
+        ['Sân Pickleball 1 - Aura Neon', 0, -6, 18, 1, 'played'],
+        ['Sân 6 - Khán Đài Quần Ngựa', 4, -5, 17, 1, 'played'],
+        ['Sân Pickleball PMH 1 - Mái Che', 11, -5, 16, 1, 'played', 5],
+        ['Sân Bóng Đá 7v7 C1 Quần Ngựa', 18, -5, 18, 1, 'expired'],
+        ['Sân 5 - VIP Tournament', 1, -4, 20, 2, 'played', 5],
+        ['Sân Tennis 1 - Đất Nện French Open Tây Hồ', 8, -4, 6, 2, 'played', 4],
+        ['Sân 11 - Sài Gòn Central BWF', 15, -4, 19, 1, 'played'],
+        ['Sân Pickleball 4 - Rooftop View Landmark 81', 22, -3, 19, 2, 'played', 5],
+        ['Sân Bóng Chuyền 1 - Thảm Taraflex Landmark', 5, -3, 19, 2, 'played', 4],
+        ['Sân Tennis 2 - Hard Court Pro Tây Hồ', 0, -3, 18, 2, 'played', 5],
+        ['Sân 3 - Tiêu Chuẩn', 12, -2, 6, 2, 'played', 5],
+        ['Sân Bóng Đá 5v5 A2 Quần Ngựa', 19, -2, 19, 1, 'played', 3],
+        ['Sân Bóng Rổ 1 - Streetball Zone Tây Hồ', 2, -2, 18, 2, 'played', 5],
+        ['Sân 7 - Tiêu Chuẩn Quần Ngựa', 9, -2, 20, 1, 'no_show'],
+        ['Sân Tennis 3 - Mặt Cứng US Open Landmark', 16, -2, 7, 1, 'expired'],
+        ['Sân 2 - Tiêu Chuẩn', 23, -1, 18, 1, 'played', 4],
+        ['Sân Pickleball 2 - Dynamic Pro', 6, -1, 7, 1, 'played', 5],
+        ['Sân Bóng Bàn 1 - Double Fish ITTF', 13, -1, 20, 1, 'played', 3],
+        ['Sân 1 - Thảm BWF Tiêu Chuẩn', 20, 0, 6, 1, 'today'],
+        ['Sân Pickleball 1 - Aura Neon', 3, 0, 18, 2, 'today'],
+        ['Sân Bóng Đá 5v5 A1 Quần Ngựa', 10, 0, 19, 1, 'today'],
+        ['Sân Tennis 2 - Hard Court Pro Tây Hồ', 17, 0, 20, 1, 'today'],
+        ['Sân 4 - VIP Đơn/Đôi', 0, 1, 19, 2, 'upcoming'],
+        ['Sân Pickleball 3 - Sunset View Hồ Tây', 0, 'weekend', 8, 2, 'upcoming'],
+        ['Sân 2 - Tiêu Chuẩn', 24, 1, 6, 2, 'upcoming'],
+        ['Sân Pickleball 2 - Dynamic Pro', 7, 1, 18, 2, 'upcoming'],
+        ['Sân Tennis 1 - Đất Nện French Open Tây Hồ', 14, 1, 6, 2, 'upcoming'],
+        ['Sân 5 - VIP Tournament', 21, 2, 19, 2, 'upcoming'],
+        ['Sân Bóng Đá 5v5 A2 Quần Ngựa', 4, 2, 20, 1, 'upcoming'],
+        ['Sân Bóng Bàn 1 - Double Fish ITTF', 11, 2, 18, 1, 'upcoming'],
+        ['Sân 3 - Tiêu Chuẩn', 18, 2, 7, 1, 'expired'],
+        ['Sân 8 - Pro Replay Quần Ngựa', 1, 3, 18, 1, 'upcoming', null, [6]],
+        ['Sân Bóng Đá Mini PMH', 8, 3, 19, 1, 'upcoming'],
+        ['Sân Bóng Rổ Trong Nhà NBA Landmark', 15, 3, 19, 2, 'upcoming', null, [20]],
+        ['Sân Bóng Bàn 2 - Stiga Master Quần Ngựa', 22, 3, 19, 1, 'upcoming'],
+        ['Sân Pickleball PMH 1 - Mái Che', 5, 4, 17, 2, 'upcoming'],
+        ['Sân Bóng Đá 7v7 C1 Quần Ngựa', 12, 4, 19, 2, 'upcoming', null, [0, 17]],
+        ['Sân Bóng Đá 5v5 A1 Quần Ngựa', 19, 4, 18, 1, 'upcoming'],
+        ['Sân 11 - Sài Gòn Central BWF', 2, 5, 20, 2, 'upcoming'],
+        ['Sân Tennis 3 - Mặt Cứng US Open Landmark', 9, 5, 17, 2, 'upcoming', null, [14]],
+        ['Sân Pickleball 4 - Rooftop View Landmark 81', 16, 6, 19, 1, 'upcoming'],
+        ['Sân Bóng Chuyền 1 - Thảm Taraflex Landmark', 23, 6, 19, 2, 'upcoming'],
+        ['Sân 9 - Thảm Victor Tây Hồ', 6, 6, 19, 1, 'upcoming'],
+        ['Sân Pickleball PMH 2 - Thi Đấu', 13, 7, 18, 2, 'upcoming'],
+        ['Sân Bóng Đá 5v5 Sài Gòn Central', 20, 8, 18, 1, 'upcoming'],
+        ['Sân Bóng Rổ 1 - Streetball Zone Tây Hồ', 3, 8, 17, 1, 'upcoming'],
+        ['Sân Tennis PMH - Hồ Bán Nguyệt', 10, 9, 7, 1, 'upcoming'],
+        ['Sân Bóng Chuyền 1 - Thảm Taraflex Landmark', 17, 9, 18, 2, 'expired'],
+        ['Sân Bóng Rổ 1 - Streetball Zone Tây Hồ', 24, 10, 18, 2, 'upcoming'],
     ];
 
     private const STATUS = ['played' => 'confirmed', 'upcoming' => 'confirmed', 'no_show' => 'no_show', 'expired' => 'expired'];
@@ -169,7 +169,7 @@ class BookingPaymentSeeder extends Seeder
         $emails = array_map(fn (int $number): string => $this->customerEmail($number), range(0, 24));
         $users = User::whereIn('email', [...$emails, 'admin@auracourt.vn', 'manager@demo.auracourt.vn', ...array_values(self::CHECK_IN_STAFF)])
             ->get()->keyBy('email');
-        $courts = Court::with(['venue'])->whereIn('slug', array_column(self::SCHEDULE, 0))->get()->keyBy('slug');
+        $courts = Court::with(['venue'])->whereIn('code', array_column(self::SCHEDULE, 0))->get()->keyBy('code');
         if ($courts->isEmpty() || ! $users->has('user@example.com')) {
             return;
         }
@@ -179,16 +179,16 @@ class BookingPaymentSeeder extends Seeder
         $reviewCounts = [];
 
         foreach (self::SCHEDULE as $index => $row) {
-            [$slug, $customerNo, $day, $hour, $hours, $kind, $rating, $waitlist] = $row + [6 => null, 7 => []];
+            [$courtCode, $customerNo, $day, $hour, $hours, $kind, $rating, $waitlist] = $row + [6 => null, 7 => []];
             $code = sprintf('DEMO-BK-%03d', $index + 1);
             $customer = $users->get($this->customerEmail($customerNo));
             // Never rewrite a seeded booking: a changed booking would no longer match its reservation mapping.
-            if (! $customer || ! $courts->has($slug) || Booking::where('code', $code)->exists()) {
+            if (! $customer || ! $courts->has($courtCode) || Booking::where('code', $code)->exists()) {
                 continue;
             }
 
             $date = $day === 'weekend' ? $weekend->copy() : $today->copy()->addDays($day);
-            [$court, $startHour] = $this->firstFit($courts[$slug], $hour, $hours, fn (Court $candidate, int $at): bool => $this->isFree(
+            [$court, $startHour] = $this->firstFit($courts[$courtCode], $hour, $hours, fn (Court $candidate, int $at): bool => $this->isFree(
                 $candidate->id, $date->copy()->setTime($at, 0), $date->copy()->setTime($at + $hours, 0), $customer->id
             ));
             $start = $date->copy()->setTime($startHour, 0);

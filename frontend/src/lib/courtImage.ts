@@ -1,7 +1,10 @@
 export interface CourtImageEntity {
-  image_url?: string | null
+  images?: string[] | null
   sport_type?: string
 }
+
+const ownImages = (court?: CourtImageEntity | null): string[] =>
+  (court?.images ?? []).map((url) => url.trim()).filter(Boolean)
 
 export const BADMINTON_DEFAULT_IMAGE = '/courts/badminton-0.jpg'
 export const BADMINTON_GALLERY: string[] = [
@@ -64,9 +67,8 @@ export function detectCourtSport(
  * safely to sport-accurate imagery if empty.
  */
 export function resolveCourtImage(court?: CourtImageEntity | null): string {
-  if (court?.image_url && court.image_url.trim()) {
-    return court.image_url.trim()
-  }
+  const [first] = ownImages(court)
+  if (first) return first
   const sport = detectCourtSport(court)
   return SPORT_DEFAULT_IMAGES[sport] ?? BADMINTON_DEFAULT_IMAGE
 }
@@ -80,6 +82,6 @@ export function getCourtGalleryImages(court?: CourtImageEntity | null): string[]
   const baseKey = sport.startsWith('football') ? 'football' : sport
   const collection: string[] = SPORT_GALLERY_COLLECTIONS[baseKey] ?? BADMINTON_GALLERY
 
-  const set = new Set<string>([primary, ...collection])
+  const set = new Set<string>([...ownImages(court), primary, ...collection])
   return Array.from(set)
 }

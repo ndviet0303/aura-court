@@ -129,11 +129,6 @@
       "count": 2
     }
   },
-  "src/features/admin/api/venuePublicationApi.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
   "src/features/admin/components/contracts/ContractsTable.vue": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
@@ -166,12 +161,7 @@
   },
   "src/features/admin/components/venues/VenueFormModal.vue": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 5
-    }
-  },
-  "src/features/admin/components/venues/VenueReadinessModal.vue": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 5
+      "count": 4
     }
   },
   "src/features/admin/composables/useAdminContracts.ts": {
@@ -191,7 +181,7 @@
   },
   "src/features/admin/composables/useAdminSchedule.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 16
+      "count": 6
     }
   },
   "src/features/admin/composables/useAdminShiftReconciliation.ts": {
@@ -206,7 +196,7 @@
   },
   "src/features/admin/composables/useAdminVenues.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 8
+      "count": 4
     }
   },
   "src/features/admin/composables/useOrganizationOwner.ts": {
@@ -227,11 +217,6 @@
   "src/features/admin/types/exceptions.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    }
-  },
-  "src/features/admin/views/AdminPublicationQueueView.vue": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
     }
   },
   "src/features/admin/views/AdminTournamentBracketView.vue": {

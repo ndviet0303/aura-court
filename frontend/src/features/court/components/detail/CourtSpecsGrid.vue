@@ -2,8 +2,16 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-const props = defineProps<{ sportType?: string }>()
+const props = defineProps<{
+  sportType?: string
+  surfaceType?: string | null
+  capacity?: number | null
+}>()
 const { t } = useI18n()
+
+// admin.manage.surfaceWood … surfaceOther, the labels the owner picks from in the court form.
+const surfaceKey = (surface: string) =>
+  `admin.manage.surface${surface.charAt(0).toUpperCase()}${surface.slice(1)}`
 
 // Playing surface per sport; badminton and unknown sports keep the BWF mat copy.
 const SURFACES: Record<string, [string, string]> = {
@@ -21,8 +29,12 @@ const specs = computed(() => {
     'courtDetail.specMat',
     'courtDetail.specMatDesc',
   ]
-  return [
-    { icon: 'layers', label: t(surface), val: t(surfaceDesc) },
+  // The saved surface and capacity of the court; without a saved surface the sport copy stays.
+  const saved = props.surfaceType
+  const cards = [
+    saved
+      ? { icon: 'layers', label: t('courtDetail.surfaceLabel'), val: t(surfaceKey(saved)) }
+      : { icon: 'layers', label: t(surface), val: t(surfaceDesc) },
     { icon: 'height', label: t('courtDetail.specCeiling'), val: t('courtDetail.specCeilingDesc') },
     {
       icon: 'lightbulb',
@@ -35,6 +47,11 @@ const specs = computed(() => {
       val: t('courtDetail.specVentilationDesc'),
     },
   ]
+  if (props.capacity) {
+    const val = t('admin.manage.courtCapacityValue', { count: props.capacity })
+    cards.splice(1, 0, { icon: 'groups', label: t('courtDetail.capacityLabel'), val })
+  }
+  return cards
 })
 </script>
 
@@ -77,7 +94,7 @@ const specs = computed(() => {
 
 .specs-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
 }
 

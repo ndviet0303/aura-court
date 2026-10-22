@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { resolveLocalizedText } from '@/i18n'
 import { AuraButton, DateTimePicker } from '@/shared/components'
 import type { Court } from '@/features/court/types/court'
 
@@ -53,7 +52,7 @@ const errorList = computed(() => Object.values(props.errors).flat())
           </p>
           <label v-for="court in courts" :key="court.id" class="court-option">
             <input v-model="courtIds" type="checkbox" :value="court.id" />
-            <span>{{ resolveLocalizedText(court.name) }}</span>
+            <span>{{ court.code }}</span>
           </label>
         </fieldset>
 

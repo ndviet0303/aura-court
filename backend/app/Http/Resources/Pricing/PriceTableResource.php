@@ -30,7 +30,8 @@ class PriceTableResource extends JsonResource
             'versions' => $this->whenLoaded('versions', fn (): array => $this->versionRows()),
             'links' => $this->links->map(fn (CourtPriceTableLink $link): array => [
                 'court_id' => (int) $link->court_id,
-                'court_name' => (string) $link->court->name,
+                // D9: the court's code is its display name; the key stays for module 3's API.
+                'court_name' => (string) $link->court->code,
                 'starts_at' => $link->starts_at->toIso8601String(),
                 'ends_at' => $link->ends_at?->toIso8601String(),
             ])->all(),

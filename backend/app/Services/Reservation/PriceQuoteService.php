@@ -7,7 +7,6 @@ use App\Domain\Pricing\DTOs\VoucherChoice;
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Exceptions\VoucherNoLongerApplies;
 use App\Models\Court;
-use App\Models\CourtBlock;
 use App\Models\PriceQuote;
 use App\Models\ReservationSlot;
 use App\Services\Pricing\RentalPriceCalculator;
@@ -25,6 +24,7 @@ class PriceQuoteService
         private readonly RentalPriceCalculator $rentals,
         private readonly ReservationIntake $intake,
         private readonly VoucherEligibility $vouchers,
+        private readonly SlotSelectionPolicy $slotPolicy,
     ) {}
 
     /** A customer's quote: one interval on the 30-minute grid, priced and later stored as one slot (design D14, D15). */
@@ -58,21 +58,11 @@ class PriceQuoteService
             }
         }
 
-        // Check for maintenance closures / court blocks
         $firstSlot = $resolvedSlots->first();
         $lastSlot = $resolvedSlots->last();
         $blockStarts = $firstSlot->copy()->utc();
         $blockEnds = $lastSlot->copy()->addMinutes($duration)->utc();
-
-        $overlappingBlock = CourtBlock::query()
-            ->where('court_id', $court->id)
-            ->where('starts_at', '<', $blockEnds)
-            ->where('ends_at', '>', $blockStarts)
-            ->first();
-
-        if ($overlappingBlock) {
-            abort(409, 'Sân đang bảo trì hoặc tạm đóng trong khoảng thời gian đã chọn.');
-        }
+        $this->slotPolicy->assertNoStop($court, $blockStarts, $blockEnds);
 
         $overlapping = ReservationSlot::query()
             ->where('court_id', $court->id)

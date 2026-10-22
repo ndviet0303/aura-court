@@ -6,7 +6,6 @@ use App\Models\AuditLog;
 use App\Models\Booking;
 use App\Models\HostKyc;
 use App\Models\OutboxMessage;
-use App\Models\VenuePublicationRevision;
 use Illuminate\Database\Eloquent\Model;
 
 interface DurableNotificationServiceInterface
@@ -39,7 +38,6 @@ interface DurableNotificationServiceInterface
 
     public function notifyApplicationReviewed(HostKyc $kyc, string $decision, ?string $reason = null): OutboxMessage;
 
-    public function notifyPublicationReviewed(VenuePublicationRevision $revision, string $decision, ?string $reason = null): OutboxMessage;
 
     public function notifyBooking(Booking $booking, string $event, string $title, string $body, ?string $actionUrl = '/booking'): OutboxMessage;
 }

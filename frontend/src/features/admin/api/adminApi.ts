@@ -1,15 +1,34 @@
 import { api } from '@/core/api/client'
-import type { Court, Venue, CourtBlock } from '@/features/court/types/court'
-import type { CourtForm, BlockForm, VenueForm } from '../types/admin'
+import type { Court, OperationalStop, Venue } from '@/features/court/types/court'
+import type { CourtForm, VenueForm } from '../types/admin'
+import type { LifecycleCommand, StopPayload } from '../types/lifecycle'
+import type { CourtDetail } from '../types/venueDetail'
 import type { VenueBookingPolicySettings, VenueBookingPolicyVersion } from '../types/admin'
 
 export const adminApi = {
   // Venues
   getVenues: () => api.get<Venue[]>('/admin/venues'),
-  createVenue: (payload: VenueForm) => api.post<Venue>('/admin/venues', payload),
-  updateVenue: (id: number, payload: Partial<VenueForm> | { is_active?: boolean }) =>
-    api.patch<Venue>(`/admin/venues/${id}`, payload),
-  deleteVenue: (id: number) => api.delete(`/admin/venues/${id}`),
+  // D12: the partner path is the only venue write path; an update sends the full venue information.
+  createVenue: (organizationId: number, payload: VenueForm) =>
+    api.post<{ data: Venue; message: string }>(
+      `/partner/organizations/${organizationId}/venues`,
+      payload,
+    ),
+  updateVenue: (organizationId: number, venueId: number, payload: VenueForm) =>
+    api.put<{ data: Venue; message: string }>(
+      `/partner/organizations/${organizationId}/venues/${venueId}`,
+      payload,
+    ),
+  venueCommand: (
+    organizationId: number,
+    venueId: number,
+    command: LifecycleCommand,
+    payload?: StopPayload,
+  ) =>
+    api.post<{ data: Venue; stop?: OperationalStop; message: string }>(
+      `/partner/organizations/${organizationId}/venues/${venueId}/${command}`,
+      payload,
+    ),
   getVenueBookingPolicy: (organizationId: number, venueId: number) =>
     api.get<{ data: VenueBookingPolicyVersion | null }>(
       `/partner/organizations/${organizationId}/venues/${venueId}/booking-policy`,
@@ -38,6 +57,13 @@ export const adminApi = {
       `/partner/organizations/${organizationId}/venues/${venueId}/schedule-exceptions`,
       { params: courtId ? { court_id: courtId } : undefined },
     ),
+  // Read-only detail for the owner and assigned staff.
+  getPartnerVenue: (organizationId: number, venueId: number) =>
+    api.get<{ data: Venue }>(`/partner/organizations/${organizationId}/venues/${venueId}`),
+  getPartnerCourt: (organizationId: number, venueId: number, courtId: number) =>
+    api.get<{ data: CourtDetail }>(
+      `/partner/organizations/${organizationId}/venues/${venueId}/courts/${courtId}`,
+    ),
   saveScheduleException: (organizationId: number, venueId: number, payload: any) =>
     api.put<{ data: any }>(
       `/partner/organizations/${organizationId}/venues/${venueId}/schedule-exceptions`,
@@ -54,18 +80,15 @@ export const adminApi = {
   createCourt: (payload: CourtForm) => api.post<Court>('/admin/courts', payload),
   updateCourt: (id: number, payload: Partial<CourtForm>) =>
     api.patch<Court>(`/admin/courts/${id}`, payload),
-  deleteCourt: (id: number) => api.delete(`/admin/courts/${id}`),
+  courtCommand: (courtId: number, command: LifecycleCommand, payload?: StopPayload) =>
+    api.post<{ data: Court; stop?: OperationalStop; message: string }>(
+      `/admin/courts/${courtId}/${command}`,
+      payload,
+    ),
 
   // Upload
   uploadImage: (formData: FormData) =>
     api.post<{ url: string; filename: string }>('/admin/upload', formData),
-
-  // Blocks
-  createBlock: (courtId: number, payload: BlockForm) =>
-    api.post(`/admin/courts/${courtId}/blocks`, payload),
-  getBlocks: (courtId: number) => api.get<CourtBlock[]>(`/admin/courts/${courtId}/blocks`),
-  deleteBlock: (courtId: number, blockId: number) =>
-    api.delete(`/admin/courts/${courtId}/blocks/${blockId}`),
 
   // Reservations & Payments
   getReservations: <T = unknown>(params?: {
