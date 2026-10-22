@@ -20,7 +20,7 @@ class OwnerFinanceBookingResource extends JsonResource
             'code' => $reservation->code,
             'status' => $reservation->status,
             'venue' => ['id' => $court?->venue_id, 'name' => $court?->venue?->name],
-            'court' => ['id' => $reservation->court_id, 'name' => $court?->name],
+            'court' => ['id' => $reservation->court_id, 'code' => $court?->code],
             'starts_at' => $reservation->starts_at?->toISOString(),
             'ends_at' => $reservation->ends_at?->toISOString(),
             'payable' => $reservation->total_amount,

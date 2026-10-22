@@ -57,7 +57,7 @@ class OwnerFinanceReportExport
             [
                 'Tổ chức' => (string) Organization::query()->find($organizationId)?->name,
                 'Cơ sở' => $filter->venueId ? (string) Venue::query()->find($filter->venueId)?->name : 'Tất cả cơ sở',
-                'Sân' => $filter->courtId ? (string) Court::query()->find($filter->courtId)?->name : 'Tất cả sân',
+                'Sân' => $filter->courtId ? (string) Court::query()->find($filter->courtId)?->code : 'Tất cả sân',
                 'Kỳ' => ExcelReportWriter::period($from, $to),
             ],
             $summary,
@@ -79,7 +79,7 @@ class OwnerFinanceReportExport
                     $row->code,
                     self::BOOKING_STATUSES[$row->status] ?? $row->status,
                     $row->court?->venue?->name,
-                    $row->court?->name,
+                    $row->court?->code,
                     ExcelReportWriter::time($row->starts_at),
                     ExcelReportWriter::time($row->ends_at),
                     ExcelReportWriter::time($row->getAttribute('finance_at')),
