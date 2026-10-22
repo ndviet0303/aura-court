@@ -13,6 +13,7 @@ use App\Models\Venue;
 use App\Services\Booking\RecurringSeriesService;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\POS\PosQrPaymentService;
+use App\Services\Reservation\HeldReservationRelease;
 use App\Services\Tournament\TournamentRegistrationPaymentService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -314,13 +315,12 @@ class OwnerPaymentAttemptService
                         ->where('code', $attempt->purpose_id)
                         ->lockForUpdate()
                         ->first();
-                    if (! $bookingReservation
-                        || (int) $bookingReservation->user_id !== (int) $attempt->user_id
-                        || $bookingReservation->payment_model !== 'direct_owner_v1'
-                        || $bookingReservation->status !== 'held') {
-                        $bookingReservation = null;
-                        $status = OwnerPaymentReceipt::STATUS_EXCEPTION;
-                        $exceptionCode = 'reservation_hold_unavailable';
+                    $unavailable = ! $bookingReservation || (int) $bookingReservation->user_id !== (int) $attempt->user_id
+                        || $bookingReservation->payment_model !== 'direct_owner_v1' || $bookingReservation->status !== 'held';
+                    // D12: a voucher that no longer applies releases the booking, and the transfer becomes an exception.
+                    $exceptionCode = $unavailable ? 'reservation_hold_unavailable' : (app(HeldReservationRelease::class)->consumeVoucher($bookingReservation, $receipt->event_at) ? 'voucher_changed' : null);
+                    if ($exceptionCode !== null) {
+                        [$bookingReservation, $status] = [null, OwnerPaymentReceipt::STATUS_EXCEPTION];
                     }
                 } elseif ($status === OwnerPaymentReceipt::STATUS_ALLOCATED && isset(self::CONFIRMERS[$attempt->purpose])) {
                     [$service, $check, $unavailable] = self::CONFIRMERS[$attempt->purpose];

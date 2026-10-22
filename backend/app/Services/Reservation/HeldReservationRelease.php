@@ -2,19 +2,35 @@
 
 namespace App\Services\Reservation;
 
+use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
+use App\Exceptions\VoucherNoLongerApplies;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\PointLedger;
 use App\Models\Reservation;
 use App\Notifications\AuraBookingNotification;
+use App\Services\Promotion\VoucherUsageService;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
  * The single release of an unpaid hold (design D2), shared by the payment-deadline sweep, the release of an
- * overdue hold before a new booking, the customer's payment cancellation and a price change. Every caller locks
+ * overdue hold before a new booking, the customer's payment cancellation, a price change and a voucher refused at
+ * confirmation. Every caller locks
  * through lock() first, so the order matches receipt processing (payment attempt, then reservation).
  */
 class HeldReservationRelease
 {
+    /** Customer notice per release reason that asks for a new request. */
+    private const NOTICES = [
+        'price_changed' => ['Giá sân đã thay đổi', 'Giá sân của đơn :code đã thay đổi nên yêu cầu đặt sân này không còn hiệu lực. Vui lòng xem giá mới và gửi lại yêu cầu.'],
+        'voucher_changed' => ['Voucher không còn áp dụng', 'Voucher của đơn :code không còn áp dụng như lúc đặt nên yêu cầu đặt sân này không còn hiệu lực. Vui lòng gửi lại yêu cầu.'],
+    ];
+
+    public function __construct(
+        private readonly VoucherUsageService $vouchers,
+        private readonly DurableNotificationServiceInterface $notifications,
+    ) {}
+
     /** Lock the reservation's pending payment attempts, then the reservation. */
     public function lock(Reservation $candidate): ?Reservation
     {
@@ -28,7 +44,7 @@ class HeldReservationRelease
     }
 
     /**
-     * Release court-time, reserved points and the pending payment attempt of a locked held
+     * Release court-time, voucher use, reserved points and the pending payment attempt of a locked held
      * reservation, each once. A reservation that is no longer held is left as it is.
      */
     public function releaseHeld(Reservation $locked, string $status, string $reason): bool
@@ -37,6 +53,7 @@ class HeldReservationRelease
             return false;
         }
 
+        $this->vouchers->release($locked);
         $locked->forceFill([
             'status' => $status,
             'cancelled_at' => $status === 'cancelled' ? now() : $locked->cancelled_at,
@@ -49,6 +66,51 @@ class HeldReservationRelease
         $this->pendingAttempts((string) $locked->code)->update(['status' => OwnerPaymentAttempt::STATUS_EXPIRED]);
 
         return true;
+    }
+
+    /**
+     * Turn the voucher use of a locked held reservation into a used one at $confirmedAt (design D12). When the
+     * voucher no longer applies, release the booking as voucher_changed and tell the customer, and return the refusal
+     * instead of throwing it, so the caller's transaction keeps the release. Null when confirmation may go on.
+     */
+    public function consumeVoucher(Reservation $locked, CarbonInterface $confirmedAt): ?VoucherNoLongerApplies
+    {
+        try {
+            $this->vouchers->consume($locked, $confirmedAt);
+
+            return null;
+        } catch (VoucherNoLongerApplies $refused) {
+            if ($this->releaseHeld($locked, 'expired', 'voucher_changed')) {
+                $this->notifyReleased($locked, 'voucher_changed');
+            }
+
+            return $refused;
+        }
+    }
+
+    /** Queue the customer's notice in the caller's transaction, so a rollback sends nothing. */
+    public function notifyReleased(Reservation $reservation, string $reason): void
+    {
+        [$title, $body] = self::NOTICES[$reason];
+        $this->notifications->recordOutboxNotification(
+            key: "reservation.notification.{$reservation->id}.{$reason}",
+            userId: (int) $reservation->user_id,
+            eventType: "booking.{$reason}",
+            payload: [
+                'booking_id' => $reservation->id,
+                'booking_code' => $reservation->code,
+                'event' => $reason,
+                'title' => $title,
+                'body' => strtr($body, [':code' => $reservation->code]),
+                'action_url' => '/booking',
+                'channels' => ['database', 'mail'],
+                'delivered_channels' => [],
+                'mail_view' => 'emails.booking-notification',
+                'aggregate_type' => Reservation::class,
+                'aggregate_id' => $reservation->id,
+            ],
+            orgId: (int) $reservation->organization_id,
+        );
     }
 
     public function notifyPaymentDeadlinePassed(Reservation $reservation): void

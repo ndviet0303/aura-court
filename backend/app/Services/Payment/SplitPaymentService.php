@@ -10,6 +10,7 @@ use App\Models\Reservation;
 use App\Models\SplitGroup;
 use App\Models\SplitShare;
 use App\Models\User;
+use App\Services\Reservation\HeldReservationRelease;
 use App\Services\Reservation\ReservationService;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
@@ -348,16 +349,17 @@ class SplitPaymentService
         }
 
         if ((int) $group->paid_amount >= (int) $group->expected_amount) {
-            $group->update([
-                'status' => 'confirmed',
-                'confirmed_at' => $paidAt,
-            ]);
-            $reservation = $group->reservation()->withoutGlobalScope('tenant_isolation')->lockForUpdate()->firstOrFail();
-            if ($reservation->status === 'held') {
-                $reservation->forceFill([
-                    'status' => 'confirmed',
-                    'confirmed_at' => $paidAt,
-                ])->save();
+            $release = app(HeldReservationRelease::class);
+            $reservation = $release->lock($group->reservation()->withoutGlobalScope('tenant_isolation')->firstOrFail());
+            // D12: a voucher that no longer applies ends the group as expire() does, this transfer among its paid shares.
+            if ($reservation?->status === 'held' && $release->consumeVoucher($reservation, $paidAt)) {
+                $this->expire($group, true);
+
+                return;
+            }
+            $group->update(['status' => 'confirmed', 'confirmed_at' => $paidAt]);
+            if ($reservation?->status === 'held') {
+                $reservation->forceFill(['status' => 'confirmed', 'confirmed_at' => $paidAt])->save();
                 $reservation->slots()->withoutGlobalScope('tenant_isolation')->where('status', 'held')->update(['status' => 'confirmed']);
                 $reservation->entitlements()->withoutGlobalScope('tenant_isolation')->where('status', 'held')->update(['status' => 'active']);
             }
@@ -387,11 +389,11 @@ class SplitPaymentService
         return $expired;
     }
 
-    public function expire(SplitGroup $group): SplitGroup
+    public function expire(SplitGroup $group, bool $beforeDue = false): SplitGroup
     {
-        return DB::transaction(function () use ($group): SplitGroup {
+        return DB::transaction(function () use ($group, $beforeDue): SplitGroup {
             $group = SplitGroup::query()->whereKey($group->id)->lockForUpdate()->firstOrFail();
-            if ($group->status !== 'pending' || ($group->expires_at && $group->expires_at->isFuture())) {
+            if ($group->status !== 'pending' || (! $beforeDue && $group->expires_at && $group->expires_at->isFuture())) {
                 return $group;
             }
             $group->update(['status' => 'expired']);

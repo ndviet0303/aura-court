@@ -3882,6 +3882,7 @@ export default {
         partial_amount: 'Short transfer',
         excess_amount: 'Excess transfer',
         reservation_hold_unavailable: 'Booking hold no longer available',
+        voucher_changed: 'Voucher no longer applies; the booking expired',
         recurring_hold_unavailable: 'Recurring hold no longer available',
         split_share_unavailable: 'Split share no longer available',
         pos_order_unavailable: 'POS order no longer available',

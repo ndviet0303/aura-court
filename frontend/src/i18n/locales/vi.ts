@@ -3874,6 +3874,7 @@ export default {
         partial_amount: 'Chuyển thiếu',
         excess_amount: 'Chuyển thừa',
         reservation_hold_unavailable: 'Đơn không còn giữ giờ',
+        voucher_changed: 'Voucher không còn áp dụng, đơn đã hết hiệu lực',
         recurring_hold_unavailable: 'Lịch định kỳ không còn giữ',
         split_share_unavailable: 'Phần chia tiền không còn',
         pos_order_unavailable: 'Đơn POS không còn',

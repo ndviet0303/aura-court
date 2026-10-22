@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Reservation;
 
 use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
+use App\Exceptions\VoucherNoLongerApplies;
 use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
 use App\Models\Reservation;
@@ -230,7 +231,12 @@ class ReservationController extends Controller
         $record = $this->visible->find($request->user(), $organization, $reservation);
 
         return $this->idempotency->run($request, function () use ($record) {
-            return response()->json(['reservation' => $this->reservations->confirm($record)]);
+            try {
+                return response()->json(['reservation' => $this->reservations->confirm($record)]);
+            } catch (VoucherNoLongerApplies $refused) {
+                // D12: answered inside the idempotent transaction, so the booking's release commits with the 422.
+                return $refused->render();
+            }
         });
     }
 
