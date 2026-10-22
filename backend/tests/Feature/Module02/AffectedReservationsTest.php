@@ -10,7 +10,7 @@ use Tests\Concerns\BuildsVenues;
 use Tests\Feature\Module02\Concerns\SeedsBookings;
 use Tests\TestCase;
 
-/** FR-28, FR-32, FR-36, FR-37, FR-40, FR-41, BR-38, BR-39 (list part); design D7. UC-2.6, UC-2.10, UC-2.15, UC-2.16, UC-2.19, UC-2.20. */
+/** FR-28, FR-32, FR-36, FR-37, FR-40, FR-41, BR-38, BR-39 (list part); design D7. UC-2.5, UC-2.10, UC-2.14, UC-2.15, UC-2.20, UC-2.21, UC-2.22. */
 class AffectedReservationsTest extends TestCase
 {
     use BuildsVenues;

@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\BuildsVenues;
 use Tests\TestCase;
 
-/** FR-44; design D13 (monitoring). UC-2.26. */
+/** FR-44; design D13 (monitoring). UC-2.24, UC-2.25. */
 class PlatformVenueMonitoringTest extends TestCase
 {
     use BuildsVenues;

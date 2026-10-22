@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\BuildsVenues;
 use Tests\TestCase;
 
-/** FR-47..FR-52, BR-43..BR-46, BR-48; design D14. UC-2.30, UC-2.31, UC-2.32, UC-2.33. */
+/** FR-47..FR-52, BR-43..BR-46, BR-48; design D14. UC-2.28, UC-2.29, UC-2.30, UC-2.31, UC-2.32, UC-2.33. */
 class SuspensionRemediationTest extends TestCase
 {
     use BuildsVenues;

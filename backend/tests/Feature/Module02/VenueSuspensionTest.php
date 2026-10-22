@@ -6,14 +6,17 @@ use App\Models\AffectedReservationCase;
 use App\Models\AuditLog;
 use App\Models\Court;
 use App\Models\OutboxMessage;
+use App\Models\Reservation;
+use App\Models\User;
 use App\Models\Venue;
 use App\Models\VenueSuspension;
+use App\Services\Infrastructure\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\BuildsVenues;
 use Tests\Feature\Module02\Concerns\SeedsBookings;
 use Tests\TestCase;
 
-/** FR-45, FR-46, BR-42, BR-47 (suspension part); design D13. UC-2.27, UC-2.28, UC-2.29. */
+/** FR-45, FR-46, BR-42, BR-47 (suspension part); design D13. UC-2.26, UC-2.27. */
 class VenueSuspensionTest extends TestCase
 {
     use BuildsVenues;
@@ -101,6 +104,22 @@ class VenueSuspensionTest extends TestCase
         $this->suspend($court->venue)->assertCreated();
 
         $this->getJson('/api/courts')->assertOk()->assertJsonMissing(['id' => $court->id]);
+    }
+
+    public function test_br_42_a_quote_taken_before_the_suspension_cannot_become_a_booking(): void
+    {
+        $court = $this->bookableCourt();
+        $customer = User::factory()->create();
+        $slot = ['court_id' => $court->id, 'starts_at' => $this->tomorrowAt(10)->toIso8601String(), 'ends_at' => $this->tomorrowAt(11)->toIso8601String()];
+        $token = $this->actingAs($customer)->withHeader('Idempotency-Key', 'quote-1')->postJson('/api/price-quotes', $slot)->assertCreated()->json('quote.quote_token');
+
+        $this->suspend($court->venue)->assertCreated();
+        // Each real request starts without a tenant; the singleton would otherwise carry the quote request's organization.
+        $this->app->forgetInstance(TenantContext::class);
+
+        $this->actingAs($customer)->withHeader('Idempotency-Key', 'book-1')->postJson('/api/reservations', ['quote_token' => $token, 'expected_total' => 100000])->assertStatus(409);
+        $this->actingAs($customer)->withHeader('Idempotency-Key', 'book-2')->postJson('/api/reservations', $slot + ['expected_total' => 100000])->assertNotFound();
+        $this->assertSame(0, Reservation::query()->where('court_id', $court->id)->count());
     }
 
     public function test_br_47_owner_during_suspension_edits_but_cannot_open_or_resume(): void

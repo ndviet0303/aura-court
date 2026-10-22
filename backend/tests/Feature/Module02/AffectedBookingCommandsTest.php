@@ -15,7 +15,7 @@ use Tests\Concerns\BuildsVenues;
 use Tests\Feature\Module02\Concerns\SeedsBookings;
 use Tests\TestCase;
 
-/** BR-39, BR-40 (operator handling); design D8. UC-2.17, UC-2.18. */
+/** FR-38, FR-39, BR-39, BR-40, BR-41 (operator handling); design D8. UC-2.16, UC-2.17, UC-2.18, UC-2.19. */
 class AffectedBookingCommandsTest extends TestCase
 {
     use BuildsVenues;
