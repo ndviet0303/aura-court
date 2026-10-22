@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Reservation;
 use App\Models\TenantCustomer;
 use App\Models\User;
+use App\Models\VoucherUse;
 use App\Services\Booking\OrdinaryCheckoutService;
 use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\IdempotencyService;
@@ -30,6 +31,12 @@ class ReservationController extends Controller
     private const NO_BENEFIT_MESSAGES = [
         'coupon_code.prohibited' => 'Mã coupon không còn áp dụng cho đặt sân.',
         'loyalty_points.prohibited' => 'Đặt sân không còn dùng điểm tích lũy.',
+    ];
+
+    /** A booking names a public program or a private code, never both (design D17). */
+    private const VOUCHER = [
+        'voucher_program_id' => 'nullable|integer|prohibits:voucher_code',
+        'voucher_code' => 'nullable|string|max:64',
     ];
 
     public function __construct(
@@ -66,8 +73,12 @@ class ReservationController extends Controller
         // Incident handling: status and source window only; contact channel and notes stay with the venue.
         $affectedCase = fn ($q) => $q->select(array_map(fn (string $column): string => 'affected_reservation_cases.'.$column, ['id', 'reservation_id', 'source_type', 'source_starts_at', 'source_ends_at', 'status', 'handled_at']));
         $record->load(['court.venue', 'quote', 'slots', 'entitlements', 'legacyMapping' => $legacyMapping, 'attendance' => $attendance, 'latestAffectedCase' => $affectedCase]);
+        // The voucher the booking holds or used, read from its use row (design D17); a released use shows nothing.
+        $use = $record->voucherUse()->whereIn('status', [VoucherUse::STATUS_HELD, VoucherUse::STATUS_USED])
+            ->with(['program:id,name', 'voucherCode:id,code'])->first();
+        $voucher = $use === null ? null : ['name' => $use->program?->name, 'code' => $use->voucherCode?->code, 'discount' => $use->discount];
 
-        return response()->json(['reservation' => [...$record->toArray(), 'payment' => $payments->result($record)]]);
+        return response()->json(['reservation' => [...$record->toArray(), 'voucher' => $voucher, 'payment' => $payments->result($record)]]);
     }
 
     public function payment(
@@ -142,6 +153,7 @@ class ReservationController extends Controller
             'ends_at' => 'required_without_all:quote_id,quote_token|string|max:40',
             'customer_id' => 'nullable|integer',
             'expected_total' => 'required|integer|min:0',
+            ...self::VOUCHER,
             ...self::NO_BENEFITS,
         ], self::NO_BENEFIT_MESSAGES);
 
@@ -191,6 +203,7 @@ class ReservationController extends Controller
             'ends_at' => 'required_without_all:quote_id,quote_token|string|max:40',
             'customer_id' => 'nullable|integer',
             'expected_total' => 'required|integer|min:0',
+            ...self::VOUCHER,
             ...self::NO_BENEFITS,
         ], self::NO_BENEFIT_MESSAGES);
         if (isset($data['court_id'])) {

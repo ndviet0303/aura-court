@@ -38,7 +38,7 @@ const facts = computed(() => {
   const booker = r.booker ? [r.booker.name, r.booker.phone, r.booker.email] : []
   const rows: [string, string][] = [
     ['booker', booker.filter(Boolean).join(' · ')],
-    ['voucher', r.quote?.benefit_snapshot?.coupon_code ?? ''],
+    ['voucher', r.voucher?.code ?? r.voucher?.name ?? r.quote?.benefit_snapshot?.coupon_code ?? ''],
     ['deadline', r.status === 'held' ? time(r.hold_expires_at) : ''],
     ['payment', paymentText.value],
     ['checkIn', time(r.attendance?.checked_in_at)],

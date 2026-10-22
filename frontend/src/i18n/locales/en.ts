@@ -561,6 +561,7 @@ export default {
       totalCost: 'Total Quote Cost:',
       membershipDiscount: 'Membership discount:',
       couponDiscount: 'Coupon discount:',
+      voucherDiscount: 'Voucher:',
       instantNote:
         '* Instant payment via wallet balance confirms reservation and activates entry entitlement immediately.',
       paying: 'Processing Payment...',
@@ -644,6 +645,18 @@ export default {
       paymentWindowClosed:
         'There is no time left to pay for this booking. Please choose another time.',
       notPending: 'This booking is no longer pending payment, so it cannot be cancelled.',
+    },
+    voucher: {
+      title: 'Voucher',
+      none: 'No voucher',
+      codePlaceholder: 'Enter a voucher code',
+      apply: 'Apply',
+      remove: 'Remove code',
+      dropped: 'Voucher {voucher} no longer applies to this court or time, so it was removed.',
+      invalidTitle: 'This voucher cannot be applied',
+      withoutTotal: 'Without a voucher, the amount payable is {total}.',
+      continueWithout: 'Continue without a voucher',
+      chooseOther: 'Choose another voucher',
     },
     agreement: {
       booker: 'Booker',

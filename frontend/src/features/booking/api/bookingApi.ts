@@ -70,6 +70,22 @@ export const bookingApi = {
     payload: import('../types/reservation').HoldReservationPayload,
   ) => api.post<T>('/reservations', payload),
 
+  // Public vouchers that apply to the interval, default first (module 3 D10); neither call holds a use.
+  getVouchers: (venueId: number, params: import('../types/reservation').PriceQuotePayload) =>
+    api.get<{
+      data: import('../types/reservation').VoucherQuote[]
+      default_program_id: number | null
+    }>(`/venues/${venueId}/vouchers`, { params }),
+
+  checkVoucherCode: (
+    venueId: number,
+    params: import('../types/reservation').PriceQuotePayload & { code: string },
+  ) =>
+    api.get<{ data: import('../types/reservation').VoucherQuote }>(
+      `/venues/${venueId}/vouchers/check`,
+      { params },
+    ),
+
   checkoutReservation: <T = { reservation: import('../types/reservation').Reservation }>(
     payload: import('../types/reservation').HoldReservationPayload,
   ) => api.post<T>('/reservations/checkout', payload),

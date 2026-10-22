@@ -7,10 +7,12 @@ use Illuminate\Foundation\Http\FormRequest;
 class RecurringSeriesPreviewRequest extends FormRequest
 {
     /** Recurring series take no voucher or coupon and no points (design D12, D21): naming one is refused, not ignored. */
-    public const NO_BENEFITS = ['coupon_code' => 'prohibited', 'loyalty_points' => 'prohibited'];
+    public const NO_BENEFITS = ['coupon_code' => 'prohibited', 'voucher_code' => 'prohibited', 'voucher_program_id' => 'prohibited', 'loyalty_points' => 'prohibited'];
 
     public const NO_BENEFIT_MESSAGES = [
         'coupon_code.prohibited' => 'Voucher và mã giảm giá không áp dụng cho đặt sân định kỳ.',
+        'voucher_code.prohibited' => 'Voucher và mã giảm giá không áp dụng cho đặt sân định kỳ.',
+        'voucher_program_id.prohibited' => 'Voucher và mã giảm giá không áp dụng cho đặt sân định kỳ.',
         'loyalty_points.prohibited' => 'Đặt sân định kỳ không dùng điểm tích lũy.',
     ];
 

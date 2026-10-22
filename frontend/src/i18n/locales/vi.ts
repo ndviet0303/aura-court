@@ -563,6 +563,7 @@ export default {
       totalCost: 'Tổng Chi Phí Báo Giá:',
       membershipDiscount: 'Ưu đãi hội viên:',
       couponDiscount: 'Mã giảm giá:',
+      voucherDiscount: 'Voucher:',
       instantNote:
         '* Thanh toán tức thì qua số dư ví để xác nhận lịch đặt và kích hoạt quyền vào sân ngay.',
       paying: 'Đang Thanh Toán...',
@@ -646,6 +647,18 @@ export default {
       phoneRequired: 'Vui lòng cập nhật số điện thoại trong hồ sơ trước khi đặt sân.',
       paymentWindowClosed: 'Đã hết thời gian thanh toán cho khung giờ này. Vui lòng chọn giờ khác.',
       notPending: 'Đơn không còn chờ thanh toán nên không thể hủy.',
+    },
+    voucher: {
+      title: 'Voucher',
+      none: 'Không dùng voucher',
+      codePlaceholder: 'Nhập mã voucher',
+      apply: 'Áp dụng',
+      remove: 'Bỏ mã',
+      dropped: 'Voucher {voucher} không còn áp dụng cho sân hoặc giờ này nên đã được bỏ.',
+      invalidTitle: 'Voucher không áp dụng được',
+      withoutTotal: 'Nếu đặt không dùng voucher, số tiền phải trả là {total}.',
+      continueWithout: 'Tiếp tục không dùng voucher',
+      chooseOther: 'Chọn voucher khác',
     },
     agreement: {
       booker: 'Người đặt',

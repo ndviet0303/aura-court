@@ -43,10 +43,15 @@ export const showsQr = (r: Displayable): boolean =>
 export const canReview = (r: Displayable): boolean =>
   ['confirmed', 'in_use', 'completed', 'no_show'].includes(displayStatus(r))
 
-// The discount lines (i18n label and amount) a priced quote carries, for the price breakdowns.
-export const quoteDiscounts = (snapshot?: PriceQuote['benefit_snapshot']) =>
+// The discount lines (i18n label and amount) of a booking, for the price breakdowns: its voucher
+// (module 3 D17), or the coupon and membership discounts an older booking's quote recorded.
+export const quoteDiscounts = (
+  snapshot?: PriceQuote['benefit_snapshot'],
+  voucher?: Reservation['voucher'],
+) =>
   (
     [
+      ['reservations.calculator.voucherDiscount', voucher?.discount],
       ['reservations.calculator.membershipDiscount', snapshot?.membership_discount_amount],
       ['reservations.calculator.couponDiscount', snapshot?.coupon_discount_amount],
     ] as const
