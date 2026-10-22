@@ -131,4 +131,18 @@ class OpeningConditionsTest extends TestCase
         $this->assertTrue($stop->ended_at->between(now()->subMinute(), now()), 'the stop ends when the owner confirms, not at the expected end');
         $this->getJson('/api/courts')->assertJsonFragment(['id' => $court->id])->assertJsonMissing(['id' => $paused->id]);
     }
+
+    public function test_br_47_only_an_active_court_with_service_time_and_full_prices_takes_bookings(): void
+    {
+        $court = $this->bookableCourt();
+        $unpriced = $this->activeCourt($court->venue);
+        $inactive = $this->activeCourt($court->venue, ['status' => Court::STATUS_INACTIVE]);
+        $this->priceCourt($inactive);
+        $date = now('Asia/Ho_Chi_Minh')->addDay()->toDateString();
+
+        $this->assertSame([$court->id], collect($this->getJson('/api/courts')->assertOk()->json())->pluck('id')->all());
+        $this->getJson("/api/availability?court_id={$court->id}&date={$date}")->assertOk();
+        $this->getJson("/api/availability?court_id={$unpriced->id}&date={$date}")->assertNotFound();
+        $this->getJson("/api/availability?court_id={$inactive->id}&date={$date}")->assertNotFound();
+    }
 }
