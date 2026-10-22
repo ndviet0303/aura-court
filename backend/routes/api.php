@@ -40,6 +40,7 @@ use App\Http\Controllers\Partner\PartnerVenueScheduleController;
 use App\Http\Controllers\Partner\ReceivingConnectionController;
 use App\Http\Controllers\Partner\VenuePackageController;
 use App\Http\Controllers\Partner\VenueLifecycleController;
+use App\Http\Controllers\Partner\VenueScheduleImpactController;
 use App\Http\Controllers\POS\PosController;
 use App\Http\Controllers\POS\ServiceTabController;
 use App\Http\Controllers\Pricing\CourtPricingController;
@@ -47,6 +48,8 @@ use App\Http\Controllers\Pricing\PriceTableController;
 use App\Http\Controllers\Promotion\PromotionProgramController;
 use App\Http\Controllers\Promotion\VoucherChoiceController;
 use App\Http\Controllers\Reservation\AdminReservationController;
+use App\Http\Controllers\Reservation\AffectedBookingCommandController;
+use App\Http\Controllers\Reservation\AffectedReservationCaseController;
 use App\Http\Controllers\Reservation\CancelReservationPaymentController;
 use App\Http\Controllers\Reservation\MyReservationController;
 use App\Http\Controllers\Reservation\ReservationController;
@@ -212,6 +215,12 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
         Route::post('{venueId}/pause', [VenueLifecycleController::class, 'pause']);
         Route::post('{venueId}/resume', [VenueLifecycleController::class, 'resume']);
         Route::post('{venueId}/close', [VenueLifecycleController::class, 'close']);
+        // D7: what a stop or schedule change would do to existing bookings, saving nothing.
+        Route::post('{venueId}/pause/preview', [VenueLifecycleController::class, 'previewPause']);
+        Route::post('{venueId}/close/preview', [VenueLifecycleController::class, 'previewClose']);
+        Route::post('{venueId}/operating-schedule/preview', [VenueScheduleImpactController::class, 'operatingSchedule']);
+        Route::post('{venueId}/schedule-exceptions/preview', [VenueScheduleImpactController::class, 'scheduleException']);
+        Route::post('{venueId}/schedule-exceptions/{exceptionId}/delete-preview', [VenueScheduleImpactController::class, 'deleteScheduleException']);
     });
     Route::get('partner/organizations/{organizationId}/packages', [VenuePackageController::class, 'index']);
     Route::get('partner/organizations/{organizationId}/package-requests/{code}', [VenuePackageController::class, 'showRequest']);
@@ -357,6 +366,8 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             Route::post('courts/{court}/pause', [CourtLifecycleController::class, 'pause']);
             Route::post('courts/{court}/resume', [CourtLifecycleController::class, 'resume']);
             Route::post('courts/{court}/close', [CourtLifecycleController::class, 'close']);
+            Route::post('courts/{court}/pause/preview', [CourtLifecycleController::class, 'previewPause']);
+            Route::post('courts/{court}/close/preview', [CourtLifecycleController::class, 'previewClose']);
             Route::get('contracts', [AdminContractController::class, 'index']);
             Route::get('contracts/{id}', [AdminContractController::class, 'show']);
             Route::post('contracts/{id}/cancel', [AdminContractController::class, 'cancel']);
@@ -382,6 +393,8 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
         Route::get('reservations', [ReservationController::class, 'index']);
         Route::get('me/reservations', MyReservationController::class);
         Route::get('admin/reservations', AdminReservationController::class)->middleware('venue_admin');
+        Route::get('admin/affected-reservations', [AffectedReservationCaseController::class, 'index'])->middleware('venue_admin');
+        Route::patch('admin/affected-reservations/{case}', [AffectedReservationCaseController::class, 'update'])->middleware('venue_admin');
         Route::post('price-quotes', [ReservationController::class, 'quote']);
         Route::post('reservations', [ReservationController::class, 'store'])->middleware('verified');
         Route::post('reservations/checkout', [ReservationController::class, 'checkout'])->middleware('verified');
@@ -397,7 +410,10 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::post('attendance/check-out', [AttendanceController::class, 'checkOut']);
             Route::post('attendance/courts/{court}/confirm-ready', [AttendanceController::class, 'confirmReady']);
             Route::post('attendance/no-show', [AttendanceController::class, 'markNoShow']);
-            Route::post('attendance/reassign-court', [AttendanceController::class, 'reassignCourt']);
+            // Design D8: operator commands on a booking with an open affected-booking case; reassign-court is retired.
+            Route::post('reservations/{reservation}/move-court', [AffectedBookingCommandController::class, 'moveCourt']);
+            Route::post('reservations/{reservation}/change-time', [AffectedBookingCommandController::class, 'changeTime']);
+            Route::post('reservations/{reservation}/operator-cancel', [AffectedBookingCommandController::class, 'cancel']);
             Route::get('attendance/{code}', [AttendanceController::class, 'show']);
 
             Route::get('service-tabs', [ServiceTabController::class, 'index']);

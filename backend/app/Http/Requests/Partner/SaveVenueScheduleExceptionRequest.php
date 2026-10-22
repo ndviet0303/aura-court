@@ -32,6 +32,7 @@ class SaveVenueScheduleExceptionRequest extends FormRequest
     {
         return [
             'court_id' => ['nullable', 'integer'],
+            'acknowledge_affected' => ['sometimes', 'boolean'],
             'exception_date' => ['required', 'date_format:Y-m-d'],
             'name' => ['required', 'string', 'max:120'],
             'type' => ['required', 'in:holiday,special_hours,closed'],

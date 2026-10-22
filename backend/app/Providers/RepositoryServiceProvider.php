@@ -9,6 +9,7 @@ use App\Contracts\Repositories\DisputeRepositoryInterface;
 use App\Contracts\Repositories\FinanceExceptionRepositoryInterface;
 use App\Contracts\Repositories\HostKycRepositoryInterface;
 use App\Contracts\Repositories\LoyaltyRuleRepositoryInterface;
+use App\Contracts\Repositories\AffectedReservationCaseRepositoryInterface;
 use App\Contracts\Repositories\OperationalStatusRepositoryInterface;
 use App\Contracts\Repositories\OperationalStopRepositoryInterface;
 use App\Contracts\Repositories\OrganizationLockRepositoryInterface;
@@ -40,6 +41,7 @@ use App\Infrastructure\Repositories\Eloquent\EloquentDisputeRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentFinanceExceptionRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentHostKycRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentLoyaltyRuleRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentAffectedReservationCaseRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentOperationalStatusRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentOperationalStopRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentOrganizationLockRepository;
@@ -81,6 +83,7 @@ class RepositoryServiceProvider extends ServiceProvider
         VoucherUseRepositoryInterface::class => EloquentVoucherUseRepository::class,
         OperationalStopRepositoryInterface::class => EloquentOperationalStopRepository::class,
         OperationalStatusRepositoryInterface::class => EloquentOperationalStatusRepository::class,
+        AffectedReservationCaseRepositoryInterface::class => EloquentAffectedReservationCaseRepository::class,
         ReservationRepositoryInterface::class => EloquentReservationRepository::class,
         PaymentRepositoryInterface::class => EloquentPaymentRepository::class,
         FinanceExceptionRepositoryInterface::class => EloquentFinanceExceptionRepository::class,

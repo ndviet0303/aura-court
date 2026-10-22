@@ -34,6 +34,17 @@ class VenueLifecycleController extends Controller
         return $this->stopped($action, $request, $venueId, 'Đã ghi nhận ngừng kinh doanh cơ sở.');
     }
 
+    /** D7: the bookings a pause would touch, saving nothing. */
+    public function previewPause(PauseRequest $request, int $organizationId, int $venueId, StopVenue $action): JsonResponse
+    {
+        return response()->json(['data' => $action->preview($venueId, OperationalStopData::fromRequest($request))]);
+    }
+
+    public function previewClose(PauseRequest $request, int $organizationId, int $venueId, StopVenue $action): JsonResponse
+    {
+        return $this->previewPause($request, $organizationId, $venueId, $action);
+    }
+
     private function stopped(StopVenue $action, PauseRequest $request, int $venueId, string $message): JsonResponse
     {
         $stop = $action->execute($venueId, OperationalStopData::fromRequest($request));

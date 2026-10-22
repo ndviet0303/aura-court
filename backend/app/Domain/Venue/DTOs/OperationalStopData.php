@@ -14,6 +14,7 @@ readonly class OperationalStopData
         public string $reason,
         public CarbonImmutable $startsAt,
         public ?CarbonImmutable $expectedEndAt = null,
+        public bool $acknowledgeAffected = false,
     ) {}
 
     public static function fromRequest(PauseRequest $request): self
@@ -28,6 +29,7 @@ readonly class OperationalStopData
             reason: (string) $request->validated('reason'),
             startsAt: $startsAt->max($now),
             expectedEndAt: $expectedEndAt === null ? null : CarbonImmutable::parse($expectedEndAt)->utc(),
+            acknowledgeAffected: $request->boolean('acknowledge_affected'),
         );
     }
 
