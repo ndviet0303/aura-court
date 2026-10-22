@@ -55,7 +55,7 @@ class CompletePersonalOnboarding
                 'user' => $updatedUser,
                 'account_type' => $data->accountType,
                 'next_step' => $isCourtOwnerIntent ? 'partner_registration' : 'explore_venues',
-                'partner_registration_url' => $isCourtOwnerIntent ? '/partner/register' : null,
+                'partner_registration_url' => $isCourtOwnerIntent ? '/partner-registration' : null,
                 'message' => $isCourtOwnerIntent
                     ? 'Thiết lập tài khoản cá nhân thành công. Để kinh doanh và quản lý câu lạc bộ, vui lòng tiếp tục đăng ký trở thành đối tác.'
                     : 'Thiết lập tài khoản thành công.',

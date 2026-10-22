@@ -110,7 +110,7 @@ class AccountRegistrationTest extends TestCase
             'courts_count' => 4,
         ])->assertOk()
             ->assertJsonPath('next_step', 'partner_registration')
-            ->assertJsonPath('partner_registration_url', '/partner/register');
+            ->assertJsonPath('partner_registration_url', '/partner-registration');
 
         $user->refresh();
         $this->assertTrue($user->onboarded);
