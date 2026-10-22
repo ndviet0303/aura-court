@@ -15,6 +15,7 @@ use App\Contracts\Repositories\PaymentRepositoryInterface;
 use App\Contracts\Repositories\PlatformPlanRepositoryInterface;
 use App\Contracts\Repositories\PlatformSubscriptionRepositoryInterface;
 use App\Contracts\Repositories\PriceTableRepositoryInterface;
+use App\Contracts\Repositories\PromotionProgramRepositoryInterface;
 use App\Contracts\Repositories\ReconciliationRepositoryInterface;
 use App\Contracts\Repositories\RecurringContractRepositoryInterface;
 use App\Contracts\Repositories\ReservationRepositoryInterface;
@@ -36,6 +37,7 @@ use App\Infrastructure\Repositories\Eloquent\EloquentPaymentRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPlatformPlanRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPlatformSubscriptionRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPriceTableRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentPromotionProgramRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReconciliationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentRecurringContractRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReservationRepository;
@@ -57,6 +59,7 @@ class RepositoryServiceProvider extends ServiceProvider
         VenueRepositoryInterface::class => EloquentVenueRepository::class,
         CourtRepositoryInterface::class => EloquentCourtRepository::class,
         PriceTableRepositoryInterface::class => EloquentPriceTableRepository::class,
+        PromotionProgramRepositoryInterface::class => EloquentPromotionProgramRepository::class,
         CourtBlockRepositoryInterface::class => EloquentCourtBlockRepository::class,
         ReservationRepositoryInterface::class => EloquentReservationRepository::class,
         PaymentRepositoryInterface::class => EloquentPaymentRepository::class,

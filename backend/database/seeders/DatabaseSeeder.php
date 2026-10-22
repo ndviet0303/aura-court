@@ -13,7 +13,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             HostKycSeeder::class,
             CourtSeeder::class,
-            CouponSeeder::class,
+            PromotionProgramSeeder::class,
             CourtBlockSeeder::class,
             BookingPaymentSeeder::class,
             PosProductSeeder::class,

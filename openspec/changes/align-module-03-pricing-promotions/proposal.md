@@ -49,7 +49,7 @@ Người dùng chốt ngày 2026-10-21:
 - **Phiên bản và thời điểm hiệu lực (D1, D6; FR-56, BR-56).**
   - Lưu nội dung là công bố một phiên bản; không có nháp. Phiên bản bất biến, có `published_at` và `effective_at`.
   - Giá cho giờ chơi t của đơn xác nhận lúc c: phiên bản công bố muộn nhất trong các phiên bản công bố trước c và có hiệu lực trước t.
-  - Công bố cần quyền kinh doanh còn hạn và phải qua kiểm độ phủ.
+  - Công bố phải qua kiểm độ phủ.
 - **Liên kết sân – bảng giá theo thời gian (D2; FR-55, FR-57, BR-50, BR-57).**
   - Mỗi sân tại mỗi thời điểm có tối đa một liên kết thường và một liên kết lễ. Bảng phải cùng cơ sở.
   - Thời điểm chuyển mặc định là bây giờ, không được ở quá khứ. Thay đổi mới nhất thắng: liên kết cùng loại đã lên lịch sau thời điểm chuyển bị xoá.

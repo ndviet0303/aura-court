@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Contracts\Repositories\PriceTableRepositoryInterface;
-use App\Models\Coupon;
 use App\Models\Court;
 use App\Models\LoyaltyRule;
 use App\Models\Organization;
@@ -21,10 +20,10 @@ class E2EArrangeTestDataCommand extends Command
 {
     protected $signature = 'e2e:arrange-test-data
         {--run-id= : Unique run ID}
-        {--scenario= : Scenario type (court|coupon|loyalty_points|pos_stock)}
+        {--scenario= : Scenario type (court|loyalty_points|pos_stock)}
         {--payload-json= : JSON payload for scenario}';
 
-    protected $description = 'Arrange isolated per-test data for court, pricing, coupon, points, or stock';
+    protected $description = 'Arrange isolated per-test data for court, pricing, points, or stock';
 
     public function handle(): int
     {
@@ -89,8 +88,6 @@ class E2EArrangeTestDataCommand extends Command
             switch ($scenario) {
                 case 'court':
                     return $this->arrangeCourt($runId, $payload);
-                case 'coupon':
-                    return $this->arrangeCoupon($runId, $payload);
                 case 'loyalty_points':
                     return $this->arrangeLoyaltyPoints($runId, $payload);
                 case 'pos_stock':
@@ -141,56 +138,6 @@ class E2EArrangeTestDataCommand extends Command
             'venue_id' => $venue->id,
             'organization_id' => $venue->organization_id,
             'price' => $basePrice,
-        ];
-
-        $this->output->writeln(json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-
-        return self::SUCCESS;
-    }
-
-    private function arrangeCoupon(string $runId, array $payload): int
-    {
-        $testKey = $payload['test_key'] ?? 'CPN_'.strtoupper(uniqid());
-        $orgId = $payload['organization_id'] ?? null;
-        if (! $orgId) {
-            $org = Organization::where('slug', 'like', '%aura-primary%')->first() ?: Organization::firstOrFail();
-            $orgId = $org->id;
-        }
-
-        $defaultCode = 'CPN_'.substr(strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $testKey)), 0, 16).'_'.substr($runId, -8).'_'.Str::upper(Str::random(4));
-        $code = strtoupper(preg_replace('/[^a-zA-Z0-9_-]/', '', $payload['code'] ?? $defaultCode));
-        if (strlen($code) > 36) {
-            $code = substr($code, 0, 36);
-        }
-        $discountType = $payload['discount_type'] ?? 'fixed';
-        $discountValue = (int) ($payload['discount_value'] ?? 20000);
-        $minSpend = (int) ($payload['min_spend'] ?? 50000);
-        $usageLimit = (int) ($payload['usage_limit'] ?? 10);
-
-        $coupon = Coupon::create([
-            'organization_id' => $orgId,
-            'venue_id' => $payload['venue_id'] ?? null,
-            'code' => $code,
-            'discount_type' => $discountType,
-            'discount_value' => $discountValue,
-            'max_discount' => $discountType === 'percent' ? 100000 : null,
-            'min_spend' => $minSpend,
-            'usage_limit' => $usageLimit,
-            'usage_count' => 0,
-            'status' => Coupon::STATUS_ACTIVE,
-            'is_active' => true,
-            'starts_at' => now()->subDay(),
-            'ends_at' => now()->addDays(30),
-            'version' => 1,
-        ]);
-
-        $out = [
-            'status' => 'success',
-            'coupon_id' => $coupon->id,
-            'code' => $coupon->code,
-            'discount_type' => $coupon->discount_type,
-            'discount_value' => $coupon->discount_value,
-            'organization_id' => $orgId,
         ];
 
         $this->output->writeln(json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));

@@ -7,13 +7,10 @@ import ManageKpiBar from '../components/manage/ManageKpiBar.vue'
 import AdminCourtsTable from '../components/manage/AdminCourtsTable.vue'
 import CourtFormModal from '../components/manage/CourtFormModal.vue'
 import CourtBlockModal from '../components/manage/CourtBlockModal.vue'
-import CouponManagerModal from '../components/manage/CouponManagerModal.vue'
 
 // Courts and Main Operations Composable
 const {
   venues,
-  courts,
-  coupons,
   error,
   notice,
   saving,
@@ -27,8 +24,6 @@ const {
   showBlockModal,
   selectedCourtForBlock,
   blockSaving,
-  showCouponModal,
-  couponSaving,
   filteredCourts,
   totalCourtsCount,
   activeCourtsCount,
@@ -43,11 +38,6 @@ const {
   openBlockModal,
   addBlock,
   deleteBlock,
-  openCouponModal,
-  createCoupon,
-  updateCoupon,
-  transitionCoupon,
-  transitionCampaign,
 } = useAdminManageCourts()
 
 onMounted(() => {
@@ -58,7 +48,7 @@ onMounted(() => {
 <template>
   <div class="admin-manage-page">
     <!-- Top Header -->
-    <ManageHeader :coupons-count="coupons.length" @open-coupons="openCouponModal" @refresh="load" />
+    <ManageHeader @refresh="load" />
 
     <!-- KPI Stats Cards -->
     <ManageKpiBar
@@ -115,19 +105,6 @@ onMounted(() => {
       @close="showBlockModal = false"
       @add-block="addBlock"
       @delete-block="deleteBlock"
-    />
-
-    <CouponManagerModal
-      :show="showCouponModal"
-      :coupons="coupons"
-      :venues="venues"
-      :courts="courts"
-      :saving="couponSaving"
-      @close="showCouponModal = false"
-      @create-coupon="createCoupon"
-      @update-coupon="updateCoupon"
-      @transition-coupon="transitionCoupon"
-      @transition-campaign="transitionCampaign"
     />
   </div>
 </template>

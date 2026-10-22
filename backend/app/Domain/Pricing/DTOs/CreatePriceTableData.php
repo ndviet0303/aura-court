@@ -14,7 +14,6 @@ readonly class CreatePriceTableData
      */
     public function __construct(
         public int $venueId,
-        public int $organizationId,
         public string $name,
         public string $kind,
         public CarbonImmutable $effectiveAt,
@@ -28,7 +27,6 @@ readonly class CreatePriceTableData
 
         return new self(
             venueId: (int) $venue->id,
-            organizationId: (int) $venue->organization_id,
             name: (string) $request->validated('name'),
             kind: (string) $request->validated('kind'),
             effectiveAt: CarbonImmutable::parse($request->validated('effective_at')),

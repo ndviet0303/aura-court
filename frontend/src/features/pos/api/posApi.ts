@@ -44,7 +44,6 @@ export const posApi = {
     customer_id?: number | null
     reservation_id?: number | null
     venue_id?: number | null
-    coupon_code?: string
     discount_amount?: number
     payment_method?: 'cash' | 'qr' | 'wallet'
     cash_tendered?: number
@@ -69,7 +68,6 @@ export const posApi = {
       payment_method: 'cash' | 'qr' | 'wallet'
       payment_reference?: string
       discount_amount?: number
-      coupon_code?: string
       cash_tendered?: number
       rounding_amount?: number
       offline?: boolean

@@ -110,11 +110,6 @@ class Booking extends Model
         return $this->hasMany(Refund::class);
     }
 
-    public function coupon(): BelongsTo
-    {
-        return $this->belongsTo(Coupon::class);
-    }
-
     public function review(): HasOne
     {
         return $this->hasOne(Review::class);

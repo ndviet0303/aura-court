@@ -13,19 +13,17 @@ readonly class PublishPriceTableVersionData
      */
     public function __construct(
         public int $priceTableId,
-        public int $organizationId,
         public ?CarbonImmutable $effectiveAt,
         public array $intervals,
     ) {}
 
     public static function from(PublishPriceTableVersionRequest $request): self
     {
-        $table = $request->table()->loadMissing('venue');
+        $table = $request->table();
         $effectiveAt = $request->validated('effective_at');
 
         return new self(
             priceTableId: (int) $table->id,
-            organizationId: (int) $table->venue->organization_id,
             effectiveAt: $effectiveAt === null ? null : CarbonImmutable::parse($effectiveAt),
             intervals: $request->validatedIntervals(),
         );

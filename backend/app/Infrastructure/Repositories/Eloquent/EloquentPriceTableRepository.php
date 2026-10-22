@@ -66,11 +66,12 @@ class EloquentPriceTableRepository implements PriceTableRepositoryInterface
         return PriceTable::query()->whereKey($id)->lockForUpdate()->first();
     }
 
-    public function courtIdsLinkedFrom(PriceTable $table, CarbonInterface $at): array
+    public function courtIdsLinkedFrom(int $tableId, CarbonInterface $at): array
     {
         $at = CarbonImmutable::instance($at)->utc();
 
-        return $table->links()
+        return CourtPriceTableLink::query()
+            ->where('price_table_id', $tableId)
             ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>', $at))
             ->distinct()
             ->orderBy('court_id')

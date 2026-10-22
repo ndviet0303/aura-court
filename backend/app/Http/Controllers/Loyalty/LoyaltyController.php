@@ -3,11 +3,17 @@
 namespace App\Http\Controllers\Loyalty;
 
 use App\Http\Controllers\Controller;
+use App\Services\Loyalty\CustomerMembershipService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class LoyaltyController extends Controller
 {
+    public function membership(Request $request, CustomerMembershipService $memberships): array
+    {
+        return ['membership' => $memberships->summary($request->user(), $request->header('X-Organization-ID') ?? $request->query('organization_id'))];
+    }
+
     /**
      * Points are no longer spent anywhere: court bookings do not redeem them (design D21) and a debit-only
      * redemption would lose points without credit.

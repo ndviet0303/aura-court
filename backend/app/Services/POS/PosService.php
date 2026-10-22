@@ -3,7 +3,6 @@
 namespace App\Services\POS;
 
 use App\Models\CashShift;
-use App\Models\Coupon;
 use App\Models\MembershipEntitlement;
 use App\Models\OrganizationMember;
 use App\Models\PointLedger;
@@ -22,7 +21,6 @@ use App\Models\User;
 use App\Models\Venue;
 use App\Models\WalletAccount;
 use App\Models\WalletTransaction;
-use App\Services\Booking\DiscountService;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\Loyalty\LoyaltyPointService;
 use App\Services\Payment\WalletAvailabilityService;
@@ -38,7 +36,6 @@ class PosService
     public function __construct(
         private readonly FinancialPostingService $financials,
         private readonly LegacyBookingBackfillService $backfill,
-        private readonly DiscountService $discounts,
         private readonly LoyaltyPointService $loyaltyPoints,
         private readonly WalletAvailabilityService $walletAvailability,
         private readonly PosQrPaymentService $posQr,
@@ -175,7 +172,7 @@ class PosService
         });
     }
 
-    public function calculateQuote(int $organizationId, array $data, ?User $cashier = null): array
+    public function calculateQuote(int $organizationId, array $data): array
     {
         $items = $data['items'] ?? [];
         abort_if($items === [], 422, 'POS order requires at least one item.');
@@ -222,23 +219,7 @@ class PosService
             ];
         }
 
-        // Discounts
-        $couponDiscount = 0;
-        $coupon = null;
-        $couponCode = trim((string) ($data['coupon_code'] ?? ''));
-        if ($couponCode !== '') {
-            $couponCustomer = ! empty($data['customer_id']) ? User::find((int) $data['customer_id']) : null;
-            [$couponVenueId, $couponCourtId] = $this->couponLocationContext($organizationId, $data, $cashier, $reservationId);
-            $coupon = $this->discounts->resolveEligibleCoupon($couponCode, $organizationId, $subtotal, $couponCustomer, $couponVenueId, $couponCourtId);
-
-            $couponDiscount = $coupon->discount_type === 'percent'
-                ? (int) floor($subtotal * min(100, $coupon->discount_value) / 100)
-                : min($subtotal, $coupon->discount_value);
-            if ($coupon->max_discount !== null) {
-                $couponDiscount = min($couponDiscount, $coupon->max_discount);
-            }
-        }
-
+        // Membership is the only POS discount; vouchers are refused at the request (design D12).
         $membershipDiscount = 0;
         $membershipSnapshot = null;
         if (! empty($data['customer_id'])) {
@@ -283,9 +264,7 @@ class PosService
             }
         }
 
-        $this->discounts->assertCombinationAllowed($coupon, $couponDiscount, $membershipDiscount);
-
-        $discount = min($subtotal, $couponDiscount + $membershipDiscount);
+        $discount = min($subtotal, $membershipDiscount);
         $submittedDiscount = (int) ($data['discount_amount'] ?? 0);
         if ($submittedDiscount > $discount && $submittedDiscount > 0) {
             throw ValidationException::withMessages(['discount_amount' => 'Giảm giá không hợp lệ hoặc vượt quá mức giảm giá được cấp trên hệ thống.']);
@@ -338,9 +317,6 @@ class PosService
         return [
             'items' => $calculatedItems,
             'subtotal' => $subtotal,
-            'coupon_id' => $coupon?->id,
-            'promotion_campaign_id' => $coupon?->promotion_campaign_id,
-            'coupon_discount_amount' => $couponDiscount,
             'membership_discount_amount' => $membershipDiscount,
             'membership_snapshot' => $membershipSnapshot,
             'discount_amount' => $discount,
@@ -385,7 +361,7 @@ class PosService
         }
 
         return DB::transaction(function () use ($cashier, $organizationId, $data, $method, $reservationId, $activeShift, $isPendingQr, $qrConnection, $saleVenueId): PosOrder {
-            $quote = $this->calculateQuote($organizationId, $data, $cashier);
+            $quote = $this->calculateQuote($organizationId, $data);
 
             $subtotal = $quote['subtotal'];
             $discount = $quote['discount_amount'];
@@ -459,14 +435,6 @@ class PosService
                 abort_unless($available >= $item['quantity'], 409, "Insufficient stock for {$product->sku}{$tabMsg}");
             }
 
-            $couponCode = trim((string) ($data['coupon_code'] ?? ''));
-            if ($couponCode !== '') {
-                $customer = ! empty($data['customer_id']) ? User::find((int) $data['customer_id']) : null;
-                [$couponVenueId, $couponCourtId] = $this->couponLocationContext($organizationId, $data, $cashier, $reservationId);
-                $reservedCoupon = $this->discounts->reserveCouponUse($couponCode, $organizationId, $subtotal, $customer, $couponVenueId, $couponCourtId);
-                $this->discounts->assertCombinationAllowed($reservedCoupon, $quote['coupon_discount_amount'], $quote['membership_discount_amount']);
-            }
-
             // A QR order's reference is the server-generated transfer code; any client-sent reference is ignored.
             $orderCode = $isPendingQr ? 'AC'.Str::upper(Str::random(18)) : ($data['payment_reference'] ?? "POS-{$cashier->id}-".strtoupper(uniqid()));
             $customer = ! empty($data['customer_id']) ? User::find((int) $data['customer_id']) : null;
@@ -532,11 +500,6 @@ class PosService
                     'vat_breakdown' => $vatBreakdown,
                     'receipt' => $receipt,
                     'expires_at' => $isPendingQr ? $expiresAt->toIso8601String() : null,
-                    'coupon_usage' => $quote['coupon_id'] ? [
-                        'coupon_id' => (int) $quote['coupon_id'],
-                        'promotion_campaign_id' => $quote['promotion_campaign_id'] ? (int) $quote['promotion_campaign_id'] : null,
-                        'status' => $isPendingQr ? 'reserved' : 'consumed',
-                    ] : null,
                     'membership_snapshot' => $quote['membership_snapshot'],
                 ],
             ]);
@@ -654,11 +617,6 @@ class PosService
                 $meta['receipt']['is_paid'] = false;
                 $meta['receipt']['cancelled_at'] = now()->toIso8601String();
                 $meta['receipt']['cancel_reason'] = $reason;
-            }
-            if (($meta['coupon_usage']['status'] ?? null) === 'reserved') {
-                $this->discounts->release(Coupon::query()->find((int) $meta['coupon_usage']['coupon_id']));
-                $meta['coupon_usage']['status'] = 'released';
-                $meta['coupon_usage']['released_at'] = now()->toIso8601String();
             }
 
             $order->update([
@@ -1130,36 +1088,5 @@ class PosService
                 'metadata' => $metadata !== [] ? $metadata : null,
             ]);
         });
-    }
-
-    /** @return array{0: ?int, 1: ?int} */
-    private function couponLocationContext(int $organizationId, array $data, ?User $cashier, ?int $reservationId): array
-    {
-        $venueId = null;
-        $courtId = null;
-
-        if ($reservationId !== null) {
-            $reservation = Reservation::query()->with('court.venue')
-                ->where('organization_id', $organizationId)
-                ->whereKey($reservationId)
-                ->firstOrFail();
-            $courtId = $reservation->court_id ? (int) $reservation->court_id : null;
-            $venueId = $reservation->court?->venue_id ? (int) $reservation->court->venue_id : null;
-            abort_unless($venueId !== null, 404, 'Reservation venue not found.');
-            if (! empty($data['venue_id']) && (int) $data['venue_id'] !== $venueId) {
-                throw ValidationException::withMessages(['venue_id' => 'The selected venue does not match the reservation.']);
-            }
-        } elseif (! empty($data['venue_id'])) {
-            $venueId = (int) $data['venue_id'];
-        }
-
-        if ($venueId === null) {
-            return [null, null];
-        }
-
-        $venue = Venue::query()->where('organization_id', $organizationId)->whereKey($venueId)->firstOrFail();
-        abort_unless($cashier?->canOperateVenue($venue), 403, 'Bạn không được giao cơ sở này.');
-
-        return [$venueId, $courtId];
     }
 }
