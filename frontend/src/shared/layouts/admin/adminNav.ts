@@ -58,6 +58,12 @@ export const navGroups: NavGroup[] = [
         icon: 'location_on',
       },
       {
+        id: 'courts-operations',
+        path: '/admin/operations',
+        labelKey: 'admin.nav.operations',
+        icon: 'how_to_reg',
+      },
+      {
         id: 'courts-affected',
         path: '/admin/affected-bookings',
         labelKey: 'admin.nav.affectedBookings',
@@ -236,6 +242,7 @@ export const OWNER_OR_STAFF_PATHS = [
   '/admin/schedule',
   '/admin/venues',
   '/admin/affected-bookings',
+  '/admin/operations',
   '/admin/pos',
   '/pos',
   '/admin/shifts',

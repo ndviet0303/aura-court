@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Contracts\Repositories\AffectedReservationCaseRepositoryInterface;
 use App\Contracts\Repositories\AuditLogRepositoryInterface;
+use App\Contracts\Repositories\BookingAttendanceAdjustmentRepositoryInterface;
 use App\Contracts\Repositories\BookingAttendanceRepositoryInterface;
 use App\Contracts\Repositories\CourtRepositoryInterface;
 use App\Contracts\Repositories\DisputeRepositoryInterface;
@@ -40,6 +41,7 @@ use App\Contracts\Storage\FileStorageServiceInterface;
 use App\Contracts\Storage\PartnerDocumentStorageInterface;
 use App\Infrastructure\Repositories\Eloquent\EloquentAffectedReservationCaseRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentAuditLogRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentBookingAttendanceAdjustmentRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentBookingAttendanceRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentCourtRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentDisputeRepository;
@@ -118,6 +120,7 @@ class RepositoryServiceProvider extends ServiceProvider
         PlatformFeeVenueRepositoryInterface::class => EloquentPlatformFeeVenueRepository::class,
         PlatformFeeReportRepositoryInterface::class => EloquentPlatformFeeReportRepository::class,
         BookingAttendanceRepositoryInterface::class => EloquentBookingAttendanceRepository::class,
+        BookingAttendanceAdjustmentRepositoryInterface::class => EloquentBookingAttendanceAdjustmentRepository::class,
     ];
 
     public function register(): void

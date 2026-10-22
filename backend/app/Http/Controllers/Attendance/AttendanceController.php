@@ -2,24 +2,33 @@
 
 namespace App\Http\Controllers\Attendance;
 
+use App\Contracts\Repositories\BookingAttendanceAdjustmentRepositoryInterface;
 use App\Contracts\Repositories\BookingAttendanceRepositoryInterface;
+use App\Domain\Attendance\Actions\AdjustReservationAttendance;
 use App\Domain\Attendance\Actions\CheckInReservation;
 use App\Domain\Attendance\Actions\CheckOutReservation;
 use App\Domain\Attendance\Actions\MarkReservationNoShow;
+use App\Domain\Attendance\DTOs\AttendanceAdjustmentData;
 use App\Domain\Attendance\DTOs\AttendanceCommandData;
 use App\Domain\Attendance\DTOs\AttendanceOutcome;
 use App\Domain\Attendance\Rules\AttendanceGuard;
 use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Attendance\AdjustAttendanceRequest;
 use App\Http\Requests\Attendance\AttendanceCommandRequest;
+use App\Http\Resources\Attendance\AttendanceAdjustmentResource;
 use App\Http\Resources\Attendance\OperationalReservationResource;
 use App\Services\Infrastructure\IdempotencyService;
 use App\Services\Payment\ReservationPaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Symfony\Component\HttpFoundation\Response;
 
-/** Module 06: one endpoint per on-site command (D8) and the booking lookup by code behind them (FR-102). */
+/**
+ * Module 06: one endpoint per on-site command (D8), the booking lookup by code behind them (FR-102), and the owner's
+ * adjustments with their history (FR-108, FR-109, D10).
+ */
 class AttendanceController extends Controller
 {
     use ResolvesOrganization;
@@ -50,6 +59,24 @@ class AttendanceController extends Controller
             'reservation' => new OperationalReservationResource($reservation),
             'payment' => $payments->result($reservation),
         ]);
+    }
+
+    public function adjust(AdjustAttendanceRequest $request, AdjustReservationAttendance $action): JsonResponse
+    {
+        $adjustment = $action->execute(AttendanceAdjustmentData::fromRequest($request, (int) $this->organization($request)->id));
+
+        return response()->json([
+            'reservation' => new OperationalReservationResource($adjustment->reservation),
+            'adjustment' => new AttendanceAdjustmentResource($adjustment),
+            'message' => 'Đã điều chỉnh ghi nhận vận hành.',
+        ], 201);
+    }
+
+    public function adjustments(Request $request, string $code, BookingAttendanceRepositoryInterface $attendances, BookingAttendanceAdjustmentRepositoryInterface $adjustments): AnonymousResourceCollection
+    {
+        $reservation = AttendanceGuard::operable($attendances->findByCode($code, (int) $this->organization($request)->id), $request->user());
+
+        return AttendanceAdjustmentResource::collection($adjustments->forReservation((int) $reservation->id));
     }
 
     private function command(AttendanceCommandRequest $request): AttendanceCommandData

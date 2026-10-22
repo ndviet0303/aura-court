@@ -175,6 +175,76 @@ export const ERROR_CODE_MAP: Record<string, { vi: string; en: string; key: strin
     en: 'Package fees cannot be received right now. Please try again later.',
     key: 'errors.packagePaymentUnavailable',
   },
+  CHECK_IN_TOO_EARLY: {
+    vi: 'Chỉ được check-in sớm tối đa 10 phút trước giờ bắt đầu.',
+    en: 'Check-in opens at most 10 minutes before the start time.',
+    key: 'errors.checkInTooEarly',
+  },
+  CHECK_IN_WINDOW_CLOSED: {
+    vi: 'Đơn đã hết thời gian sử dụng; chủ cơ sở điều chỉnh nếu khách đã nhận sân.',
+    en: 'The booked time is over; the owner adjusts the record if the customer took the court.',
+    key: 'errors.checkInWindowClosed',
+  },
+  COURT_OUT_OF_SERVICE: {
+    vi: 'Sân đang ngừng phục vụ, không bàn giao được.',
+    en: 'The court is out of service and cannot be handed over.',
+    key: 'errors.courtOutOfService',
+  },
+  BOOKING_NOT_CONFIRMED: {
+    vi: 'Chỉ thao tác với đơn đã xác nhận.',
+    en: 'Only confirmed bookings can be handled.',
+    key: 'errors.bookingNotConfirmed',
+  },
+  NOT_CHECKED_IN: {
+    vi: 'Đơn chưa check-in nên chưa thể check-out.',
+    en: 'The booking is not checked in, so it cannot be checked out.',
+    key: 'errors.notCheckedIn',
+  },
+  ALREADY_NO_SHOW: {
+    vi: 'Đơn đã được ghi nhận Không đến.',
+    en: 'The booking is already recorded as a no-show.',
+    key: 'errors.alreadyNoShow',
+  },
+  ALREADY_COMPLETED: {
+    vi: 'Đơn đã hoàn thành, không check-in lại.',
+    en: 'The booking is completed and cannot be checked in again.',
+    key: 'errors.alreadyCompleted',
+  },
+  ALREADY_CHECKED_IN: {
+    vi: 'Đơn đã check-in, không ghi nhận Không đến.',
+    en: 'The booking is checked in, so it cannot be a no-show.',
+    key: 'errors.alreadyCheckedIn',
+  },
+  NO_SHOW_TOO_EARLY: {
+    vi: 'Chỉ ghi nhận Không đến sau khi hết thời gian đặt.',
+    en: 'A no-show is recorded only after the booked time is over.',
+    key: 'errors.noShowTooEarly',
+  },
+  BOOKING_NOT_FOUND: {
+    vi: 'Không tìm thấy đơn đặt sân trong tổ chức.',
+    en: 'No booking with this code in the organization.',
+    key: 'errors.bookingNotFound',
+  },
+  VENUE_NOT_ASSIGNED: {
+    vi: 'Bạn không được thao tác tại cơ sở này.',
+    en: 'You are not assigned to this venue.',
+    key: 'errors.venueNotAssigned',
+  },
+  VENUE_NOT_FOUND: {
+    vi: 'Không tìm thấy cơ sở trong tổ chức.',
+    en: 'No such venue in the organization.',
+    key: 'errors.venueNotFound',
+  },
+  AFFECTED_CASE_OPEN: {
+    vi: 'Đơn đang có case ảnh hưởng chưa xử lý xong, không thể ghi vắng mặt.',
+    en: 'The booking has an open affected-booking case, so it cannot be a no-show.',
+    key: 'errors.affectedCaseOpen',
+  },
+  ADJUSTMENT_NO_CHANGE: {
+    vi: 'Trạng thái và thời điểm không thay đổi.',
+    en: 'The status and times did not change.',
+    key: 'errors.adjustmentNoChange',
+  },
 }
 
 export function isRawInfrastructureMessage(msg: string): boolean {

@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Attendance\Actions\SendUsageTimeReminders;
 use App\Domain\Booking\Actions\ExpirePendingBookings;
 use App\Domain\Package\Actions\ExpirePackagePaymentRequests;
 use App\Domain\Package\Actions\SendPackageExpiryReminders;
@@ -76,6 +77,13 @@ Schedule::call(fn () => app(SendPackageExpiryReminders::class)->execute())
     ->withoutOverlapping(10)
     ->everyMinute()
     ->onFailure($reportScheduleFailure('packages:send-expiry-reminders'));
+// 1e. Module 06 D9: web notices for bookings in use that end within 10 minutes or are overdue (BR-131)
+Schedule::call(fn () => app(SendUsageTimeReminders::class)->execute())
+    ->name('attendance:send-usage-time-reminders')
+    ->withoutOverlapping(10)
+    ->everyMinute()
+    ->onFailure($reportScheduleFailure('attendance:send-usage-time-reminders'));
+
 // 1e. Operational stops (design D6): a started stop moves its court or venue to paused/closed. Booking is blocked
 // from the moment the stop is saved, so a late run only delays the status label.
 Schedule::call(fn () => app(ApplyStartedOperationalStops::class)->execute())

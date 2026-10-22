@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\PlatformFeeReportController;
 use App\Http\Controllers\Admin\PlatformFeeRequestController;
 use App\Http\Controllers\Admin\PlatformFeeVenueController;
 use App\Http\Controllers\Attendance\AttendanceController;
+use App\Http\Controllers\Attendance\OperationsController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\SocialEmailController;
 use App\Http\Controllers\Booking\AdvancedBookingController;
@@ -420,6 +421,12 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
         Route::post('reservations/{reservation}/cancel-payment', CancelReservationPaymentController::class);
         Route::post('loyalty/redeem', [LoyaltyController::class, 'redeem'])->middleware('verified');
 
+        // Module 06 D10, BR-134: only the owner corrects an operational record and reads its history.
+        Route::middleware(RequireOrganizationRole::class.':organization_owner')->group(function () {
+            Route::post('attendance/adjustments', [AttendanceController::class, 'adjust']);
+            Route::get('attendance/{code}/adjustments', [AttendanceController::class, 'adjustments']);
+        });
+
         Route::middleware(RequireOrganizationRole::class.':organization_owner,staff')->group(function () {
             Route::post('attendance/check-in', [AttendanceController::class, 'checkIn']);
             Route::post('attendance/check-out', [AttendanceController::class, 'checkOut']);
@@ -429,6 +436,8 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::post('reservations/{reservation}/change-time', [AffectedBookingCommandController::class, 'changeTime']);
             Route::post('reservations/{reservation}/operator-cancel', [AffectedBookingCommandController::class, 'cancel']);
             Route::get('attendance/{code}', [AttendanceController::class, 'show']);
+            Route::get('operations/venues/{venue}/day', [OperationsController::class, 'day']);
+            Route::get('operations/venues/{venue}/in-use', [OperationsController::class, 'inUse']);
 
             Route::get('service-tabs', [ServiceTabController::class, 'index']);
             Route::post('service-tabs', [ServiceTabController::class, 'store']);
