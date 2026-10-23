@@ -32,6 +32,7 @@ export function getNotificationCategory(
   }
   if (
     ev.includes('match') ||
+    ev.includes('chat') ||
     ev.includes('tournament') ||
     ev.includes('social') ||
     ev.includes('resale')
@@ -108,6 +109,9 @@ export function getNotificationMeta(event?: string): NotificationMeta {
       category: 'payment',
       badgeText: 'VÍ HỘI VIÊN',
     }
+  }
+  if (ev.includes('chat_message')) {
+    return { icon: 'chat', color: '#0284c7', category: 'social', badgeText: 'TIN NHẮN' }
   }
   if (ev.includes('matchmaking') || ev.includes('match')) {
     return { icon: 'groups', color: '#0284c7', category: 'social', badgeText: 'KÈO GIAO LƯU' }

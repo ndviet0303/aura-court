@@ -372,6 +372,23 @@ const router = createRouter({
           },
         },
         {
+          path: 'customers',
+          name: 'admin-customers',
+          component: () => import('@/features/customers/views/CustomersView.vue'),
+          meta: {
+            orgRoles: ['organization_owner', 'staff'],
+            titleKey: 'seo.adminCustomersTitle',
+            indexable: false,
+          },
+        },
+        {
+          // Owners, staff and the platform admin; the API decides which conversations each one sees.
+          path: 'messages',
+          name: 'admin-messages',
+          component: () => import('@/features/chat/views/ChatView.vue'),
+          meta: { titleKey: 'seo.messagesTitle', indexable: false },
+        },
+        {
           path: 'organizations/:organizationId(\\d+)/venues/:venueId(\\d+)',
           name: 'admin-venue-detail',
           component: () => import('@/features/admin/views/AdminVenueDetailView.vue'),
@@ -643,6 +660,12 @@ const router = createRouter({
         descriptionKey: 'seo.notificationsDesc',
         indexable: false,
       },
+    },
+    {
+      path: '/messages',
+      name: 'messages',
+      component: () => import('@/features/chat/views/ChatView.vue'),
+      meta: { auth: true, titleKey: 'seo.messagesTitle', indexable: false },
     },
     {
       path: '/invitations',

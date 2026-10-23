@@ -11,7 +11,6 @@ use App\Models\WalletAccount;
 use App\Services\Infrastructure\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class CustomerController extends Controller
 {
@@ -101,79 +100,6 @@ class CustomerController extends Controller
         return response()->json([
             'organization_id' => $org->id,
             'customers' => $customers,
-        ]);
-    }
-
-    public function store(Request $request): JsonResponse
-    {
-        $org = $this->resolveOrganization();
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:160',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:160',
-            'user_id' => 'nullable|integer|exists:users,id',
-            'is_guest' => 'nullable|boolean',
-            'notes' => 'nullable|string',
-            'metadata' => 'nullable|array',
-        ]);
-
-        $userId = $validated['user_id'] ?? null;
-        $phone = $validated['phone'] ?? null;
-
-        // Uniqueness within tenant: user_id
-        if ($userId !== null) {
-            $exists = TenantCustomer::where('organization_id', $org->id)
-                ->where('user_id', $userId)
-                ->exists();
-            if ($exists) {
-                throw ValidationException::withMessages([
-                    'user_id' => ['User is already registered as a customer for this organization.'],
-                ]);
-            }
-        }
-
-        // Uniqueness within tenant: phone
-        if ($phone !== null && trim($phone) !== '') {
-            $exists = TenantCustomer::where('organization_id', $org->id)
-                ->where('phone', trim($phone))
-                ->exists();
-            if ($exists) {
-                throw ValidationException::withMessages([
-                    'phone' => ['A customer with this phone number already exists in this organization.'],
-                ]);
-            }
-        }
-
-        $isGuest = $validated['is_guest'] ?? ($userId === null);
-
-        $customer = TenantCustomer::create([
-            'organization_id' => $org->id,
-            'user_id' => $userId,
-            'is_guest' => $isGuest,
-            'name' => $validated['name'],
-            'phone' => $phone ? trim($phone) : null,
-            'email' => $validated['email'] ?? null,
-            'status' => 'active',
-            'notes' => $validated['notes'] ?? null,
-            'metadata' => $validated['metadata'] ?? null,
-        ]);
-
-        return response()->json([
-            'customer' => $customer->load('user'),
-        ], 201);
-    }
-
-    public function show(TenantCustomer $customer): JsonResponse
-    {
-        $org = $this->resolveOrganization();
-
-        if ($customer->organization_id !== $org->id) {
-            abort(404, 'Customer not found.');
-        }
-
-        return response()->json([
-            'customer' => $customer->load('user'),
         ]);
     }
 }

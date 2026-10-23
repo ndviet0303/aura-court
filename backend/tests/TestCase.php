@@ -17,7 +17,7 @@ abstract class TestCase extends BaseTestCase
         $this->ensureSafeTestDatabase();
     }
 
-    /** Destructive tests run only against a database whose name ends in _test. */
+    /** Destructive tests run only against a database whose name ends in _test (or _test_N for a parallel process). */
     protected function ensureSafeTestDatabase(): void
     {
         if ($this->app->environment('production')) {
@@ -25,7 +25,7 @@ abstract class TestCase extends BaseTestCase
         }
 
         $configuredDb = (string) config('database.connections.pgsql.database');
-        if ($configuredDb === 'booking' || ! str_ends_with($configuredDb, '_test')) {
+        if ($configuredDb === 'booking' || ! preg_match('/_test(_\d+)?$/', $configuredDb)) {
             throw new \RuntimeException("CRITICAL: Test attempted execution against non-test database: '{$configuredDb}'.");
         }
     }

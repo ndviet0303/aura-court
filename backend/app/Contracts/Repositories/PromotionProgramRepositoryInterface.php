@@ -41,6 +41,13 @@ interface PromotionProgramRepositoryInterface
     /** The code exactly as stored (upper case); codes are unique across the platform. */
     public function findCode(string $code): ?VoucherCode;
 
+    /**
+     * FR-111, BR-143: free codes of the venue's private programs running at $at, with their program and its courts.
+     *
+     * @return Collection<int, VoucherCode>
+     */
+    public function giftableCodes(int $venueId, CarbonInterface $at): Collection;
+
     public function coversCourt(PromotionProgram $program, int $courtId): bool;
 
     /**

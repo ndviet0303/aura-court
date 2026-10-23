@@ -49,7 +49,7 @@ function closeMobileSidebar() {
 }
 
 function isItemPermitted(item: NavItem): boolean {
-  if (!auth.user) return true
+  if (!auth.user || item.anyRole) return true
   const userAny = auth.user as any
   const isPlatformAdmin = auth.user.role === 'admin' || userAny.capabilities?.is_platform_admin
   // A platform admin sees organization items only through their own active owner/staff membership.

@@ -23,10 +23,12 @@ use App\Http\Controllers\Booking\AdvancedBookingController;
 use App\Http\Controllers\Booking\AvailabilityController;
 use App\Http\Controllers\Booking\ResaleListingController;
 use App\Http\Controllers\Booking\WaitlistController;
+use App\Http\Controllers\Chat\ConversationController;
 use App\Http\Controllers\Court\CourtController;
 use App\Http\Controllers\Court\CourtLifecycleController;
 use App\Http\Controllers\Court\ReviewController;
 use App\Http\Controllers\Customer\CustomerController;
+use App\Http\Controllers\Customer\VenueCustomerController;
 use App\Http\Controllers\Finance\FinanceController;
 use App\Http\Controllers\Finance\FinanceExceptionController;
 use App\Http\Controllers\Finance\FinancialReconciliationController;
@@ -142,6 +144,14 @@ Route::prefix('v1')->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
+    // Module 07 FR-118, FR-111: chat crosses organizations, so it sits outside the tenant group; access is per side.
+    Route::get('conversations', [ConversationController::class, 'index']);
+    Route::post('conversations', [ConversationController::class, 'store']);
+    Route::get('conversations/{conversation}/messages', [ConversationController::class, 'messages']);
+    Route::post('conversations/{conversation}/messages', [ConversationController::class, 'send']);
+    Route::post('conversations/{conversation}/vouchers', [ConversationController::class, 'gift']);
+    Route::get('venues/{venue}/gift-vouchers', [ConversationController::class, 'giftableVouchers']);
+
     Route::get('auth/me', function (Request $request, WalletPaymentService $walletService) {
         $user = $request->user();
         $wallet = $walletService->getOrCreateWallet($user->id);
@@ -400,9 +410,8 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
     Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
         Route::get('capabilities', [OrganizationController::class, 'capabilities']);
         Route::middleware(RequireOrganizationRole::class.':organization_owner,staff')->group(function () {
+            // POS customer search; FR-110 customer insights are per venue below.
             Route::get('customers', [CustomerController::class, 'index']);
-            Route::post('customers', [CustomerController::class, 'store']);
-            Route::get('customers/{customer}', [CustomerController::class, 'show']);
         });
 
         // Reservation commands are the canonical write path. Each command
@@ -439,6 +448,8 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::get('attendance/{code}', [AttendanceController::class, 'show']);
             Route::get('operations/venues/{venue}/day', [OperationsController::class, 'day']);
             Route::get('operations/venues/{venue}/in-use', [OperationsController::class, 'inUse']);
+            Route::get('operations/venues/{venue}/customers', [VenueCustomerController::class, 'index']);
+            Route::get('operations/venues/{venue}/customers/{user}', [VenueCustomerController::class, 'show']);
 
             Route::get('service-tabs', [ServiceTabController::class, 'index']);
             Route::post('service-tabs', [ServiceTabController::class, 'store']);

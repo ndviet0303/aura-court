@@ -19,6 +19,14 @@ const emit = defineEmits<{
   (e: 'logout'): void
 }>()
 
+const accountLinks = [
+  { to: '/profile', icon: 'person', label: 'nav.profile' },
+  { to: '/notifications', icon: 'notifications', label: 'nav.notifications' },
+  { to: '/messages', icon: 'chat', label: 'nav.messages' },
+  { to: '/booking', icon: 'calendar_month', label: 'nav.history' },
+  { to: '/tournaments', icon: 'emoji_events', label: 'nav.tournaments' },
+]
+
 const isDropdownOpen = ref(false)
 const dropdownRoot = ref<HTMLElement | null>(null)
 
@@ -214,24 +222,15 @@ onBeforeUnmount(() => {
 
         <!-- Navigation Links -->
         <div class="dropdown-links-list">
-          <RouterLink to="/profile" class="dropdown-item" @click="closeDropdown">
-            <span class="material-symbols-outlined item-ico">person</span>
-            <span class="item-label">{{ $t('nav.profile') }}</span>
-          </RouterLink>
-
-          <RouterLink to="/notifications" class="dropdown-item" @click="closeDropdown">
-            <span class="material-symbols-outlined item-ico">notifications</span>
-            <span class="item-label">{{ $t('nav.notifications') }}</span>
-          </RouterLink>
-
-          <RouterLink to="/booking" class="dropdown-item" @click="closeDropdown">
-            <span class="material-symbols-outlined item-ico">calendar_month</span>
-            <span class="item-label">{{ $t('nav.history') }}</span>
-          </RouterLink>
-
-          <RouterLink to="/tournaments" class="dropdown-item" @click="closeDropdown">
-            <span class="material-symbols-outlined item-ico">emoji_events</span>
-            <span class="item-label">{{ $t('nav.tournaments') }}</span>
+          <RouterLink
+            v-for="link in accountLinks"
+            :key="link.to"
+            :to="link.to"
+            class="dropdown-item"
+            @click="closeDropdown"
+          >
+            <span class="material-symbols-outlined item-ico">{{ link.icon }}</span>
+            <span class="item-label">{{ $t(link.label) }}</span>
           </RouterLink>
 
           <RouterLink

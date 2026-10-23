@@ -7,6 +7,7 @@ use App\Contracts\Repositories\AffectedReservationCaseRepositoryInterface;
 use App\Contracts\Repositories\AuditLogRepositoryInterface;
 use App\Contracts\Repositories\BookingAttendanceAdjustmentRepositoryInterface;
 use App\Contracts\Repositories\BookingAttendanceRepositoryInterface;
+use App\Contracts\Repositories\ConversationRepositoryInterface;
 use App\Contracts\Repositories\CourtRepositoryInterface;
 use App\Contracts\Repositories\DisputeRepositoryInterface;
 use App\Contracts\Repositories\FinanceExceptionRepositoryInterface;
@@ -32,6 +33,7 @@ use App\Contracts\Repositories\ReservationRepositoryInterface;
 use App\Contracts\Repositories\StockTransferRepositoryInterface;
 use App\Contracts\Repositories\TenantMembershipPlanRepositoryInterface;
 use App\Contracts\Repositories\UserRepositoryInterface;
+use App\Contracts\Repositories\VenueCustomerRepositoryInterface;
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
 use App\Contracts\Repositories\VenueMonitoringRepositoryInterface;
 use App\Contracts\Repositories\VenuePackageRepositoryInterface;
@@ -45,6 +47,7 @@ use App\Infrastructure\Repositories\Eloquent\EloquentAffectedReservationCaseRepo
 use App\Infrastructure\Repositories\Eloquent\EloquentAuditLogRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentBookingAttendanceAdjustmentRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentBookingAttendanceRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentConversationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentCourtRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentDisputeRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentFinanceExceptionRepository;
@@ -70,6 +73,7 @@ use App\Infrastructure\Repositories\Eloquent\EloquentReservationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentStockTransferRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentTenantMembershipPlanRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentUserRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentVenueCustomerRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueLifecycleRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueMonitoringRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenuePackageRepository;
@@ -125,6 +129,8 @@ class RepositoryServiceProvider extends ServiceProvider
         PlatformFeeReportRepositoryInterface::class => EloquentPlatformFeeReportRepository::class,
         BookingAttendanceRepositoryInterface::class => EloquentBookingAttendanceRepository::class,
         BookingAttendanceAdjustmentRepositoryInterface::class => EloquentBookingAttendanceAdjustmentRepository::class,
+        VenueCustomerRepositoryInterface::class => EloquentVenueCustomerRepository::class,
+        ConversationRepositoryInterface::class => EloquentConversationRepository::class,
         VenueStockRepositoryInterface::class => EloquentVenueStockRepository::class,
         StockTransferRepositoryInterface::class => EloquentStockTransferRepository::class,
     ];
