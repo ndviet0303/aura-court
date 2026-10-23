@@ -44,7 +44,7 @@ class VoucherGiftTest extends TestCase
             ->assertJsonPath('message.voucher.code', 'TRIAN01')
             ->assertJsonPath('message.voucher.percent_bp', 1000)
             ->assertJsonPath('message.voucher.min_rental', 200000)
-            ->assertJsonPath('message.voucher.courts', [$this->court->name])
+            ->assertJsonPath('message.voucher.courts', [$this->court->code])
             ->assertJsonPath('message.body', 'Cảm ơn bạn!');
         $this->assertSame(0, VoucherUse::count());
     }

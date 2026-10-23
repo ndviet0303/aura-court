@@ -31,7 +31,7 @@ trait ServesCustomers
             'organization_id' => $booking->organization_id,
             'reservation_id' => $booking->id,
             'status' => $status,
-            $status === BookingAttendance::STATUS_NO_SHOW ? 'no_show_at' : 'checked_out_at' => $at->copy()->utc(),
+            $status === BookingAttendance::STATUS_NO_SHOW ? 'no_show_at' : 'checked_out_at' => $at,
         ]);
 
         return $booking;

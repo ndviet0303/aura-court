@@ -60,7 +60,7 @@ class CustomerInsightTest extends TestCase
             ->assertJsonPath('data.0.completed_amount', 100000)
             ->assertJsonPath('data.0.usage_rate', 50)
             ->assertJsonPath('data.0.tier', 'bronze')
-            ->assertJsonPath('data.0.last_used_at', $this->at('2027-01-01 00:30')->utc()->toIso8601String());
+            ->assertJsonPath('data.0.last_used_at', $this->at('2027-01-01 00:30')->toIso8601String());
 
         $this->getJson("/api/operations/venues/{$venue->id}/customers?quarter=2027-Q1", $this->tenant($venue))
             ->assertJsonPath('data.0.completed', 1)

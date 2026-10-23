@@ -4,7 +4,7 @@ namespace App\Domain\Customer\Rules;
 
 use Carbon\CarbonImmutable;
 
-/** BR-141: a calendar quarter in venue time, as the UTC range [from, to) that completion times are counted in. */
+/** BR-141: a calendar quarter in venue time, as the range [from, to) that completion times are counted in. Attendance times are stored in the app timezone (Asia/Ho_Chi_Minh), so the range stays in it. */
 final readonly class CustomerQuarter
 {
     private function __construct(public string $label, public CarbonImmutable $from, public CarbonImmutable $to) {}
@@ -18,6 +18,6 @@ final readonly class CustomerQuarter
             : array_map('intval', explode('-Q', $label));
         $start = CarbonImmutable::create($year, ($quarter - 1) * 3 + 1, 1, 0, 0, 0, 'Asia/Ho_Chi_Minh');
 
-        return new self(sprintf('%d-Q%d', $year, $quarter), $start->utc(), $start->addMonths(3)->utc());
+        return new self(sprintf('%d-Q%d', $year, $quarter), $start, $start->addMonths(3));
     }
 }

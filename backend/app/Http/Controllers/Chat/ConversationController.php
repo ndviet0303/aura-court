@@ -87,7 +87,7 @@ class ConversationController extends Controller
             'amount' => $code->program->amount,
             'max_discount' => $code->program->max_discount,
             'min_rental' => $code->program->min_rental,
-            'courts' => $code->program->courts->pluck('name')->all(),
+            'courts' => $code->program->courts->pluck('code')->all(),
             'ends_at' => $code->program->ends_at?->toIso8601String(),
         ])->values()]);
     }
