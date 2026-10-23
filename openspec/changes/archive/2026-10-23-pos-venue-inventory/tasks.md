@@ -28,7 +28,9 @@ Nhánh riêng. Không đổi hợp đồng API kho, nên merge và deploy đư�
   - Booking khác cơ sở → 422, không có payment, movement hay điểm.
 
   Thêm một spec Vitest cho `mapPosShift`.
-- [ ] 1.7 Gate theo `local-test-gates`: Pint, PHPStan 0/5, `tests/Unit/Architecture`, test 1.6, và chuỗi `frontend_check`. Merge `--no-ff` vào main. Hẹn giờ với người dùng rồi push và chạy `glab ci run -b main`.
+- [x] 1.7 Gate theo `local-test-gates`: Pint, PHPStan 0/5, `tests/Unit/Architecture`, test 1.6, và chuỗi `frontend_check`. Merge `--no-ff` vào main. Hẹn giờ với người dùng rồi push và chạy `glab ci run -b main`.
+
+  Ghi chú khi apply: người dùng chọn ship Pha 1 cùng toàn bộ change trong một commit, nên gate, merge và deploy của pha này đi chung với 6.2 và 6.4.
 
 ## 2. Pha 2 – Schema, cutover và repository (D1, D4, D6)
 
@@ -145,5 +147,11 @@ Nhánh riêng. Không đổi hợp đồng API kho, nên merge và deploy đư�
   - Mốc so sánh sau deploy: 34 sản phẩm, tổng tồn 1857; 201 movement, tổng `quantity_delta` 1857.
   - Migration chờ chạy duy nhất là `2026_10_23_000001_create_venue_stocks_and_stock_transfers`; batch lớn nhất hiện là 2, nên batch thủ công kế tiếp là 3.
   - 1 ca đang mở, đã có cơ sở.
-- [ ] 6.4 Backup prod theo quy trình reseed. Merge `--no-ff` vào main. Hẹn giờ với người dùng rồi push và chạy `glab ci run -b main`. Sau deploy, đọc lại prod để xác nhận tổng tồn mỗi sản phẩm không đổi.
-- [ ] 6.5 `openspec validate pos-venue-inventory --strict` đạt, tick task. Archive khi người dùng đồng ý.
+- [x] 6.4 Backup prod theo quy trình reseed. Merge `--no-ff` vào main. Hẹn giờ với người dùng rồi push và chạy `glab ci run -b main`. Sau deploy, đọc lại prod để xác nhận tổng tồn mỗi sản phẩm không đổi.
+
+  Kết quả ngày 2026-10-23:
+  - Backup `booking-bt-server-20261023-0732-before-pos-venue-inventory.dump`.
+  - SQL lấy từ `migrate --pretend`, tập trên hai bản khôi phục local: bản chạy SQL tay và bản chạy `artisan migrate` cho schema và dữ liệu giống hệt.
+  - Chạy trên prod lúc ~07:55 trong một transaction, ghi `migrations` batch 3. Merge `a97abcad` vào main, push, pipeline backend `2978973199` deploy xong 07:59.
+  - Đọc lại prod sau deploy: 34 dòng `venue_stocks`, tổng 1857 (cơ sở 1: 1399, cơ sở 6: 458); 201 movement đều có `venue_id`; tồn từng cơ sở bằng tổng movement của nó.
+- [x] 6.5 `openspec validate pos-venue-inventory --strict` đạt, tick task. Archive khi người dùng đồng ý.
