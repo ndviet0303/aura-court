@@ -25,9 +25,6 @@ const {
   cancelledCount,
   showReviewModal,
   reviewingBooking,
-  reviewRating,
-  reviewBody,
-  submittingReview,
   showQrModal,
   qrBooking,
   load,
@@ -36,7 +33,7 @@ const {
   closeQr,
   openReview,
   closeReview,
-  submitReview,
+  reviewSaved,
 } = useUserBookings()
 
 onMounted(() => {
@@ -122,15 +119,10 @@ onMounted(() => {
 
     <!-- Review Rating Modal -->
     <BookingReviewModal
-      :show="showReviewModal"
+      v-if="showReviewModal && reviewingBooking"
       :booking="reviewingBooking"
-      :rating="reviewRating"
-      :body="reviewBody"
-      :submitting="submittingReview"
       @close="closeReview"
-      @update:rating="reviewRating = $event"
-      @update:body="reviewBody = $event"
-      @submit="submitReview"
+      @saved="reviewSaved"
     />
   </div>
 </template>

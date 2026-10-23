@@ -24,7 +24,7 @@ const isCommunityActive = computed(() => {
   return (
     path.startsWith('/resale') ||
     path.startsWith('/marketplace') ||
-    path.startsWith('/matchmaking') ||
+    path.startsWith('/community') ||
     path.startsWith('/social-tournaments') ||
     path.startsWith('/tournaments')
   )
@@ -180,23 +180,9 @@ const partnerRoute = computed(() =>
             <span class="material-symbols-outlined">emoji_events</span>
             <span>{{ $t('nav.tournaments') }}</span>
           </RouterLink>
-          <RouterLink
-            to="/matchmaking"
-            class="nav-dropdown-item"
-            role="menuitem"
-            @click="closeMenu"
-          >
-            <span class="material-symbols-outlined">sports_tennis</span>
-            <span>{{ $t('nav.matchmaking') }}</span>
-          </RouterLink>
-          <RouterLink
-            to="/matchmaking/create"
-            class="nav-dropdown-item"
-            role="menuitem"
-            @click="closeMenu"
-          >
-            <span class="material-symbols-outlined">add_circle</span>
-            <span>{{ $t('nav.createMatch') }}</span>
+          <RouterLink to="/community" class="nav-dropdown-item" role="menuitem" @click="closeMenu">
+            <span class="material-symbols-outlined">forum</span>
+            <span>{{ $t('nav.communityFeed') }}</span>
           </RouterLink>
         </div>
       </Transition>

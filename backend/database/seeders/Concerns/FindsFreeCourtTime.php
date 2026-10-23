@@ -4,7 +4,6 @@ namespace Database\Seeders\Concerns;
 
 use App\Models\BookingSlot;
 use App\Models\Court;
-use App\Models\MatchPost;
 use App\Models\OperationalStop;
 use App\Models\ReservationSlot;
 use Carbon\Carbon;
@@ -54,7 +53,6 @@ trait FindsFreeCourtTime
 
         return ! $overlapping(BookingSlot::where('court_id', $courtId)->whereIn('status', ['held', 'confirmed']))
             && ! OperationalStop::query()->affectingCourt($courtId, (int) Court::whereKey($courtId)->value('venue_id'))->overlapping($from, $to)->exists()
-            && ! $overlapping(MatchPost::withoutGlobalScope('tenant_isolation')->where('court_id', $courtId)->whereIn('status', ['open', 'active', 'full']))
             && ! $overlapping(ReservationSlot::withoutGlobalScope('tenant_isolation')
                 ->whereIn('status', ['held', 'confirmed'])
                 ->where(fn ($query) => $query->where('court_id', $courtId)

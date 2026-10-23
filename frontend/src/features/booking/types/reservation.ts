@@ -58,11 +58,15 @@ export type LegacyMapping = {
   legacy_status: string
 }
 
+// The booking's review, kept after the customer deletes it (deleted_at) so it cannot be written again.
 export type ReservationReview = {
   id: number
-  reservation_id: number
   rating: number
-  body?: string | null
+  body: string | null
+  images: string[]
+  reply: { body: string; replied_at: string } | null
+  created_at: string
+  deleted_at: string | null
 }
 
 // Contact recorded when the booking was created; later profile edits do not change it.
@@ -83,10 +87,10 @@ export type ReservationPaymentResult = {
   } | null
 }
 
-// Check-in and check-out recorded on site (detail API only).
+// Check-in and check-out recorded on site; the list API carries status and checked_out_at only.
 export type ReservationAttendance = {
   status: string
-  checked_in_at: string | null
+  checked_in_at?: string | null
   checked_out_at: string | null
 }
 

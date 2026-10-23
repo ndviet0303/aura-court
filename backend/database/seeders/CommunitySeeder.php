@@ -3,18 +3,14 @@
 namespace Database\Seeders;
 
 use App\Models\Booking;
+use App\Models\Court;
 use App\Models\FeedComment;
 use App\Models\FeedPost;
-use App\Models\FeedReaction;
 use App\Models\FeedReport;
-use App\Models\Friendship;
-use App\Models\MatchBill;
-use App\Models\MatchInvitation;
-use App\Models\MatchParticipation;
-use App\Models\MatchPost;
 use App\Models\ModerationRecord;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
+use App\Models\Review;
 use App\Models\Tournament;
 use App\Models\TournamentParticipant;
 use App\Models\User;
@@ -29,17 +25,20 @@ use Illuminate\Support\Facades\DB;
 use Ramsey\Uuid\Uuid;
 
 /**
- * Club feed with moderation history, friendships around user@example.com, and the in-app notifications the app would
- * have stored for the seeded bookings, registrations, match invitations and friendships. Everything is read back from
- * what earlier seeders created. Notification rows are inserted in the database-channel shape, so nothing is sent.
+ * The platform-wide feed (D12) with share and matchmaking posts, a pending and a resolved report, owner replies to
+ * reviews, and the in-app notifications the app would have stored for the seeded bookings, registrations and comments.
+ * Everything is read back from what earlier seeders created. Notification rows are inserted in the database-channel
+ * shape, so nothing is sent.
  */
 class CommunitySeeder extends Seeder
 {
     use KeepsWakingHours;
 
-    private const REACTIONS = ['like', 'love', 'like', 'celebrate', 'like', 'fire'];
-
-    private const CROWD_SIZES = [6, 3, 8, 4, 5, 2, 7, 4];
+    private const REPLIES = [
+        'Cảm ơn bạn đã ghé sân và góp ý. Cơ sở sẽ tiếp tục giữ sân sạch và đèn đủ sáng, hẹn gặp lại bạn!',
+        'Cảm ơn bạn! Bên mình đã ghi nhận phần nhà vệ sinh và sẽ bố trí dọn thường xuyên hơn vào giờ cao điểm.',
+        'Rất vui vì bạn hài lòng. Lần tới đặt sớm để giữ khung giờ đẹp nhé!',
+    ];
 
     private Carbon $now;
 
@@ -48,6 +47,8 @@ class CommunitySeeder extends Seeder
     private User $owner;
 
     private User $primary;
+
+    private User $admin;
 
     /** @var Collection<int, User> */
     private Collection $customers;
@@ -63,15 +64,14 @@ class CommunitySeeder extends Seeder
         $this->now = now()->setSecond(0);
         $organization = Organization::where('slug', 'aura-badminton-club')->first();
         $owner = User::where('email', 'owner@demo.auracourt.vn')->first();
+        $admin = User::where('email', 'admin@auracourt.vn')->first();
         $emails = array_merge(['user@example.com'], array_map(fn (int $n) => sprintf('khach%02d@demo.auracourt.vn', $n), range(1, 24)));
         $users = User::whereIn('email', $emails)->get()->keyBy('email');
         $this->customers = collect($emails)->map(fn (string $email) => $users->get($email))->filter()->values();
-        if (! $organization || ! $owner || $this->customers->count() < 12) {
+        if (! $organization || ! $owner || ! $admin || $this->customers->count() < 12) {
             return;
         }
-        [$this->organization, $this->owner, $this->primary] = [$organization, $owner, $this->customers->first()];
-
-        $this->friendships();
+        [$this->organization, $this->owner, $this->admin, $this->primary] = [$organization, $owner, $admin, $this->customers->first()];
 
         $this->tournamentPost($organization, $owner, true);
         $hoangGia = Organization::where('slug', 'hoang-gia-sports')->first();
@@ -79,83 +79,14 @@ class CommunitySeeder extends Seeder
         if ($hoangGia && $hoangGiaOwner) {
             $this->tournamentPost($hoangGia, $hoangGiaOwner, false);
         }
-        $this->ownerSessionPosts();
         $this->primaryPosts();
-        $this->matchRecaps();
         $this->memberPosts();
         $this->persistPosts();
+        $this->reviewReplies();
 
         $this->customerNotifications();
         $this->ownerNotifications();
         $this->persistNotifications();
-    }
-
-    /**
-     * user@example.com befriends people from their finished matches (falling back to the customer list), has two
-     * incoming and one outgoing pending request; other players who shared a finished match become friends in pairs.
-     */
-    private function friendships(): void
-    {
-        $primary = $this->primary;
-        $pairs = [];
-        $befriend = function (?User $from, ?User $to, Carbon $askedAt, ?Carbon $acceptedAt) use (&$pairs): void {
-            $key = $from && $to ? min($from->id, $to->id).'-'.max($from->id, $to->id) : null;
-            if (! $key || $from->id === $to->id || isset($pairs[$key])) {
-                return;
-            }
-            $pairs[$key] = true;
-            Friendship::firstOrNew(['requester_id' => $from->id, 'addressee_id' => $to->id])->forceFill([
-                'status' => $acceptedAt ? Friendship::STATUS_ACCEPTED : Friendship::STATUS_PENDING,
-                'created_at' => $askedAt,
-                'updated_at' => $acceptedAt ?? $askedAt,
-            ])->save();
-        };
-
-        $finished = MatchPost::query()
-            ->with(['participations' => fn ($q) => $q->where('status', 'joined')->orderBy('joined_at')->orderBy('id')])
-            ->where('organization_id', $this->organization->id)
-            ->whereIn('status', ['completed', 'ended'])
-            ->orderBy('starts_at')
-            ->orderBy('id')
-            ->get()
-            // Friend requests follow a few hours after the match, so only matches that ended half a day ago count.
-            ->filter(fn (MatchPost $post) => $post->ends_at->lte($this->now->copy()->subHours(12)));
-
-        $met = [];
-        foreach ($finished as $post) {
-            $ids = $post->participations->pluck('user_id');
-            foreach ($ids->contains($primary->id) ? $ids : [] as $id) {
-                if ($id !== $primary->id && $this->customer($id)) {
-                    $met[$id] ??= $this->local($post->ends_at);
-                }
-            }
-        }
-
-        $friends = collect(array_keys($met))->concat($this->customers->slice(1)->pluck('id'))->unique()->take(4)->values();
-        foreach ($friends as $i => $id) {
-            $askedAt = isset($met[$id])
-                ? $this->awake($met[$id]->copy()->addHours(2 + $i), $met[$id])
-                : $this->now->copy()->subDays(20 - 4 * $i)->setTime(21, 0);
-            $acceptedAt = $this->awake($askedAt->copy()->addHours(1 + $i), $askedAt);
-            // Alternate who asked, so both the request and the "accepted" notification appear for user@example.com.
-            [$from, $to] = $i % 2 === 0 ? [$primary, $this->customer($id)] : [$this->customer($id), $primary];
-            $befriend($from, $to, $askedAt, $acceptedAt);
-        }
-
-        $others = $this->customers->slice(1)->reject(fn (User $user) => $friends->contains($user->id))->values();
-        $befriend($others->get(2), $primary, $this->now->copy()->subDay()->setTime(21, 40), null);
-        $befriend($others->get(5), $primary, $this->awake($this->now->copy()->subHours(5)), null);
-        $befriend($primary, $others->get(8), $this->now->copy()->subDays(2)->setTime(8, 30), null);
-
-        foreach ($finished as $post) {
-            $ids = $post->participations->pluck('user_id')
-                ->reject(fn (int $id) => $id === $primary->id || ! $this->customer($id))
-                ->values();
-            for ($i = 0; $i + 1 < min($ids->count(), 6); $i += 2) {
-                $askedAt = $this->awake($this->local($post->ends_at)->addHours(3 + $i), $post->ends_at);
-                $befriend($this->customer($ids[$i]), $this->customer($ids[$i + 1]), $askedAt, $this->awake($askedAt->copy()->addHours(2), $askedAt));
-            }
-        }
     }
 
     /** Organizer announcement for the tenant's next open tournament whose registration is still running. */
@@ -197,104 +128,35 @@ class CommunitySeeder extends Seeder
                 $at->copy()->addHours(3)->addMinutes(40), ['likes' => [$asker]]);
         }
 
-        $this->addPost($author, $content, $at, $comments, ['organization_id' => $organization->id]);
+        $this->addPost($author, $content, $at, $comments);
     }
 
-    /** The owner announces the upcoming drop-in session and recaps the last finished one with its bill. */
-    private function ownerSessionPosts(): void
-    {
-        $sessions = MatchPost::query()
-            ->with(['court.venue', 'bill', 'participations' => fn ($q) => $q->where('status', 'joined')->orderBy('joined_at')->orderBy('id')])
-            ->where('organization_id', $this->organization->id)
-            ->where('creator_id', $this->owner->id)
-            ->where('is_owner_hosted', true)
-            ->orderBy('id')
-            ->get()
-            ->filter(fn (MatchPost $post) => $post->court?->venue)
-            ->sortBy(fn (MatchPost $post) => $post->starts_at->getTimestamp());
-
-        $open = $sessions->first(fn (MatchPost $post) => $post->status === 'open' && $post->starts_at->gt($this->now));
-        if ($open) {
-            $start = $this->local($open->starts_at);
-            $at = $open->created_at->copy()->addMinutes(15);
-            $comments = $open->participations->take(3)->values()->map(fn (MatchParticipation $p, int $i) => $this->comment(
-                $this->customer($p->user_id),
-                $p->user_id === $this->primary->id
-                    ? 'Mình đã nhận lời mời của CLB, tối đó gặp mọi người nhé!'
-                    : ['Cho mình một suất nhé, lâu rồi chưa giao lưu.', 'Mình đăng ký rồi, hẹn gặp cả nhà!', 'Tính mình một chân nhé!'][$i],
-                $p->joined_at->copy()->addMinutes(3)->max($at->copy()->addMinutes(5 + $i))
-            ))->filter(fn (array $c) => $c['user'])->all();
-            $this->addPost($this->owner, sprintf(
-                '%s %s, CLB mở buổi giao lưu cầu lông tại %s (%s), %s-%s. Có sẵn cầu thi đấu, tiền sân và cầu chia đều theo số người đến chơi. Ai rảnh vào mục Ghép trận để giữ chỗ nhé!',
-                ucfirst(MatchmakingSeeder::when($start)), $start->format('d/m'), $open->court->venue->getTranslation('name', 'vi'),
-                $open->court->code, $start->format('H:i'), $this->local($open->ends_at)->format('H:i')
-            ), $at, $comments);
-        }
-
-        $ended = $sessions->reverse()->first(fn (MatchPost $post) => $post->status === 'ended'
-            && $post->bill?->status === MatchBill::STATUS_FINALIZED && $post->bill->finalized_at?->lte($this->now));
-        if ($ended) {
-            $bill = $ended->bill;
-            $start = $this->local($ended->starts_at);
-            $at = $bill->finalized_at->copy()->addMinutes(10);
-            $late = $ended->participations->firstWhere('attendance_status', 'late');
-            $present = $ended->participations->first(fn (MatchParticipation $p) => $p->attendance_status === 'present');
-            $comments = array_values(array_filter([
-                $late ? $this->comment($this->customer($late->user_id), 'Hôm đó mình đến muộn, cảm ơn mọi người vẫn chờ!', $at->copy()->addMinutes(40)) : null,
-                $present ? $this->comment($this->customer($present->user_id), 'Buổi giao lưu vui quá, lần sau CLB mở tiếp nhé!', $at->copy()->addMinutes(75), ['likes' => [$this->owner]]) : null,
-            ], fn (?array $c) => $c && $c['user']));
-            $this->addPost($this->owner, sprintf(
-                'Cảm ơn %d bạn đã đến giao lưu cầu lông %s %s tại %s. CLB đã chốt hóa đơn %s, mỗi người %s%s, mọi người xem chi tiết trong mục Ghép trận nhé.',
-                $bill->actual_headcount, MatchmakingSeeder::when($start), $start->format('d/m'), $ended->court->venue->getTranslation('name', 'vi'),
-                $this->money($bill->total_amount), $bill->is_approximate ? 'khoảng ' : '', $this->money($bill->per_person_amount)
-            ), $at, $comments);
-        }
-    }
-
-    /** user@example.com looks for a player for their open match (one reply is rude and reported) and posts their entry. */
+    /** user@example.com looks for players for a booked court (one reply is rude and reported) and posts their entry. */
     private function primaryPosts(): void
     {
         $primary = $this->primary;
-        $hosted = MatchPost::query()
-            ->with(['court', 'participations' => fn ($q) => $q->where('status', 'joined')->orderBy('joined_at')->orderBy('id')])
-            ->where('organization_id', $this->organization->id)
-            ->where('creator_id', $primary->id)
-            ->where('status', 'open')
-            ->whereNotNull('court_id')
-            ->orderBy('id')
-            ->get()
-            ->filter(fn (MatchPost $post) => $post->starts_at->gt($this->now) && $post->joined_count < $post->required_participants)
-            ->sortBy(fn (MatchPost $post) => $post->starts_at->getTimestamp())
-            ->first();
-
-        if ($hosted) {
-            [$start, $end] = [$this->local($hosted->starts_at), $this->local($hosted->ends_at)];
-            $at = $hosted->created_at->copy()->addMinutes(5);
-            $joiners = $hosted->participations->reject(fn (MatchParticipation $p) => $p->user_id === $primary->id)->values();
-            $comments = $joiners->take(2)->map(fn (MatchParticipation $p, int $i) => $this->comment(
-                $this->customer($p->user_id),
-                $i === 0 ? sprintf('Mình vào kèo rồi nha, hẹn gặp %s!', MatchmakingSeeder::when($start)) : 'Mình cũng vào rồi, đến sớm khởi động cùng nhé!',
-                $p->joined_at->copy()->addMinutes(2)->max($at->copy()->addMinute())
-            ))->filter(fn (array $c) => $c['user'])->all();
-
-            $avoid = Friendship::where('requester_id', $primary->id)->pluck('addressee_id')
-                ->concat(Friendship::where('addressee_id', $primary->id)->pluck('requester_id'))
-                ->concat($hosted->participations->pluck('user_id'))
-                ->push($this->spammer()->id)
-                ->all();
-            $rude = $this->customers->reverse()->first(fn (User $user) => ! in_array($user->id, $avoid, true));
-            if ($rude) {
-                $comments[] = $this->comment($rude, 'Đánh dở mà cũng đòi kén trình, về tập thêm rồi hẵng rủ kèo.', $at->copy()->addMinutes(50), [
+        $venue = Venue::where('organization_id', $this->organization->id)->orderBy('id')->first();
+        if ($venue) {
+            $playAt = $this->now->copy()->addDays(2)->setTime(19, 0);
+            $at = $this->now->copy()->subDay()->setTime(20, 15);
+            $rude = $this->customers->reverse()->first(fn (User $user) => ! in_array($user->id, [$primary->id, $this->spammer()->id], true));
+            $comments = [
+                $this->comment($this->customers->get(3), 'Mình đánh đôi nam được, tối đó gặp nhé!', $at->copy()->addMinutes(20)),
+                $this->comment($this->customers->get(8), 'Cho mình hỏi trình trung bình là khoảng nào bạn?', $at->copy()->addMinutes(55)),
+                $this->comment($rude, 'Đánh dở mà cũng đòi kén trình, về tập thêm rồi hẵng rủ kèo.', $at->copy()->addMinutes(80), [
                     'report' => ['reporter' => $primary, 'reason' => 'Bình luận chê bai, thiếu tôn trọng người chơi khác.'],
-                ]);
-            }
-
-            $skill = $hosted->min_skill && $hosted->max_skill ? sprintf(' trình %d-%d', $hosted->min_skill, $hosted->max_skill) : '';
+                ]),
+            ];
             $this->addPost($primary, sprintf(
-                'Kèo %s (%s, %s-%s, %s) còn thiếu %d bạn%s. Ai rảnh vào mục Ghép trận tham gia cùng mình nhé!',
-                lcfirst($hosted->title), $start->format('d/m'), $start->format('H:i'), $end->format('H:i'),
-                $hosted->court->code, $hosted->required_participants - $hosted->joined_count, $skill
-            ), $at, $comments);
+                'Tối %s mình đặt sân ở %s, %s-%s, còn thiếu 2 bạn đánh đôi trình trung bình. Ai rảnh nhắn mình nhé!',
+                $playAt->format('d/m'), $venue->getTranslation('name', 'vi'), $playAt->format('H:i'), $playAt->copy()->addHours(2)->format('H:i')
+            ), $at, $comments, [
+                'type' => FeedPost::TYPE_MATCHMAKING,
+                'sport' => 'badminton',
+                'venue_id' => $venue->id,
+                'court_code' => Court::where('venue_id', $venue->id)->orderBy('code')->value('code'),
+                'play_at' => $playAt,
+            ]);
         }
 
         $entry = TournamentParticipant::with('tournament')->where('user_id', $primary->id)->orderBy('created_at')->orderBy('id')->get()
@@ -311,50 +173,21 @@ class CommunitySeeder extends Seeder
                 $i === 0 ? 'Mình cũng đăng ký rồi, tối nào tập chung thì nhắn mình nhé.' : 'Tính mình vào nhóm tập với nhé, mình cũng có tên trong danh sách rồi.',
                 $at->copy()->addMinutes(60 * ($i + 1))->max($p->created_at->copy()->addMinutes(10))
             ))->all();
-            $this->addPost($primary, sprintf('Vừa đăng ký %s! Còn ai trong CLB tham gia không, lập nhóm tập chung trước giải nhé.', $entry->tournament->name), $at, $comments);
+            $this->addPost($primary, sprintf('Vừa đăng ký %s! Còn ai tham gia không, lập nhóm tập chung trước giải nhé.', $entry->tournament->name), $at, $comments);
         }
     }
 
-    /** Hosts of the two latest finished matches thank their players; replies follow the recorded attendance. */
-    private function matchRecaps(): void
-    {
-        $matches = MatchPost::query()
-            ->with(['participations' => fn ($q) => $q->where('status', 'joined')->orderBy('joined_at')->orderBy('id')])
-            ->where('organization_id', $this->organization->id)
-            ->where('status', 'completed')
-            ->where('is_owner_hosted', false)
-            ->orderBy('id')
-            ->get()
-            ->filter(fn (MatchPost $post) => $this->customer($post->creator_id) && isset($post->metadata['sport_name'], $post->metadata['venue_name'])
-                && $post->ends_at->lte($this->now->copy()->subHours(4)))
-            ->sortByDesc(fn (MatchPost $post) => $post->ends_at->getTimestamp())
-            ->take(2);
-
-        foreach ($matches as $match) {
-            $host = $this->customer($match->creator_id);
-            // Hosts post the recap once home, the next morning when the match ran late.
-            $at = $this->awake($this->local($match->ends_at)->addHours(2), $match->ends_at->copy()->addMinutes(30));
-            $replies = ['Đánh vui quá, hẹn kèo sau!', 'Trận hay thật, lần sau cho mình đánh cặp với bạn nhé.', 'Cảm ơn chủ kèo, sân đẹp mà giá cũng hợp lý.'];
-            $comments = $match->participations->reject(fn (MatchParticipation $p) => $p->user_id === $host->id)->take(3)->values()
-                ->map(fn (MatchParticipation $p, int $i) => $this->comment($this->customer($p->user_id), match ($p->attendance_status) {
-                    'late' => 'Mình đến muộn chút, cảm ơn cả nhà đã chờ!',
-                    'absent' => 'Xin lỗi mọi người, mình bận đột xuất nên không đến được.',
-                    default => $replies[$i],
-                }, $at->copy()->addMinutes(35 * ($i + 1)), ['likes' => [$host]]))
-                ->filter(fn (array $c) => $c['user'])->all();
-
-            $this->addPost($host, sprintf(
-                'Cảm ơn cả nhà đã ra sân %s %s vừa rồi ở %s. Trận rất vui, tuần sau mình lại làm kèo nhé!',
-                mb_strtolower($match->metadata['sport_name']), MatchmakingSeeder::when($this->local($match->starts_at)), $match->metadata['venue_name']
-            ), $at, $comments);
-        }
-    }
-
-    /** Everyday member posts across sports, a friends-only post and one spam post the owner hid after a report. */
+    /** Everyday member posts across sports, two of them matchmaking, and one spam post the platform admin hid after a report. */
     private function memberPosts(): void
     {
         $c = fn (int $i) => $this->customers->get($i % $this->customers->count());
-        $saigon = Venue::where('slug', 'aura-central-saigon')->first()?->getTranslation('name', 'vi') ?? 'Aura Sài Gòn';
+        $saigonVenue = Venue::where('slug', 'aura-central-saigon')->first();
+        $saigon = $saigonVenue?->getTranslation('name', 'vi') ?? 'Aura Sài Gòn';
+        $thursday = $this->now->copy()->next(Carbon::THURSDAY)->setTime(19, 0);
+        $matchmaking = [
+            2 => ['type' => FeedPost::TYPE_MATCHMAKING, 'sport' => 'football_5v5', 'venue_id' => $saigonVenue?->id, 'address' => $saigonVenue ? null : 'Quận 1, TP. Hồ Chí Minh', 'play_at' => $thursday],
+            3 => ['type' => FeedPost::TYPE_MATCHMAKING, 'sport' => 'basketball', 'address' => 'Landmark 72, Phạm Hùng, Nam Từ Liêm, Hà Nội', 'play_at' => $this->now->copy()->addDays(3)->setTime(19, 30)],
+        ];
         $posts = [
             [3, 6, '19:40', 'Có ai biết chỗ căng vợt cầu lông uy tín gần Cầu Giấy không ạ? Vợt mình đứt dây mà cuối tuần có kèo rồi.', [
                 [8, 'Mình hay căng ở tiệm gần cổng Đại học Quốc gia, khoảng 30 phút là lấy được.'],
@@ -378,63 +211,64 @@ class CommunitySeeder extends Seeder
                 [4, 'Mình từng chơi chủ công cho đội trường, cho mình thử nhé.'],
             ]],
         ];
-        foreach ($posts as [$author, $days, $time, $content, $replies]) {
+        foreach ($posts as $k => [$author, $days, $time, $content, $replies]) {
             $at = $this->now->copy()->subDays($days)->setTimeFromTimeString($time);
             $this->addPost($c($author), $content, $at, array_map(
                 fn (array $reply, int $i) => $this->comment($c($reply[0]), $reply[1], $at->copy()->addMinutes(45 * ($i + 1))),
                 $replies, array_keys($replies)
-            ));
-        }
-
-        // Friends-only: user@example.com's first friend; only that friend's friends see and react to it.
-        $friendship = Friendship::where('status', Friendship::STATUS_ACCEPTED)
-            ->where(fn ($q) => $q->where('requester_id', $this->primary->id)->orWhere('addressee_id', $this->primary->id))
-            ->orderBy('created_at')->orderBy('id')->first();
-        $friend = $friendship ? $this->customer($friendship->requester_id === $this->primary->id ? $friendship->addressee_id : $friendship->requester_id) : null;
-        if ($friend) {
-            $circle = Friendship::where('status', Friendship::STATUS_ACCEPTED)
-                ->where(fn ($q) => $q->where('requester_id', $friend->id)->orWhere('addressee_id', $friend->id))
-                ->get()
-                ->map(fn (Friendship $f) => $f->requester_id === $friend->id ? $f->addressee_id : $f->requester_id);
-            $at = $this->now->copy()->subDays(2)->setTime(21, 30);
-            $this->addPost($friend, 'Cuối tuần này nhà mình có việc nên nghỉ kèo, các bạn chơi vui nhé. Tuần sau mình mời nước cả hội!', $at,
-                [$this->comment($this->primary, 'Ok bạn, tuần sau gặp nhé!', $at->copy()->addMinutes(25))],
-                ['audience' => FeedPost::AUDIENCE_FRIENDS, 'reactors' => $this->customers->whereIn('id', $circle)->values()]);
+            ), $matchmaking[$k] ?? []);
         }
 
         $this->addPost($this->spammer(), 'THANH LÝ VỢT, GIÀY XÁCH TAY GIÁ RẺ!!! Nhắn tin riêng để nhận mã giảm thêm 50%, số lượng có hạn.',
             $this->now->copy()->subDays(2)->setTime(23, 10), [], ['hide' => [
                 'reporter' => $c(11),
-                'report_reason' => 'Spam quảng cáo bán hàng trong nhóm CLB.',
-                'reason' => 'Quảng cáo bán hàng không liên quan đến hoạt động câu lạc bộ.',
+                'report_reason' => 'Spam quảng cáo bán hàng trên bảng tin.',
+                'reason' => 'Quảng cáo bán hàng không liên quan đến thể thao.',
             ]]);
     }
 
-    /** Inserts posts oldest first (the feed lists by id), then their comments, reactions, reports and moderation. */
+    /** Inserts posts oldest first (the feed lists newest first), then their comments and reports. */
     private function persistPosts(): void
     {
         usort($this->posts, fn (array $a, array $b) => $a['at'] <=> $b['at']);
 
-        foreach ($this->posts as $k => $spec) {
+        foreach ($this->posts as $spec) {
             $at = $spec['at'];
-            $post = FeedPost::firstOrNew(['organization_id' => $spec['organization_id'], 'user_id' => $spec['author']->id, 'content' => $spec['content']]);
-            $post->forceFill(['audience' => $spec['audience'], 'created_at' => $at, 'updated_at' => $at])->save();
+            $post = FeedPost::firstOrNew(['user_id' => $spec['author']->id, 'content' => $spec['content']]);
+            $post->forceFill([
+                'type' => $spec['type'] ?? FeedPost::TYPE_SHARE,
+                'sport' => $spec['sport'] ?? null,
+                'venue_id' => $spec['venue_id'] ?? null,
+                'address' => $spec['address'] ?? null,
+                'court_code' => $spec['court_code'] ?? null,
+                'play_at' => $spec['play_at'] ?? null,
+                'created_at' => $at,
+                'updated_at' => $at,
+            ])->save();
 
             if ($spec['hide']) {
                 $this->hide($post, $spec['hide']);
 
                 continue;
             }
-            $reactors = $spec['reactors'] ?? ($spec['organization_id'] === $this->organization->id
-                ? $this->crowd($k * 5, self::CROWD_SIZES[$k % count(self::CROWD_SIZES)], [$spec['author']->id])
-                : collect());
-            $this->react(FeedPost::class, $post->id, $at, $reactors->reject(fn (User $user) => $user->id === $spec['author']->id), $k);
 
-            foreach ($spec['comments'] as $j => $reply) {
+            foreach ($spec['comments'] as $reply) {
+                if (! $reply['user']) {
+                    continue;
+                }
                 $commentAt = $this->awake($reply['at']->copy()->min($this->cap())->max($at), $at);
                 $comment = FeedComment::firstOrNew(['feed_post_id' => $post->id, 'user_id' => $reply['user']->id, 'content' => $reply['content']]);
                 $comment->forceFill(['created_at' => $commentAt, 'updated_at' => $commentAt])->save();
-                $this->react(FeedComment::class, $comment->id, $commentAt, collect($reply['likes'])->filter(), $k + $j);
+
+                // CreateComment notifies the post's author (D11).
+                if ($spec['author']->id === $this->primary->id && $reply['user']->id !== $this->primary->id) {
+                    $this->addNotification($this->primary, "community.comment.{$comment->id}", OutboxNotification::class, [
+                        'event' => 'community.comment',
+                        'title' => 'Bình luận mới',
+                        'body' => "{$reply['user']->name} đã bình luận: ".mb_strimwidth($reply['content'], 0, 80, '...'),
+                        'action_url' => "/community/posts/{$post->id}",
+                    ], $commentAt, null);
+                }
 
                 if ($reply['report']) {
                     $reportedAt = $this->awake($commentAt->copy()->addMinutes(25)->min($this->cap())->max($commentAt), $commentAt);
@@ -443,7 +277,6 @@ class CommunitySeeder extends Seeder
                         'reportable_type' => FeedComment::class,
                         'reportable_id' => $comment->id,
                     ])->forceFill([
-                        'organization_id' => $spec['organization_id'],
                         'reason' => $reply['report']['reason'],
                         'status' => FeedReport::STATUS_PENDING,
                         'created_at' => $reportedAt,
@@ -454,7 +287,7 @@ class CommunitySeeder extends Seeder
         }
     }
 
-    /** Same records CommunityFeedService::hideContent writes, with the report filed before the owner acted. */
+    /** Same records ModerateReport writes when the platform admin hides a reported post (D14). */
     private function hide(FeedPost $post, array $hide): void
     {
         $reportedAt = $this->awake($post->created_at->copy()->addMinutes(35)->min($this->cap()), $post->created_at);
@@ -463,57 +296,51 @@ class CommunitySeeder extends Seeder
         $post->forceFill([
             'is_hidden' => true,
             'hidden_at' => $hiddenAt,
-            'hidden_by' => $this->owner->id,
+            'hidden_by' => $this->admin->id,
             'hidden_reason' => $hide['reason'],
             'updated_at' => $hiddenAt,
         ])->save();
 
-        FeedReport::firstOrNew([
+        $report = FeedReport::firstOrNew([
             'reporter_id' => $hide['reporter']->id,
             'reportable_type' => FeedPost::class,
             'reportable_id' => $post->id,
-        ])->forceFill([
-            'organization_id' => $post->organization_id,
+        ]);
+        $report->forceFill([
             'reason' => $hide['report_reason'],
             'status' => FeedReport::STATUS_RESOLVED,
-            'reviewed_by' => $this->owner->id,
+            'reviewed_by' => $this->admin->id,
             'reviewed_at' => $hiddenAt,
-            'action_taken' => 'hidden',
+            'action_taken' => FeedReport::ACTION_HIDDEN,
             'created_at' => $reportedAt,
             'updated_at' => $hiddenAt,
         ])->save();
 
         // Moderation records are immutable, so only create the missing one.
-        $record = ModerationRecord::firstOrNew([
-            'organization_id' => $post->organization_id,
-            'target_type' => FeedPost::class,
-            'target_id' => $post->id,
-            'action' => 'content_hidden',
-        ]);
+        $record = ModerationRecord::firstOrNew(['target_type' => FeedPost::class, 'target_id' => $post->id, 'action' => 'hide']);
         if (! $record->exists) {
             $record->forceFill([
-                'actor_id' => $this->owner->id,
+                'actor_id' => $this->admin->id,
                 'reason' => $hide['reason'],
-                'metadata' => ['hidden_by' => $this->owner->name, 'hidden_at' => $hiddenAt->toIso8601String()],
+                'metadata' => ['report_id' => $report->id],
                 'created_at' => $hiddenAt,
             ])->save();
         }
     }
 
-    private function react(string $type, int $id, Carbon $from, Collection $users, int $offset): void
+    /** FR-117: the owner answers the club's three latest reviews a few hours after each was posted. */
+    private function reviewReplies(): void
     {
-        foreach ($users->values() as $j => $user) {
-            $at = $this->awake($from->copy()->addMinutes(17 * ($j + 1))->min($this->cap())->max($from), $from);
-            FeedReaction::firstOrNew([
-                'reactable_type' => $type,
-                'reactable_id' => $id,
-                'user_id' => $user->id,
-                'reaction_type' => self::REACTIONS[($offset + $j) % count(self::REACTIONS)],
-            ])->forceFill(['created_at' => $at, 'updated_at' => $at])->save();
+        $venueIds = Venue::where('organization_id', $this->organization->id)->pluck('id');
+        $reviews = Review::whereIn('venue_id', $venueIds)->where('is_published', true)->where('created_at', '<=', $this->cap())
+            ->orderByDesc('created_at')->orderByDesc('id')->take(count(self::REPLIES))->get();
+        foreach ($reviews->values() as $i => $review) {
+            $repliedAt = $this->awake($review->created_at->copy()->addHours(3)->min($this->cap()), $review->created_at);
+            $review->forceFill(['reply_body' => self::REPLIES[$i], 'replied_by' => $this->owner->id, 'replied_at' => $repliedAt])->save();
         }
     }
 
-    /** What the app stored for user@example.com: checkout and expiry notices, registrations, invitations, friendships. */
+    /** What the app stored for user@example.com: checkout and expiry notices and tournament registrations. */
     private function customerNotifications(): void
     {
         $primary = $this->primary;
@@ -560,47 +387,9 @@ class CommunitySeeder extends Seeder
                 'event' => 'tournament.participant_registered',
             ], $entry->created_at, $entry->created_at->copy()->addMinutes(9));
         }
-
-        foreach ($this->invitations()->where('invitee_id', $primary->id) as $invitation) {
-            $post = $invitation->post;
-            $this->addNotification($primary, "match_invitation/{$invitation->id}", OutboxNotification::class, [
-                'title' => 'Lời mời tham gia trận đấu',
-                'body' => "{$post->creator->name} đã mời bạn tham gia trận đấu: {$post->title}",
-                'type' => 'match_invitation',
-                'source_id' => $post->id,
-                'invitation_id' => $invitation->id,
-                'match_id' => $post->id,
-                'event' => 'social.match_invitation',
-            ], $invitation->created_at, $invitation->responded_at);
-        }
-
-        $friendships = Friendship::with(['requester', 'addressee'])
-            ->where(fn ($q) => $q->where('requester_id', $primary->id)->orWhere('addressee_id', $primary->id))
-            ->orderBy('created_at')->orderBy('id')->get();
-        foreach ($friendships as $friendship) {
-            if ($friendship->addressee_id === $primary->id) {
-                $this->addNotification($primary, "friendship_request/{$friendship->id}", OutboxNotification::class, [
-                    'title' => 'Lời mời kết bạn mới',
-                    'body' => "{$friendship->requester->name} đã gửi lời mời kết bạn cho bạn.",
-                    'type' => 'friendship_request',
-                    'source_id' => $friendship->id,
-                    'requester_id' => $friendship->requester_id,
-                    'event' => 'social.friendship_request',
-                ], $friendship->created_at, $friendship->status === Friendship::STATUS_PENDING ? null : $friendship->updated_at);
-            } elseif ($friendship->status === Friendship::STATUS_ACCEPTED) {
-                $this->addNotification($primary, "friendship_accepted/{$friendship->id}", OutboxNotification::class, [
-                    'title' => 'Lời mời kết bạn được chấp nhận',
-                    'body' => "{$friendship->addressee->name} đã đồng ý lời mời kết bạn của bạn.",
-                    'type' => 'friendship_accepted',
-                    'source_id' => $friendship->id,
-                    'friend_id' => $friendship->addressee_id,
-                    'event' => 'social.friendship_accepted',
-                ], $friendship->updated_at, $friendship->updated_at->copy()->addMinutes(30));
-            }
-        }
     }
 
-    /** What the app stored for owner@: staff who joined the club, and replies to the owner's match invitations. */
+    /** What the app stored for owner@: staff who joined the club. */
     private function ownerNotifications(): void
     {
         $staff = OrganizationMember::with('user')
@@ -619,22 +408,6 @@ class CommunitySeeder extends Seeder
                 'body' => "{$member->user->name} ({$member->user->email}) đã chấp nhận lời mời tham gia tổ chức.",
                 'action_url' => '/admin/staff',
             ], $at, $at->copy()->addMinutes(45));
-        }
-
-        $replies = $this->invitations()->filter(fn (MatchInvitation $invitation) => $invitation->responded_at
-            && in_array($invitation->status, ['accepted', 'declined'], true)
-            && $invitation->post->creator_id === $this->owner->id);
-        foreach ($replies as $invitation) {
-            $post = $invitation->post;
-            $this->addNotification($this->owner, "match_invitation_response/{$invitation->id}/{$invitation->status}", OutboxNotification::class, [
-                'title' => 'Phản hồi lời mời trận đấu',
-                'body' => "{$invitation->invitee->name} đã ".($invitation->status === 'accepted' ? 'chấp nhận' : 'từ chối')." lời mời tham gia trận đấu: {$post->title}",
-                'type' => 'match_invitation_response',
-                'source_id' => $post->id,
-                'invitation_id' => $invitation->id,
-                'status' => $invitation->status,
-                'event' => 'social.match_invitation_response',
-            ], $invitation->responded_at, $invitation->invitee_id === $this->primary->id ? null : $invitation->responded_at->copy()->addHour());
         }
     }
 
@@ -673,47 +446,21 @@ class CommunitySeeder extends Seeder
         ];
     }
 
-    /** @return Collection<int, MatchInvitation> */
-    private function invitations(): Collection
-    {
-        return MatchInvitation::with(['post.creator', 'invitee'])
-            ->where('organization_id', $this->organization->id)
-            ->where('created_at', '<=', $this->now)
-            ->orderBy('created_at')
-            ->orderBy('id')
-            ->get()
-            ->filter(fn (MatchInvitation $invitation) => $invitation->post?->creator && $invitation->invitee);
-    }
-
     /** @param list<array<string, mixed>> $comments */
     private function addPost(User $author, string $content, Carbon $at, array $comments = [], array $extra = []): void
     {
         $this->posts[] = $extra + [
-            'organization_id' => $this->organization->id,
             'author' => $author,
             'content' => $content,
             'at' => $at->copy()->min($this->cap()),
-            'audience' => FeedPost::AUDIENCE_ORGANIZATION,
             'comments' => $comments,
-            'reactors' => null,
             'hide' => null,
         ];
     }
 
     private function comment(?User $user, string $content, Carbon $at, array $extra = []): array
     {
-        return $extra + ['user' => $user, 'content' => $content, 'at' => $at, 'likes' => [], 'report' => null];
-    }
-
-    /** Customers from a rotating offset, so each post draws a different crowd. */
-    private function crowd(int $offset, int $count, array $exclude): Collection
-    {
-        $offset %= $this->customers->count();
-
-        return $this->customers->slice($offset)->concat($this->customers->take($offset))
-            ->reject(fn (User $user) => in_array($user->id, $exclude, true))
-            ->take($count)
-            ->values();
+        return $extra + ['user' => $user, 'content' => $content, 'at' => $at, 'report' => null];
     }
 
     private function spammer(): User
@@ -726,18 +473,8 @@ class CommunitySeeder extends Seeder
         return $id ? $this->customers->firstWhere('id', $id) : null;
     }
 
-    private function money(int $amount): string
-    {
-        return number_format($amount, 0, ',', '.').' ₫';
-    }
-
     private function cap(): Carbon
     {
         return $this->now->copy()->subMinute();
-    }
-
-    private function local(Carbon $at): Carbon
-    {
-        return $at->copy()->setTimezone(config('app.timezone'));
     }
 }

@@ -13,7 +13,7 @@ import CourtReviewsSection from '../components/detail/CourtReviewsSection.vue'
 import CourtStickyBookingCard from '../components/detail/CourtStickyBookingCard.vue'
 import CourtGalleryModal from '../components/detail/CourtGalleryModal.vue'
 
-const { court, reviews, reviewsLoading, isGalleryOpen, basePrice } = useCourtDetail()
+const { court, isGalleryOpen, basePrice } = useCourtDetail()
 const { t } = useI18n()
 const auth = useAuthStore()
 const startChat = useStartChat()
@@ -46,7 +46,7 @@ async function messageVenue() {
         <CourtAmenitiesGrid :amenities="court.amenities" />
 
         <!-- Player Reviews & Ratings Section -->
-        <CourtReviewsSection :court="court" :reviews="reviews" :loading="reviewsLoading" />
+        <CourtReviewsSection :court="court" />
       </div>
 
       <!-- Right Column (Sticky Booking Widget) -->

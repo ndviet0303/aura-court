@@ -2,20 +2,25 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['organization_id', 'actor_id', 'target_type', 'target_id', 'action', 'reason', 'metadata'])]
+/** FR-132: what the platform admin decided on reported content, and why; never changed afterwards. */
+#[Fillable(['actor_id', 'target_type', 'target_id', 'action', 'reason', 'metadata'])]
 class ModerationRecord extends Model
 {
-    use BelongsToTenant;
-
     public $timestamps = false;
 
     protected function casts(): array
     {
         return ['metadata' => 'array', 'created_at' => 'datetime'];
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function actor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'actor_id');
     }
 
     protected static function booted(): void

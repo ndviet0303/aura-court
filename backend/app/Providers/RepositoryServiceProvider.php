@@ -7,6 +7,8 @@ use App\Contracts\Repositories\AffectedReservationCaseRepositoryInterface;
 use App\Contracts\Repositories\AuditLogRepositoryInterface;
 use App\Contracts\Repositories\BookingAttendanceAdjustmentRepositoryInterface;
 use App\Contracts\Repositories\BookingAttendanceRepositoryInterface;
+use App\Contracts\Repositories\CommunityFeedRepositoryInterface;
+use App\Contracts\Repositories\ContentModerationRepositoryInterface;
 use App\Contracts\Repositories\ConversationRepositoryInterface;
 use App\Contracts\Repositories\CourtRepositoryInterface;
 use App\Contracts\Repositories\DisputeRepositoryInterface;
@@ -30,6 +32,7 @@ use App\Contracts\Repositories\PromotionProgramRepositoryInterface;
 use App\Contracts\Repositories\ReconciliationRepositoryInterface;
 use App\Contracts\Repositories\RecurringContractRepositoryInterface;
 use App\Contracts\Repositories\ReservationRepositoryInterface;
+use App\Contracts\Repositories\ReviewRepositoryInterface;
 use App\Contracts\Repositories\StockTransferRepositoryInterface;
 use App\Contracts\Repositories\TenantMembershipPlanRepositoryInterface;
 use App\Contracts\Repositories\UserRepositoryInterface;
@@ -47,6 +50,8 @@ use App\Infrastructure\Repositories\Eloquent\EloquentAffectedReservationCaseRepo
 use App\Infrastructure\Repositories\Eloquent\EloquentAuditLogRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentBookingAttendanceAdjustmentRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentBookingAttendanceRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentCommunityFeedRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentContentModerationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentConversationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentCourtRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentDisputeRepository;
@@ -70,6 +75,7 @@ use App\Infrastructure\Repositories\Eloquent\EloquentPromotionProgramRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReconciliationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentRecurringContractRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReservationRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentReviewRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentStockTransferRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentTenantMembershipPlanRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentUserRepository;
@@ -131,6 +137,9 @@ class RepositoryServiceProvider extends ServiceProvider
         BookingAttendanceAdjustmentRepositoryInterface::class => EloquentBookingAttendanceAdjustmentRepository::class,
         VenueCustomerRepositoryInterface::class => EloquentVenueCustomerRepository::class,
         ConversationRepositoryInterface::class => EloquentConversationRepository::class,
+        CommunityFeedRepositoryInterface::class => EloquentCommunityFeedRepository::class,
+        ContentModerationRepositoryInterface::class => EloquentContentModerationRepository::class,
+        ReviewRepositoryInterface::class => EloquentReviewRepository::class,
         VenueStockRepositoryInterface::class => EloquentVenueStockRepository::class,
         StockTransferRepositoryInterface::class => EloquentStockTransferRepository::class,
     ];

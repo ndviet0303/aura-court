@@ -3,7 +3,6 @@
 namespace App\Services\Reservation;
 
 use App\Models\Court;
-use App\Models\MatchPost;
 use App\Models\Reservation;
 use App\Models\ReservationSlot;
 use App\Models\Venue;
@@ -15,9 +14,9 @@ use Illuminate\Database\Eloquent\Collection;
  * BR-38, the single query for bookings affected by an operational change (design D7). A booking is affected while it
  * is held before its deadline, confirmed or in use, not completed or no-show, and has a slot that ends after now and
  * either overlaps the stop window (D5: a stop without a recorded end runs forever; the expected end never counts) or
- * no longer lies within the effective service time. Owner-hosted sessions on the same courts and times come with it.
+ * no longer lies within the effective service time.
  *
- * Results are arrays {reservations: Collection<int, Reservation>, sessions: Collection<int, MatchPost>} keyed by id.
+ * Results are arrays {reservations: Collection<int, Reservation>} keyed by id.
  */
 class AffectedReservationQuery
 {
@@ -43,37 +42,33 @@ class AffectedReservationQuery
         $window = fn (Builder $query) => $query->where('ends_at', '>', $after)
             ->when($until, fn (Builder $q) => $q->where('starts_at', '<', $until->copy()->utc()));
 
-        return $this->result($window($this->slots($courtIds))->get(), $window($this->sessions($courtIds))->get());
+        return $this->result($window($this->slots($courtIds))->get());
     }
 
     /**
-     * Future bookings and sessions on these courts that are not entirely within the effective service time.
+     * Future bookings on these courts that are not entirely within the effective service time.
      *
      * @param  list<int>  $courtIds
      */
     public function outsideService(array $courtIds): array
     {
         $now = now()->utc();
-        $closed = fn (ReservationSlot|MatchPost $row): bool => $row->court instanceof Court && ! $this->calendar->isOpen($row->court, $row->starts_at, $row->ends_at);
+        $closed = fn (ReservationSlot $row): bool => $row->court instanceof Court && ! $this->calendar->isOpen($row->court, $row->starts_at, $row->ends_at);
         // ponytail: one calendar lookup per future slot; preload the calendar per court and date if venues hold thousands.
         $slots = $this->slots($courtIds)->where('ends_at', '>', $now)->with('court.venue')->get()->filter($closed);
-        $sessions = $this->sessions($courtIds)->where('ends_at', '>', $now)->with('court.venue')->get()->filter($closed);
 
-        return $this->result($slots, $sessions);
+        return $this->result($slots);
     }
 
     /** What $after lists that $before did not: bookings that are no longer within the service time. */
     public function without(array $after, array $before): array
     {
-        return [
-            'reservations' => $after['reservations']->diffKeys($before['reservations']),
-            'sessions' => $after['sessions']->diffKeys($before['sessions']),
-        ];
+        return ['reservations' => $after['reservations']->diffKeys($before['reservations'])];
     }
 
     public function isEmpty(array $affected): bool
     {
-        return $affected['reservations']->isEmpty() && $affected['sessions']->isEmpty();
+        return $affected['reservations']->isEmpty();
     }
 
     /** The preview and 409 body. A platform admin's suspension preview leaves out customer contacts. */
@@ -93,14 +88,6 @@ class AffectedReservationQuery
                 'customer_name' => $reservation->booker['name'] ?? $reservation->user?->name,
                 'customer_phone' => $reservation->booker['phone'] ?? $reservation->user?->phone,
             ] : []))->all(),
-            'sessions' => $affected['sessions']->values()->map(fn (MatchPost $session): array => [
-                'match_post_id' => $session->id,
-                'title' => $session->title,
-                'court_id' => $session->court_id,
-                'court_code' => $session->court?->code,
-                'starts_at' => $session->starts_at?->toIso8601String(),
-                'ends_at' => $session->ends_at?->toIso8601String(),
-            ])->all(),
         ];
     }
 
@@ -121,15 +108,6 @@ class AffectedReservationQuery
             ->whereHas('reservation', fn (Builder $reservation) => $this->affectable($reservation->withoutGlobalScope('tenant_isolation')));
     }
 
-    /** @return Builder<MatchPost> */
-    private function sessions(array $courtIds): Builder
-    {
-        return MatchPost::query()->withoutGlobalScope('tenant_isolation')
-            ->whereIn('court_id', $courtIds)
-            ->where('is_owner_hosted', true)
-            ->whereIn('status', ['open', 'active']);
-    }
-
     /** Held before its deadline, confirmed or in use; never cancelled, expired, completed or no-show. */
     private function affectable(Builder $query): Builder
     {
@@ -141,7 +119,7 @@ class AffectedReservationQuery
                 ->orWhereNotIn('metadata->operational_status', ['completed', 'no_show']));
     }
 
-    private function result(Collection $slots, Collection $sessions): array
+    private function result(Collection $slots): array
     {
         $reservations = Reservation::query()->withoutGlobalScope('tenant_isolation')
             ->with([
@@ -153,9 +131,6 @@ class AffectedReservationQuery
             ->orderBy('id')
             ->get();
 
-        return [
-            'reservations' => $reservations->keyBy('id'),
-            'sessions' => $sessions->loadMissing('court:id,code')->sortBy('id')->keyBy('id'),
-        ];
+        return ['reservations' => $reservations->keyBy('id')];
     }
 }

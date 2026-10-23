@@ -1,5 +1,5 @@
 import type { OperatingStatus, SportType, VenueSuspension } from '@/features/court/types/court'
-import type { AffectedBooking, AffectedSession } from './affected'
+import type { AffectedBooking } from './affected'
 import type { WeeklyHours } from './venueDetail'
 
 type LocalizedName = string | Record<string, string>
@@ -68,7 +68,6 @@ export type SuspensionPreview = {
   court_count: number
   already_suspended: boolean
   bookings: AffectedBooking[]
-  sessions: AffectedSession[]
 }
 
 /** MonitoredVenueResource (list). */

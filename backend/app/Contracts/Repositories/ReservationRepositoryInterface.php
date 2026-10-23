@@ -4,7 +4,6 @@ namespace App\Contracts\Repositories;
 
 use App\Models\Reservation;
 use App\Models\ReservationSlot;
-use App\Models\Review;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -13,11 +12,6 @@ use Illuminate\Database\Eloquent\Collection;
  */
 interface ReservationRepositoryInterface
 {
-    /** The caller's reservation by code, with slots, legacy mapping and review loaded. */
-    public function findOwnedByCode(int $userId, string $code): ?Reservation;
-
-    public function createReview(array $attributes): Review;
-
     public function paginateUserReservations(int $userId, int $perPage = 20): LengthAwarePaginator;
 
     /**

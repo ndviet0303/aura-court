@@ -23,7 +23,6 @@ class DatabaseSeeder extends Seeder
             PosSalesSeeder::class,
             MembershipPlanSeeder::class,
             TournamentSeeder::class,
-            MatchmakingSeeder::class,
             CommunitySeeder::class,
             DisputeFinanceSeeder::class,
             MarketplaceSeeder::class,

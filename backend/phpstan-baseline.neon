@@ -187,12 +187,6 @@ parameters:
 			path: app/Domain/Partner/Actions/SubmitPartnerApplication.php
 
 		-
-			message: '#^Parameter \#1 \$creator of method App\\Services\\Social\\MatchService\:\:createPost\(\) expects App\\Models\\User, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domain/Social/Actions/CreateMatchPost.php
-
-		-
 			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\RecurringSeries\|null given\.$#'
 			identifier: argument.type
 			count: 2
@@ -479,72 +473,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Http/Controllers/Reservation/ReservationController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$organization_id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Http/Controllers/Social/CommunityFeedController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Social\\CommunityFeedController\:\:reportComment\(\) should return Illuminate\\Http\\JsonResponse but returns Symfony\\Component\\HttpFoundation\\Response\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Social/CommunityFeedController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Social\\CommunityFeedController\:\:reportPost\(\) should return Illuminate\\Http\\JsonResponse but returns Symfony\\Component\\HttpFoundation\\Response\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Social/CommunityFeedController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Social\\CommunityFeedController\:\:store\(\) should return Illuminate\\Http\\JsonResponse but returns Symfony\\Component\\HttpFoundation\\Response\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Social/CommunityFeedController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Social\\CommunityFeedController\:\:storeComment\(\) should return Illuminate\\Http\\JsonResponse but returns Symfony\\Component\\HttpFoundation\\Response\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Social/CommunityFeedController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Social\\CommunityFeedController\:\:update\(\) should return Illuminate\\Http\\JsonResponse but returns Symfony\\Component\\HttpFoundation\\Response\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Social/CommunityFeedController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Social\\CommunityFeedController\:\:updateComment\(\) should return Illuminate\\Http\\JsonResponse but returns Symfony\\Component\\HttpFoundation\\Response\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Social/CommunityFeedController.php
-
-		-
-			message: '#^Parameter \#1 \$post of method App\\Services\\Social\\CommunityFeedService\:\:canViewPost\(\) expects App\\Models\\FeedPost, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Social/CommunityFeedController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Social\\FriendshipController\:\:accept\(\) should return Illuminate\\Http\\JsonResponse but returns Symfony\\Component\\HttpFoundation\\Response\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Social/FriendshipController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Social\\FriendshipController\:\:decline\(\) should return Illuminate\\Http\\JsonResponse but returns Symfony\\Component\\HttpFoundation\\Response\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Social/FriendshipController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Social\\FriendshipController\:\:sendRequest\(\) should return Illuminate\\Http\\JsonResponse but returns Symfony\\Component\\HttpFoundation\\Response\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Social/FriendshipController.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:active\(\)\.$#'
@@ -1205,12 +1133,6 @@ parameters:
 			identifier: booleanAnd.leftAlwaysTrue
 			count: 1
 			path: app/Models/Court.php
-
-		-
-			message: '#^Method App\\Models\\Friendship\:\:otherUser\(\) should return App\\Models\\User\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
-			identifier: return.type
-			count: 2
-			path: app/Models/Friendship.php
 
 		-
 			message: '#^Left side of && is always true\.$#'
@@ -1949,126 +1871,6 @@ parameters:
 			identifier: return.type
 			count: 1
 			path: app/Services/Reservation/SlotSelectionPolicy.php
-
-		-
-			message: '#^Offset ''email'' on array\{id\: int\<0, max\>, name\: string, email\: string, phone\: string\|null, avatar_url\: string\|null, play_level\: string\|null, friendship_id\: int\<0, max\>, friendship_since\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 1
-			path: app/Services/Social/FriendshipService.php
-
-		-
-			message: '#^Offset ''name'' on array\{id\: int\<0, max\>, name\: string, email\: string, phone\: string\|null, avatar_url\: string\|null, play_level\: string\|null, friendship_id\: int\<0, max\>, friendship_since\: string\|null\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 1
-			path: app/Services/Social/FriendshipService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$creator_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$version\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:isFinalized\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Method App\\Services\\Social\\MatchService\:\:getBill\(\) should return App\\Models\\MatchBill\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Negated boolean expression is always true\.$#'
-			identifier: booleanNot.alwaysTrue
-			count: 1
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\Court\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Parameter \#1 \$post of method App\\Services\\Social\\MatchService\:\:join\(\) expects App\\Models\\MatchPost, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Strict comparison using \!\=\= between int\<0, max\> and null will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 1
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>court" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>ends_at" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>organization_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 3
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>starts_at" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>version" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 2
-			path: app/Services/Social/MatchService.php
-
-		-
-			message: '#^Call to function method_exists\(\) with App\\Models\\MatchPost and ''participations'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Services/Social/ReputationService.php
-
-		-
-			message: '#^Call to function method_exists\(\) with App\\Models\\Reservation and ''entitlements'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Services/Social/ReputationService.php
-
-		-
-			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\User\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/Social/ReputationService.php
 
 		-
 			message: '#^Method App\\Services\\Social\\ResalePriceCap\:\:onPage\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, array\<string, mixed\>\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, array\{id\?\: int, organization_id\?\: int, user_id\?\: int, court_id\?\: int, price_quote_id\?\: int\|null, code\?\: string, status\?\: string, currency\?\: string, \.\.\.\}\>\.$#'

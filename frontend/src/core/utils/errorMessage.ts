@@ -275,6 +275,56 @@ export const ERROR_CODE_MAP: Record<string, { vi: string; en: string; key: strin
     en: 'The code is not a running private voucher of this venue, or it is already used.',
     key: 'errors.voucherNotGiftable',
   },
+  FEED_NOT_AUTHOR: {
+    vi: 'Chỉ tác giả mới được sửa hoặc xoá nội dung này.',
+    en: 'Only the author can edit or delete this content.',
+    key: 'errors.feedNotAuthor',
+  },
+  REPORT_DUPLICATE: {
+    vi: 'Bạn đã báo cáo nội dung này và báo cáo đang chờ xử lý.',
+    en: 'You already reported this content and the report is pending.',
+    key: 'errors.reportDuplicate',
+  },
+  REPORT_OWN_CONTENT: {
+    vi: 'Bạn không thể báo cáo nội dung của chính mình.',
+    en: 'You cannot report your own content.',
+    key: 'errors.reportOwnContent',
+  },
+  CONTENT_NOT_HIDDEN: {
+    vi: 'Nội dung không ở trạng thái ẩn nên không cần khôi phục.',
+    en: 'The content is not hidden, so there is nothing to restore.',
+    key: 'errors.contentNotHidden',
+  },
+  REVIEW_NOT_COMPLETED: {
+    vi: 'Chỉ đánh giá được đơn đã hoàn thành (đã check-out).',
+    en: 'Only completed (checked-out) bookings can be reviewed.',
+    key: 'errors.reviewNotCompleted',
+  },
+  REVIEW_WINDOW_CLOSED: {
+    vi: 'Đã quá 7 ngày kể từ khi check-out nên không thể đánh giá.',
+    en: 'More than 7 days have passed since check-out, so it can no longer be reviewed.',
+    key: 'errors.reviewWindowClosed',
+  },
+  REVIEW_EXISTS: {
+    vi: 'Đơn này đã có đánh giá (kể cả đánh giá đã xoá).',
+    en: 'This booking already has a review (including a deleted one).',
+    key: 'errors.reviewExists',
+  },
+  REVIEW_EDIT_CLOSED: {
+    vi: 'Đã quá 7 ngày kể từ lần gửi đầu nên không sửa được đánh giá.',
+    en: 'More than 7 days have passed since the review was sent, so it can no longer be edited.',
+    key: 'errors.reviewEditClosed',
+  },
+  REVIEW_NOT_AUTHOR: {
+    vi: 'Chỉ người viết mới được sửa hoặc xoá đánh giá.',
+    en: 'Only the author can edit or delete the review.',
+    key: 'errors.reviewNotAuthor',
+  },
+  REVIEW_REPLY_FORBIDDEN: {
+    vi: 'Chỉ chủ tổ chức sở hữu cơ sở mới được phản hồi đánh giá.',
+    en: 'Only the owner of the venue’s organization can reply to reviews.',
+    key: 'errors.reviewReplyForbidden',
+  },
 }
 
 export function isRawInfrastructureMessage(msg: string): boolean {

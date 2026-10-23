@@ -89,6 +89,12 @@ export const navGroups: NavGroup[] = [
         labelKey: 'admin.nav.promotionPrograms',
         icon: 'sell',
       },
+      {
+        id: 'courts-reviews',
+        path: '/admin/reviews',
+        labelKey: 'admin.nav.customerReviews',
+        icon: 'reviews',
+      },
     ],
   },
   {
@@ -233,12 +239,18 @@ export const navGroups: NavGroup[] = [
         labelKey: 'admin.nav.disputes',
         icon: 'gavel',
       },
+      {
+        id: 'org-content-reports',
+        path: '/admin/content-reports',
+        labelKey: 'admin.nav.contentReports',
+        icon: 'flag',
+      },
     ],
   },
 ]
 
 // Owner-only: courts, contracts, venues, pricing, promotions, membership, organization profile & staff,
-// payment exceptions, venue packages, finance
+// payment exceptions, venue packages, finance, customer reviews
 export const OWNER_ONLY_PATHS = [
   '/admin/manage',
   '/admin/contracts',
@@ -250,6 +262,7 @@ export const OWNER_ONLY_PATHS = [
   '/admin/payment-exceptions',
   '/admin/packages',
   '/admin/finance',
+  '/admin/reviews',
 ]
 
 // Owner or staff: schedule, venues (staff read-only), POS, shifts, inventory, tournaments

@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\AdminVenueMonitoringController;
 use App\Http\Controllers\Admin\AdminVenueRemediationController;
 use App\Http\Controllers\Admin\AdminVenueSuspensionController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\ContentModerationController;
 use App\Http\Controllers\Admin\PartnerReviewController;
 use App\Http\Controllers\Admin\PlatformFeePriceController;
 use App\Http\Controllers\Admin\PlatformFeeReportController;
@@ -24,9 +25,11 @@ use App\Http\Controllers\Booking\AvailabilityController;
 use App\Http\Controllers\Booking\ResaleListingController;
 use App\Http\Controllers\Booking\WaitlistController;
 use App\Http\Controllers\Chat\ConversationController;
+use App\Http\Controllers\Community\ContentReportController;
+use App\Http\Controllers\Community\FeedCommentController;
+use App\Http\Controllers\Community\FeedPostController;
 use App\Http\Controllers\Court\CourtController;
 use App\Http\Controllers\Court\CourtLifecycleController;
-use App\Http\Controllers\Court\ReviewController;
 use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Customer\VenueCustomerController;
 use App\Http\Controllers\Finance\FinanceController;
@@ -61,9 +64,7 @@ use App\Http\Controllers\Reservation\AffectedReservationCaseController;
 use App\Http\Controllers\Reservation\CancelReservationPaymentController;
 use App\Http\Controllers\Reservation\MyReservationController;
 use App\Http\Controllers\Reservation\ReservationController;
-use App\Http\Controllers\Social\CommunityFeedController;
-use App\Http\Controllers\Social\FriendshipController;
-use App\Http\Controllers\Social\SocialController;
+use App\Http\Controllers\Review\ReviewController;
 use App\Http\Controllers\Tournament\TournamentController;
 use App\Http\Controllers\Wallet\WalletController;
 use App\Http\Controllers\Wallet\WalletDepositController;
@@ -122,7 +123,10 @@ Route::get('auth/verify-email/{id}/{hash}', function (Request $request, string $
 })->name('verification.verify');
 Route::get('courts', [CourtController::class, 'index']);
 Route::get('courts/{court}', [CourtController::class, 'show']);
-Route::get('courts/{court}/reviews', [ReviewController::class, 'index']);
+// Module 07 D12, D15: the feed is one platform-wide board and reviews belong to a venue; both read without an account.
+Route::get('social/feed', [FeedPostController::class, 'index']);
+Route::get('social/feed/{post}', [FeedPostController::class, 'show'])->whereNumber('post');
+Route::get('venues/{venue}/reviews', [ReviewController::class, 'index'])->whereNumber('venue');
 Route::get('venues', [AdminController::class, 'venues']);
 Route::get('venues/{slug}', [AdminController::class, 'showVenue']);
 Route::get('availability', AvailabilityController::class);
@@ -151,6 +155,19 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
     Route::post('conversations/{conversation}/messages', [ConversationController::class, 'send']);
     Route::post('conversations/{conversation}/vouchers', [ConversationController::class, 'gift']);
     Route::get('venues/{venue}/gift-vouchers', [ConversationController::class, 'giftableVouchers']);
+    // Module 07 FR-112..FR-117, FR-132: feed, reviews and reports cross organizations too; only authors change their content.
+    Route::post('uploads/community-images', [ContentReportController::class, 'uploadImage'])->middleware('throttle:30,1');
+    Route::post('social/feed', [FeedPostController::class, 'store']);
+    Route::put('social/feed/{post}', [FeedPostController::class, 'update'])->whereNumber('post');
+    Route::delete('social/feed/{post}', [FeedPostController::class, 'destroy'])->whereNumber('post');
+    Route::post('social/feed/{post}/comments', [FeedCommentController::class, 'store'])->whereNumber('post');
+    Route::put('social/feed/comments/{comment}', [FeedCommentController::class, 'update']);
+    Route::delete('social/feed/comments/{comment}', [FeedCommentController::class, 'destroy']);
+    Route::post('content-reports', [ContentReportController::class, 'store']);
+    Route::post('reviews', [ReviewController::class, 'store'])->middleware('verified');
+    Route::put('reviews/{review}', [ReviewController::class, 'update']);
+    Route::delete('reviews/{review}', [ReviewController::class, 'destroy']);
+    Route::put('reviews/{review}/reply', [ReviewController::class, 'reply']);
 
     Route::get('auth/me', function (Request $request, WalletPaymentService $walletService) {
         $user = $request->user();
@@ -320,7 +337,6 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
     Route::post('waitlist', [WaitlistController::class, 'store'])->middleware('verified');
     Route::delete('waitlist/{waitlist}', [WaitlistController::class, 'destroy']);
     Route::get('membership', [LoyaltyController::class, 'membership']);
-    Route::post('reviews', [ReviewController::class, 'store'])->middleware('verified');
 
     // Organizations endpoints
     Route::get('organizations', [OrganizationController::class, 'index']);
@@ -358,6 +374,12 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             Route::get('platform-fees/venues/{venueId}', [PlatformFeeVenueController::class, 'show'])->whereNumber('venueId');
             Route::get('platform-fees/report', [PlatformFeeReportController::class, 'show']);
             Route::get('platform-fees/report/export', [PlatformFeeReportController::class, 'export']);
+            // Module 07 D14: reported posts, comments and reviews; owners and staff have no moderation right.
+            Route::get('content-reports', [ContentModerationController::class, 'index']);
+            Route::get('content-reports/{report}', [ContentModerationController::class, 'show']);
+            Route::post('content-reports/{report}/hide', [ContentModerationController::class, 'hide']);
+            Route::post('content-reports/{report}/restore', [ContentModerationController::class, 'restore']);
+            Route::post('content-reports/{report}/keep', [ContentModerationController::class, 'keep']);
             Route::get('payments', [AdminController::class, 'payments']);
             Route::patch('payments/{payment}', [AdminController::class, 'reviewPayment']);
             Route::get('audit-logs', [AuditLogController::class, 'index']);
@@ -482,58 +504,6 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
         });
 
         Route::middleware('feature:social_matchmaking_tournaments')->group(function () {
-            Route::get('social/profile', [SocialController::class, 'profile']);
-            Route::put('social/profile', [SocialController::class, 'updateProfile']);
-            // Friendships & Connections
-            Route::get('social/friends', [FriendshipController::class, 'index']);
-            Route::get('social/friends/requests', [FriendshipController::class, 'requests']);
-            Route::post('social/friends/requests', [FriendshipController::class, 'sendRequest']);
-            Route::post('social/friends/requests/{friendship}/accept', [FriendshipController::class, 'accept']);
-            Route::post('social/friends/requests/{friendship}/decline', [FriendshipController::class, 'decline']);
-            Route::delete('social/friends/{friendship}', [FriendshipController::class, 'destroy']);
-            // Community Feed, Comments, Reactions & Moderation
-            Route::get('social/feed', [CommunityFeedController::class, 'index']);
-            Route::post('social/feed', [CommunityFeedController::class, 'store']);
-            Route::get('social/feed/reports', [CommunityFeedController::class, 'reports'])->middleware(RequireOrganizationRole::class.':organization_owner');
-            Route::get('social/feed/reports/{report}', [CommunityFeedController::class, 'showReport'])->middleware(RequireOrganizationRole::class.':organization_owner');
-            Route::post('social/feed/reports/{report}/dismiss', [CommunityFeedController::class, 'dismissReport'])->middleware(RequireOrganizationRole::class.':organization_owner');
-            Route::get('social/feed/{post}', [CommunityFeedController::class, 'show']);
-            Route::put('social/feed/{post}', [CommunityFeedController::class, 'update']);
-            Route::delete('social/feed/{post}', [CommunityFeedController::class, 'destroy']);
-            Route::post('social/feed/{post}/comments', [CommunityFeedController::class, 'storeComment']);
-            Route::put('social/feed/comments/{comment}', [CommunityFeedController::class, 'updateComment']);
-            Route::delete('social/feed/comments/{comment}', [CommunityFeedController::class, 'destroyComment']);
-            Route::post('social/feed/{post}/react', [CommunityFeedController::class, 'reactPost']);
-            Route::post('social/feed/comments/{comment}/react', [CommunityFeedController::class, 'reactComment']);
-            Route::post('social/feed/{post}/report', [CommunityFeedController::class, 'reportPost']);
-            Route::post('social/feed/comments/{comment}/report', [CommunityFeedController::class, 'reportComment']);
-            Route::post('social/feed/{post}/hide', [CommunityFeedController::class, 'hidePost'])->middleware(RequireOrganizationRole::class.':organization_owner');
-            Route::post('social/feed/{post}/restore', [CommunityFeedController::class, 'restorePost'])->middleware(RequireOrganizationRole::class.':organization_owner');
-            Route::post('social/feed/comments/{comment}/hide', [CommunityFeedController::class, 'hideComment'])->middleware(RequireOrganizationRole::class.':organization_owner');
-            Route::post('social/feed/comments/{comment}/restore', [CommunityFeedController::class, 'restoreComment'])->middleware(RequireOrganizationRole::class.':organization_owner');
-
-            Route::post('social/matches', [SocialController::class, 'create']);
-            Route::put('social/matches/{post}', [SocialController::class, 'update']);
-            Route::post('social/matches/{post}/end', [SocialController::class, 'endSession']);
-            Route::get('social/matches/{post}/bill', [SocialController::class, 'getBill']);
-            Route::post('social/matches/{post}/bill/draft', [SocialController::class, 'saveDraftBill']);
-            Route::post('social/matches/{post}/bill/finalize', [SocialController::class, 'finalizeBill']);
-            Route::get('social/matches/{post}/rates', [SocialController::class, 'getDefaultRates']);
-            Route::post('social/matches/{post}/invite', [SocialController::class, 'invite']);
-            Route::post('social/matches/{post}/join', [SocialController::class, 'join']);
-            Route::post('social/matches/{match}/approve-participant', [SocialController::class, 'approveParticipant']);
-            Route::post('social/matches/{match}/reject-participant', [SocialController::class, 'rejectParticipant']);
-            Route::post('social/matches/{match}/close-roster', [SocialController::class, 'closeRoster']);
-            Route::post('social/matches/{match}/record-attendance', [SocialController::class, 'recordAttendance']);
-            Route::post('matches/{match}/approve-participant', [SocialController::class, 'approveParticipant']);
-            Route::post('matches/{match}/reject-participant', [SocialController::class, 'rejectParticipant']);
-            Route::post('matches/{match}/close-roster', [SocialController::class, 'closeRoster']);
-            Route::post('matches/{match}/record-attendance', [SocialController::class, 'recordAttendance']);
-            Route::post('matches/{post}/join', [SocialController::class, 'join']);
-            Route::post('social/invitations/{invitation}/respond', [SocialController::class, 'respond']);
-            Route::post('social/reputation/activity', [SocialController::class, 'recordActivity'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
-            Route::post('social/reputation/activities/{activity}/dispute', [SocialController::class, 'fileDispute']);
-            Route::post('social/reputation/disputes/{dispute}/resolve', [SocialController::class, 'resolveDispute'])->middleware(RequireOrganizationRole::class.':organization_owner');
             Route::post('tournaments', [TournamentController::class, 'create'])->middleware(RequireOrganizationRole::class.':organization_owner');
             Route::post('tournaments/{tournament}/regenerate', [TournamentController::class, 'regenerateBracket'])->middleware('tournament_role:organizer');
             Route::post('tournaments/{tournament}/participants', [TournamentController::class, 'addParticipant'])->middleware('tournament_role:organizer');
@@ -664,13 +634,11 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
         });
     });
 
-    // Public Discoverable Routes (Tournaments & Matchmaking)
+    // Public Discoverable Routes (Tournaments)
     Route::middleware('feature:social_matchmaking_tournaments')->group(function () {
         Route::get('tournaments', [TournamentController::class, 'index']);
         Route::get('tournaments/{tournament}', [TournamentController::class, 'show']);
         Route::get('tournaments/{tournament}/events', [TournamentController::class, 'events']);
         Route::get('tournaments/{tournament}/poll', [TournamentController::class, 'poll']);
-        Route::get('social/matches', [SocialController::class, 'index']);
-        Route::get('social/matches/{post}', [SocialController::class, 'show']);
     });
 });

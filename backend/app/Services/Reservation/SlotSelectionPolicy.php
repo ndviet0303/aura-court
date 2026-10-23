@@ -3,7 +3,6 @@
 namespace App\Services\Reservation;
 
 use App\Models\Court;
-use App\Models\MatchPost;
 use App\Models\OperationalStop;
 use App\Models\Reservation;
 use App\Models\ReservationSlot;
@@ -30,8 +29,8 @@ use Illuminate\Validation\ValidationException;
  * Slot-start alignment is intentionally NOT enforced here: each caller keeps its
  * own per-version alignment rule.
  *
- * An operator command on an affected booking (design D8) passes the booking as $changing: its own slots and
- * sessions do not overlap it, its captured policy replaces the live one, and duration bounds are skipped.
+ * An operator command on an affected booking (design D8) passes the booking as $changing: its own slots do
+ * not overlap it, its captured policy replaces the live one, and duration bounds are skipped.
  * $allowStarted accepts a slot already in play (move-court), rejecting only one that has ended.
  */
 class SlotSelectionPolicy
@@ -126,18 +125,6 @@ class SlotSelectionPolicy
                 ->exists();
             if ($reservationConflict) {
                 abort(409, 'The selected court-time is no longer available.');
-            }
-
-            $matchConflict = MatchPost::query()
-                ->where('court_id', $court->id)
-                ->where('starts_at', '<', $endUtc)
-                ->where('ends_at', '>', $startUtc)
-                ->whereIn('status', ['open', 'active'])
-                ->where(fn ($q) => $q->where('is_owner_hosted', true)->orWhereNull('reservation_id'))
-                ->when($changing, fn ($q) => $q->where(fn ($own) => $own->whereNull('reservation_id')->orWhere('reservation_id', '!=', $changing->id)))
-                ->exists();
-            if ($matchConflict) {
-                abort(409, 'Court interval is reserved for a community/hosted activity.');
             }
         }
     }

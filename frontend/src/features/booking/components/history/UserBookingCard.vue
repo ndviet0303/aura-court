@@ -7,6 +7,7 @@ import { VENUE_TIME_ZONE, venueClockRange } from '@/core/utils/venueTime'
 import type { Reservation } from '../../types/reservation'
 import {
   canReview,
+  canEditReview,
   displayCode,
   displayStatus,
   showsQr,
@@ -54,12 +55,18 @@ const statusMeta = computed(() => {
   return { label: statusLabel(props.booking, t), icon, class: cls }
 })
 
+const reviewLabel = computed(() => {
+  const review = props.booking.review
+  if (!review) return t('booking.reviewBtn')
+  const key = canEditReview(props.booking) ? 'editReviewBtn' : 'viewReviewBtn'
+  return `${t(`booking.${key}`)} (${review.rating}★)`
+})
+
 const sportLabel = computed(() => t(`sportTypes.${props.booking.court?.sport_type ?? 'badminton'}`))
 </script>
 
 <template>
   <div class="user-booking-card" :class="`border-${status}`">
-    <!-- Card Top Header -->
     <div class="card-header">
       <div class="header-main">
         <div class="code-and-type">
@@ -98,7 +105,6 @@ const sportLabel = computed(() => t(`sportTypes.${props.booking.court?.sport_typ
       </div>
     </div>
 
-    <!-- Slots Schedule Details -->
     <div class="slots-box">
       <div v-for="s in booking.slots" :key="s.starts_at" class="slot-item">
         <div class="slot-time-col">
@@ -129,7 +135,6 @@ const sportLabel = computed(() => t(`sportTypes.${props.booking.court?.sport_typ
         >
       </div>
     </div>
-    <!-- Card Bottom & Actions -->
     <div class="card-footer">
       <div class="total-section">
         <span class="total-label">{{ $t('booking.totalAmountLabel') }}</span>
@@ -137,7 +142,6 @@ const sportLabel = computed(() => t(`sportTypes.${props.booking.court?.sport_typ
       </div>
 
       <div class="actions-group">
-        <!-- Pay Now (if pending) -->
         <RouterLink
           v-if="isPendingPayment"
           :to="{ name: 'reservations', params: { code: booking.code } }"
@@ -164,19 +168,15 @@ const sportLabel = computed(() => t(`sportTypes.${props.booking.court?.sport_typ
           <span>{{ $t('booking.splitBillBtn') }}</span>
         </RouterLink>
 
-        <!-- Review (same eligibility as POST /reviews) -->
+        <!-- Review: write (BR-147 window), edit within 7 days, or read it with the venue's reply -->
         <button
-          v-if="canReview(booking)"
+          v-if="canReview(booking) || (booking.review && !booking.review.deleted_at)"
           type="button"
           class="btn-card-secondary"
           @click="emit('review', booking)"
         >
           <span class="material-symbols-outlined">rate_review</span>
-          <span>{{
-            booking.review
-              ? `${$t('booking.reviewBtn')} (${booking.review.rating}★)`
-              : $t('booking.reviewBtn')
-          }}</span>
+          <span>{{ reviewLabel }}</span>
         </button>
 
         <!-- Bookings are final: a confirmed booking can only be passed on via resale -->
