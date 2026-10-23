@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\POS;
 
+use App\Contracts\Repositories\VenueStockRepositoryInterface;
 use App\Http\Controllers\Concerns\ResolvesOrganization;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\POS\CompletePosOrderRequest;
 use App\Http\Requests\POS\QuotePosOrderRequest;
 use App\Models\CashShift;
 use App\Models\LoyaltyRule;
+use App\Models\OrganizationMember;
 use App\Models\PosOrder;
 use App\Models\PosPayment;
 use App\Models\PosProduct;
@@ -24,7 +26,7 @@ class PosController extends Controller
 {
     use ResolvesOrganization;
 
-    public function __construct(private readonly PosService $pos, private readonly IdempotencyService $idempotency, private readonly PosQrPaymentService $posQr) {}
+    public function __construct(private readonly PosService $pos, private readonly IdempotencyService $idempotency, private readonly PosQrPaymentService $posQr, private readonly VenueStockRepositoryInterface $stock) {}
 
     public function products(Request $request)
     {
@@ -45,7 +47,12 @@ class PosController extends Controller
             $query->where('metadata->category', $cat);
         }
 
-        return $query->orderBy('name')->get();
+        // stock_quantity is the stock of the venue being read (D2), or null when none can be told.
+        $venueId = $this->posQr->stockVenueId($request->user(), $organization->id, $request->integer('venue_id') ?: null);
+        $products = $query->orderBy('name')->get();
+        $stock = $venueId ? $this->stock->quantities($venueId, $products->modelKeys()) : [];
+
+        return $products->each(fn (PosProduct $product) => $product->setAttribute('stock_quantity', $venueId ? ($stock[$product->id] ?? 0) : null));
     }
 
     public function showProduct(Request $request, PosProduct $product)
@@ -73,6 +80,7 @@ class PosController extends Controller
             'price' => 'required|integer|min:0',
             'cost' => 'nullable|integer|min:0',
             'stock_quantity' => 'nullable|integer|min:0',
+            'venue_id' => 'nullable|integer',
             'category' => 'nullable|string|max:100',
             'unit' => 'nullable|string|max:50',
             'min_stock' => 'nullable|integer|min:0',
@@ -127,6 +135,7 @@ class PosController extends Controller
         $organization = $this->organization($request);
         abort_unless($product->organization_id === $organization->id, 404);
         $data = $request->validate([
+            'venue_id' => 'required|integer',
             'quantity_delta' => 'nullable|integer',
             'quantity' => 'nullable|integer|min:0',
             'type' => 'nullable|string|in:in,out,adjust,receipt,adjustment,return,disposal',
@@ -134,6 +143,8 @@ class PosController extends Controller
             'reference' => 'nullable|string|max:160',
         ]);
 
+        $venueId = (int) $data['venue_id'];
+        $this->posQr->assertOperableVenue($request->user(), $organization->id, $venueId);
         $type = $data['type'] ?? 'adjustment';
         $note = $data['note'] ?? $data['reference'] ?? null;
         $reference = $data['reference'] ?? null;
@@ -147,30 +158,31 @@ class PosController extends Controller
             } elseif (in_array($type, ['out', 'disposal'])) {
                 $delta = -abs($qty);
             } else {
-                $delta = $qty - $product->stock_quantity;
+                $delta = $qty - ($this->stock->quantities($venueId, [$product->id])[$product->id] ?? 0);
             }
         }
 
         abort_if($delta === 0, 422, 'Số lượng điều chỉnh không thể bằng 0.');
 
         return $this->idempotency->run($request, fn () => response()->json([
-            'product' => $this->pos->adjustStock($product, $delta, $request->user(), $type, $reference, $note),
+            'product' => $this->pos->adjustStock($product, $venueId, $delta, $request->user(), $type, $reference, $note),
         ]));
     }
 
     public function movements(Request $request)
     {
         $organization = $this->organization($request);
-        $query = StockMovement::where('organization_id', $organization->id)
+        $venueId = $this->posQr->stockVenueId($request->user(), $organization->id, $request->integer('venue_id') ?: null);
+        $query = StockMovement::where('organization_id', $organization->id)->where('venue_id', $venueId ?? 0)
             ->with(['product', 'creator:id,name,email'])
             ->latest('created_at')->latest('id');
 
         if ($request->filled('type') && $request->type !== 'all') {
             $type = $request->type;
             if ($type === 'in') {
-                $query->whereIn('type', ['in', 'receipt']);
+                $query->whereIn('type', ['in', 'receipt', 'transfer_in']);
             } elseif ($type === 'out') {
-                $query->whereIn('type', ['out', 'sale', 'disposal']);
+                $query->whereIn('type', ['out', 'sale', 'disposal', 'transfer_out']);
             } elseif ($type === 'adjust') {
                 $query->whereIn('type', ['adjust', 'adjustment']);
             } else {
@@ -196,12 +208,16 @@ class PosController extends Controller
     public function inventoryKpis(Request $request)
     {
         $organization = $this->organization($request);
+        $venueId = $this->posQr->stockVenueId($request->user(), $organization->id, $request->integer('venue_id') ?: null);
         $products = PosProduct::where('organization_id', $organization->id)->where('is_active', true)->get();
+        // One venue's stock against each product's shared min_stock (D7); no venue, no figures.
+        $stock = $venueId ? $this->stock->quantities($venueId, $products->modelKeys()) : [];
+        $quantity = fn (PosProduct $p): int => $stock[$p->id] ?? 0;
 
-        $totalItems = (int) $products->sum('stock_quantity');
-        $totalValue = (int) $products->reduce(fn ($sum, $p) => $sum + ($p->stock_quantity * $p->cost), 0);
-        $lowStockCount = $products->filter(fn ($p) => $p->stock_quantity <= $p->min_stock && $p->stock_quantity > 0)->count();
-        $outOfStockCount = $products->filter(fn ($p) => $p->stock_quantity === 0)->count();
+        $totalItems = (int) $products->sum($quantity);
+        $totalValue = (int) $products->sum(fn ($p) => $quantity($p) * $p->cost);
+        $lowStockCount = $products->filter(fn ($p) => $quantity($p) <= $p->min_stock && $quantity($p) > 0)->count();
+        $outOfStockCount = $venueId ? $products->filter(fn ($p) => $quantity($p) === 0)->count() : 0;
 
         return response()->json([
             'totalItems' => $totalItems,
@@ -223,12 +239,6 @@ class PosController extends Controller
     {
         $organization = $this->organization($request);
         $data = $request->validated();
-
-        $activeShift = CashShift::where('organization_id', $organization->id)
-            ->where('cashier_id', $request->user()->id)
-            ->where('status', 'open')
-            ->first();
-        abort_unless($activeShift !== null, 409, 'Cashier does not have an active open shift.');
 
         return $this->idempotency->run($request, function () use ($request, $organization, $data) {
             $order = $this->pos->completeOrder($request->user(), $organization->id, $data);
@@ -426,8 +436,12 @@ class PosController extends Controller
     public function shifts(Request $request)
     {
         $organization = $this->organization($request);
+        $user = $request->user();
+        // Shifts of operable venues only; venue-less legacy shifts stay visible to the owner.
         $query = CashShift::where('organization_id', $organization->id)
-            ->with(['reconciliation.reviewer:id,name,email', 'cashier:id,name,email'])
+            ->where(fn ($q) => $q->whereIn('venue_id', $user->getAuthorizedVenueIds($organization->id))
+                ->when($user->hasRoleInOrganization($organization->id, [OrganizationMember::ROLE_ORGANIZATION_OWNER]), fn ($q) => $q->orWhereNull('venue_id')))
+            ->with(['reconciliation.reviewer:id,name,email', 'cashier:id,name,email', 'venue:id,name'])
             ->latest('opened_at');
 
         if ($request->has('status') && in_array($request->status, ['open', 'closed'])) {
@@ -435,61 +449,7 @@ class PosController extends Controller
         }
 
         $shifts = $query->paginate((int) ($request->get('per_page', 50)));
-
-        $shifts->getCollection()->transform(function ($shift) {
-            $orders = PosOrder::where('cash_shift_id', $shift->id)
-                ->where('status', 'completed')
-                ->get();
-
-            if ($orders->isEmpty()) {
-                $endTime = $shift->closed_at ?: now();
-                $orders = PosOrder::where('organization_id', $shift->organization_id)
-                    ->where('cashier_id', $shift->cashier_id)
-                    ->where('status', 'completed')
-                    ->whereBetween('created_at', [$shift->opened_at, $endTime])
-                    ->whereNull('cash_shift_id')
-                    ->get();
-            }
-
-            $cashSales = (int) $orders->where('payment_method', 'cash')->sum('total_amount');
-            $mixedCash = (int) PosPayment::whereHas('order', function ($q) use ($shift) {
-                $q->where('cash_shift_id', $shift->id)
-                    ->where('status', 'completed')
-                    ->where('payment_method', 'mixed');
-            })->where('method', 'cash')->where('status', 'paid')->sum('amount');
-            $cashSales += $mixedCash;
-
-            $qrSales = (int) $orders->where('payment_method', 'qr')->sum('total_amount');
-            $walletSales = (int) $orders->where('payment_method', 'wallet')->sum('total_amount');
-            $totalSales = (int) $orders->sum('total_amount');
-
-            $movements = (array) ($shift->cash_movements ?? []);
-            $cashInflows = 0;
-            $cashOutflows = 0;
-            $cashRefunds = 0;
-            foreach ($movements as $m) {
-                $mType = $m['type'] ?? '';
-                $mAmt = (int) ($m['amount'] ?? 0);
-                if ($mType === 'cash_in') {
-                    $cashInflows += $mAmt;
-                } elseif ($mType === 'cash_out') {
-                    $cashOutflows += $mAmt;
-                } elseif ($mType === 'refund') {
-                    $cashRefunds += $mAmt;
-                }
-            }
-
-            $shift->cash_sales = $cashSales;
-            $shift->qr_sales = $qrSales;
-            $shift->wallet_sales = $walletSales;
-            $shift->total_sales = $totalSales;
-            $shift->orders_count = $orders->count();
-            if ($shift->status === 'open') {
-                $shift->expected_cash = $shift->opening_cash + $cashSales + $cashInflows - $cashOutflows - $cashRefunds;
-            }
-
-            return $shift;
-        });
+        $shifts->getCollection()->transform(fn (CashShift $shift) => $this->withShiftTotals($shift));
 
         return $shifts;
     }
@@ -497,69 +457,16 @@ class PosController extends Controller
     public function activeShift(Request $request)
     {
         $organization = $this->organization($request);
+        // Only the caller's own open shift: another cashier's shift is never offered as theirs.
         $shift = CashShift::where('organization_id', $organization->id)
             ->where('cashier_id', $request->user()->id)
             ->where('status', 'open')
-            ->with(['reconciliation.reviewer:id,name,email', 'cashier:id,name,email'])
+            ->with(['reconciliation.reviewer:id,name,email', 'cashier:id,name,email', 'venue:id,name'])
             ->latest('opened_at')
             ->first();
 
-        if (! $shift) {
-            $shift = CashShift::where('organization_id', $organization->id)
-                ->where('status', 'open')
-                ->with(['reconciliation.reviewer:id,name,email', 'cashier:id,name,email'])
-                ->latest('opened_at')
-                ->first();
-        }
-
         if ($shift) {
-            $orders = PosOrder::where('cash_shift_id', $shift->id)
-                ->where('status', 'completed')
-                ->get();
-
-            if ($orders->isEmpty()) {
-                $orders = PosOrder::where('organization_id', $shift->organization_id)
-                    ->where('cashier_id', $shift->cashier_id)
-                    ->where('status', 'completed')
-                    ->where('created_at', '>=', $shift->opened_at)
-                    ->whereNull('cash_shift_id')
-                    ->get();
-            }
-
-            $cashSales = (int) $orders->where('payment_method', 'cash')->sum('total_amount');
-            $mixedCash = (int) PosPayment::whereHas('order', function ($q) use ($shift) {
-                $q->where('cash_shift_id', $shift->id)
-                    ->where('status', 'completed')
-                    ->where('payment_method', 'mixed');
-            })->where('method', 'cash')->where('status', 'paid')->sum('amount');
-            $cashSales += $mixedCash;
-
-            $qrSales = (int) $orders->where('payment_method', 'qr')->sum('total_amount');
-            $walletSales = (int) $orders->where('payment_method', 'wallet')->sum('total_amount');
-            $totalSales = (int) $orders->sum('total_amount');
-
-            $movements = (array) ($shift->cash_movements ?? []);
-            $cashInflows = 0;
-            $cashOutflows = 0;
-            $cashRefunds = 0;
-            foreach ($movements as $m) {
-                $mType = $m['type'] ?? '';
-                $mAmt = (int) ($m['amount'] ?? 0);
-                if ($mType === 'cash_in') {
-                    $cashInflows += $mAmt;
-                } elseif ($mType === 'cash_out') {
-                    $cashOutflows += $mAmt;
-                } elseif ($mType === 'refund') {
-                    $cashRefunds += $mAmt;
-                }
-            }
-
-            $shift->cash_sales = $cashSales;
-            $shift->qr_sales = $qrSales;
-            $shift->wallet_sales = $walletSales;
-            $shift->total_sales = $totalSales;
-            $shift->orders_count = $orders->count();
-            $shift->expected_cash = $shift->opening_cash + $cashSales + $cashInflows - $cashOutflows - $cashRefunds;
+            $this->withShiftTotals($shift);
             // The POS hides QR tender unless the shift's venue has a verified owner receiving connection.
             $shift->setAttribute('qr_available', $this->posQr->connectionFor($organization->id, $this->posQr->venueIdFor($request->user(), $organization->id, $shift->venue_id)) !== null);
         }
@@ -646,5 +553,56 @@ class PosController extends Controller
         $data = $request->validate(['amount' => 'required|integer|min:1', 'reference' => 'required|string|max:160']);
 
         return $this->idempotency->run($request, fn () => response()->json(['transaction' => $this->pos->spendWallet($organization->id, $request->user()->id, $data['amount'], $data['reference'])], 201));
+    }
+
+    /** Running sales and expected cash of a shift; legacy shifts fall back to the cashier's unlinked orders in its window. */
+    private function withShiftTotals(CashShift $shift): CashShift
+    {
+        $orders = PosOrder::where('cash_shift_id', $shift->id)
+            ->where('status', 'completed')
+            ->get();
+
+        if ($orders->isEmpty()) {
+            $orders = PosOrder::where('organization_id', $shift->organization_id)
+                ->where('cashier_id', $shift->cashier_id)
+                ->where('status', 'completed')
+                ->whereBetween('created_at', [$shift->opened_at, $shift->closed_at ?: now()])
+                ->whereNull('cash_shift_id')
+                ->get();
+        }
+
+        $cashSales = (int) $orders->where('payment_method', 'cash')->sum('total_amount');
+        $mixedCash = (int) PosPayment::whereHas('order', function ($q) use ($shift) {
+            $q->where('cash_shift_id', $shift->id)
+                ->where('status', 'completed')
+                ->where('payment_method', 'mixed');
+        })->where('method', 'cash')->where('status', 'paid')->sum('amount');
+        $cashSales += $mixedCash;
+
+        $cashInflows = 0;
+        $cashOutflows = 0;
+        $cashRefunds = 0;
+        foreach ((array) ($shift->cash_movements ?? []) as $m) {
+            $mType = $m['type'] ?? '';
+            $mAmt = (int) ($m['amount'] ?? 0);
+            if ($mType === 'cash_in') {
+                $cashInflows += $mAmt;
+            } elseif ($mType === 'cash_out') {
+                $cashOutflows += $mAmt;
+            } elseif ($mType === 'refund') {
+                $cashRefunds += $mAmt;
+            }
+        }
+
+        $shift->cash_sales = $cashSales;
+        $shift->qr_sales = (int) $orders->where('payment_method', 'qr')->sum('total_amount');
+        $shift->wallet_sales = (int) $orders->where('payment_method', 'wallet')->sum('total_amount');
+        $shift->total_sales = (int) $orders->sum('total_amount');
+        $shift->orders_count = $orders->count();
+        if ($shift->status === 'open') {
+            $shift->expected_cash = $shift->opening_cash + $cashSales + $cashInflows - $cashOutflows - $cashRefunds;
+        }
+
+        return $shift;
     }
 }

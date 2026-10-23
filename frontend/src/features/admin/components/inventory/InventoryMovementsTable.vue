@@ -35,21 +35,14 @@ const typeOptions = computed<DropdownOption[]>(() => [
   { value: 'adjust', label: t('admin.inventory.typeAdjustOption'), icon: 'tune' },
 ])
 
-const productOptions = computed<DropdownOption[]>(() => {
-  const list: DropdownOption[] = [
-    { value: 'all', label: t('admin.inventory.allProductsFilter'), icon: 'inventory_2' },
-  ]
-  if (props.products) {
-    props.products.forEach((p) => {
-      list.push({
-        value: p.id,
-        label: `${p.name} (${p.sku})`,
-        icon: 'package_2',
-      })
-    })
-  }
-  return list
-})
+const productOptions = computed<DropdownOption[]>(() => [
+  { value: 'all', label: t('admin.inventory.allProductsFilter'), icon: 'inventory_2' },
+  ...(props.products ?? []).map((p) => ({
+    value: p.id,
+    label: `${p.name} (${p.sku})`,
+    icon: 'package_2',
+  })),
+])
 
 const hasActiveFilters = computed(() => {
   return Boolean(
@@ -62,8 +55,8 @@ const hasActiveFilters = computed(() => {
 })
 
 function getTypeBadgeClass(type: string): string {
-  if (type === 'in' || type === 'receipt') return 'type-in'
-  if (type === 'out' || type === 'disposal') return 'type-out'
+  if (type === 'in' || type === 'receipt' || type === 'transfer_in') return 'type-in'
+  if (type === 'out' || type === 'disposal' || type === 'transfer_out') return 'type-out'
   if (type === 'adjust' || type === 'adjustment') return 'type-adjust'
   if (type === 'sale') return 'type-sale'
   return 'type-default'
@@ -74,6 +67,7 @@ function getTypeIcon(type: string): string {
   if (type === 'out' || type === 'disposal') return 'arrow_upward'
   if (type === 'adjust' || type === 'adjustment') return 'sync'
   if (type === 'sale') return 'shopping_bag'
+  if (type === 'transfer_in' || type === 'transfer_out') return 'local_shipping'
   return 'swap_vert'
 }
 
@@ -82,6 +76,8 @@ function getTypeLabel(type: string): string {
   if (type === 'out' || type === 'disposal') return t('admin.inventory.badgeOut')
   if (type === 'adjust' || type === 'adjustment') return t('admin.inventory.badgeAdjust')
   if (type === 'sale') return t('admin.inventory.badgeSale')
+  if (type === 'transfer_in') return t('admin.inventory.badgeTransferIn')
+  if (type === 'transfer_out') return t('admin.inventory.badgeTransferOut')
   return type.toUpperCase()
 }
 

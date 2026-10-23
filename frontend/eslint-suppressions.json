@@ -186,7 +186,7 @@
   },
   "src/features/admin/composables/useAdminShiftReconciliation.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 2
+      "count": 1
     }
   },
   "src/features/admin/composables/useAdminStaff.ts": {

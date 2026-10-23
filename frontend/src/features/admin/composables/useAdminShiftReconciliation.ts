@@ -117,7 +117,7 @@ export function useAdminShiftReconciliation() {
     return activeShift.value.id > 0 && activeShift.value.status === 'open'
   })
 
-  function mapPosShift(raw: any, defaultVenueName = 'Aura Badminton Arena'): CashShiftItem {
+  function mapPosShift(raw: any): CashShiftItem {
     const rawVariance =
       raw.variance ??
       (raw.declared_cash != null && raw.expected_cash != null
@@ -127,7 +127,8 @@ export function useAdminShiftReconciliation() {
       raw.reconciliation?.status ||
       (raw.status === 'open' ? 'open' : rawVariance === 0 ? 'matched' : 'exception')
 
-    const vName = raw.venue?.name || venuesList.value[0]?.name || defaultVenueName
+    // A shift shows its own venue; a legacy shift without one matches no venue filter.
+    const vName = raw.venue?.name
     const cashierName =
       raw.cashier?.name ||
       raw.user?.name ||
@@ -141,9 +142,12 @@ export function useAdminShiftReconciliation() {
       cashier_id: raw.cashier_id || raw.user_id || 1,
       cashier_name: cashierName,
       cashier_email: raw.cashier?.email || raw.user?.email,
-      venue_id: raw.venue_id || venuesList.value[0]?.id || 1,
-      venue_name:
-        typeof vName === 'object' ? vName.vi || vName.en || Object.values(vName)[0] : vName,
+      venue_id: raw.venue_id ?? undefined,
+      venue_name: !vName
+        ? 'Chưa gắn cơ sở'
+        : typeof vName === 'object'
+          ? vName.vi || vName.en || Object.values(vName)[0]
+          : vName,
       shift_name:
         raw.name ||
         (raw.opened_at
@@ -195,22 +199,14 @@ export function useAdminShiftReconciliation() {
         venuesList.value = venuesRes.value
       }
 
-      const defaultVenue = venuesList.value[0]?.name
-        ? typeof venuesList.value[0].name === 'object'
-          ? (venuesList.value[0].name as any).vi || Object.values(venuesList.value[0].name)[0]
-          : venuesList.value[0].name
-        : 'Aura Badminton Arena'
-
       if (activeRes.status === 'fulfilled' && activeRes.value) {
-        activeShift.value = mapPosShift(activeRes.value, defaultVenue as string)
+        activeShift.value = mapPosShift(activeRes.value)
       } else {
         activeShift.value = { ...defaultShift }
       }
 
       if (historyRes.status === 'fulfilled' && Array.isArray(historyRes.value)) {
-        shiftHistory.value = historyRes.value.map((item) =>
-          mapPosShift(item, defaultVenue as string),
-        )
+        shiftHistory.value = historyRes.value.map((item) => mapPosShift(item))
       }
     } catch (e: unknown) {
       error.value = errorMessage(e, 'Không thể tải dữ liệu đối soát ca làm việc.')
@@ -317,11 +313,11 @@ export function useAdminShiftReconciliation() {
     denominations.value.forEach((d) => (d.count = 0))
   }
 
-  async function openNewShift(openingCash: number) {
+  async function openNewShift(openingCash: number, venueId?: number) {
     saving.value = true
     error.value = ''
     try {
-      const res = await posApi.openShift({ opening_cash: openingCash })
+      const res = await posApi.openShift({ opening_cash: openingCash, venue_id: venueId })
       showOpenShiftModal.value = false
       showNotice('Mở ca làm việc thành công!')
       await loadData()

@@ -1,21 +1,32 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton, CurrencyInput } from '@/shared/components'
+import { posApi } from '@/features/pos/api/posApi'
 
-defineProps<{
+const props = defineProps<{
   show: boolean
   saving: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'submit', openingCash: number): void
+  (e: 'submit', openingCash: number, venueId?: number): void
 }>()
 
 const { t } = useI18n()
 
 const openingCash = ref<number>(1000000)
+// BR-20: a caller with several venues picks the one this shift runs at; a single venue is assigned by the server.
+const venues = ref<Array<{ id: number; name: string }>>([])
+const venueId = ref<number | null>(null)
+watch(
+  () => props.show,
+  async (open) => {
+    if (open && !venues.value.length) venues.value = await posApi.getVenues().catch(() => [])
+  },
+  { immediate: true },
+)
 
 const presets = [
   { label: '0 ₫', value: 0 },
@@ -25,8 +36,8 @@ const presets = [
 ]
 
 function handleSubmit() {
-  if (openingCash.value < 0) return
-  emit('submit', openingCash.value)
+  if (openingCash.value < 0 || (venues.value.length > 1 && !venueId.value)) return
+  emit('submit', openingCash.value, venueId.value ?? undefined)
 }
 </script>
 
@@ -43,6 +54,16 @@ function handleSubmit() {
 
       <div class="modal-body">
         <p class="modal-intro">{{ t('admin.shifts.openShiftDesc') }}</p>
+
+        <div v-if="venues.length > 1" class="form-group">
+          <label class="form-label" for="open-shift-venue">{{
+            t('admin.pos.shiftVenueLabel')
+          }}</label>
+          <select id="open-shift-venue" v-model="venueId" class="form-input">
+            <option :value="null" disabled>{{ t('admin.pos.shiftVenueLabel') }}</option>
+            <option v-for="v in venues" :key="v.id" :value="v.id">{{ v.name }}</option>
+          </select>
+        </div>
 
         <div class="form-group">
           <label class="form-label">{{ t('admin.shifts.startingFloatLabel') }}</label>
@@ -76,7 +97,11 @@ function handleSubmit() {
         <AuraButton variant="secondary" :disabled="saving" @click="emit('close')">
           {{ t('common.close') }}
         </AuraButton>
-        <AuraButton variant="primary" :disabled="saving || openingCash < 0" @click="handleSubmit">
+        <AuraButton
+          variant="primary"
+          :disabled="saving || openingCash < 0 || (venues.length > 1 && !venueId)"
+          @click="handleSubmit"
+        >
           <span class="material-symbols-outlined icon-16" :class="{ 'spin-icon': saving }">
             check
           </span>

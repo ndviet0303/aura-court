@@ -13,6 +13,8 @@ export interface InventoryProduct {
   image_url?: string | null
   description?: string | null
   is_active: boolean
+  /** Services and untracked items keep no stock. */
+  is_service?: boolean
   last_restocked?: string | null
   supplier?: string | null
   created_at?: string
@@ -62,13 +64,35 @@ export interface ProductFormPayload {
   description?: string | null
   supplier?: string | null
   is_active?: boolean
+  /** The venue that receives the opening stock; required by the server when stock_quantity > 0. */
+  venue_id?: number
 }
 
 export interface StockActionPayload {
   productId: number
+  venueId: number
   type: 'in' | 'out' | 'adjust'
   quantity: number
   unitCost?: number
   note?: string
   reference?: string
+}
+
+export interface StockTransferPayload {
+  product_id: number
+  from_venue_id: number
+  to_venue_id: number
+  quantity: number
+  note?: string
+}
+
+export interface StockTransfer {
+  id: number
+  product_id: number
+  from_venue_id: number
+  to_venue_id: number
+  quantity: number
+  note?: string | null
+  created_by?: number | null
+  created_at: string
 }

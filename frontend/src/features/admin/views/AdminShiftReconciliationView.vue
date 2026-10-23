@@ -48,8 +48,8 @@ const {
   openReviewModal,
 } = useAdminShiftReconciliation()
 
-async function handleOpenShiftSubmit(openingCash: number) {
-  await openNewShift(openingCash)
+async function handleOpenShiftSubmit(openingCash: number, venueId?: number) {
+  await openNewShift(openingCash, venueId)
 }
 
 async function handleCloseShiftSubmit(payload: { declaredCash: number; note?: string }) {

@@ -48,6 +48,7 @@ use App\Http\Controllers\Partner\VenueScheduleImpactController;
 use App\Http\Controllers\Partner\VenueSuspensionController;
 use App\Http\Controllers\POS\PosController;
 use App\Http\Controllers\POS\ServiceTabController;
+use App\Http\Controllers\POS\StockTransferController;
 use App\Http\Controllers\Pricing\CourtPricingController;
 use App\Http\Controllers\Pricing\PriceTableController;
 use App\Http\Controllers\Promotion\PromotionProgramController;
@@ -545,6 +546,8 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::post('pos/products/{product}/stock', [PosController::class, 'adjustStock'])->middleware(RequireOrganizationRole::class.':organization_owner');
             Route::get('pos/inventory/movements', [PosController::class, 'movements'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
             Route::get('pos/inventory/kpis', [PosController::class, 'inventoryKpis'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
+            Route::get('pos/inventory/transfers', [StockTransferController::class, 'index'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
+            Route::post('pos/inventory/transfers', [StockTransferController::class, 'store'])->middleware(RequireOrganizationRole::class.':organization_owner');
             Route::post('pos/quote', [PosController::class, 'quote'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
             Route::post('pos/orders', [PosController::class, 'completeOrder'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
             Route::get('pos/orders/{order}', [PosController::class, 'showOrder'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');

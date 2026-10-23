@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Contracts\Repositories\VenueStockRepositoryInterface;
 use App\Models\CashShift;
 use App\Models\Organization;
 use App\Models\OwnerPaymentAllocation;
@@ -16,6 +17,7 @@ use App\Models\ShiftReconciliation;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Models\Venue;
+use App\Models\VenueStock;
 use App\Services\POS\PosService;
 use Carbon\Carbon;
 use Database\Seeders\Concerns\PaysVenueOwner;
@@ -46,7 +48,10 @@ class PosSalesSeeder extends Seeder
     /** @var Collection<string, PosProduct> */
     private Collection $products;
 
-    /** @var array<int, int> stock per product id while the events are replayed in time order */
+    /** The venue being seeded: every movement and stock balance below belongs to it (pos-venue-inventory D1). */
+    private int $venueId;
+
+    /** @var array<int, int> stock per product id at that venue while the events are replayed in time order */
     private array $stock = [];
 
     private int $sequence = 0;
@@ -72,8 +77,10 @@ class PosSalesSeeder extends Seeder
         if ($this->products->isEmpty()) {
             return;
         }
+        $this->venueId = $venue->id;
+        $this->stock = [];
         foreach ($this->products as $product) {
-            $this->stock[$product->id] = (int) StockMovement::where('product_id', $product->id)->sum('quantity_delta');
+            $this->stock[$product->id] = (int) StockMovement::where('venue_id', $venue->id)->where('product_id', $product->id)->sum('quantity_delta');
         }
 
         $shifts = CashShift::with('cashier')
@@ -124,6 +131,7 @@ class PosSalesSeeder extends Seeder
                 foreach ($lines as $sku => $delta) {
                     $product = $this->products[$sku] ?? null;
                     if (! $product || $this->stock[$product->id] + $delta < 0 || StockMovement::query()
+                        ->where('venue_id', $this->venueId)
                         ->where('product_id', $product->id)
                         ->where('reference_type', 'pos')
                         ->where('metadata->reference', $reference)
@@ -565,17 +573,22 @@ class PosSalesSeeder extends Seeder
         }
     }
 
-    /** stock_quantity = sum of the product's movements, last touched by its latest movement. */
+    /** The venue's stock row of each product = sum of its movements there, last touched by its latest movement. */
     private function syncStock(): void
     {
         foreach ($this->products as $product) {
-            $movements = StockMovement::where('product_id', $product->id);
-            $stock = (int) (clone $movements)->sum('quantity_delta');
+            $movements = StockMovement::where('venue_id', $this->venueId)->where('product_id', $product->id);
             $lastMovedAt = (clone $movements)->max('created_at');
-            $product->timestamps = false;
-            $product->forceFill([
-                'stock_quantity' => $stock,
-                'updated_at' => $lastMovedAt ? Carbon::parse($lastMovedAt, $this->now->getTimezone())->max($product->updated_at)->copy() : $product->updated_at,
+            if ($lastMovedAt === null) {
+                continue;
+            }
+            $row = VenueStock::firstOrNew(['venue_id' => $this->venueId, 'product_id' => $product->id]);
+            $row->timestamps = false;
+            $row->forceFill([
+                'organization_id' => $product->organization_id,
+                'quantity' => (int) (clone $movements)->sum('quantity_delta'),
+                'created_at' => $row->created_at ?? $this->now,
+                'updated_at' => Carbon::parse($lastMovedAt, $this->now->getTimezone()),
             ])->save();
         }
     }
@@ -600,11 +613,20 @@ class PosSalesSeeder extends Seeder
                 $failures[] = "shift {$shift->id}: cash does not reconcile";
             }
         }
-        foreach (PosProduct::where('organization_id', $org->id)->get() as $product) {
-            $reserved = (int) ServiceTabItem::where('product_id', $product->id)->where('status', ServiceTabItem::STATUS_RESERVED)->sum('quantity');
-            if ($product->stock_quantity !== (int) StockMovement::where('product_id', $product->id)->sum('quantity_delta') || $product->stock_quantity < $reserved) {
-                $failures[] = "product {$product->sku}: stock {$product->stock_quantity} does not match its movements or reservations";
+        // Every venue's stock equals the sum of its own movements and covers what its open tabs and QR orders hold.
+        $held = app(VenueStockRepositoryInterface::class);
+        foreach (VenueStock::with('product:id,sku')->where('organization_id', $org->id)->get() as $row) {
+            $moved = (int) StockMovement::where('venue_id', $row->venue_id)->where('product_id', $row->product_id)->sum('quantity_delta');
+            if ($row->quantity !== $moved || $row->quantity < $held->held($row->venue_id, $row->product_id)) {
+                $failures[] = "product {$row->product->sku} at venue {$row->venue_id}: stock {$row->quantity} does not match its movements ({$moved}) or holds";
             }
+        }
+        $unbalanced = DB::select('
+            select m.venue_id, m.product_id from stock_movements m
+            where m.organization_id = ? and not exists (select 1 from venue_stocks s where s.venue_id = m.venue_id and s.product_id = m.product_id)
+            group by m.venue_id, m.product_id having sum(m.quantity_delta) <> 0', [$org->id]);
+        foreach ($unbalanced as $pair) {
+            $failures[] = "product {$pair->product_id} at venue {$pair->venue_id}: movements without a stock row";
         }
         $doubleOpen = CashShift::where('organization_id', $org->id)->where('status', 'open')->groupBy('cashier_id')->havingRaw('count(*) > 1')->pluck('cashier_id');
         if ($doubleOpen->isNotEmpty()) {
@@ -658,6 +680,7 @@ class PosSalesSeeder extends Seeder
         }
         (new StockMovement)->forceFill([
             'organization_id' => $orgId,
+            'venue_id' => $this->venueId,
             'product_id' => $product->id,
             'type' => $type,
             'quantity_delta' => $delta,

@@ -6,13 +6,16 @@ use App\Models\Organization;
 use App\Models\PosProduct;
 use App\Models\StockMovement;
 use App\Models\User;
+use App\Models\Venue;
+use App\Models\VenueStock;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
 /**
  * Per-organization POS catalogs, shaped like PosService::createProduct writes them: metadata carries
- * category/unit/min_stock/supplier/tax_rate (vat_rate mirrors tax_rate for the POS screen) and every
- * stocked product gets its "initial_stock" movement. Sales and restocks are seeded by PosSalesSeeder.
+ * category/unit/min_stock/supplier/tax_rate (vat_rate mirrors tax_rate for the POS screen). Every venue of the
+ * organization opens with the catalog's initial stock: a venue_stocks row and an "initial_stock" movement per venue
+ * (pos-venue-inventory D1). Sales and restocks are seeded by PosSalesSeeder.
  */
 class PosProductSeeder extends Seeder
 {
@@ -27,6 +30,7 @@ class PosProductSeeder extends Seeder
                 continue;
             }
             $ownerId = User::where('email', $ownerEmail)->value('id');
+            $venueIds = Venue::where('organization_id', $org->id)->orderBy('id')->pluck('id');
 
             foreach ($products as [$sku, $barcode, $name, $category, $unit, $price, $cost, $stock, $minStock, $supplier, $description]) {
                 $taxRate = in_array($category, ['drinks', 'nutrition'], true) ? 8 : 10;
@@ -51,16 +55,24 @@ class PosProductSeeder extends Seeder
                     'description' => $description,
                     'price' => $price,
                     'cost' => $cost,
-                    'stock_quantity' => $isNew ? $stock : $product->stock_quantity,
                     'is_active' => true,
                     'metadata' => $metadata,
                     'created_at' => $isNew ? $setupAt : $product->created_at,
                     'updated_at' => $setupAt,
                 ])->save();
 
-                if ($isNew && $stock > 0) {
+                foreach ($isNew && $stock > 0 ? $venueIds : [] as $venueId) {
+                    (new VenueStock)->forceFill([
+                        'organization_id' => $org->id,
+                        'venue_id' => $venueId,
+                        'product_id' => $product->id,
+                        'quantity' => $stock,
+                        'created_at' => $setupAt,
+                        'updated_at' => $setupAt,
+                    ])->save();
                     (new StockMovement)->forceFill([
                         'organization_id' => $org->id,
+                        'venue_id' => $venueId,
                         'product_id' => $product->id,
                         'type' => 'in',
                         'quantity_delta' => $stock,
@@ -71,9 +83,6 @@ class PosProductSeeder extends Seeder
                         'metadata' => [
                             'note' => 'Khởi tạo tồn kho ban đầu',
                             'balance_after' => $stock,
-                            'product_name' => $name,
-                            'product_sku' => $sku,
-                            'unit' => $unit,
                         ],
                         'created_at' => $setupAt,
                         'updated_at' => $setupAt,
@@ -84,7 +93,7 @@ class PosProductSeeder extends Seeder
     }
 
     /**
-     * [sku, barcode, name, category, unit, price, cost, initial stock, min stock, supplier, description]
+     * [sku, barcode, name, category, unit, price, cost, initial stock per venue, min stock, supplier, description]
      *
      * @return array<string, array{0: string, 1: list<array>}>
      */

@@ -477,7 +477,7 @@ async function handleCancelQr() {
 
 async function handleOpenShift(cash: number, venueId?: number) {
   try {
-    await openShift(cash, venueId)
+    await openShift(cash, venueId).then(() => loadProducts())
     showShiftModal.value = false
     showNotice(t('admin.pos.openShiftSuccess'))
   } catch {
