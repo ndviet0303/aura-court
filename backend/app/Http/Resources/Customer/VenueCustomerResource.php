@@ -25,7 +25,7 @@ class VenueCustomerResource extends JsonResource
             'no_show' => $noShow,
             'used_minutes' => (int) $this->resource->used_minutes,
             'completed_amount' => (int) $this->resource->completed_amount,
-            'last_used_at' => $this->resource->last_used_at ? Carbon::parse($this->resource->last_used_at, 'UTC')->toIso8601String() : null,
+            'last_used_at' => $this->resource->last_used_at ? Carbon::parse($this->resource->last_used_at, config('app.timezone'))->toIso8601String() : null,
             'tier' => CustomerTier::for($completed),
             'usage_rate' => CustomerTier::usageRate($completed, $noShow),
         ];

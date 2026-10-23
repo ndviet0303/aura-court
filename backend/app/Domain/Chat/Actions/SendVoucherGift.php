@@ -53,7 +53,7 @@ class SendVoucherGift
                 'amount' => $program->amount,
                 'max_discount' => $program->max_discount,
                 'min_rental' => $program->min_rental,
-                'courts' => $program->courts->pluck('name')->all(),
+                'courts' => $program->courts->pluck('code')->all(),
                 'starts_at' => $program->starts_at?->toIso8601String(),
                 'ends_at' => $program->ends_at?->toIso8601String(),
             ],
