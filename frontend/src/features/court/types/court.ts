@@ -94,16 +94,3 @@ export type Court = {
   capacity?: number | null
   timezone?: string
 }
-
-export type CourtReview = {
-  id: number
-  court_id: number
-  user_id: number
-  rating: number
-  body?: string | null
-  created_at?: string
-  user?: {
-    id: number
-    name: string
-  }
-}

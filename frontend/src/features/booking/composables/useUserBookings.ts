@@ -20,9 +20,6 @@ export function useUserBookings() {
   // Review modal state
   const showReviewModal = ref(false)
   const reviewingBooking = ref<Reservation | null>(null)
-  const reviewRating = ref(5)
-  const reviewBody = ref('')
-  const submittingReview = ref(false)
 
   // QR Check-in modal state
   const showQrModal = ref(false)
@@ -132,8 +129,6 @@ export function useUserBookings() {
   // Review Modal Handlers
   function openReview(b: Reservation) {
     reviewingBooking.value = b
-    reviewRating.value = b.review?.rating || 5
-    reviewBody.value = b.review?.body || ''
     showReviewModal.value = true
   }
 
@@ -142,22 +137,10 @@ export function useUserBookings() {
     reviewingBooking.value = null
   }
 
-  async function submitReview() {
-    if (!reviewingBooking.value) return
-    submittingReview.value = true
-    try {
-      await bookingApi.submitReview(reviewingBooking.value.code, {
-        rating: reviewRating.value,
-        body: reviewBody.value.trim() || undefined,
-      })
-      showNotice('Cảm ơn bạn đã gửi đánh giá trải nghiệm sân đấu!')
-      closeReview()
-      await load()
-    } catch (cause: unknown) {
-      error.value = errorMessage(cause, 'Không thể gửi đánh giá lúc này.')
-    } finally {
-      submittingReview.value = false
-    }
+  async function reviewSaved(message: string) {
+    showNotice(message)
+    closeReview()
+    await load()
   }
 
   return {
@@ -176,9 +159,6 @@ export function useUserBookings() {
     cancelledCount,
     showReviewModal,
     reviewingBooking,
-    reviewRating,
-    reviewBody,
-    submittingReview,
     showQrModal,
     qrBooking,
     load,
@@ -188,6 +168,6 @@ export function useUserBookings() {
     closeQr,
     openReview,
     closeReview,
-    submitReview,
+    reviewSaved,
   }
 }

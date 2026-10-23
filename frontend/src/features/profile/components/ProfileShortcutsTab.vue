@@ -24,11 +24,11 @@ const userShortcuts = [
     color: '#6B2D3F',
   },
   {
-    key: 'Matchmaking',
-    nameKey: 'profile.scMatchmakingTitle',
-    descKey: 'profile.scMatchmakingDesc',
-    path: '/matchmaking',
-    icon: 'groups',
+    key: 'Community',
+    nameKey: 'profile.scCommunityTitle',
+    descKey: 'profile.scCommunityDesc',
+    path: '/community',
+    icon: 'forum',
     color: '#0284c7',
   },
   {

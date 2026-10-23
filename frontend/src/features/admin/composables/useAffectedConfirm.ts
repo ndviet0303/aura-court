@@ -16,7 +16,7 @@ export function failureMessage(cause: unknown): string {
 function unacknowledgedList(cause: unknown): AffectedList | null {
   const failure = cause as { status?: number; code?: string; affected?: AffectedList } | null
   return failure?.status === 409 && failure.code === 'AFFECTED_BOOKINGS_UNACKNOWLEDGED'
-    ? (failure.affected ?? { bookings: [], sessions: [] })
+    ? (failure.affected ?? { bookings: [] })
     : null
 }
 

@@ -12,19 +12,8 @@ export type AffectedBooking = {
   customer_phone?: string | null
 }
 
-/** An owner-hosted session on an affected court and time. */
-export type AffectedSession = {
-  match_post_id: number
-  title: string | null
-  court_id: number
-  court_code: string | null
-  starts_at: string
-  ends_at: string
-}
-
 export type AffectedList = {
   bookings: AffectedBooking[]
-  sessions: AffectedSession[]
 }
 
 export const CASE_STATUSES = [

@@ -1,341 +1,192 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { resolveLocalizedText } from '@/i18n'
+import { AuraButton } from '@/shared/components'
+import ImageGrid from '@/features/community/components/ImageGrid.vue'
+import ImageUploadField from '@/features/community/components/ImageUploadField.vue'
+import { REVIEW_BODY_MAX, REVIEW_IMAGES_MAX } from '@/features/community/types/review'
 import type { Reservation } from '../../types/reservation'
 import { displayCode } from '../../utils/reservation'
+import { useBookingReview } from '../../composables/useBookingReview'
 
-defineProps<{
-  show: boolean
-  booking: Reservation | null
-  rating: number
-  body: string
-  submitting?: boolean
-}>()
+const props = defineProps<{ booking: Reservation }>()
+const emit = defineEmits<{ close: []; saved: [notice: string] }>()
 
-const emit = defineEmits<{
-  (e: 'close'): void
-  (e: 'update:rating', val: number): void
-  (e: 'update:body', val: string): void
-  (e: 'submit'): void
-}>()
+const { t } = useI18n()
+const { existing, mode, rating, body, images, saving, error, save, remove } = useBookingReview(
+  props.booking,
+)
+const hovered = ref<number | null>(null)
+const uploading = ref(false)
 
-const hoveredRating = ref<number | null>(null)
+async function done(action: () => Promise<string | null>) {
+  const notice = await action()
+  if (notice) emit('saved', notice)
+}
 </script>
 
 <template>
-  <div v-if="show && booking" class="modal-backdrop" @click.self="emit('close')">
-    <div class="modal-card modal-md">
+  <div class="modal-backdrop" @click.self="emit('close')">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
       <div class="modal-header">
-        <div class="title-with-icon">
-          <span class="material-symbols-outlined header-icon-gold">rate_review</span>
-          <h3 class="modal-title">Đánh Giá Trải Nghiệm Sân Đấu</h3>
-        </div>
-        <button class="modal-close-btn" type="button" @click="emit('close')">
+        <h3 id="review-modal-title" class="modal-title">{{ t(`reviews.modal.${mode}`) }}</h3>
+        <button
+          type="button"
+          class="modal-close-btn"
+          :aria-label="t('common.close')"
+          @click="emit('close')"
+        >
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
 
-      <div class="modal-body">
-        <div class="court-summary-box">
-          <strong class="court-name">{{ booking.court?.code || 'Sân Aura Court' }}</strong>
-          <span class="venue-name">
-            <span class="material-symbols-outlined loc-icon">location_on</span>
-            {{ booking.court?.venue?.name || 'Aura Badminton Center' }}
-          </span>
-          <span class="code-badge font-mono">Đơn: #{{ displayCode(booking) }}</span>
-        </div>
+      <div class="modal-body review-modal-body">
+        <p class="review-modal-booking">
+          <strong>{{ booking.court?.code }}</strong>
+          · {{ resolveLocalizedText(booking.court?.venue?.name) }} · #{{ displayCode(booking) }}
+        </p>
 
-        <div class="rating-section">
-          <label class="section-label">Chất lượng mặt sân & cơ sở vật chất:</label>
-          <div class="stars-picker" @mouseleave="hoveredRating = null">
-            <button
-              v-for="star in [1, 2, 3, 4, 5]"
-              :key="star"
-              type="button"
-              class="star-btn"
-              :class="{
-                active: (hoveredRating ?? rating) >= star,
-              }"
-              @mouseenter="hoveredRating = star"
-              @click="emit('update:rating', star)"
-            >
-              <span class="material-symbols-outlined star-icon">
-                {{ (hoveredRating ?? rating) >= star ? 'star' : 'star_border' }}
-              </span>
-            </button>
-            <span class="rating-text-hint font-mono">
-              {{
-                (hoveredRating ?? rating) === 5
-                  ? 'Tuyệt vời (5/5)'
-                  : (hoveredRating ?? rating) === 4
-                    ? 'Rất tốt (4/5)'
-                    : (hoveredRating ?? rating) === 3
-                      ? 'Bình thường (3/5)'
-                      : (hoveredRating ?? rating) === 2
-                        ? 'Chưa hài lòng (2/5)'
-                        : 'Kém (1/5)'
-              }}
-            </span>
+        <template v-if="mode === 'view' && existing">
+          <p
+            class="review-modal-stars"
+            :aria-label="t('reviews.ratingLabel', { rating: existing.rating })"
+          >
+            {{ '★'.repeat(existing.rating) }}{{ '☆'.repeat(5 - existing.rating) }}
+          </p>
+          <p v-if="existing.body" class="review-modal-text">{{ existing.body }}</p>
+          <ImageGrid :images="existing.images" />
+          <p class="form-hint">{{ t('reviews.editClosed') }}</p>
+        </template>
+
+        <template v-else>
+          <div class="form-group">
+            <span class="form-label">{{ t('reviews.rating') }} *</span>
+            <div class="review-modal-picker" @mouseleave="hovered = null">
+              <button
+                v-for="star in 5"
+                :key="star"
+                type="button"
+                class="review-modal-star"
+                :class="{ active: (hovered ?? rating) >= star }"
+                :aria-label="t('reviews.ratingLabel', { rating: star })"
+                :aria-pressed="rating === star"
+                @mouseenter="hovered = star"
+                @click="rating = star"
+              >
+                <span class="material-symbols-outlined">star</span>
+              </button>
+            </div>
           </div>
-        </div>
+          <label class="form-group">
+            <span class="form-label">{{ t('reviews.body') }}</span>
+            <textarea
+              v-model="body"
+              rows="4"
+              :maxlength="REVIEW_BODY_MAX"
+              class="form-textarea"
+              :placeholder="t('reviews.bodyPlaceholder')"
+            />
+            <span class="form-hint">{{ body.length }}/{{ REVIEW_BODY_MAX }}</span>
+          </label>
+          <ImageUploadField
+            v-model="images"
+            v-model:uploading="uploading"
+            :max="REVIEW_IMAGES_MAX"
+          />
+          <p class="form-hint">{{ t('reviews.editWindow') }}</p>
+        </template>
 
-        <div class="form-group">
-          <label class="section-label">Cảm nhận chi tiết của bạn:</label>
-          <textarea
-            :value="body"
-            rows="3"
-            class="form-textarea"
-            placeholder="Mặt thảm êm ái, hệ thống chiếu sáng chuẩn thi đấu, nhân viên nhiệt tình..."
-            @input="emit('update:body', ($event.target as HTMLTextAreaElement).value)"
-          ></textarea>
+        <div v-if="existing?.reply" class="review-modal-reply">
+          <strong>{{ t('reviews.replyFromVenue') }}</strong>
+          <p class="review-modal-text">{{ existing.reply.body }}</p>
         </div>
+        <p v-if="error" class="form-error" role="alert">{{ error }}</p>
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" type="button" :disabled="submitting" @click="emit('close')">
-          Huỷ
-        </button>
-        <button class="btn-submit" type="button" :disabled="submitting" @click="emit('submit')">
-          <span v-if="submitting" class="material-symbols-outlined spin-icon"
-            >progress_activity</span
-          >
-          <span v-else>Gửi Đánh Giá</span>
-        </button>
+        <AuraButton
+          v-if="mode === 'edit'"
+          variant="danger"
+          class="review-modal-delete"
+          :disabled="saving"
+          @click="done(remove)"
+        >
+          {{ t('common.delete') }}
+        </AuraButton>
+        <AuraButton variant="outline" :disabled="saving" @click="emit('close')">
+          {{ mode === 'view' ? t('common.close') : t('common.cancel') }}
+        </AuraButton>
+        <AuraButton
+          v-if="mode !== 'view'"
+          :loading="saving"
+          :disabled="uploading"
+          @click="done(save)"
+        >
+          {{ mode === 'edit' ? t('common.save') : t('reviews.submit') }}
+        </AuraButton>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 16px;
-}
-
-.modal-card {
-  background: var(--surface);
-  color: var(--ink);
-  border-radius: 20px;
-  width: 100%;
-  max-width: 480px;
-  border: 1px solid var(--outline);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+.review-modal-body {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  gap: 14px;
 }
 
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--outline);
-}
-
-.title-with-icon {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.header-icon-gold {
-  font-size: 22px;
-  color: var(--accent, #c9a15a);
-}
-
-.modal-title {
+.review-modal-booking {
   margin: 0;
-  font-size: 16px;
-  font-weight: 800;
+  color: var(--muted);
+  font-size: 13px;
 }
 
-.modal-close-btn {
-  background: transparent;
+.review-modal-picker {
+  display: flex;
+  gap: 2px;
+}
+
+.review-modal-star {
+  display: flex;
+  padding: 2px;
   border: 0;
-  color: var(--muted);
+  background: none;
+  color: var(--outline);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
 }
 
-.modal-close-btn:hover {
-  color: var(--ink);
+.review-modal-star .material-symbols-outlined {
+  font-size: 30px;
+  font-variation-settings: 'FILL' 1;
 }
 
-.modal-body {
-  padding: 20px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.court-summary-box {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
-  border: 1px solid var(--border);
-}
-
-.court-name {
-  font-size: 14px;
-}
-
-.venue-name {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.loc-icon {
-  font-size: 14px;
-}
-
-.code-badge {
-  font-size: 11px;
-  color: var(--primary, #6b2d3f);
-  font-weight: 700;
-}
-
-.rating-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.section-label {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.stars-picker {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.star-btn {
-  background: transparent;
-  border: 0;
-  padding: 4px;
-  cursor: pointer;
-  color: var(--muted);
-  transition:
-    transform 0.15s ease,
-    color 0.15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.star-btn:hover {
-  transform: scale(1.15);
-}
-
-.star-icon {
-  font-size: 28px;
-}
-
-.star-btn.active {
+.review-modal-star.active {
   color: #f59e0b;
 }
 
-.rating-text-hint {
-  font-size: 12px;
-  color: var(--muted);
-  margin-left: 8px;
-  font-weight: 600;
+.review-modal-stars {
+  margin: 0;
+  color: #f59e0b;
+  font-size: 20px;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.review-modal-text {
+  margin: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
-.form-textarea {
-  width: 100%;
+.review-modal-reply {
   padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
-  color: var(--ink);
+  border-left: 3px solid var(--primary, #6b2d3f);
+  border-radius: 8px;
+  background: var(--surface-subtle, rgba(0, 0, 0, 0.03));
   font-size: 13px;
-  line-height: 1.4;
-  outline: none;
-  resize: vertical;
 }
 
-.form-textarea:focus {
-  border-color: var(--primary, #6b2d3f);
-}
-
-.modal-footer {
-  padding: 14px 22px;
-  border-top: 1px solid var(--outline);
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.btn-cancel {
-  padding: 9px 18px;
-  border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-submit {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 22px;
-  border-radius: 10px;
-  border: 0;
-  background: var(--primary, #6b2d3f);
-  color: var(--on-primary, #fff);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.btn-submit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.spin-icon {
-  animation: spin 1s linear infinite;
-  font-size: 16px;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.review-modal-delete {
+  margin-right: auto;
 }
 </style>

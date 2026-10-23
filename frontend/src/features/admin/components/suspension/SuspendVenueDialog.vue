@@ -62,12 +62,7 @@ const canSubmit = computed(
             {{ t('admin.suspension.courtCount', { count: state.preview.court_count }) }}
           </p>
           <p class="admin-detail-muted">
-            {{
-              t('admin.suspension.impact', {
-                bookings: state.preview.bookings.length,
-                sessions: state.preview.sessions.length,
-              })
-            }}
+            {{ t('admin.suspension.impact', { bookings: state.preview.bookings.length }) }}
           </p>
         </template>
         <label class="form-group">

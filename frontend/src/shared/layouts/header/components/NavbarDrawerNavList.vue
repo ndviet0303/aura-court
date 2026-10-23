@@ -31,7 +31,7 @@ const isCommunityActive = computed(() => {
   return (
     path.startsWith('/resale') ||
     path.startsWith('/marketplace') ||
-    path.startsWith('/matchmaking') ||
+    path.startsWith('/community') ||
     path.startsWith('/social-tournaments') ||
     path.startsWith('/tournaments')
   )
@@ -49,8 +49,7 @@ const bookingItems = computed(() => [
 const communityItems = [
   { to: '/resale', icon: 'swap_horiz', key: 'nav.resale' },
   { to: '/tournaments', icon: 'emoji_events', key: 'nav.tournaments' },
-  { to: '/matchmaking', icon: 'sports_tennis', key: 'nav.matchmaking' },
-  { to: '/matchmaking/create', icon: 'add_circle', key: 'nav.createMatch' },
+  { to: '/community', icon: 'forum', key: 'nav.communityFeed' },
 ]
 
 const isOwner = computed(() => {

@@ -36,9 +36,6 @@ export const bookingApi = {
 
   getWalletBalance: () => api.get<{ balance: number; currency?: string }>('/wallet/balance'),
 
-  submitReview: (reservationCode: string, payload: { rating: number; body?: string }) =>
-    api.post('/reviews', { reservation_code: reservationCode, ...payload }),
-
   createRecurringSeries: (payload: CreateRecurringSeriesPayload, key?: string) =>
     api.post<CreateRecurringSeriesResult>(
       '/recurring-series',

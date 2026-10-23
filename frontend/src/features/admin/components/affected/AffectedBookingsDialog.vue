@@ -66,19 +66,6 @@ const slot = (start: string, end: string) => `${venueDate(start)} · ${venueCloc
             </ul>
           </template>
 
-          <template v-if="state.list.sessions.length">
-            <h4 class="affected-heading">
-              {{ t('admin.affected.sessionsTitle', { count: state.list.sessions.length }) }}
-            </h4>
-            <ul class="affected-items">
-              <li v-for="session in state.list.sessions" :key="session.match_post_id">
-                <strong>{{ session.title || `#${session.match_post_id}` }}</strong>
-                <span>{{ session.court_code ?? '—' }}</span>
-                <span>{{ slot(session.starts_at, session.ends_at) }}</span>
-              </li>
-            </ul>
-          </template>
-
           <label class="affected-ack">
             <input v-model="acknowledged" type="checkbox" />
             <span>{{ t('admin.affected.acknowledgeLabel') }}</span>

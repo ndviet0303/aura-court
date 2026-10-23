@@ -31,7 +31,8 @@ export function getNotificationCategory(
     return 'payment'
   }
   if (
-    ev.includes('match') ||
+    ev.includes('community') ||
+    ev.includes('review') ||
     ev.includes('chat') ||
     ev.includes('tournament') ||
     ev.includes('social') ||
@@ -113,11 +114,11 @@ export function getNotificationMeta(event?: string): NotificationMeta {
   if (ev.includes('chat_message')) {
     return { icon: 'chat', color: '#0284c7', category: 'social', badgeText: 'TIN NHẮN' }
   }
-  if (ev.includes('matchmaking') || ev.includes('match')) {
-    return { icon: 'groups', color: '#0284c7', category: 'social', badgeText: 'KÈO GIAO LƯU' }
+  if (ev.includes('community_comment')) {
+    return { icon: 'forum', color: '#0284c7', category: 'social', badgeText: 'BÌNH LUẬN MỚI' }
   }
-  if (ev.includes('friendship')) {
-    return { icon: 'person_add', color: '#0284c7', category: 'social', badgeText: 'KẾT BẠN' }
+  if (ev.includes('review_reply')) {
+    return { icon: 'reviews', color: '#d97706', category: 'social', badgeText: 'PHẢN HỒI ĐÁNH GIÁ' }
   }
   if (ev.includes('tournament')) {
     return { icon: 'emoji_events', color: '#d97706', category: 'social', badgeText: 'GIẢI ĐẤU' }
