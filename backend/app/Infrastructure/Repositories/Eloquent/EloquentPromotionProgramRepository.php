@@ -67,6 +67,23 @@ class EloquentPromotionProgramRepository implements PromotionProgramRepositoryIn
         return VoucherCode::query()->where('code', $code)->first();
     }
 
+    public function giftableCodes(int $venueId, CarbonInterface $at): Collection
+    {
+        $at = CarbonImmutable::instance($at)->setTimezone(config('app.timezone'))->format('Y-m-d H:i:s');
+
+        return VoucherCode::query()
+            ->with('program.courts')
+            ->whereDoesntHave('activeUse')
+            ->whereHas('program', fn ($program) => $program
+                ->where('type', PromotionProgram::TYPE_PRIVATE)
+                ->where('venue_id', $venueId)
+                ->whereNull('stopped_at')
+                ->where('starts_at', '<=', $at)
+                ->where('ends_at', '>', $at))
+            ->orderBy('id')
+            ->get();
+    }
+
     public function coversCourt(PromotionProgram $program, int $courtId): bool
     {
         return $program->courts()->whereKey($courtId)->exists();
