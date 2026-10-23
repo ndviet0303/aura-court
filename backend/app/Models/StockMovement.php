@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['organization_id', 'product_id', 'type', 'quantity_delta', 'unit_cost', 'reference_type', 'reference_id', 'created_by', 'metadata'])]
+#[Fillable(['organization_id', 'venue_id', 'product_id', 'type', 'quantity_delta', 'unit_cost', 'reference_type', 'reference_id', 'created_by', 'metadata'])]
 class StockMovement extends Model
 {
     use BelongsToTenant;
@@ -26,6 +26,11 @@ class StockMovement extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(PosProduct::class, 'product_id');
+    }
+
+    public function venue(): BelongsTo
+    {
+        return $this->belongsTo(Venue::class);
     }
 
     public function creator(): BelongsTo

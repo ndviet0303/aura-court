@@ -36,6 +36,7 @@ class ServiceTabItem extends Model
         return $this->belongsTo(ServiceTab::class);
     }
 
+    /** @return BelongsTo<PosProduct, $this> */
     public function product(): BelongsTo
     {
         return $this->belongsTo(PosProduct::class, 'product_id');

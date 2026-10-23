@@ -5,6 +5,8 @@ import type {
   InventoryKpis,
   ProductFormPayload,
   StockActionPayload,
+  StockTransfer,
+  StockTransferPayload,
 } from '../types/inventory'
 
 export const inventoryApi = {
@@ -30,6 +32,7 @@ export const inventoryApi = {
     const res = await api.post<{ product: InventoryProduct }>(
       `/pos/products/${payload.productId}/stock`,
       {
+        venue_id: payload.venueId,
         quantity: payload.quantity,
         type: payload.type,
         note: payload.note,
@@ -43,4 +46,10 @@ export const inventoryApi = {
     api.get<StockMovement[]>('/pos/inventory/movements', { params }),
 
   getKpis: () => api.get<InventoryKpis>('/pos/inventory/kpis'),
+
+  getTransfers: (venueId: number) =>
+    api.get<StockTransfer[]>('/pos/inventory/transfers', { params: { venue_id: venueId } }),
+
+  createTransfer: (payload: StockTransferPayload) =>
+    api.post<{ transfer: StockTransfer }>('/pos/inventory/transfers', payload),
 }

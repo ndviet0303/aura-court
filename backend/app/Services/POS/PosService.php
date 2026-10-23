@@ -2,18 +2,16 @@
 
 namespace App\Services\POS;
 
+use App\Contracts\Repositories\VenueStockRepositoryInterface;
 use App\Models\CashShift;
 use App\Models\MembershipEntitlement;
 use App\Models\OrganizationMember;
 use App\Models\PointLedger;
 use App\Models\PosOrder;
-use App\Models\PosOrderItem;
 use App\Models\PosPayment;
 use App\Models\PosProduct;
 use App\Models\Reservation;
-use App\Models\ServiceTabItem;
 use App\Models\ShiftReconciliation;
-use App\Models\StockMovement;
 use App\Models\TenantCustomer;
 use App\Models\TenantMembership;
 use App\Models\TenantMembershipPlan;
@@ -39,6 +37,7 @@ class PosService
         private readonly LoyaltyPointService $loyaltyPoints,
         private readonly WalletAvailabilityService $walletAvailability,
         private readonly PosQrPaymentService $posQr,
+        private readonly VenueStockRepositoryInterface $stock,
     ) {}
 
     public function createProduct(int $organizationId, array $data, ?User $actor = null): PosProduct
@@ -61,8 +60,14 @@ class PosService
         }
 
         $initialStock = (int) ($data['stock_quantity'] ?? 0);
+        // Opening stock lands at one venue the owner names (D3).
+        $venueId = $initialStock > 0 ? (int) ($data['venue_id'] ?? 0) : null;
+        if ($venueId !== null) {
+            abort_if($venueId === 0 || $actor === null, 422, 'Chọn cơ sở nhận tồn ban đầu.');
+            $this->posQr->assertOperableVenue($actor, $organizationId, $venueId);
+        }
 
-        return DB::transaction(function () use ($organizationId, $data, $metadata, $initialStock, $actor): PosProduct {
+        return DB::transaction(function () use ($organizationId, $data, $metadata, $initialStock, $venueId, $actor): PosProduct {
             $product = PosProduct::create([
                 'organization_id' => $organizationId,
                 'sku' => $data['sku'],
@@ -71,32 +76,16 @@ class PosService
                 'description' => $data['description'] ?? null,
                 'price' => (int) $data['price'],
                 'cost' => (int) ($data['cost'] ?? 0),
-                'stock_quantity' => $initialStock,
                 'is_active' => true,
                 'metadata' => $metadata,
             ]);
 
-            if ($initialStock > 0) {
-                StockMovement::create([
-                    'organization_id' => $organizationId,
-                    'product_id' => $product->id,
-                    'type' => 'in',
-                    'quantity_delta' => $initialStock,
-                    'unit_cost' => $product->cost,
-                    'reference_type' => 'initial_stock',
-                    'reference_id' => null,
-                    'created_by' => $actor?->id,
-                    'metadata' => [
-                        'note' => 'Khởi tạo tồn kho ban đầu',
-                        'balance_after' => $initialStock,
-                        'product_name' => $product->name,
-                        'product_sku' => $product->sku,
-                        'unit' => $product->unit,
-                    ],
-                ]);
+            if ($venueId) {
+                $stock = $this->stock->lock($organizationId, $venueId, $product->id);
+                $this->stock->apply($stock, $initialStock, 'in', $actor->id, 'initial_stock', null, ['note' => 'Khởi tạo tồn kho ban đầu']);
             }
 
-            return $product;
+            return $product->setAttribute('stock_quantity', $venueId ? $initialStock : null);
         });
     }
 
@@ -141,34 +130,14 @@ class PosService
         $product->update(['is_active' => false]);
     }
 
-    public function adjustStock(PosProduct $product, int $delta, User $actor, string $type = 'adjustment', ?string $reference = null, ?string $note = null): PosProduct
+    /** Receipt, issue or count at one venue; the product comes back with that venue's stock. */
+    public function adjustStock(PosProduct $product, int $venueId, int $delta, User $actor, string $type = 'adjustment', ?string $reference = null, ?string $note = null): PosProduct
     {
-        return DB::transaction(function () use ($product, $delta, $actor, $type, $reference, $note): PosProduct {
-            $product = PosProduct::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
-            abort_unless($product->stock_quantity + $delta >= 0, 409, 'Insufficient stock.');
-            $product->increment('stock_quantity', $delta);
-            $fresh = $product->fresh();
+        return DB::transaction(function () use ($product, $venueId, $delta, $actor, $type, $reference, $note): PosProduct {
+            $stock = $this->stock->lock($product->organization_id, $venueId, $product->id);
+            $this->stock->apply($stock, $delta, $type, $actor->id, 'pos', null, ['reference' => $reference, 'note' => $note ?? $reference]);
 
-            StockMovement::create([
-                'organization_id' => $product->organization_id,
-                'product_id' => $product->id,
-                'type' => $type,
-                'quantity_delta' => $delta,
-                'unit_cost' => $product->cost,
-                'reference_type' => 'pos',
-                'reference_id' => null,
-                'created_by' => $actor->id,
-                'metadata' => [
-                    'reference' => $reference,
-                    'note' => $note ?? $reference,
-                    'balance_after' => $fresh->stock_quantity,
-                    'product_name' => $product->name,
-                    'product_sku' => $product->sku,
-                    'unit' => $product->unit,
-                ],
-            ]);
-
-            return $fresh;
+            return $product->setAttribute('stock_quantity', $stock->quantity);
         });
     }
 
@@ -344,13 +313,15 @@ class PosService
             ->where('status', 'open')
             ->first();
 
-        abort_if(! empty($data['require_shift']) && $activeShift === null, 409, 'Cashier does not have an active open shift.');
+        abort_if($activeShift === null, 409, 'Cashier does not have an active open shift.');
+        // The order belongs to the shift's venue; a different venue or a booking elsewhere is refused before any effect.
+        abort_if($activeShift->venue_id === null, 422, 'Ca đang mở chưa gắn cơ sở. Hãy đóng ca và mở ca mới tại cơ sở bạn đang bán.');
+        $saleVenueId = (int) $activeShift->venue_id;
+        abort_if(! empty($data['venue_id']) && (int) $data['venue_id'] !== $saleVenueId, 422, 'Đơn phải thuộc cơ sở của ca đang mở.');
+        $this->posQr->assertOperableVenue($cashier, $organizationId, $saleVenueId);
 
         $reservationId = empty($data['reservation_id']) ? null : $this->backfill->resolveCanonicalReservationId((int) $data['reservation_id'], $organizationId);
-
-        $saleVenueId = $data['venue_id'] ?? $activeShift?->venue_id ?? ($reservationId ? Reservation::query()->find($reservationId)?->court()->value('venue_id') : null);
-        $saleVenueId = $this->posQr->venueIdFor($cashier, $organizationId, $saleVenueId === null ? null : (int) $saleVenueId);
-        $this->posQr->assertOperableVenue($cashier, $organizationId, $saleVenueId);
+        abort_if($reservationId && (int) Reservation::query()->find($reservationId)?->court()->value('venue_id') !== $saleVenueId, 422, 'Lượt đặt sân thuộc cơ sở khác với ca đang mở.');
 
         // QR pays the venue owner's verified connection; without one the tender is refused before any mutation.
         $isPendingQr = $method === 'qr' || ($method === 'mixed' && in_array('qr', array_column((array) ($data['tenders'] ?? []), 'method'), true));
@@ -375,19 +346,7 @@ class PosService
             // Mixed tender validation (Task 8.1)
             $tenders = [];
             if ($method === 'mixed') {
-                $reservation = $reservationId ? Reservation::find($reservationId) : null;
-                $venue = null;
-                if (! empty($data['venue_id'])) {
-                    $venue = Venue::find((int) $data['venue_id']);
-                } elseif ($reservation && $reservation->court?->venue) {
-                    $venue = $reservation->court->venue;
-                } elseif ($activeShift && $activeShift->venue_id) {
-                    $venue = $activeShift->venue;
-                }
-                $allowMixed = false;
-                if ($venue) {
-                    $allowMixed = (bool) data_get($venue->currentBookingPolicy?->settings, 'pos.allow_mixed_tender', false);
-                }
+                $allowMixed = (bool) data_get(Venue::find($saleVenueId)?->currentBookingPolicy?->settings, 'pos.allow_mixed_tender', false);
                 if (! $allowMixed && ! empty($data['allow_mixed_tender'])) {
                     $allowMixed = true;
                 }
@@ -407,31 +366,17 @@ class PosService
                 abort_unless($tenderSum === $grandTotal, 422, "Total tender allocations ({$tenderSum}) must equal order total ({$grandTotal}).");
             }
 
-            // Stock lock and check (Task 8.11 / D58)
-            foreach ($quote['items'] as $item) {
-                $product = PosProduct::query()
-                    ->where('organization_id', $organizationId)
-                    ->whereKey($item['product_id'])
-                    ->lockForUpdate()
-                    ->firstOrFail();
-
+            // Stock of the sale venue, rows locked in product id order (D4); what tabs and QR orders there hold is not for sale.
+            $stocks = [];
+            foreach (collect($quote['items'])->sortBy('product_id') as $item) {
+                $product = $item['product'];
                 if (! $product->isTracked()) {
                     continue;
                 }
-
-                $reservedTabs = (int) ServiceTabItem::query()
-                    ->where('product_id', $product->id)
-                    ->where('status', ServiceTabItem::STATUS_RESERVED)
-                    ->sum('quantity');
-
-                $reservedQr = (int) PosOrderItem::query()
-                    ->where('product_id', $product->id)
-                    ->whereHas('order', fn ($q) => $q->where('status', 'pending_payment'))
-                    ->sum('quantity');
-
-                $totalReserved = $reservedTabs + $reservedQr;
-                $available = max(0, (int) $product->stock_quantity - $totalReserved);
-                $tabMsg = $totalReserved > 0 ? " ({$totalReserved} reserved by pending orders/tabs)." : '.';
+                $stock = $stocks[$product->id] ??= $this->stock->lock($organizationId, $saleVenueId, $product->id);
+                $held = $this->stock->held($saleVenueId, $product->id);
+                $available = max(0, $stock->quantity - $held);
+                $tabMsg = $held > 0 ? " ({$held} reserved by pending orders/tabs)." : '.';
                 abort_unless($available >= $item['quantity'], 409, "Insufficient stock for {$product->sku}{$tabMsg}");
             }
 
@@ -481,9 +426,9 @@ class PosService
                 'cart_id' => $data['cart_id'] ?? null,
                 'customer_id' => $data['customer_id'] ?? null,
                 'cashier_id' => $cashier->id,
-                'cash_shift_id' => $activeShift?->id,
-                'venue_id' => $qrConnection->venue_id ?? $saleVenueId,
-                'register_id' => $data['register_id'] ?? $activeShift?->register_id ?? null,
+                'cash_shift_id' => $activeShift->id,
+                'venue_id' => $saleVenueId,
+                'register_id' => $data['register_id'] ?? $activeShift->register_id,
                 'reservation_id' => $reservationId,
                 'status' => $orderStatus,
                 'payment_method' => $method,
@@ -512,18 +457,7 @@ class PosService
             foreach ($quote['items'] as $item) {
                 $product = $item['product'];
                 if (! $isPendingQr && $product->isTracked()) {
-                    $product->decrement('stock_quantity', $item['quantity']);
-
-                    StockMovement::create([
-                        'organization_id' => $organizationId,
-                        'product_id' => $product->id,
-                        'type' => 'sale',
-                        'quantity_delta' => -$item['quantity'],
-                        'unit_cost' => $product->cost,
-                        'reference_type' => PosOrder::class,
-                        'reference_id' => $order->id,
-                        'created_by' => $cashier->id,
-                    ]);
+                    $this->stock->apply($stocks[$product->id], -$item['quantity'], 'sale', $cashier->id, PosOrder::class, $order->id);
                 }
 
                 $order->items()->create([
@@ -803,20 +737,8 @@ class PosService
             if (empty($items)) {
                 $refundAmount = $order->total_amount;
                 foreach ($order->items as $item) {
-                    $product = $item->product;
-                    if ($product && $product->isTracked()) {
-                        $product->increment('stock_quantity', $item->quantity);
-                        StockMovement::create([
-                            'organization_id' => $order->organization_id,
-                            'product_id' => $product->id,
-                            'type' => 'return',
-                            'quantity_delta' => $item->quantity,
-                            'unit_cost' => $product->cost,
-                            'reference_type' => PosOrder::class,
-                            'reference_id' => $order->id,
-                            'created_by' => $cashier->id,
-                            'metadata' => ['reason' => $reason],
-                        ]);
+                    if ($item->product?->isTracked()) {
+                        $this->restock($order, $item->product_id, $item->quantity, $cashier, $reason);
                     }
                     $refundedItems[] = [
                         'product_id' => $item->product_id,
@@ -838,20 +760,8 @@ class PosService
                     $lineRefund = (int) round(($orderItem->line_total / $orderItem->quantity) * $qty);
                     $refundAmount += $lineRefund;
 
-                    $product = $orderItem->product;
-                    if ($restock && $product && $product->isTracked()) {
-                        $product->increment('stock_quantity', $qty);
-                        StockMovement::create([
-                            'organization_id' => $order->organization_id,
-                            'product_id' => $product->id,
-                            'type' => 'return',
-                            'quantity_delta' => $qty,
-                            'unit_cost' => $product->cost,
-                            'reference_type' => PosOrder::class,
-                            'reference_id' => $order->id,
-                            'created_by' => $cashier->id,
-                            'metadata' => ['reason' => $reason],
-                        ]);
+                    if ($restock && $orderItem->product?->isTracked()) {
+                        $this->restock($order, $productId, $qty, $cashier, $reason);
                     }
 
                     $refundedItems[] = [
@@ -1067,6 +977,14 @@ class PosService
 
             return $transaction;
         });
+    }
+
+    /** A return goes back to the venue of its sale (D3); an order without a venue cannot take stock back. */
+    private function restock(PosOrder $order, int $productId, int $quantity, User $cashier, string $reason): void
+    {
+        abort_if($order->venue_id === null, 422, 'Đơn chưa gắn cơ sở nên không nhập lại kho được. Hãy trả tiền mà không nhập kho (restock = false).');
+        $stock = $this->stock->lock($order->organization_id, (int) $order->venue_id, $productId);
+        $this->stock->apply($stock, $quantity, 'return', $cashier->id, PosOrder::class, $order->id, ['reason' => $reason]);
     }
 
     private function writePoints(int $organizationId, int $userId, int $ruleId, int $delta, string $sourceType, int $sourceId, ?CarbonInterface $expiresAt = null, array $metadata = []): PointLedger

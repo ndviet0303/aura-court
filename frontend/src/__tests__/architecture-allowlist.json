@@ -9,7 +9,7 @@
   ["component-lines", "features/admin/components/exceptions/ImmutableAuditSidebar.vue", 415],
   ["component-lines", "features/admin/components/exceptions/ManualOverrideDrawer.vue", 832],
   ["component-lines", "features/admin/components/inventory/InventoryCatalogTable.vue", 850],
-  ["component-lines", "features/admin/components/inventory/InventoryMovementsTable.vue", 602],
+  ["component-lines", "features/admin/components/inventory/InventoryMovementsTable.vue", 598],
   ["component-lines", "features/admin/components/inventory/InventoryProductModal.vue", 677],
   ["component-lines", "features/admin/components/inventory/InventoryStockActionModal.vue", 472],
   ["component-lines", "features/admin/components/kyc/KycDetailWorkbench.vue", 947],

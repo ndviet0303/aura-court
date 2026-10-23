@@ -2,13 +2,12 @@
 
 namespace App\Services\POS;
 
-use App\Models\OrganizationMember;
+use App\Contracts\Repositories\VenueStockRepositoryInterface;
+use App\Models\CashShift;
 use App\Models\OwnerPaymentAllocation;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\PosOrder;
-use App\Models\PosProduct;
 use App\Models\ReceivingConnection;
-use App\Models\StockMovement;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Finance\FinancialPostingService;
@@ -27,9 +26,9 @@ class PosQrPaymentService
         private readonly ReservationPaymentService $payments,
         private readonly FinancialPostingService $financials,
         private readonly LoyaltyPointService $loyaltyPoints,
+        private readonly VenueStockRepositoryInterface $stock,
     ) {}
 
-    /** The order's own venue, else the cashier's only venue in the organization; null when ambiguous. */
     /** The given venue, else the caller's only operable venue (BR-20: a staff member never falls back to the whole organization). */
     public function venueIdFor(User $cashier, int $organizationId, ?int $venueId): ?int
     {
@@ -41,16 +40,25 @@ class PosQrPaymentService
         return count($venueIds) === 1 ? $venueIds[0] : null;
     }
 
-    /** BR-20/21: a sale or shift belongs to a venue the caller operates; only the owner may work without one. */
+    /** BR-20/21: a sale or shift belongs to a venue the caller operates, owners included. */
     public function assertOperableVenue(User $cashier, int $organizationId, ?int $venueId): void
     {
-        if ($venueId === null) {
-            abort_unless($cashier->hasRoleInOrganization($organizationId, [OrganizationMember::ROLE_ORGANIZATION_OWNER]), 422, 'Vui lòng chọn cơ sở bạn được giao.');
-
-            return;
-        }
+        abort_if($venueId === null, 422, 'Vui lòng chọn cơ sở bạn được giao.');
         $venue = Venue::query()->where('organization_id', $organizationId)->find($venueId);
         abort_unless($venue && $cashier->canOperateVenue($venue), 403, 'Bạn không được giao cơ sở này.');
+    }
+
+    /** D2: whose stock a read shows: the asked venue (403 outside the caller's), else the caller's open shift's, else their only one. */
+    public function stockVenueId(User $user, int $organizationId, ?int $venueId): ?int
+    {
+        if ($venueId) {
+            $this->assertOperableVenue($user, $organizationId, $venueId);
+
+            return $venueId;
+        }
+        $shiftVenueId = CashShift::query()->where('organization_id', $organizationId)->where('cashier_id', $user->id)->where('status', 'open')->value('venue_id');
+
+        return $shiftVenueId ? (int) $shiftVenueId : $this->venueIdFor($user, $organizationId, null);
     }
 
     public function connectionFor(int $organizationId, ?int $venueId): ?ReceivingConnection
@@ -104,24 +112,14 @@ class PosQrPaymentService
         $order = $this->lockOrder((int) $allocation->purpose_id);
         $order->load(['items', 'payments', 'shift']);
 
-        foreach ($order->items as $item) {
-            $product = PosProduct::query()->where('organization_id', $order->organization_id)
-                ->whereKey($item->product_id)->lockForUpdate()->firstOrFail();
-            if (! $product->isTracked()) {
+        // The sale leaves the order's venue (D3), rows locked in product id order (D4).
+        foreach ($order->items->load('product')->sortBy('product_id') as $item) {
+            if (! $item->product->isTracked()) {
                 continue;
             }
-            abort_unless($product->stock_quantity >= $item->quantity, 409, "Insufficient stock for {$product->sku}.");
-            $product->decrement('stock_quantity', $item->quantity);
-            StockMovement::create([
-                'organization_id' => $order->organization_id,
-                'product_id' => $product->id,
-                'type' => 'sale',
-                'quantity_delta' => -$item->quantity,
-                'unit_cost' => $product->cost,
-                'reference_type' => PosOrder::class,
-                'reference_id' => $order->id,
-                'created_by' => $order->cashier_id,
-            ]);
+            abort_if($order->venue_id === null, 422, 'Đơn chưa gắn cơ sở nên không trừ kho được.');
+            $stock = $this->stock->lock($order->organization_id, (int) $order->venue_id, $item->product_id);
+            $this->stock->apply($stock, -$item->quantity, 'sale', $order->cashier_id, PosOrder::class, $order->id);
         }
 
         $order->payments()->where('method', 'qr')->where('status', 'pending')->update(['status' => 'paid']);

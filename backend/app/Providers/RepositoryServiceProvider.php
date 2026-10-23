@@ -29,12 +29,14 @@ use App\Contracts\Repositories\PromotionProgramRepositoryInterface;
 use App\Contracts\Repositories\ReconciliationRepositoryInterface;
 use App\Contracts\Repositories\RecurringContractRepositoryInterface;
 use App\Contracts\Repositories\ReservationRepositoryInterface;
+use App\Contracts\Repositories\StockTransferRepositoryInterface;
 use App\Contracts\Repositories\TenantMembershipPlanRepositoryInterface;
 use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
 use App\Contracts\Repositories\VenueMonitoringRepositoryInterface;
 use App\Contracts\Repositories\VenuePackageRepositoryInterface;
 use App\Contracts\Repositories\VenueRepositoryInterface;
+use App\Contracts\Repositories\VenueStockRepositoryInterface;
 use App\Contracts\Repositories\VenueSuspensionRepositoryInterface;
 use App\Contracts\Repositories\VoucherUseRepositoryInterface;
 use App\Contracts\Storage\FileStorageServiceInterface;
@@ -65,12 +67,14 @@ use App\Infrastructure\Repositories\Eloquent\EloquentPromotionProgramRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReconciliationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentRecurringContractRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReservationRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentStockTransferRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentTenantMembershipPlanRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentUserRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueLifecycleRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueMonitoringRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenuePackageRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentVenueStockRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueSuspensionRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVoucherUseRepository;
 use App\Infrastructure\Services\DurableNotificationService;
@@ -121,6 +125,8 @@ class RepositoryServiceProvider extends ServiceProvider
         PlatformFeeReportRepositoryInterface::class => EloquentPlatformFeeReportRepository::class,
         BookingAttendanceRepositoryInterface::class => EloquentBookingAttendanceRepository::class,
         BookingAttendanceAdjustmentRepositoryInterface::class => EloquentBookingAttendanceAdjustmentRepository::class,
+        VenueStockRepositoryInterface::class => EloquentVenueStockRepository::class,
+        StockTransferRepositoryInterface::class => EloquentStockTransferRepository::class,
     ];
 
     public function register(): void

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['organization_id', 'sku', 'barcode', 'name', 'description', 'price', 'cost', 'stock_quantity', 'is_active', 'metadata'])]
+#[Fillable(['organization_id', 'sku', 'barcode', 'name', 'description', 'price', 'cost', 'is_active', 'metadata'])]
 class PosProduct extends Model
 {
     use BelongsToTenant;
@@ -19,7 +19,6 @@ class PosProduct extends Model
         return [
             'price' => 'integer',
             'cost' => 'integer',
-            'stock_quantity' => 'integer',
             'is_active' => 'boolean',
             'metadata' => 'array',
         ];
@@ -28,6 +27,11 @@ class PosProduct extends Model
     public function movements(): HasMany
     {
         return $this->hasMany(StockMovement::class, 'product_id');
+    }
+
+    public function venueStocks(): HasMany
+    {
+        return $this->hasMany(VenueStock::class, 'product_id');
     }
 
     public function getCategoryAttribute(): string

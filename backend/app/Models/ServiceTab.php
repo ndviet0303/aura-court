@@ -65,6 +65,7 @@ class ServiceTab extends Model
         return $this->belongsTo(PosOrder::class, 'pos_order_id');
     }
 
+    /** @return HasMany<ServiceTabItem, $this> */
     public function items(): HasMany
     {
         return $this->hasMany(ServiceTabItem::class);

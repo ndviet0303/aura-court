@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
-import { AuraButton, SkeletonLoader } from '@/shared/components'
+import { AuraButton, SelectDropdown, SkeletonLoader } from '@/shared/components'
+import type { DropdownOption } from '@/shared/components'
 
 defineProps<{
   kpis: {
@@ -12,6 +13,10 @@ defineProps<{
   }
   activeTab: 'catalog' | 'movements'
   loading?: boolean
+  /** The venues the user may read; the figures below are the chosen venue's. */
+  venueOptions: DropdownOption[]
+  venueId: number | null
+  canTransfer?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -20,6 +25,8 @@ const emit = defineEmits<{
   (e: 'stockIn'): void
   (e: 'audit'): void
   (e: 'refresh'): void
+  (e: 'update:venueId', venueId: number): void
+  (e: 'transfer'): void
 }>()
 
 const { t } = useI18n()
@@ -37,6 +44,15 @@ const { t } = useI18n()
       </div>
 
       <div class="header-actions">
+        <SelectDropdown
+          v-if="venueOptions.length"
+          :model-value="venueId"
+          :options="venueOptions"
+          :aria-label="t('admin.inventory.venueLabel')"
+          variant="bordered"
+          @update:model-value="emit('update:venueId', Number($event))"
+        />
+
         <AuraButton variant="outline" :disabled="loading" @click="emit('refresh')">
           <span class="material-symbols-outlined icon-18" :class="{ 'spin-anim': loading }"
             >refresh</span
@@ -57,6 +73,11 @@ const { t } = useI18n()
         <AuraButton variant="outline" @click="emit('audit')">
           <span class="material-symbols-outlined icon-18">fact_check</span>
           <span>{{ t('admin.inventory.auditStock') }}</span>
+        </AuraButton>
+
+        <AuraButton v-if="canTransfer" variant="outline" @click="emit('transfer')">
+          <span class="material-symbols-outlined icon-18">local_shipping</span>
+          <span>{{ t('admin.inventory.transferStock') }}</span>
         </AuraButton>
       </div>
     </div>

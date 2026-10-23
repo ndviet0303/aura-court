@@ -1,6 +1,16 @@
 import { ref, computed, onMounted } from 'vue'
-import type { InventoryProduct, StockMovement, ProductFormPayload } from '../types/inventory'
+import type {
+  InventoryProduct,
+  StockMovement,
+  ProductFormPayload,
+  StockTransferPayload,
+} from '../types/inventory'
 import { inventoryApi } from '../api/inventoryApi'
+import { adminApi } from '../api/adminApi'
+import { useOwnerCheck } from './useLifecycleCommands'
+import { resolveLocalizedText } from '@/i18n'
+import type { Venue } from '@/features/court/types/court'
+import type { ApiError } from '@/core/types/api'
 import { errorMessage } from '@/core/utils/errorMessage'
 
 export function useAdminInventory() {
@@ -38,6 +48,19 @@ export function useAdminInventory() {
   const showDeleteModal = ref(false)
   const productToDelete = ref<InventoryProduct | null>(null)
 
+  // Stock is kept per venue (pos-venue-inventory D9): the page reads and changes the chosen venue.
+  const venues = ref<Venue[]>([])
+  const venueId = ref<number | null>(null)
+  const isOwnerOf = useOwnerCheck()
+  const venueOptions = computed(() =>
+    venues.value.map((v) => ({ value: v.id, label: resolveLocalizedText(v.name) })),
+  )
+  const canTransfer = computed(
+    () => venues.value.length > 1 && isOwnerOf(venues.value[0]?.organization_id),
+  )
+  const showTransferModal = ref(false)
+  const transferErrors = ref<Record<string, string[]>>({})
+
   // Derived Categories
   const categories = computed(() => {
     const defaultCats = ['drinks', 'equipment', 'accessories', 'snacks']
@@ -71,8 +94,9 @@ export function useAdminInventory() {
     return movements.value.filter((m) => {
       if (movementTypeFilter.value !== 'all') {
         const type = movementTypeFilter.value
-        if (type === 'in' && !['in', 'receipt'].includes(m.type)) return false
-        if (type === 'out' && !['out', 'sale', 'disposal'].includes(m.type)) return false
+        if (type === 'in' && !['in', 'receipt', 'transfer_in'].includes(m.type)) return false
+        if (type === 'out' && !['out', 'sale', 'disposal', 'transfer_out'].includes(m.type))
+          return false
         if (type === 'adjust' && !['adjust', 'adjustment'].includes(m.type)) return false
         if (!['in', 'out', 'adjust'].includes(type) && m.type !== type) return false
       }
@@ -136,28 +160,69 @@ export function useAdminInventory() {
     }, 6000)
   }
 
+  const venueParams = () => (venueId.value ? { venue_id: venueId.value } : {})
+
+  async function loadMovements() {
+    const movs = await inventoryApi.getMovements(venueParams())
+    if (Array.isArray(movs)) {
+      movements.value = movs.map((m) => ({
+        ...m,
+        quantity: m.quantity !== undefined ? m.quantity : Math.abs(m.quantity_delta || 0),
+      }))
+    }
+  }
+
   async function loadInventoryData() {
     loading.value = true
     errorMsg.value = ''
     try {
-      const [prodsRes, movsRes] = await Promise.allSettled([
-        inventoryApi.getProducts(),
-        inventoryApi.getMovements(),
+      if (!venues.value.length) {
+        const list = await adminApi.getVenues()
+        venues.value = Array.isArray(list) ? list : []
+        venueId.value ??= venues.value[0]?.id ?? null
+      }
+      const [prodsRes] = await Promise.allSettled([
+        inventoryApi.getProducts(venueParams()),
+        loadMovements(),
       ])
 
       if (prodsRes.status === 'fulfilled' && Array.isArray(prodsRes.value)) {
         products.value = prodsRes.value
       }
-      if (movsRes.status === 'fulfilled' && Array.isArray(movsRes.value)) {
-        movements.value = movsRes.value.map((m) => ({
-          ...m,
-          quantity: m.quantity !== undefined ? m.quantity : Math.abs(m.quantity_delta || 0),
-        }))
-      }
     } catch (e: unknown) {
       showError(errorMessage(e, 'Không thể tải dữ liệu kho hàng.'))
     } finally {
       loading.value = false
+    }
+  }
+
+  function selectVenue(id: number) {
+    venueId.value = id
+    return loadInventoryData()
+  }
+
+  function openTransfer() {
+    transferErrors.value = {}
+    showTransferModal.value = true
+  }
+
+  async function handleTransfer(payload: Omit<StockTransferPayload, 'from_venue_id'>) {
+    if (!venueId.value) return
+    saving.value = true
+    transferErrors.value = {}
+    try {
+      await inventoryApi.createTransfer({ ...payload, from_venue_id: venueId.value })
+      showTransferModal.value = false
+      showNotice('Đã điều chuyển hàng sang cơ sở khác.')
+      await loadInventoryData()
+    } catch (e: unknown) {
+      // 409 (not enough to move) and 422 come back by field, shown beside it in the modal.
+      transferErrors.value = (e as ApiError)?.errors ?? {}
+      if (!Object.keys(transferErrors.value).length) {
+        showError(errorMessage(e, 'Không thể điều chuyển hàng.'))
+      }
+    } finally {
+      saving.value = false
     }
   }
 
@@ -194,20 +259,14 @@ export function useAdminInventory() {
         }
         showNotice(`Đã cập nhật sản phẩm "${payload.name}" thành công!`)
       } else {
-        const created = await inventoryApi.createProduct(payload)
+        // Opening stock lands at the venue shown.
+        const created = await inventoryApi.createProduct({
+          ...payload,
+          venue_id: venueId.value ?? undefined,
+        })
         products.value.unshift(created)
         showNotice(`Đã thêm mặt hàng mới "${payload.name}" vào kho!`)
-        // Refresh movements as well if initial stock was created
-        if ((payload.stock_quantity || 0) > 0) {
-          inventoryApi.getMovements().then((movs) => {
-            if (Array.isArray(movs)) {
-              movements.value = movs.map((m) => ({
-                ...m,
-                quantity: m.quantity !== undefined ? m.quantity : Math.abs(m.quantity_delta || 0),
-              }))
-            }
-          })
-        }
+        if ((payload.stock_quantity || 0) > 0) loadMovements()
       }
       showProductModal.value = false
     } catch (e: unknown) {
@@ -222,13 +281,15 @@ export function useAdminInventory() {
     note?: string
     unitCost?: number
   }) {
-    if (!selectedProductForAction.value) return
     const p = selectedProductForAction.value
+    const venue = venueId.value
+    if (!p || !venue) return
     saving.value = true
     errorMsg.value = ''
     try {
       const updatedProduct = await inventoryApi.adjustStock({
         productId: p.id,
+        venueId: venue,
         type: stockActionType.value,
         quantity: payload.quantity,
         unitCost: payload.unitCost,
@@ -241,13 +302,7 @@ export function useAdminInventory() {
       }
 
       // Re-fetch movements to get exact server state with relations
-      const movs = await inventoryApi.getMovements()
-      if (Array.isArray(movs)) {
-        movements.value = movs.map((m) => ({
-          ...m,
-          quantity: m.quantity !== undefined ? m.quantity : Math.abs(m.quantity_delta || 0),
-        }))
-      }
+      await loadMovements()
 
       showStockActionModal.value = false
       const actionName =
@@ -339,5 +394,13 @@ export function useAdminInventory() {
     resetCatalogFilters,
     resetMovementFilters,
     loadInventoryData,
+    venueOptions,
+    venueId,
+    canTransfer,
+    showTransferModal,
+    transferErrors,
+    selectVenue,
+    openTransfer,
+    handleTransfer,
   }
 }

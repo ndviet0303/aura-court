@@ -7,6 +7,7 @@ import InventoryMovementsTable from '../components/inventory/InventoryMovementsT
 import InventoryProductModal from '../components/inventory/InventoryProductModal.vue'
 import InventoryStockActionModal from '../components/inventory/InventoryStockActionModal.vue'
 import InventoryDeleteModal from '../components/inventory/InventoryDeleteModal.vue'
+import InventoryTransferModal from '../components/inventory/InventoryTransferModal.vue'
 
 const {
   loading,
@@ -44,6 +45,14 @@ const {
   resetCatalogFilters,
   resetMovementFilters,
   loadInventoryData,
+  venueOptions,
+  venueId,
+  canTransfer,
+  showTransferModal,
+  transferErrors,
+  selectVenue,
+  openTransfer,
+  handleTransfer,
 } = useAdminInventory()
 </script>
 
@@ -71,6 +80,11 @@ const {
       :kpis="kpis"
       :active-tab="activeTab"
       :loading="loading"
+      :venue-options="venueOptions"
+      :venue-id="venueId"
+      :can-transfer="canTransfer"
+      @update:venue-id="selectVenue"
+      @transfer="openTransfer"
       @update:active-tab="activeTab = $event"
       @add-product="openAddProduct"
       @stock-in="openStockAction('in')"
@@ -134,6 +148,17 @@ const {
       :saving="saving"
       @close="showStockActionModal = false"
       @submit="handleStockAction"
+    />
+
+    <InventoryTransferModal
+      :show="showTransferModal"
+      :products="products"
+      :venue-options="venueOptions"
+      :from-venue-id="venueId"
+      :saving="saving"
+      :errors="transferErrors"
+      @close="showTransferModal = false"
+      @submit="handleTransfer"
     />
 
     <InventoryDeleteModal

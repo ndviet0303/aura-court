@@ -2,13 +2,13 @@
 
 namespace App\Services\POS;
 
+use App\Contracts\Repositories\VenueStockRepositoryInterface;
 use App\Models\CashShift;
 use App\Models\PosOrder;
 use App\Models\PosProduct;
 use App\Models\Reservation;
 use App\Models\ServiceTab;
 use App\Models\ServiceTabItem;
-use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\Infrastructure\FeatureFlagService;
@@ -26,22 +26,8 @@ class ServiceTabService
         private readonly WalletAvailabilityService $walletAvailability,
         private readonly LegacyBookingBackfillService $backfill,
         private readonly FeatureFlagService $features,
+        private readonly VenueStockRepositoryInterface $stock,
     ) {}
-
-    public function getReservedQuantity(int $productId): int
-    {
-        return (int) ServiceTabItem::query()
-            ->where('product_id', $productId)
-            ->where('status', ServiceTabItem::STATUS_RESERVED)
-            ->sum('quantity');
-    }
-
-    public function getAvailableStock(PosProduct $product): int
-    {
-        $reserved = $this->getReservedQuantity($product->id);
-
-        return max(0, (int) $product->stock_quantity - $reserved);
-    }
 
     public function resolveReservation(int|string $reservationIdOrCode, int $organizationId): Reservation
     {
@@ -109,44 +95,7 @@ class ServiceTabService
     {
         abort_unless($quantity > 0, 422, 'Quantity must be greater than zero.');
 
-        return DB::transaction(function () use ($staff, $organizationId, $reservationIdOrCode, $productId, $quantity): ServiceTab {
-            $tab = $this->getOrCreateTab($organizationId, $reservationIdOrCode, $staff);
-            abort_unless($tab->status === ServiceTab::STATUS_UNPAID, 422, 'Cannot add items to a settled or cancelled tab.');
-
-            $product = PosProduct::query()
-                ->where('organization_id', $organizationId)
-                ->whereKey($productId)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            $availableStock = $this->getAvailableStock($product);
-            abort_unless($availableStock >= $quantity, 409, "Insufficient stock for {$product->name}. (Available: {$availableStock}, requested: {$quantity})");
-
-            $item = $tab->items()
-                ->where('product_id', $productId)
-                ->where('status', ServiceTabItem::STATUS_RESERVED)
-                ->first();
-
-            if ($item) {
-                $item->quantity += $quantity;
-                $item->line_total = $item->quantity * $item->unit_price;
-                $item->save();
-            } else {
-                $tab->items()->create([
-                    'product_id' => $product->id,
-                    'quantity' => $quantity,
-                    'unit_price' => $product->price,
-                    'line_total' => $quantity * $product->price,
-                    'status' => ServiceTabItem::STATUS_RESERVED,
-                ]);
-            }
-
-            // Recalculate tab total
-            $tab->total_amount = (int) $tab->items()->where('status', ServiceTabItem::STATUS_RESERVED)->sum('line_total');
-            $tab->save();
-
-            return $tab->fresh(['items.product', 'reservation.user', 'reservation.court.venue', 'openedBy:id,name']);
-        });
+        return $this->addItems($staff, $organizationId, $reservationIdOrCode, [['product_id' => $productId, 'quantity' => $quantity]]);
     }
 
     public function addItems(User $staff, int $organizationId, int|string $reservationIdOrCode, array $items): ServiceTab
@@ -154,22 +103,22 @@ class ServiceTabService
         return DB::transaction(function () use ($staff, $organizationId, $reservationIdOrCode, $items): ServiceTab {
             $tab = $this->getOrCreateTab($organizationId, $reservationIdOrCode, $staff);
             abort_unless($tab->status === ServiceTab::STATUS_UNPAID, 422, 'Cannot add items to a settled or cancelled tab.');
+            // A tab holds stock of its booking's venue (D3), rows locked in product id order (D4).
+            $venueId = (int) $tab->reservation->court->venue_id;
 
-            foreach ($items as $row) {
+            foreach (collect($items)->sortBy('product_id') as $row) {
                 $productId = (int) $row['product_id'];
                 $quantity = (int) ($row['quantity'] ?? 1);
                 if ($quantity <= 0) {
                     continue;
                 }
 
-                $product = PosProduct::query()
-                    ->where('organization_id', $organizationId)
-                    ->whereKey($productId)
-                    ->lockForUpdate()
-                    ->firstOrFail();
-
-                $availableStock = $this->getAvailableStock($product);
-                abort_unless($availableStock >= $quantity, 409, "Insufficient stock for {$product->name}. (Available: {$availableStock}, requested: {$quantity})");
+                $product = PosProduct::query()->where('organization_id', $organizationId)->whereKey($productId)->firstOrFail();
+                if ($product->isTracked()) {
+                    $stock = $this->stock->lock($organizationId, $venueId, $productId);
+                    $availableStock = max(0, $stock->quantity - $this->stock->held($venueId, $productId));
+                    abort_unless($availableStock >= $quantity, 409, "Insufficient stock for {$product->name}. (Available: {$availableStock}, requested: {$quantity})");
+                }
 
                 $item = $tab->items()
                     ->where('product_id', $productId)
@@ -251,13 +200,15 @@ class ServiceTabService
             ->first();
         abort_unless($activeShift !== null, 409, 'Cashier does not have an active open shift.');
 
-        return DB::transaction(function () use ($cashier, $organizationId, $tabId, $paymentData, $method): array {
+        return DB::transaction(function () use ($cashier, $organizationId, $tabId, $paymentData, $method, $activeShift): array {
             $tab = ServiceTab::query()
                 ->where('organization_id', $organizationId)
                 ->whereKey($tabId)
                 ->lockForUpdate()
                 ->firstOrFail();
             $this->assertOperates($cashier, $tab->reservation);
+            // The settlement order belongs to the booking's venue, which must be the cashier's shift venue.
+            $venueId = (int) $tab->reservation->court->venue_id;
 
             // Idempotent retry: if already settled, return existing order and receipt
             if ($tab->status === ServiceTab::STATUS_SETTLED && $tab->pos_order_id) {
@@ -276,6 +227,7 @@ class ServiceTabService
             }
 
             abort_unless($tab->status === ServiceTab::STATUS_UNPAID, 422, 'Cannot settle a cancelled or already processed tab.');
+            abort_unless((int) $activeShift->venue_id === $venueId, 422, 'Lượt đặt sân thuộc cơ sở khác với ca đang mở.');
 
             $reservedItems = $tab->items()
                 ->where('status', ServiceTabItem::STATUS_RESERVED)
@@ -310,6 +262,7 @@ class ServiceTabService
                 'organization_id' => $organizationId,
                 'customer_id' => $customer?->id,
                 'cashier_id' => $cashier->id,
+                'venue_id' => $venueId,
                 'reservation_id' => $tab->reservation_id,
                 'status' => 'completed',
                 'payment_method' => $method,
@@ -329,29 +282,12 @@ class ServiceTabService
 
             // Convert stock reservations into sale stock movements exactly once
             $orderLines = [];
-            foreach ($reservedItems as $item) {
-                $product = PosProduct::query()->whereKey($item->product_id)->lockForUpdate()->firstOrFail();
-
-                $product->decrement('stock_quantity', $item->quantity);
-
-                StockMovement::create([
-                    'organization_id' => $organizationId,
-                    'product_id' => $product->id,
-                    'type' => 'sale',
-                    'quantity_delta' => -$item->quantity,
-                    'unit_cost' => (int) $product->cost,
-                    'reference_type' => 'service_tab',
-                    'reference_id' => $tab->id,
-                    'created_by' => $cashier->id,
-                    'metadata' => [
-                        'balance_after' => $product->fresh()->stock_quantity,
-                        'product_name' => $product->name,
-                        'product_sku' => $product->sku,
-                        'unit' => $product->unit,
-                        'tab_id' => $tab->id,
-                        'reservation_id' => $tab->reservation_id,
-                    ],
-                ]);
+            foreach ($reservedItems->sortBy('product_id') as $item) {
+                $product = $item->product;
+                if ($product->isTracked()) {
+                    $stock = $this->stock->lock($organizationId, $venueId, $product->id);
+                    $this->stock->apply($stock, -$item->quantity, 'sale', $cashier->id, 'service_tab', $tab->id, ['tab_id' => $tab->id, 'reservation_id' => $tab->reservation_id]);
+                }
 
                 $item->update(['status' => ServiceTabItem::STATUS_SETTLED]);
 
