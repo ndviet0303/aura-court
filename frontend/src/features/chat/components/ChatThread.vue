@@ -54,7 +54,9 @@ function gift(code: string, note: string) {
   <section class="thread">
     <header class="thread-head">
       <h2 class="thread-title">{{ conversation.title }}</h2>
-      <p v-if="conversation.venue" class="muted">{{ conversation.venue.name }}</p>
+      <p v-if="conversation.venue && conversation.venue.name !== conversation.title" class="muted">
+        {{ conversation.venue.name }}
+      </p>
     </header>
 
     <div ref="scroller" class="messages" role="log" aria-live="polite">

@@ -20,7 +20,11 @@ const { t } = useI18n()
         @click="emit('select', item.id)"
       >
         <span class="title">{{ item.title }}</span>
-        <span v-if="item.venue && item.side !== 'venue'" class="tag">{{ item.venue.name }}</span>
+        <span
+          v-if="item.venue && item.side !== 'venue' && item.venue.name !== item.title"
+          class="tag"
+          >{{ item.venue.name }}</span
+        >
         <span class="preview">
           <template v-if="item.last_message">
             {{ item.last_message.mine ? `${t('chat.you')}: ` : '' }}{{ item.last_message.preview }}
