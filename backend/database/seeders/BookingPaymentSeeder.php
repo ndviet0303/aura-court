@@ -281,6 +281,7 @@ class BookingPaymentSeeder extends Seeder
                         'reservation_id' => $reservation->id,
                         'booking_id' => $booking->id,
                         'user_id' => $customer->id,
+                        'venue_id' => $court->venue_id,
                         'court_id' => $court->id,
                         'rating' => $rating,
                         'body' => $pool[$reviewCounts[$key] % count($pool)],

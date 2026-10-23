@@ -123,9 +123,10 @@ class Court extends Model
         return $this->hasMany(WaitlistEntry::class);
     }
 
+    /** D15: reviews belong to the venue, so every court of a venue shows the same reviews and rating. */
     public function reviews(): HasMany
     {
-        return $this->hasMany(Review::class);
+        return $this->hasMany(Review::class, 'venue_id', 'venue_id');
     }
 
     /** D9: a court is addressed by its id only; a former slug URL is a 404, not a database error. */

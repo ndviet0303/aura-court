@@ -21,26 +21,25 @@ class FeedComment extends Model
         ];
     }
 
+    /** @return BelongsTo<FeedPost, $this> */
     public function post(): BelongsTo
     {
         return $this->belongsTo(FeedPost::class, 'feed_post_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function reactions(): MorphMany
-    {
-        return $this->morphMany(FeedReaction::class, 'reactable');
-    }
-
+    /** @return MorphMany<FeedReport, $this> */
     public function reports(): MorphMany
     {
         return $this->morphMany(FeedReport::class, 'reportable');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function hiddenBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'hidden_by');

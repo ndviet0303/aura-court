@@ -5,28 +5,14 @@ namespace App\Infrastructure\Repositories\Eloquent;
 use App\Contracts\Repositories\ReservationRepositoryInterface;
 use App\Models\Reservation;
 use App\Models\ReservationSlot;
-use App\Models\Review;
 use App\Models\VoucherUse;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class EloquentReservationRepository implements ReservationRepositoryInterface
 {
     private const TENANT_SCOPE = 'tenant_isolation';
-
-    public function findOwnedByCode(int $userId, string $code): ?Reservation
-    {
-        return Reservation::query()->withoutGlobalScope(self::TENANT_SCOPE)
-            ->where('user_id', $userId)
-            ->where('code', $code)
-            ->with(['slots' => $this->unscoped(), 'legacyMapping' => $this->unscoped(), 'review'])
-            ->first();
-    }
-
-    public function createReview(array $attributes): Review
-    {
-        return Review::create($attributes);
-    }
 
     public function paginateUserReservations(int $userId, int $perPage = 20): LengthAwarePaginator
     {
@@ -38,7 +24,9 @@ class EloquentReservationRepository implements ReservationRepositoryInterface
                 'slots' => $this->unscoped(),
                 'entitlements' => $this->unscoped(),
                 'legacyMapping' => $this->legacyMapping(),
-                'review',
+                // BR-147: a deleted review still blocks a new one, so the customer's list shows it too.
+                'review' => fn ($query) => $query->withoutGlobalScope(SoftDeletingScope::class),
+                'attendance' => fn ($query) => $query->withoutGlobalScope(self::TENANT_SCOPE)->select(['id', 'reservation_id', 'status', 'checked_out_at']),
             ])
             ->latest()
             ->paginate($perPage);

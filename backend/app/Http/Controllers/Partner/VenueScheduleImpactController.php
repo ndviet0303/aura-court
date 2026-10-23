@@ -10,7 +10,7 @@ use App\Http\Requests\Partner\SaveVenueOperatingScheduleRequest;
 use App\Http\Requests\Partner\SaveVenueScheduleExceptionRequest;
 use Illuminate\Http\JsonResponse;
 
-/** Design D7 previews: the bookings and owner-hosted sessions a schedule change would affect. Nothing is saved. */
+/** Design D7 previews: the bookings a schedule change would affect. Nothing is saved. */
 class VenueScheduleImpactController extends Controller
 {
     public function operatingSchedule(SaveVenueOperatingScheduleRequest $request, int $organizationId, int $venueId, SaveVenueOperatingSchedule $action): JsonResponse
