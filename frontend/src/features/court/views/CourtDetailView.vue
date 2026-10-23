@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '@/features/auth/stores/authStore'
+import { AuraButton } from '@/shared/components'
+import { useStartChat } from '@/features/chat/composables/useStartChat'
 import { useCourtDetail } from '../composables/useCourtDetail'
 
 import CourtDetailHero from '../components/detail/CourtDetailHero.vue'
@@ -9,6 +14,17 @@ import CourtStickyBookingCard from '../components/detail/CourtStickyBookingCard.
 import CourtGalleryModal from '../components/detail/CourtGalleryModal.vue'
 
 const { court, reviews, reviewsLoading, isGalleryOpen, basePrice } = useCourtDetail()
+const { t } = useI18n()
+const auth = useAuthStore()
+const startChat = useStartChat()
+const chatError = ref('')
+
+// UC-7.14: the customer opens the chat with this court's venue.
+async function messageVenue() {
+  const venueId = court.value?.venue_id
+  if (!venueId) return
+  chatError.value = (await startChat({ type: 'customer_venue', venue_id: venueId })) ?? ''
+}
 </script>
 
 <template>
@@ -36,6 +52,10 @@ const { court, reviews, reviewsLoading, isGalleryOpen, basePrice } = useCourtDet
       <!-- Right Column (Sticky Booking Widget) -->
       <div class="sidebar-sticky-col">
         <CourtStickyBookingCard :court="court" :base-price="basePrice" />
+        <AuraButton v-if="auth.user" class="message-venue" variant="outline" @click="messageVenue">
+          {{ t('chat.messageVenue') }}
+        </AuraButton>
+        <p v-if="chatError" class="form-error" role="alert">{{ chatError }}</p>
       </div>
     </div>
 
@@ -73,6 +93,11 @@ const { court, reviews, reviewsLoading, isGalleryOpen, basePrice } = useCourtDet
 .sidebar-sticky-col {
   position: sticky;
   top: 24px;
+}
+
+.message-venue {
+  width: 100%;
+  margin-top: 12px;
 }
 
 @media (max-width: 950px) {

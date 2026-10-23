@@ -8,6 +8,8 @@ export interface NavItem {
   badgeKey?: string
   /** Tenant capability the item needs; the route meta carries the same flag. */
   capability?: string
+  /** Shown to every admin-layout role: owners and staff chat for their venues, the platform admin answers owners (FR-118). */
+  anyRole?: boolean
 }
 
 export interface NavGroup {
@@ -62,6 +64,12 @@ export const navGroups: NavGroup[] = [
         path: '/admin/operations',
         labelKey: 'admin.nav.operations',
         icon: 'how_to_reg',
+      },
+      {
+        id: 'courts-customers',
+        path: '/admin/customers',
+        labelKey: 'admin.nav.customers',
+        icon: 'groups',
       },
       {
         id: 'courts-affected',
@@ -180,6 +188,13 @@ export const navGroups: NavGroup[] = [
         labelKey: 'admin.nav.organization',
         icon: 'corporate_fare',
       },
+      {
+        id: 'org-messages',
+        path: '/admin/messages',
+        labelKey: 'admin.nav.messages',
+        icon: 'chat',
+        anyRole: true,
+      },
       { id: 'org-staff', path: '/admin/staff', labelKey: 'admin.nav.staffManage', icon: 'badge' },
       {
         id: 'org-packages',
@@ -243,6 +258,7 @@ export const OWNER_OR_STAFF_PATHS = [
   '/admin/venues',
   '/admin/affected-bookings',
   '/admin/operations',
+  '/admin/customers',
   '/admin/pos',
   '/pos',
   '/admin/shifts',

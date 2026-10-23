@@ -245,6 +245,36 @@ export const ERROR_CODE_MAP: Record<string, { vi: string; en: string; key: strin
     en: 'The status and times did not change.',
     key: 'errors.adjustmentNoChange',
   },
+  CUSTOMER_NOT_FOUND: {
+    vi: 'Khách hàng chưa đặt sân tại cơ sở này.',
+    en: 'This customer has not booked at this venue.',
+    key: 'errors.customerNotFound',
+  },
+  CONVERSATION_FORBIDDEN: {
+    vi: 'Bạn không có quyền truy cập cuộc trò chuyện này.',
+    en: 'You cannot access this conversation.',
+    key: 'errors.conversationForbidden',
+  },
+  CHAT_WITH_SELF: {
+    vi: 'Không thể trò chuyện với chính mình hoặc cơ sở mình đang quản lý.',
+    en: 'You cannot chat with yourself or a venue you run.',
+    key: 'errors.chatWithSelf',
+  },
+  VOUCHER_NEEDS_VENUE_CHAT: {
+    vi: 'Chỉ tặng voucher trong cuộc trò chuyện giữa khách và cơ sở.',
+    en: 'Vouchers can only be gifted in a customer–venue chat.',
+    key: 'errors.voucherNeedsVenueChat',
+  },
+  VOUCHER_OWNER_ONLY: {
+    vi: 'Chỉ chủ cơ sở được tặng voucher.',
+    en: 'Only the venue owner can gift vouchers.',
+    key: 'errors.voucherOwnerOnly',
+  },
+  VOUCHER_NOT_GIFTABLE: {
+    vi: 'Mã không thuộc voucher riêng đang hiệu lực của cơ sở hoặc đã được dùng.',
+    en: 'The code is not a running private voucher of this venue, or it is already used.',
+    key: 'errors.voucherNotGiftable',
+  },
 }
 
 export function isRawInfrastructureMessage(msg: string): boolean {

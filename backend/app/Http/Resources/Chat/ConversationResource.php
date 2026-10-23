@@ -23,7 +23,7 @@ class ConversationResource extends JsonResource
             'type' => $this->type,
             'side' => $side,
             'title' => ChatDisplay::counterpart($this->resource, $side, $viewer),
-            'venue' => $this->venue ? ['id' => $this->venue->id, 'name' => $this->venue->name] : null,
+            'venue' => $this->venue ? ['id' => $this->venue->id, 'name' => $this->venue->name, 'organization_id' => $this->venue->organization_id] : null,
             'customer_id' => $this->type === Conversation::TYPE_VENUE ? $this->user_a_id : null,
             'last_message' => $last ? [
                 'preview' => $last->voucher ? 'Voucher '.$last->voucher['code'] : ($last->body ? Str::limit($last->body, 80) : 'Ảnh'),
