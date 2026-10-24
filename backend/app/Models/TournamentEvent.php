@@ -2,25 +2,25 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
+use App\Casts\UtcDateTime;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['organization_id', 'tournament_id', 'aggregate_version', 'event_type', 'created_by', 'payload'])]
+/** The tournament's history: draws, stops and result corrections with before and after (UC-7.33, BR-157). */
+#[Fillable(['tournament_id', 'type', 'actor_id', 'reason', 'payload', 'created_at'])]
 class TournamentEvent extends Model
 {
-    use BelongsToTenant;
-
-    public $timestamps = false;
+    public const UPDATED_AT = null;
 
     protected function casts(): array
     {
-        return ['aggregate_version' => 'integer', 'payload' => 'array', 'created_at' => 'datetime'];
+        return ['payload' => 'array', 'created_at' => UtcDateTime::class];
     }
 
-    protected static function booted(): void
+    /** @return BelongsTo<User, $this> */
+    public function actor(): BelongsTo
     {
-        static::updating(fn () => throw new \LogicException('Tournament events are immutable.'));
-        static::deleting(fn () => throw new \LogicException('Tournament events are immutable.'));
+        return $this->belongsTo(User::class, 'actor_id');
     }
 }

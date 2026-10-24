@@ -65,7 +65,12 @@ use App\Http\Controllers\Reservation\CancelReservationPaymentController;
 use App\Http\Controllers\Reservation\MyReservationController;
 use App\Http\Controllers\Reservation\ReservationController;
 use App\Http\Controllers\Review\ReviewController;
-use App\Http\Controllers\Tournament\TournamentController;
+use App\Http\Controllers\Tournament\ManagedTournamentController;
+use App\Http\Controllers\Tournament\PublicTournamentController;
+use App\Http\Controllers\Tournament\TournamentEntryController;
+use App\Http\Controllers\Tournament\TournamentFixtureController;
+use App\Http\Controllers\Tournament\TournamentRosterController;
+use App\Http\Controllers\Tournament\TournamentSetupController;
 use App\Http\Controllers\Wallet\WalletController;
 use App\Http\Controllers\Wallet\WalletDepositController;
 use App\Http\Controllers\Webhook\ProviderWebhookController;
@@ -127,6 +132,9 @@ Route::get('courts/{court}', [CourtController::class, 'show']);
 Route::get('social/feed', [FeedPostController::class, 'index']);
 Route::get('social/feed/{post}', [FeedPostController::class, 'show'])->whereNumber('post');
 Route::get('venues/{venue}/reviews', [ReviewController::class, 'index'])->whereNumber('venue');
+// Module 07 FR-121, FR-122: published public tournaments; an internal or draft one only for those who take part.
+Route::get('tournaments', [PublicTournamentController::class, 'index']);
+Route::get('tournaments/{tournament}', [PublicTournamentController::class, 'show']);
 Route::get('venues', [AdminController::class, 'venues']);
 Route::get('venues/{slug}', [AdminController::class, 'showVenue']);
 Route::get('availability', AvailabilityController::class);
@@ -164,6 +172,35 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
     Route::put('social/feed/comments/{comment}', [FeedCommentController::class, 'update']);
     Route::delete('social/feed/comments/{comment}', [FeedCommentController::class, 'destroy']);
     Route::post('content-reports', [ContentReportController::class, 'store']);
+    // Module 07 part C (D20): tournaments cross organizations; TournamentAccess checks the caller's role per tournament.
+    Route::post('tournaments/{tournament}/entries', [TournamentEntryController::class, 'store']);
+    Route::get('me/tournament-entries', [TournamentEntryController::class, 'mine']);
+    Route::post('tournament-entries/{entry}/withdraw', [TournamentEntryController::class, 'withdraw']);
+    Route::post('tournament-entries/{entry}/payment', [TournamentEntryController::class, 'pay']);
+    Route::post('tournament-entries/{entry}/approve', [TournamentEntryController::class, 'approve']);
+    Route::post('tournament-entries/{entry}/reject', [TournamentEntryController::class, 'reject'])->name('tournament-entries.reject');
+    Route::delete('tournament-entries/{entry}', [TournamentEntryController::class, 'destroy']);
+    Route::get('managed/tournaments', [ManagedTournamentController::class, 'index']);
+    Route::post('managed/tournaments', [ManagedTournamentController::class, 'store']);
+    Route::post('managed/internal-tournaments', [ManagedTournamentController::class, 'storeInternal']);
+    Route::get('managed/tournaments/{tournament}', [ManagedTournamentController::class, 'show']);
+    Route::put('managed/tournaments/{tournament}', [ManagedTournamentController::class, 'update']);
+    Route::post('managed/tournaments/{tournament}/publish', [ManagedTournamentController::class, 'publish']);
+    Route::post('managed/tournaments/{tournament}/stop', [ManagedTournamentController::class, 'stop']);
+    Route::post('managed/tournaments/{tournament}/allocations', [TournamentSetupController::class, 'allocate']);
+    Route::delete('managed/tournaments/{tournament}/allocations/{allocation}', [TournamentSetupController::class, 'release']);
+    Route::post('managed/tournaments/{tournament}/grants', [TournamentSetupController::class, 'grant']);
+    Route::delete('managed/tournaments/{tournament}/grants/{grant}', [TournamentSetupController::class, 'revoke']);
+    Route::post('managed/tournaments/{tournament}/lock-roster', [TournamentSetupController::class, 'lockRoster']);
+    Route::post('managed/tournaments/{tournament}/draw', [TournamentSetupController::class, 'draw']);
+    Route::get('managed/tournaments/{tournament}/roster/template', [TournamentRosterController::class, 'template']);
+    Route::post('managed/tournaments/{tournament}/roster/preview', [TournamentRosterController::class, 'preview']);
+    Route::post('managed/tournaments/{tournament}/roster/confirm', [TournamentRosterController::class, 'confirm']);
+    Route::post('managed/tournaments/{tournament}/roster/entries', [TournamentRosterController::class, 'store']);
+    Route::put('tournament-fixtures/{fixture}/schedule', [TournamentFixtureController::class, 'schedule']);
+    Route::post('tournament-fixtures/{fixture}/result', [TournamentFixtureController::class, 'result']);
+    Route::post('tournament-fixtures/{fixture}/walkover', [TournamentFixtureController::class, 'result'])->name('tournament-fixtures.walkover');
+    Route::post('tournament-fixtures/{fixture}/correction', [TournamentFixtureController::class, 'correct'])->name('tournament-fixtures.correction');
     Route::post('reviews', [ReviewController::class, 'store'])->middleware('verified');
     Route::put('reviews/{review}', [ReviewController::class, 'update']);
     Route::delete('reviews/{review}', [ReviewController::class, 'destroy']);
@@ -503,21 +540,6 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::post('marketplace/listings/{listing}/withdraw', [AdvancedBookingController::class, 'withdrawListing']);
         });
 
-        Route::middleware('feature:social_matchmaking_tournaments')->group(function () {
-            Route::post('tournaments', [TournamentController::class, 'create'])->middleware(RequireOrganizationRole::class.':organization_owner');
-            Route::post('tournaments/{tournament}/regenerate', [TournamentController::class, 'regenerateBracket'])->middleware('tournament_role:organizer');
-            Route::post('tournaments/{tournament}/participants', [TournamentController::class, 'addParticipant'])->middleware('tournament_role:organizer');
-            Route::post('tournament-participants/{participant}/check-in', [TournamentController::class, 'checkIn'])->middleware('tournament_role:official');
-            Route::post('tournaments/{tournament}/register', [TournamentController::class, 'register']);
-            Route::get('tournaments/{tournament}/registration', [TournamentController::class, 'registration']);
-            Route::post('tournaments/{tournament}/fixtures/{fixture}/score', [TournamentController::class, 'score'])->middleware('tournament_role:official');
-            Route::get('tournaments/{tournament}/grants', [TournamentController::class, 'grants'])->middleware('tournament_role:organizer');
-            Route::post('tournaments/{tournament}/grants', [TournamentController::class, 'createGrant'])->middleware('tournament_role:organizer');
-            Route::delete('tournaments/{tournament}/grants/{grant}', [TournamentController::class, 'revokeGrant'])->middleware('tournament_role:organizer');
-            Route::post('tournaments/{tournament}/finalize', [TournamentController::class, 'finalize'])->middleware('tournament_role:organizer');
-            Route::post('tournaments/{tournament}/reopen', [TournamentController::class, 'reopen']);
-        });
-
         Route::middleware('feature:tenant_pos_and_wallet')->group(function () {
             Route::get('pos/products', [PosController::class, 'products']);
             Route::get('pos/products/{product}', [PosController::class, 'showProduct']);
@@ -634,11 +656,4 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
         });
     });
 
-    // Public Discoverable Routes (Tournaments)
-    Route::middleware('feature:social_matchmaking_tournaments')->group(function () {
-        Route::get('tournaments', [TournamentController::class, 'index']);
-        Route::get('tournaments/{tournament}', [TournamentController::class, 'show']);
-        Route::get('tournaments/{tournament}/events', [TournamentController::class, 'events']);
-        Route::get('tournaments/{tournament}/poll', [TournamentController::class, 'poll']);
-    });
 });

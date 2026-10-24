@@ -2,6 +2,7 @@
 
 namespace App\Services\Payment;
 
+use App\Domain\Tournament\Actions\ConfirmEntryPayment;
 use App\Models\OwnerPaymentAllocation;
 use App\Models\OwnerPaymentAttempt;
 use App\Models\OwnerPaymentReceipt;
@@ -14,7 +15,6 @@ use App\Services\Booking\RecurringSeriesService;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\POS\PosQrPaymentService;
 use App\Services\Reservation\HeldReservationRelease;
-use App\Services\Tournament\TournamentRegistrationPaymentService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\QueryException;
@@ -35,7 +35,7 @@ class OwnerPaymentAttemptService
         'recurring_period' => [RecurringSeriesService::class, 'hasConfirmablePeriod', 'recurring_hold_unavailable'],
         'split_share' => [SplitPaymentService::class, 'hasConfirmableShare', 'split_share_unavailable'],
         'pos_order' => [PosQrPaymentService::class, 'hasConfirmableOrder', 'pos_order_unavailable'],
-        'tournament_registration' => [TournamentRegistrationPaymentService::class, 'hasConfirmableRegistration', 'tournament_registration_unavailable'],
+        'tournament_registration' => [ConfirmEntryPayment::class, 'hasConfirmableRegistration', 'tournament_registration_unavailable'],
     ];
 
     public function createAttempt(
@@ -120,7 +120,7 @@ class OwnerPaymentAttemptService
                     'credential_version' => $lockedConnection->credential_version,
                     'receiver_snapshot_ciphertext' => $this->encryptSnapshot($receiverSnapshot),
                     'purpose_snapshot_ciphertext' => $this->encryptSnapshot($purposeSnapshot),
-                    'expires_at' => $expiresAt,
+                    'expires_at' => $expiresAt->copy()->setTimezone(config('app.timezone')), // app-time column: a UTC instant would land 7 hours early
                 ]);
             });
         } catch (QueryException $exception) {

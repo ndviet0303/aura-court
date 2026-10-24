@@ -13,6 +13,7 @@ use App\Models\RecurringOccurrence;
 use App\Models\RecurringSeries;
 use App\Models\Reservation;
 use App\Models\ReservationSlot;
+use App\Models\TournamentCourtAllocation;
 use App\Models\User;
 use App\Models\VenueBookingPolicy;
 use App\Services\Infrastructure\FeatureFlagService;
@@ -765,7 +766,7 @@ class RecurringSeriesService
 
     private function overlapReason(Court $court, Carbon $start, Carbon $end): ?string
     {
-        $conflict = ReservationSlot::query()
+        $conflict = TournamentCourtAllocation::blocks((int) $court->id, $start, $end) || ReservationSlot::query()
             ->where('court_id', $court->id)
             ->where('starts_at', '<', $end->copy()->utc())
             ->where('ends_at', '>', $start->copy()->utc())

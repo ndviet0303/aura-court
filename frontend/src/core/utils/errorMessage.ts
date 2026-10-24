@@ -325,6 +325,131 @@ export const ERROR_CODE_MAP: Record<string, { vi: string; en: string; key: strin
     en: 'Only the owner of the venue’s organization can reply to reviews.',
     key: 'errors.reviewReplyForbidden',
   },
+  ENTRY_CLOSED: {
+    vi: 'Giải không mở đăng ký hoặc đã quá hạn đăng ký.',
+    en: 'Registration is not open or its deadline has passed.',
+    key: 'errors.entryClosed',
+  },
+  ENTRY_EXISTS: {
+    vi: 'Bạn đã có hồ sơ đang xử lý ở giải này.',
+    en: 'You already have an entry in progress for this tournament.',
+    key: 'errors.entryExists',
+  },
+  ENTRY_NOT_WITHDRAWABLE: {
+    vi: 'Hồ sơ này không thể rút nữa.',
+    en: 'This entry can no longer be withdrawn.',
+    key: 'errors.entryNotWithdrawable',
+  },
+  ENTRY_NOT_APPROVED: {
+    vi: 'Hồ sơ chưa được duyệt nên chưa thể thanh toán.',
+    en: 'The entry has not been approved, so it cannot be paid yet.',
+    key: 'errors.entryNotApproved',
+  },
+  PAYMENT_DEADLINE_PASSED: {
+    vi: 'Đã quá hạn thanh toán lệ phí giải.',
+    en: 'The tournament payment deadline has passed.',
+    key: 'errors.paymentDeadlinePassed',
+  },
+  TOURNAMENT_NO_RECEIVER: {
+    vi: 'Cơ sở của giải chưa có tài khoản nhận tiền.',
+    en: 'The tournament venue has no receiving account yet.',
+    key: 'errors.tournamentNoReceiver',
+  },
+  TOURNAMENT_NOT_DRAFT: {
+    vi: 'Chỉ sửa được thông tin khi giải còn là bản nháp.',
+    en: 'The tournament can only be edited while it is a draft.',
+    key: 'errors.tournamentNotDraft',
+  },
+  TOURNAMENT_NO_COURTS: {
+    vi: 'Cần dành sân cho giải trước khi công bố.',
+    en: 'Reserve court time for the tournament before publishing it.',
+    key: 'errors.tournamentNoCourts',
+  },
+  TOURNAMENT_DEADLINES: {
+    vi: 'Hạn đăng ký phải ở tương lai, không sau hạn thanh toán; hạn thanh toán không sau giờ bắt đầu.',
+    en: 'The registration deadline must be in the future and not after the payment deadline, which must not be after the start.',
+    key: 'errors.tournamentDeadlines',
+  },
+  TOURNAMENT_STOPPED: {
+    vi: 'Giải đã dừng, không nhận thêm thay đổi.',
+    en: 'The tournament has been stopped and takes no more changes.',
+    key: 'errors.tournamentStopped',
+  },
+  ALLOCATION_CONFLICT: {
+    vi: 'Khoảng sân này trùng đơn đặt đã xác nhận, giữ chỗ còn hạn hoặc giải khác.',
+    en: 'This court time overlaps a confirmed booking, an active hold or another tournament.',
+    key: 'errors.allocationConflict',
+  },
+  ALLOCATION_IN_USE: {
+    vi: 'Khoảng sân này đã có trận được xếp vào.',
+    en: 'A match is already scheduled in this court time.',
+    key: 'errors.allocationInUse',
+  },
+  INTERNAL_RENTALS_INVALID: {
+    vi: 'Mã đơn thuê phải là đơn đã xác nhận của cùng một khách, tại cùng một cơ sở.',
+    en: 'Booking codes must be confirmed bookings of one customer at one venue.',
+    key: 'errors.internalRentalsInvalid',
+  },
+  GRANT_INVALID: {
+    vi: 'Không thể cấp quyền này: người điều hành phải là nhân viên được phân công cơ sở (giải công khai), người đại diện chỉ dành cho giải nội bộ.',
+    en: 'This access cannot be granted: an official must be staff assigned to the venue (public tournament), a representative is for internal tournaments only.',
+    key: 'errors.grantInvalid',
+  },
+  ENTRY_NOT_PENDING: {
+    vi: 'Hồ sơ không còn chờ duyệt.',
+    en: 'The entry is no longer waiting for review.',
+    key: 'errors.entryNotPending',
+  },
+  ROSTER_INVALID: {
+    vi: 'Tệp danh sách còn lỗi, xem các dòng được liệt kê.',
+    en: 'The roster file has errors; see the listed rows.',
+    key: 'errors.rosterInvalid',
+  },
+  ROSTER_LOCKED: {
+    vi: 'Danh sách đã chốt, không thể thay đổi.',
+    en: 'The roster is locked and cannot change.',
+    key: 'errors.rosterLocked',
+  },
+  ROSTER_TOO_SMALL: {
+    vi: 'Cần ít nhất 2 đơn vị để chốt danh sách.',
+    en: 'At least 2 entries are needed to lock the roster.',
+    key: 'errors.rosterTooSmall',
+  },
+  DRAW_NOT_ALLOWED: {
+    vi: 'Không thể bốc thăm lúc này: giải đã bắt đầu hoặc đã có kết quả.',
+    en: 'The draw cannot be made now: the tournament has started or has results.',
+    key: 'errors.drawNotAllowed',
+  },
+  FIXTURE_OUTSIDE_COURTS: {
+    vi: 'Giờ thi đấu nằm ngoài khoảng sân của giải.',
+    en: 'The match time is outside the tournament court time.',
+    key: 'errors.fixtureOutsideCourts',
+  },
+  FIXTURE_CLASH: {
+    vi: 'Trùng giờ với trận khác trên cùng sân.',
+    en: 'It overlaps another match on the same court.',
+    key: 'errors.fixtureClash',
+  },
+  RESULT_INVALID: {
+    vi: 'Kết quả không hợp lệ: cầu lông không hoà và đủ số ván; trận loại trực tiếp hoà cần luân lưu phân định.',
+    en: 'Invalid result: badminton cannot be drawn and needs enough games; a drawn knockout match needs a deciding shoot-out.',
+    key: 'errors.resultInvalid',
+  },
+  RESULT_EXISTS: {
+    vi: 'Trận đã có kết quả; hãy dùng sửa kết quả.',
+    en: 'This match already has a result; use a correction.',
+    key: 'errors.resultExists',
+  },
+  FIXTURE_NOT_READY: {
+    vi: 'Trận chưa đủ hai bên để nhập kết quả.',
+    en: 'The match does not have both sides yet.',
+    key: 'errors.fixtureNotReady',
+  },
+  CORRECTION_BLOCKED: {
+    vi: 'Không thể sửa vì trận vòng sau phụ thuộc đã có kết quả.',
+    en: 'It cannot be corrected because a later match that depends on it has a result.',
+    key: 'errors.correctionBlocked',
+  },
 }
 
 export function isRawInfrastructureMessage(msg: string): boolean {

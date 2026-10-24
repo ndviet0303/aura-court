@@ -36,7 +36,6 @@
         <env name="FEATURE_MARKETPLACE_PAYOUTS" value="false" force="true"/>
         <env name="FEATURE_MARKETPLACE_SPLIT_PAYMENTS" value="false" force="true"/>
         <env name="FEATURE_MARKETPLACE_SLOT_RESALE" value="false" force="true"/>
-        <env name="FEATURE_SOCIAL_TOURNAMENTS" value="false" force="true"/>
         <env name="FEATURE_TENANT_POS_WALLET" value="false" force="true"/>
         <env name="FEATURE_DIRECT_OWNER_PAYMENTS" value="false" force="true"/>
         <env name="PILOT_ORGANIZATION_IDS" value="" force="true"/>

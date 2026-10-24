@@ -6,6 +6,7 @@ use App\Models\Court;
 use App\Models\OperationalStop;
 use App\Models\Reservation;
 use App\Models\ReservationSlot;
+use App\Models\TournamentCourtAllocation;
 use App\Models\Venue;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -134,6 +135,8 @@ class SlotSelectionPolicy
     {
         $stopped = OperationalStop::query()->affectingCourt($court, (int) $court->venue_id)->overlapping($start, $end)->exists();
         abort_if($stopped, 409, 'Sân đang tạm ngừng hoặc ngừng kinh doanh trong khoảng thời gian đã chọn.');
+        // BR-152: court time reserved for a tournament is not for ordinary bookings.
+        abort_if(TournamentCourtAllocation::blocks((int) $court->id, $start, $end), 409, 'Sân đã được dành cho giải đấu trong khoảng thời gian đã chọn.');
     }
 
     /**

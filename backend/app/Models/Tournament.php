@@ -2,51 +2,59 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
+use App\Casts\UtcDateTime;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
-#[Fillable(['uuid', 'organization_id', 'venue_id', 'created_by', 'name', 'format', 'status', 'version', 'starts_at', 'settings'])]
+/**
+ * Module 07 part C (D16–D18): one sport and one event. A public tournament is set up by the venue owner, published,
+ * paid for on AuraCourt and played in reserved court time (BR-148, BR-152); an internal one is run by the renter's
+ * representative inside the renter's confirmed bookings, with no public entry or fee.
+ */
+#[Fillable([
+    'uuid', 'organization_id', 'venue_id', 'created_by', 'type', 'name', 'sport', 'entry_type', 'team_main', 'team_reserve',
+    'max_entries', 'format', 'group_count', 'advance_per_group', 'games_to_win', 'points', 'tiebreakers', 'rules',
+    'eligibility', 'athlete_fields', 'forfeit_rule', 'prizes', 'fee', 'registration_deadline', 'payment_deadline',
+    'starts_at', 'ends_at', 'status', 'published_at', 'stopped_at', 'stopped_by', 'stop_reason',
+])]
 class Tournament extends Model
 {
-    use BelongsToTenant;
+    public const TYPE_PUBLIC = 'public';
 
-    protected $appends = ['entry_fee', 'max_participants'];
+    public const TYPE_INTERNAL = 'internal';
 
-    // Null when no fee was published; registration then charges nothing.
-    public function getEntryFeeAttribute(): ?string
-    {
-        return isset($this->settings['entry_fee']) ? (string) $this->settings['entry_fee'] : null;
-    }
+    public const SPORTS = ['badminton', 'football'];
 
-    public function getMaxParticipantsAttribute(): int
-    {
-        return (int) ($this->settings['max_participants'] ?? 16);
-    }
+    public const ENTRY_TYPES = ['single', 'double', 'team'];
+
+    public const FORMAT_GROUP = 'group';
+
+    public const FORMAT_KNOCKOUT = 'knockout';
+
+    public const TIEBREAKERS = ['head_to_head', 'score_diff', 'score_for'];
+
+    public const STATUS_DRAFT = 'draft';
+
+    public const STATUS_OPEN = 'open';
+
+    public const STATUS_ROSTER_LOCKED = 'roster_locked';
+
+    public const STATUS_DRAWN = 'drawn';
+
+    public const STATUS_IN_PROGRESS = 'in_progress';
+
+    public const STATUS_FINISHED = 'finished';
+
+    public const STATUS_STOPPED = 'stopped';
 
     protected static function booted(): void
     {
-        static::creating(function (Tournament $tournament) {
-            if (empty($tournament->uuid)) {
-                $tournament->uuid = (string) Str::uuid7();
-            }
+        static::creating(function (Tournament $tournament): void {
+            $tournament->uuid ??= (string) Str::uuid7();
         });
-    }
-
-    public function resolveRouteBinding($value, $field = null): ?Model
-    {
-        if (Str::isUuid((string) $value)) {
-            return $this->where('uuid', (string) $value)->first();
-        }
-
-        if (is_numeric($value)) {
-            return $this->where('id', (int) $value)->first();
-        }
-
-        return $this->where('uuid', $value)->first();
     }
 
     public function getRouteKeyName(): string
@@ -57,58 +65,86 @@ class Tournament extends Model
     protected function casts(): array
     {
         return [
-            'version' => 'integer',
-            'starts_at' => 'datetime',
-            'settings' => 'array',
+            'points' => 'array',
+            'tiebreakers' => 'array',
+            'athlete_fields' => 'array',
+            'fee' => 'integer',
+            'max_entries' => 'integer',
+            'team_main' => 'integer',
+            'team_reserve' => 'integer',
+            'group_count' => 'integer',
+            'advance_per_group' => 'integer',
+            'games_to_win' => 'integer',
+            'registration_deadline' => UtcDateTime::class,
+            'payment_deadline' => UtcDateTime::class,
+            'starts_at' => UtcDateTime::class,
+            'ends_at' => UtcDateTime::class,
+            'published_at' => UtcDateTime::class,
+            'stopped_at' => UtcDateTime::class,
         ];
     }
 
-    public function participants(): HasMany
+    public function isPublic(): bool
     {
-        return $this->hasMany(TournamentParticipant::class);
+        return $this->type === self::TYPE_PUBLIC;
     }
 
-    public function fixtures(): HasMany
+    public function isClosed(): bool
     {
-        return $this->hasMany(TournamentFixture::class);
+        return in_array($this->status, [self::STATUS_FINISHED, self::STATUS_STOPPED], true);
     }
 
-    public function standings(): HasMany
+    /** Entries holding a place: paid public applications or the internal roster. */
+    public function acceptedStatus(): string
     {
-        return $this->hasMany(TournamentStanding::class);
+        return $this->isPublic() ? TournamentEntry::STATUS_PAID : TournamentEntry::STATUS_CONFIRMED;
     }
 
-    public function events(): HasMany
+    /** BR-153: public entry is open until the registration deadline. */
+    public function acceptsEntries(): bool
     {
-        return $this->hasMany(TournamentEvent::class);
+        return $this->isPublic() && $this->status === self::STATUS_OPEN && $this->registration_deadline?->isFuture() === true;
     }
 
+    /** @return BelongsTo<Venue, $this> */
+    public function venue(): BelongsTo
+    {
+        return $this->belongsTo(Venue::class);
+    }
+
+    /** @return HasMany<TournamentGrant, $this> */
     public function grants(): HasMany
     {
         return $this->hasMany(TournamentGrant::class);
     }
 
-    public function creator(): BelongsTo
+    /** @return HasMany<TournamentEntry, $this> */
+    public function entries(): HasMany
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->hasMany(TournamentEntry::class);
     }
 
-    public function isAuthorizedOfficial(User $user, ?string $requiredRole = null): bool
+    /** @return HasMany<TournamentCourtAllocation, $this> */
+    public function allocations(): HasMany
     {
-        if ($user->hasRoleInOrganization($this->organization_id, ['organization_owner', 'staff'])) {
-            return true;
-        }
+        return $this->hasMany(TournamentCourtAllocation::class);
+    }
 
-        return $this->grants()
-            ->active()
-            ->where('user_id', $user->id)
-            ->when($requiredRole, function ($q) use ($requiredRole) {
-                if ($requiredRole === 'official') {
-                    return $q->whereIn('role', ['organizer', 'official']);
-                }
+    /** @return HasMany<TournamentRental, $this> */
+    public function rentals(): HasMany
+    {
+        return $this->hasMany(TournamentRental::class);
+    }
 
-                return $q->where('role', $requiredRole);
-            })
-            ->exists();
+    /** @return HasMany<TournamentFixture, $this> */
+    public function fixtures(): HasMany
+    {
+        return $this->hasMany(TournamentFixture::class);
+    }
+
+    /** @return HasMany<TournamentEvent, $this> */
+    public function events(): HasMany
+    {
+        return $this->hasMany(TournamentEvent::class);
     }
 }
