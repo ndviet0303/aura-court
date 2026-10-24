@@ -405,56 +405,6 @@ class FinancialPostingService
         ], $entries);
     }
 
-    public function postTournamentRegistrationPayment(int $organizationId, int $tournamentId, int $participantId, int $amount, int $walletAccountId, ?string $reference = null): Journal
-    {
-        $eventId = "tournament:{$tournamentId}:participant:{$participantId}";
-        $existing = Journal::query()
-            ->where('organization_id', $organizationId)
-            ->where('event_type', 'tournament.registration')
-            ->where('event_id', $eventId)
-            ->first();
-
-        if ($existing) {
-            return $existing->load('entries');
-        }
-
-        $amount = (int) $amount;
-        $accounts = $this->ledger->systemAccounts($organizationId);
-
-        $entries = [
-            [
-                'account_id' => $accounts['wallet_liability']->id,
-                'side' => 'debit',
-                'amount' => $amount,
-                'source_type' => 'App\\Models\\TournamentParticipant',
-                'source_id' => $participantId,
-            ],
-            [
-                'account_id' => $accounts['tenant_payable']->id,
-                'side' => 'credit',
-                'amount' => $amount,
-                'source_type' => 'App\\Models\\TournamentParticipant',
-                'source_id' => $participantId,
-            ],
-        ];
-
-        return $this->ledger->post([
-            'organization_id' => $organizationId,
-            'event_type' => 'tournament.registration',
-            'event_id' => $eventId,
-            'reference' => $reference ?? "TRN-{$tournamentId}-{$participantId}",
-            'currency' => config('finance.currency', 'VND'),
-            'description' => 'Tournament registration fee funded via wallet',
-            'metadata' => [
-                'provider' => 'wallet',
-                'tournament_id' => $tournamentId,
-                'participant_id' => $participantId,
-                'wallet_account_id' => $walletAccountId,
-                'commission' => 0,
-            ],
-        ], $entries);
-    }
-
     public function compensate(Journal $original, string $eventId, string $reason, array $metadata = []): Journal
     {
         $entries = $original->entries()->orderBy('line_number')->get()->map(function ($entry) {

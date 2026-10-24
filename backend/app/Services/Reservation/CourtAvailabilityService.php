@@ -5,6 +5,7 @@ namespace App\Services\Reservation;
 use App\Models\Court;
 use App\Models\OperationalStop;
 use App\Models\ReservationSlot;
+use App\Models\TournamentCourtAllocation;
 use App\Services\Pricing\RentalPriceCalculator;
 use Carbon\CarbonImmutable;
 
@@ -40,6 +41,7 @@ class CourtAvailabilityService
             ->whereHas('reservation', fn ($reservation) => $reservation->blocksInventory())
             ->get(['starts_at', 'ends_at']);
         $stops = OperationalStop::query()->affectingCourt($court, (int) $court->venue_id)->overlapping($window[0], $window[1])->get(['starts_at', 'ended_at']);
+        $tournaments = TournamentCourtAllocation::query()->overlapping((int) $court->id, $window[0], $window[1])->get(['starts_at', 'ends_at']);
 
         $times = [];
         foreach ($quotes as $index => $quote) {
@@ -48,7 +50,7 @@ class CourtAvailabilityService
                 'startsAt' => $start->toIso8601String(),
                 'endsAt' => $end->toIso8601String(),
                 'price' => $quote->rental,
-                'available' => $start->isFuture() && ! $busy->contains(fn ($row): bool => $row->starts_at < $end && $row->ends_at > $start)
+                'available' => $start->isFuture() && ! $busy->toBase()->merge($tournaments)->contains(fn ($row): bool => $row->starts_at < $end && $row->ends_at > $start)
                     && ! $stops->contains(fn ($stop): bool => $stop->starts_at < $end && ($stop->ended_at === null || $stop->ended_at > $start)),
             ];
         }

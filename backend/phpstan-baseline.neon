@@ -25,24 +25,6 @@ parameters:
 			path: app/Console/Commands/ReconcileLegacyPartnersCommand.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$court_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Booking/Actions/ExpirePendingBookings.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$starts_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Domain/Booking/Actions/ExpirePendingBookings.php
-
-		-
-			message: '#^Parameter \#1 \$callback of static method Illuminate\\Database\\Connection\:\:transaction\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Domain/Booking/Actions/ExpirePendingBookings.php
-
-		-
 			message: '#^Call to an undefined method App\\Services\\Finance\\PayoutService\:\:approvePayout\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -473,24 +455,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Http/Controllers/Reservation/ReservationController.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:active\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Controllers/Tournament/TournamentController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$organization_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Middleware/EnsureTournamentRole.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:isAuthorizedOfficial\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Middleware/EnsureTournamentRole.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
@@ -1147,18 +1111,6 @@ parameters:
 			path: app/Models/OrganizationInvitation.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ends_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Reservation.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$starts_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Reservation.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
 			identifier: property.notFound
 			count: 2
@@ -1193,12 +1145,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Models/StockMovement.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:active\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Models/Tournament.php
 
 		-
 			message: '#^Right side of && is always true\.$#'
@@ -1877,22 +1823,3 @@ parameters:
 			identifier: return.type
 			count: 1
 			path: app/Services/Social/ResalePriceCap.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 8
-			path: app/Services/Tournament/TournamentService.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:isAuthorizedOfficial\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Services/Tournament/TournamentService.php
-
-		-
-			message: '#^Call to function is_string\(\) with non\-falsy\-string will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Services/Tournament/TournamentService.php
-

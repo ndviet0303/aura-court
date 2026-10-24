@@ -142,6 +142,7 @@ class Reservation extends Model
         return $this->belongsTo(PriceQuote::class, 'price_quote_id');
     }
 
+    /** @return HasMany<ReservationSlot, $this> */
     public function slots(): HasMany
     {
         return $this->hasMany(ReservationSlot::class);

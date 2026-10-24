@@ -6,6 +6,7 @@ use App\Models\BookingSlot;
 use App\Models\Court;
 use App\Models\OperationalStop;
 use App\Models\ReservationSlot;
+use App\Models\TournamentCourtAllocation;
 use Carbon\Carbon;
 
 /** One definition of free court time for every seeder that books courts, so seeded data never double-books a court or a player. */
@@ -46,12 +47,13 @@ trait FindsFreeCourtTime
         throw new \RuntimeException("No free {$hours}h court time near {$court->code} from {$hour}:00.");
     }
 
-    /** No active booking, reservation, stop of the court or its venue, or match on the court, nor an active reservation of the player, overlaps [from, to). */
+    /** No active booking, reservation, tournament court time, stop of the court or its venue, or match on the court, nor an active reservation of the player, overlaps [from, to). */
     protected function isFree(int $courtId, Carbon $from, Carbon $to, ?int $userId = null): bool
     {
         $overlapping = fn ($query): bool => $query->where('starts_at', '<', $to->copy()->utc())->where('ends_at', '>', $from->copy()->utc())->exists();
 
         return ! $overlapping(BookingSlot::where('court_id', $courtId)->whereIn('status', ['held', 'confirmed']))
+            && ! TournamentCourtAllocation::blocks($courtId, $from, $to)
             && ! OperationalStop::query()->affectingCourt($courtId, (int) Court::whereKey($courtId)->value('venue_id'))->overlapping($from, $to)->exists()
             && ! $overlapping(ReservationSlot::withoutGlobalScope('tenant_isolation')
                 ->whereIn('status', ['held', 'confirmed'])

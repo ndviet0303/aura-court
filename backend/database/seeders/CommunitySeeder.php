@@ -12,7 +12,7 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\Review;
 use App\Models\Tournament;
-use App\Models\TournamentParticipant;
+use App\Models\TournamentEntry;
 use App\Models\User;
 use App\Models\Venue;
 use App\Notifications\AuraBookingNotification;
@@ -26,7 +26,8 @@ use Ramsey\Uuid\Uuid;
 
 /**
  * The platform-wide feed (D12) with share and matchmaking posts, a pending and a resolved report, owner replies to
- * reviews, and the in-app notifications the app would have stored for the seeded bookings, registrations and comments.
+ * reviews, and the in-app notifications the app would have stored for the seeded bookings and comments (tournament
+ * notices come from the outbox rows TournamentSeeder's actions wrote).
  * Everything is read back from what earlier seeders created. Notification rows are inserted in the database-channel
  * shape, so nothing is sent.
  */
@@ -89,42 +90,42 @@ class CommunitySeeder extends Seeder
         $this->persistNotifications();
     }
 
-    /** Organizer announcement for the tenant's next open tournament whose registration is still running. */
+    /** Organizer announcement for the tenant's next public tournament whose registration is still running. */
     private function tournamentPost(Organization $organization, User $author, bool $withComments): void
     {
-        $tournament = Tournament::query()
+        $tournament = Tournament::with('venue')
             ->where('organization_id', $organization->id)
-            ->where('status', 'open')
+            ->where('type', Tournament::TYPE_PUBLIC)
+            ->where('status', Tournament::STATUS_OPEN)
+            ->where('registration_deadline', '>', $this->now->copy()->utc())
             ->orderBy('starts_at')
             ->orderBy('id')
-            ->get()
-            ->first(fn (Tournament $t) => isset($t->settings['registration_deadline'], $t->settings['start_date'], $t->settings['venue'], $t->settings['entry_fee'])
-                && Carbon::parse($t->settings['registration_deadline'])->gt($this->now));
+            ->first();
         if (! $tournament) {
             return;
         }
 
-        $settings = $tournament->settings;
-        $deadline = Carbon::parse($settings['registration_deadline'])->setTimezone(config('app.timezone'));
-        $days = collect([$settings['start_date'], $settings['end_date'] ?? null])->filter()->unique()
-            ->map(fn (string $day) => Carbon::parse($day)->format('d/m'))->implode(' - ');
-        $at = $this->now->copy()->subDays(4)->setTime(9, 0)->max($tournament->created_at->copy()->addHours(2));
+        $tz = config('app.timezone');
+        $days = collect([$tournament->starts_at, $tournament->ends_at])->filter()
+            ->map(fn (Carbon $day) => $day->copy()->setTimezone($tz)->format('d/m'))->unique()->implode(' - ');
+        $at = $this->now->copy()->subDays(4)->setTime(9, 0)->max($tournament->published_at ?? $tournament->created_at);
         $content = sprintf(
-            '%s đang mở đăng ký đến hết %s. Thi đấu %s tại %s, lệ phí %s. Anh chị em đăng ký trong mục Giải đấu nhé, số suất có hạn!',
-            $tournament->name, $deadline->format('d/m'), $days, $settings['venue'], $settings['entry_fee']
+            '%s đang mở đăng ký đến hết %s. Thi đấu %s tại %s, lệ phí %sđ mỗi đơn vị. Đăng ký trong mục Giải đấu nhé, số suất có hạn!',
+            $tournament->name, $tournament->registration_deadline->copy()->setTimezone($tz)->format('d/m'), $days,
+            $tournament->venue->getTranslation('name', 'vi'), number_format($tournament->fee, 0, ',', '.')
         );
 
         $comments = [];
         if ($withComments) {
-            $entrant = TournamentParticipant::where('tournament_id', $tournament->id)->orderBy('created_at')->orderBy('id')->get()
-                ->first(fn (TournamentParticipant $p) => $p->user_id !== $this->primary->id && $this->customer((int) $p->user_id));
+            $entrant = TournamentEntry::where('tournament_id', $tournament->id)->where('status', TournamentEntry::STATUS_PAID)->orderBy('paid_at')->orderBy('id')->get()
+                ->first(fn (TournamentEntry $e) => $e->user_id !== $this->primary->id && $this->customer((int) $e->user_id));
             if ($entrant) {
-                $comments[] = $this->comment($this->customer($entrant->user_id), 'Mình đăng ký rồi, hẹn gặp mọi người ở giải nhé!',
-                    $at->copy()->addMinutes(90)->max($entrant->created_at->copy()->addMinutes(5)));
+                $comments[] = $this->comment($this->customer($entrant->user_id), "{$entrant->name} đã đóng lệ phí rồi, hẹn gặp các đội ở giải nhé!",
+                    $at->copy()->addMinutes(90)->max($entrant->paid_at->copy()->addMinutes(5)));
             }
             $asker = $this->customers->get(7);
-            $comments[] = $this->comment($asker, 'Giải có giới hạn trình độ không ạ?', $at->copy()->addHours(3));
-            $comments[] = $this->comment($author, 'Bạn xem điều lệ và nội dung thi đấu trong mục Giải đấu nhé, cần hỗ trợ cứ nhắn CLB.',
+            $comments[] = $this->comment($asker, 'Giải có giới hạn độ tuổi cầu thủ không ạ?', $at->copy()->addHours(3));
+            $comments[] = $this->comment($author, 'Bạn xem điều kiện tham gia và thể lệ trong mục Giải đấu nhé, cần hỗ trợ cứ nhắn CLB.',
                 $at->copy()->addHours(3)->addMinutes(40), ['likes' => [$asker]]);
         }
 
@@ -159,21 +160,22 @@ class CommunitySeeder extends Seeder
             ]);
         }
 
-        $entry = TournamentParticipant::with('tournament')->where('user_id', $primary->id)->orderBy('created_at')->orderBy('id')->get()
-            ->first(fn (TournamentParticipant $p) => $p->tournament?->status === 'open'
-                && $p->tournament->organization_id === $this->organization->id && $p->created_at->lte($this->now));
+        $entry = TournamentEntry::with('tournament')->where('user_id', $primary->id)->orderBy('created_at')->orderBy('id')->get()
+            ->first(fn (TournamentEntry $e) => $e->tournament?->status === Tournament::STATUS_OPEN
+                && $e->tournament->organization_id === $this->organization->id && $e->created_at->lte($this->now));
         if ($entry) {
             $at = $entry->created_at->copy()->addMinutes(20);
-            $mates = TournamentParticipant::where('tournament_id', $entry->tournament_id)->where('id', '!=', $entry->id)
+            $mates = TournamentEntry::where('tournament_id', $entry->tournament_id)->where('id', '!=', $entry->id)
+                ->whereIn('status', [TournamentEntry::STATUS_APPROVED, TournamentEntry::STATUS_PAID])
                 ->orderBy('created_at')->orderBy('id')->get()
-                ->filter(fn (TournamentParticipant $p) => $this->customer((int) $p->user_id))
+                ->filter(fn (TournamentEntry $e) => $this->customer((int) $e->user_id))
                 ->take(2)->values();
-            $comments = $mates->map(fn (TournamentParticipant $p, int $i) => $this->comment(
-                $this->customer($p->user_id),
-                $i === 0 ? 'Mình cũng đăng ký rồi, tối nào tập chung thì nhắn mình nhé.' : 'Tính mình vào nhóm tập với nhé, mình cũng có tên trong danh sách rồi.',
-                $at->copy()->addMinutes(60 * ($i + 1))->max($p->created_at->copy()->addMinutes(10))
+            $comments = $mates->map(fn (TournamentEntry $e, int $i) => $this->comment(
+                $this->customer($e->user_id),
+                $i === 0 ? "{$e->name} cũng đăng ký rồi, trước giải đá giao hữu một trận không?" : "{$e->name} nhận lời giao hữu nhé, chốt sân thì nhắn mình.",
+                $at->copy()->addMinutes(60 * ($i + 1))->max($e->created_at->copy()->addMinutes(10))
             ))->all();
-            $this->addPost($primary, sprintf('Vừa đăng ký %s! Còn ai tham gia không, lập nhóm tập chung trước giải nhé.', $entry->tournament->name), $at, $comments);
+            $this->addPost($primary, sprintf('Đội %s vừa đăng ký %s! Đội nào cùng giải thì giao lưu trước cho quen sân nhé.', $entry->name, $entry->tournament->name), $at, $comments);
         }
     }
 
@@ -340,7 +342,7 @@ class CommunitySeeder extends Seeder
         }
     }
 
-    /** What the app stored for user@example.com: checkout and expiry notices and tournament registrations. */
+    /** What the app stored for user@example.com: checkout and expiry notices. */
     private function customerNotifications(): void
     {
         $primary = $this->primary;
@@ -370,22 +372,6 @@ class CommunitySeeder extends Seeder
                 'body' => "Booking {$expired->code} đã hết thời gian thanh toán và được giải phóng.",
                 'action_url' => '/booking',
             ], $at, $at->copy()->addMinutes(40));
-        }
-
-        // Path-A outbox payloads copy the service's array; "event" (the outbox event type) is added so the
-        // notification page files them under its social tab.
-        $entries = TournamentParticipant::with('tournament')->where('user_id', $primary->id)
-            ->where('created_at', '<=', $this->now)->orderBy('created_at')->orderBy('id')->get();
-        foreach ($entries->filter(fn (TournamentParticipant $p) => $p->tournament) as $entry) {
-            $tournament = $entry->tournament;
-            $this->addNotification($primary, "tournament/{$entry->id}", OutboxNotification::class, [
-                'title' => 'Đăng ký giải đấu thành công',
-                'body' => "Bạn đã được ghi danh tham gia giải đấu: {$tournament->name}",
-                'type' => 'tournament_update',
-                'source_id' => $tournament->id,
-                'tournament_id' => $tournament->id,
-                'event' => 'tournament.participant_registered',
-            ], $entry->created_at, $entry->created_at->copy()->addMinutes(9));
         }
     }
 

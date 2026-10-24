@@ -35,6 +35,8 @@ use App\Contracts\Repositories\ReservationRepositoryInterface;
 use App\Contracts\Repositories\ReviewRepositoryInterface;
 use App\Contracts\Repositories\StockTransferRepositoryInterface;
 use App\Contracts\Repositories\TenantMembershipPlanRepositoryInterface;
+use App\Contracts\Repositories\TournamentPlayRepositoryInterface;
+use App\Contracts\Repositories\TournamentRepositoryInterface;
 use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Contracts\Repositories\VenueCustomerRepositoryInterface;
 use App\Contracts\Repositories\VenueLifecycleRepositoryInterface;
@@ -78,6 +80,8 @@ use App\Infrastructure\Repositories\Eloquent\EloquentReservationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReviewRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentStockTransferRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentTenantMembershipPlanRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentTournamentPlayRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentTournamentRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentUserRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueCustomerRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentVenueLifecycleRepository;
@@ -142,6 +146,8 @@ class RepositoryServiceProvider extends ServiceProvider
         ReviewRepositoryInterface::class => EloquentReviewRepository::class,
         VenueStockRepositoryInterface::class => EloquentVenueStockRepository::class,
         StockTransferRepositoryInterface::class => EloquentStockTransferRepository::class,
+        TournamentRepositoryInterface::class => EloquentTournamentRepository::class,
+        TournamentPlayRepositoryInterface::class => EloquentTournamentPlayRepository::class,
     ];
 
     public function register(): void
