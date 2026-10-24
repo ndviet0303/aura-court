@@ -4708,7 +4708,6 @@ export default {
     empty: 'This venue has no reviews yet.',
     loadError: 'Could not load the reviews.',
     ratingLabel: '{rating} out of 5 stars',
-    court: 'Court {code}',
     replyFromVenue: 'Reply from the venue',
     rating: 'Rating',
     body: 'Comments',

@@ -14,7 +14,7 @@ defineProps<{ review: Review }>()
       <StarRating class="review-stars" :rating="review.rating" />
     </AuthorLine>
     <p v-if="review.court" class="review-court">
-      {{ $t('reviews.court', { code: review.court.code }) }}
+      {{ review.court.code }}
     </p>
     <p v-if="review.body" class="review-body">{{ review.body }}</p>
     <ImageGrid :images="review.images" />
