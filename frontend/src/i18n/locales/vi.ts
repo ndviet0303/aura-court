@@ -4692,7 +4692,6 @@ export default {
     empty: 'Chưa có đánh giá nào cho cơ sở này.',
     loadError: 'Không tải được đánh giá.',
     ratingLabel: '{rating}/5 sao',
-    court: 'Sân {code}',
     replyFromVenue: 'Phản hồi từ cơ sở',
     rating: 'Số sao',
     body: 'Nhận xét',
