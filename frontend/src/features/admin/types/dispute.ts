@@ -4,12 +4,7 @@ export type DisputeStatus =
 export type DisputeSeverity = 'critical' | 'high' | 'medium' | 'low'
 
 export type DisputeType =
-  | 'double_booking'
-  | 'match_stake'
-  | 'resale_fraud'
-  | 'equipment_damage'
-  | 'tournament_score'
-  | 'other'
+  'double_booking' | 'match_stake' | 'resale_fraud' | 'equipment_damage' | 'other'
 
 export interface DisputeParty {
   id?: number

@@ -60,7 +60,6 @@ const disputeTypeOptions = computed<DropdownOption[]>(() => [
     label: t('admin.disputes.typeEquipmentDamage'),
     icon: 'sports_tennis',
   },
-  { value: 'tournament_score', label: t('admin.disputes.typeTournamentScore'), icon: 'scoreboard' },
   { value: 'other', label: t('admin.disputes.typeOther'), icon: 'help' },
 ])
 </script>

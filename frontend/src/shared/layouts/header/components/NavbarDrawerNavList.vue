@@ -32,7 +32,6 @@ const isCommunityActive = computed(() => {
     path.startsWith('/resale') ||
     path.startsWith('/marketplace') ||
     path.startsWith('/community') ||
-    path.startsWith('/social-tournaments') ||
     path.startsWith('/tournaments')
   )
 })

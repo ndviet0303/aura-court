@@ -54,16 +54,6 @@
       "count": 1
     }
   },
-  "src/features/admin/components/tournament/ScoreUpdateModal.vue": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/features/admin/components/tournament/TournamentCreateModal.vue": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/features/admin/components/venues/VenueFormModal.vue": {
     "@typescript-eslint/no-explicit-any": {
       "count": 4
@@ -109,22 +99,12 @@
       "count": 3
     }
   },
-  "src/features/admin/composables/useTournamentBracketAdmin.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 5
-    }
-  },
   "src/features/admin/types/contract.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
     }
   },
   "src/features/admin/types/exceptions.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/features/admin/views/AdminTournamentBracketView.vue": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
     }
@@ -182,31 +162,6 @@
   "src/features/pos/views/PosView.vue": {
     "@typescript-eslint/no-explicit-any": {
       "count": 9
-    }
-  },
-  "src/features/tournament/api/tournamentApi.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 13
-    }
-  },
-  "src/features/tournament/composables/useLiveScore.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 9
-    }
-  },
-  "src/features/tournament/composables/useTournamentBracket.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 18
-    }
-  },
-  "src/features/tournament/composables/useTournamentsList.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/features/tournament/types/tournament.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
     }
   },
   "src/features/wallet/api/walletApi.ts": {

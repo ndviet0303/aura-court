@@ -176,10 +176,10 @@ export const navGroups: NavGroup[] = [
     icon: 'emoji_events',
     items: [
       {
-        id: 'tournaments-bracket',
+        id: 'tournaments-manage',
         path: '/admin/tournaments',
         labelKey: 'admin.nav.tournaments',
-        icon: 'account_tree',
+        icon: 'emoji_events',
       },
     ],
   },

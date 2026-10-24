@@ -8,7 +8,6 @@ export interface TenantCapabilities {
   marketplace_payouts?: boolean
   marketplace_split_payments?: boolean
   marketplace_slot_resale?: boolean
-  social_matchmaking_tournaments?: boolean
   tenant_pos_and_wallet?: boolean
   direct_owner_payments?: boolean
   [key: string]: boolean | undefined
@@ -134,7 +133,6 @@ export function useTenantCapabilities() {
     return loaded.value && !fetchFailed.value && !capabilities.value['tenant_pos_and_wallet']
   })
 
-  const isTournamentsEnabled = computed(() => isEnabled('social_matchmaking_tournaments'))
   const isPayoutsEnabled = computed(() => isEnabled('marketplace_payouts'))
   const isSplitEnabled = computed(() => isEnabled('marketplace_split_payments'))
   const isResaleEnabled = computed(() => isEnabled('marketplace_slot_resale'))
@@ -155,7 +153,6 @@ export function useTenantCapabilities() {
     isEnabled,
     isPosEnabled,
     isPosDisabled,
-    isTournamentsEnabled,
     isPayoutsEnabled,
     isSplitEnabled,
     isResaleEnabled,
