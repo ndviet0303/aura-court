@@ -161,6 +161,13 @@ export const navGroups: NavGroup[] = [
         icon: 'report',
         capability: 'direct_owner_payments',
       },
+      {
+        id: 'finance-venue-credits',
+        path: '/admin/venue-credits',
+        labelKey: 'admin.nav.venueCredits',
+        icon: 'account_balance_wallet',
+        capability: 'direct_owner_payments',
+      },
       // No capability: AdminLayout shows unlisted paths to platform admins only.
       {
         id: 'finance-platform-fees',
@@ -260,6 +267,7 @@ export const OWNER_ONLY_PATHS = [
   '/admin/organization',
   '/admin/staff',
   '/admin/payment-exceptions',
+  '/admin/venue-credits',
   '/admin/packages',
   '/admin/finance',
   '/admin/reviews',

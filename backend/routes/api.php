@@ -36,6 +36,8 @@ use App\Http\Controllers\Finance\FinanceController;
 use App\Http\Controllers\Finance\FinanceExceptionController;
 use App\Http\Controllers\Finance\FinancialReconciliationController;
 use App\Http\Controllers\Finance\OwnerPaymentExceptionController;
+use App\Http\Controllers\Finance\OwnerVenueCreditController;
+use App\Http\Controllers\Finance\VenueCreditController;
 use App\Http\Controllers\Loyalty\LoyaltyController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Organization\InvitationResponseController;
@@ -54,6 +56,7 @@ use App\Http\Controllers\Partner\VenueSuspensionController;
 use App\Http\Controllers\POS\PosController;
 use App\Http\Controllers\POS\ServiceTabController;
 use App\Http\Controllers\POS\StockTransferController;
+use App\Http\Controllers\POS\VenueCreditCashOutController;
 use App\Http\Controllers\Pricing\CourtPricingController;
 use App\Http\Controllers\Pricing\PriceTableController;
 use App\Http\Controllers\Promotion\PromotionProgramController;
@@ -477,6 +480,8 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
         // controller delegates to IdempotencyService and persists its outcome.
         Route::get('reservations', [ReservationController::class, 'index']);
         Route::get('me/reservations', MyReservationController::class);
+        Route::get('me/venue-credits', [VenueCreditController::class, 'index']);
+        Route::post('me/venue-credits/{organization}/cash-out-codes', [VenueCreditController::class, 'storeCashOutCode'])->middleware('verified');
         Route::get('admin/reservations', AdminReservationController::class)->middleware('venue_admin');
         Route::get('admin/affected-reservations', [AffectedReservationCaseController::class, 'index'])->middleware('venue_admin');
         Route::patch('admin/affected-reservations/{case}', [AffectedReservationCaseController::class, 'update'])->middleware('venue_admin');
@@ -533,10 +538,8 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::get('marketplace/listings', [AdvancedBookingController::class, 'listings']);
             Route::post('marketplace/entitlements/{entitlement}/list', [ResaleListingController::class, 'store']);
             Route::get('marketplace/listings/{listing}', [ResaleListingController::class, 'show']);
-            Route::post('marketplace/listings/{listing}/checkout', [ResaleListingController::class, 'lock']);
-            Route::post('marketplace/listings/{listing}/payment-sent', [ResaleListingController::class, 'paymentSent']);
+            Route::post('marketplace/listings/{listing}/checkout', [ResaleListingController::class, 'lock'])->middleware('verified');
             Route::post('marketplace/listings/{listing}/release', [ResaleListingController::class, 'release']);
-            Route::post('marketplace/listings/{listing}/confirm-receipt', [ResaleListingController::class, 'confirmReceipt']);
             Route::post('marketplace/listings/{listing}/withdraw', [AdvancedBookingController::class, 'withdrawListing']);
         });
 
@@ -563,6 +566,9 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::post('pos/shifts', [PosController::class, 'openShift'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
             Route::post('pos/shifts/{shift}/close', [PosController::class, 'closeShift'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
             Route::post('pos/shifts/{shift}/cash-movement', [PosController::class, 'recordCashMovement'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
+            Route::get('pos/venue-credits/customers/{user}', [VenueCreditCashOutController::class, 'customer'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
+            Route::post('pos/shifts/{shift}/venue-credit-cash-outs/lookup', [VenueCreditCashOutController::class, 'lookup'])->middleware([RequireOrganizationRole::class.':organization_owner,staff', 'throttle:venue-credit-lookup']);
+            Route::post('pos/shifts/{shift}/venue-credit-cash-outs', [VenueCreditCashOutController::class, 'store'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
             Route::post('pos/shifts/{shift}/review', [PosController::class, 'reviewReconciliation'])->middleware(RequireOrganizationRole::class.':organization_owner');
             Route::get('memberships/plans', [PosController::class, 'membershipPlans']);
             Route::get('memberships/benefits', [PosController::class, 'benefits']);
@@ -575,6 +581,8 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
 
         // A direct-owner payment interface, so it follows direct_owner_payments rather than the payouts group below.
         Route::get('owner-payment-exceptions', [OwnerPaymentExceptionController::class, 'index'])
+            ->middleware([RequireOrganizationRole::class.':organization_owner', 'feature:direct_owner_payments']);
+        Route::get('owner-venue-credits', [OwnerVenueCreditController::class, 'index'])
             ->middleware([RequireOrganizationRole::class.':organization_owner', 'feature:direct_owner_payments']);
 
         Route::middleware([RequireOrganizationRole::class.':organization_owner', 'feature:marketplace_payouts'])->group(function () {

@@ -20,6 +20,7 @@ use App\Models\Venue;
 use App\Models\WalletAccount;
 use App\Models\WalletTransaction;
 use App\Services\Finance\FinancialPostingService;
+use App\Services\Finance\VenueCreditService;
 use App\Services\Loyalty\LoyaltyPointService;
 use App\Services\Payment\WalletAvailabilityService;
 use App\Services\Reservation\LegacyBookingBackfillService;
@@ -38,6 +39,7 @@ class PosService
         private readonly WalletAvailabilityService $walletAvailability,
         private readonly PosQrPaymentService $posQr,
         private readonly VenueStockRepositoryInterface $stock,
+        private readonly VenueCreditService $credits,
     ) {}
 
     public function createProduct(int $organizationId, array $data, ?User $actor = null): PosProduct
@@ -305,7 +307,7 @@ class PosService
     {
         abort_if((bool) ($data['offline'] ?? false), 409, 'Offline POS drafts cannot finalize payment or inventory.');
         $method = (string) ($data['payment_method'] ?? '');
-        abort_unless(in_array($method, ['cash', 'qr', 'wallet', 'mixed'], true), 422, 'Unsupported POS payment method.');
+        abort_unless(in_array($method, ['cash', 'qr', 'wallet', 'credit', 'mixed'], true), 422, 'Unsupported POS payment method.');
         $this->walletAvailability->assertAvailable($organizationId, in_array('wallet', [$method, ...array_column((array) ($data['tenders'] ?? []), 'method')], true));
 
         $activeShift = CashShift::where('organization_id', $organizationId)
@@ -359,12 +361,16 @@ class PosService
                 foreach ($tenders as $tender) {
                     $tMethod = $tender['method'] ?? '';
                     $tAmount = (int) ($tender['amount'] ?? 0);
-                    abort_unless(in_array($tMethod, ['cash', 'qr', 'wallet'], true), 422, "Unsupported tender method: {$tMethod}");
+                    abort_unless(in_array($tMethod, ['cash', 'qr', 'wallet', 'credit'], true), 422, "Unsupported tender method: {$tMethod}");
                     abort_unless($tAmount > 0, 422, 'Tender amount must be positive.');
                     $tenderSum += $tAmount;
                 }
                 abort_unless($tenderSum === $grandTotal, 422, "Total tender allocations ({$tenderSum}) must equal order total ({$grandTotal}).");
             }
+            // Venue credit of this organization (design D6); an order still awaiting QR only checks the balance and spends it on payment.
+            $creditPart = $method === 'credit' ? $grandTotal : (int) collect($tenders)->where('method', 'credit')->sum('amount');
+            abort_if($creditPart > 0 && empty($data['customer_id']), 422, 'Customer is required for credit payment.');
+            abort_if($creditPart > 0 && $this->credits->balance($organizationId, (int) $data['customer_id']) < $creditPart, 422, 'Số dư credit không đủ.');
 
             // Stock of the sale venue, rows locked in product id order (D4); what tabs and QR orders there hold is not for sale.
             $stocks = [];
@@ -453,6 +459,9 @@ class PosService
                 abort_unless(! empty($data['customer_id']), 422, 'Customer is required for wallet payment.');
                 $this->spendWallet($organizationId, (int) $data['customer_id'], $grandTotal, "pos:{$order->id}");
             }
+            if ($creditPart > 0 && ! $isPendingQr) {
+                $this->credits->spend($organizationId, (int) $data['customer_id'], $creditPart, 'pos_order', $order->id, $cashier->id, $orderCode);
+            }
 
             foreach ($quote['items'] as $item) {
                 $product = $item['product'];
@@ -482,7 +491,7 @@ class PosService
                 foreach ($tenders as $tender) {
                     $tMethod = $tender['method'];
                     $tAmount = (int) $tender['amount'];
-                    $tStatus = ($tMethod === 'qr') ? 'pending' : 'paid';
+                    $tStatus = $tMethod === 'qr' || ($tMethod === 'credit' && $isPendingQr) ? 'pending' : 'paid';
 
                     $order->payments()->create([
                         'organization_id' => $organizationId,
@@ -519,8 +528,9 @@ class PosService
             if ($isPendingQr) {
                 $qrAmount = $method === 'mixed' ? (int) collect($tenders)->firstWhere('method', 'qr')['amount'] : $grandTotal;
                 $this->posQr->open($order, $qrConnection, $qrAmount, $expiresAt);
-            } elseif ($method !== 'wallet') {
-                $this->financials->postPosSale($organizationId, $order->id, $grandTotal, $method, $order->payment_reference);
+            } elseif ($method !== 'wallet' && $grandTotal > $creditPart) {
+                // The credit part is revenue through its own venue_credit.spend journal.
+                $this->financials->postPosSale($organizationId, $order->id, $grandTotal - $creditPart, $method, $order->payment_reference);
             }
 
             if (! $isPendingQr && $order->customer_id && $this->loyaltyPoints->getActiveBaseEarnRule($organizationId) !== null) {
@@ -715,119 +725,6 @@ class PosService
         });
     }
 
-    public function refundOrder(
-        PosOrder $order,
-        User $cashier,
-        array $items = [],
-        string $reason = 'Customer return',
-        string $refundMethod = 'cash'
-    ): PosOrder {
-        abort_unless($order->status === 'completed', 409, 'Only completed orders can be refunded.');
-        abort_unless(in_array($refundMethod, ['cash', 'original_method', 'wallet'], true), 422, 'Unsupported refund method.');
-
-        return DB::transaction(function () use ($order, $cashier, $items, $reason, $refundMethod): PosOrder {
-            $order = PosOrder::whereKey($order->id)->lockForUpdate()->firstOrFail();
-            abort_unless($order->status === 'completed', 409, 'Only completed orders can be refunded.');
-
-            $order->load(['items.product', 'payments']);
-
-            $refundAmount = 0;
-            $refundedItems = [];
-
-            if (empty($items)) {
-                $refundAmount = $order->total_amount;
-                foreach ($order->items as $item) {
-                    if ($item->product?->isTracked()) {
-                        $this->restock($order, $item->product_id, $item->quantity, $cashier, $reason);
-                    }
-                    $refundedItems[] = [
-                        'product_id' => $item->product_id,
-                        'name' => $item->name,
-                        'quantity' => $item->quantity,
-                        'amount' => $item->line_total,
-                    ];
-                }
-            } else {
-                foreach ($items as $reqItem) {
-                    $productId = (int) ($reqItem['product_id'] ?? 0);
-                    $qty = (int) ($reqItem['quantity'] ?? 1);
-                    $restock = (bool) ($reqItem['restock'] ?? true);
-
-                    $orderItem = $order->items->firstWhere('product_id', $productId);
-                    abort_unless($orderItem !== null, 422, "Product ID {$productId} was not part of this order.");
-                    abort_unless($qty > 0 && $qty <= $orderItem->quantity, 422, "Invalid refund quantity for {$orderItem->name}.");
-
-                    $lineRefund = (int) round(($orderItem->line_total / $orderItem->quantity) * $qty);
-                    $refundAmount += $lineRefund;
-
-                    if ($restock && $orderItem->product?->isTracked()) {
-                        $this->restock($order, $productId, $qty, $cashier, $reason);
-                    }
-
-                    $refundedItems[] = [
-                        'product_id' => $productId,
-                        'name' => $orderItem->name,
-                        'quantity' => $qty,
-                        'amount' => $lineRefund,
-                    ];
-                }
-            }
-
-            $refundAmount = min($refundAmount, $order->total_amount);
-
-            $meta = $order->metadata ?? [];
-            $refunds = (array) ($meta['refunds'] ?? []);
-            $refundRecord = [
-                'id' => uniqid('ref_'),
-                'amount' => $refundAmount,
-                'method' => $refundMethod,
-                'reason' => $reason,
-                'items' => $refundedItems,
-                'cashier_id' => $cashier->id,
-                'cashier_name' => $cashier->name,
-                'refunded_at' => now()->toIso8601String(),
-            ];
-            $refunds[] = $refundRecord;
-            $meta['refunds'] = $refunds;
-
-            if ($refundMethod === 'cash') {
-                // The owner refunds (BR-21); without a shift of their own the cash leaves the order's still-open register.
-                $activeShift = CashShift::where('organization_id', $order->organization_id)
-                    ->where('cashier_id', $cashier->id)
-                    ->where('status', 'open')
-                    ->first() ?? CashShift::where('organization_id', $order->organization_id)->where('status', 'open')->find($order->cash_shift_id);
-                if ($activeShift) {
-                    $movements = (array) ($activeShift->cash_movements ?? []);
-                    $movements[] = [
-                        'id' => uniqid('cm_'),
-                        'type' => 'refund',
-                        'amount' => $refundAmount,
-                        'reason' => "Refund for Order {$order->payment_reference}: {$reason}",
-                        'cashier_id' => $cashier->id,
-                        'order_id' => $order->id,
-                        'created_at' => now()->toIso8601String(),
-                    ];
-                    $activeShift->update(['cash_movements' => $movements]);
-                }
-            }
-
-            $order->update([
-                'status' => $refundAmount >= $order->total_amount ? 'refunded' : 'completed',
-                'metadata' => $meta,
-            ]);
-
-            $this->financials->postRefund(
-                $order->organization_id,
-                $order->payment_reference ?? "POS-{$order->id}",
-                $refundAmount,
-                $refundRecord['id'],
-                ['order_id' => $order->id, 'reason' => $reason]
-            );
-
-            return $order->fresh(['items', 'payments']);
-        });
-    }
-
     public function releaseExpiredPendingOrders(int $organizationId): int
     {
         $now = now();
@@ -977,14 +874,6 @@ class PosService
 
             return $transaction;
         });
-    }
-
-    /** A return goes back to the venue of its sale (D3); an order without a venue cannot take stock back. */
-    private function restock(PosOrder $order, int $productId, int $quantity, User $cashier, string $reason): void
-    {
-        abort_if($order->venue_id === null, 422, 'Đơn chưa gắn cơ sở nên không nhập lại kho được. Hãy trả tiền mà không nhập kho (restock = false).');
-        $stock = $this->stock->lock($order->organization_id, (int) $order->venue_id, $productId);
-        $this->stock->apply($stock, $quantity, 'return', $cashier->id, PosOrder::class, $order->id, ['reason' => $reason]);
     }
 
     private function writePoints(int $organizationId, int $userId, int $ruleId, int $delta, string $sourceType, int $sourceId, ?CarbonInterface $expiresAt = null, array $metadata = []): PointLedger

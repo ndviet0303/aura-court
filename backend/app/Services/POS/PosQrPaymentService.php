@@ -11,6 +11,7 @@ use App\Models\ReceivingConnection;
 use App\Models\User;
 use App\Models\Venue;
 use App\Services\Finance\FinancialPostingService;
+use App\Services\Finance\VenueCreditService;
 use App\Services\Loyalty\LoyaltyPointService;
 use App\Services\Payment\OwnerPaymentAttemptService;
 use App\Services\Payment\ReservationPaymentService;
@@ -27,6 +28,7 @@ class PosQrPaymentService
         private readonly FinancialPostingService $financials,
         private readonly LoyaltyPointService $loyaltyPoints,
         private readonly VenueStockRepositoryInterface $stock,
+        private readonly VenueCreditService $credits,
     ) {}
 
     /** The given venue, else the caller's only operable venue (BR-20: a staff member never falls back to the whole organization). */
@@ -100,13 +102,17 @@ class PosQrPaymentService
     {
         $order = $this->lockOrder((int) $attempt->purpose_id);
 
-        return $order !== null
-            && (int) $order->organization_id === (int) $attempt->organization_id
-            && $order->status === 'pending_payment'
-            && $order->payment_reference === $attempt->reference;
+        if ($order === null || (int) $order->organization_id !== (int) $attempt->organization_id
+            || $order->status !== 'pending_payment' || $order->payment_reference !== $attempt->reference) {
+            return false;
+        }
+        // ponytail: read without a lock, since the account is locked after the stock rows below; a spend in between fails the receipt (D6).
+        $credit = $this->pendingCredit($order);
+
+        return $credit === 0 || $this->credits->balance((int) $order->organization_id, (int) $order->customer_id) >= $credit;
     }
 
-    /** Completes the order once: stock, QR payment row, loyalty. Revenue for the QR portion is the owner receipt journal. */
+    /** Completes the order once: stock, credit, QR payment row, loyalty. Revenue for the QR portion is the owner receipt journal. */
     public function confirmPaidAttempt(OwnerPaymentAllocation $allocation, CarbonInterface $paidAt): void
     {
         $order = $this->lockOrder((int) $allocation->purpose_id);
@@ -122,7 +128,11 @@ class PosQrPaymentService
             $this->stock->apply($stock, -$item->quantity, 'sale', $order->cashier_id, PosOrder::class, $order->id);
         }
 
-        $order->payments()->where('method', 'qr')->where('status', 'pending')->update(['status' => 'paid']);
+        $credit = $this->pendingCredit($order);
+        if ($credit > 0) {
+            $this->credits->spend((int) $order->organization_id, (int) $order->customer_id, $credit, 'pos_order', $order->id, $order->cashier_id, $order->payment_reference);
+        }
+        $order->payments()->whereIn('method', ['qr', 'credit'])->where('status', 'pending')->update(['status' => 'paid']);
 
         $meta = $order->metadata ?? [];
         if (isset($meta['receipt'])) {
@@ -138,13 +148,18 @@ class PosQrPaymentService
         $meta['owner_payment_allocation_id'] = $allocation->id;
         $order->update(['status' => 'completed', 'completed_at' => now(), 'metadata' => $meta]);
 
-        $otherTenders = (int) $order->total_amount - (int) $allocation->amount;
+        $otherTenders = (int) $order->total_amount - (int) $allocation->amount - $credit;
         if ($otherTenders > 0) {
             $this->financials->postPosSale($order->organization_id, $order->id, $otherTenders, $order->payment_method, $order->payment_reference);
         }
         if ($order->customer_id && $this->loyaltyPoints->getActiveBaseEarnRule($order->organization_id) !== null) {
             app(PosService::class)->awardPoints($order->organization_id, $order->customer_id, $order->total_amount, PosOrder::class, $order->id);
         }
+    }
+
+    private function pendingCredit(PosOrder $order): int
+    {
+        return (int) $order->payments()->where('method', 'credit')->where('status', 'pending')->sum('amount');
     }
 
     private function lockOrder(int $orderId): ?PosOrder

@@ -1,11 +1,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type {
-  ResaleListing,
-  UserBookingSlot,
-  MyResaleListing,
-  ResaleReceiver,
-} from '../types/marketplace'
+import type { ResaleListing, UserBookingSlot, MyResaleListing } from '../types/marketplace'
 import { marketplaceApi } from '../api/marketplaceApi'
 import { errorMessage } from '@/core/utils/errorMessage'
 
@@ -183,7 +178,6 @@ export function useResaleMarketplace() {
           askingPrice: item.asking_price,
           status: item.effective_status,
           lockedUntil: checkout ? item.metadata?.locked_until : undefined,
-          paymentReportedAt: checkout ? item.metadata?.payment_reported_at : undefined,
           cutoffAt: item.cutoff_at ?? undefined,
           createdAt: formatDateStr(item.created_at ?? undefined),
         }
@@ -282,8 +276,8 @@ export function useResaleMarketplace() {
     selectedSlotToSell.value = null
   }
 
-  /** A paid listing carries the seller's own receiving account; a free one carries none. */
-  async function confirmSell(receiver: ResaleReceiver | null) {
+  /** The buyer pays the venue owner; the seller is paid in venue credit equal to the asking price. */
+  async function confirmSell() {
     const slot = selectedSlotToSell.value
     if (!slot) return
     const asking = askingPriceInput.value
@@ -293,18 +287,11 @@ export function useResaleMarketplace() {
       })
       return
     }
-    if (asking > 0 && !receiver) {
-      error.value = 'Nhập tài khoản nhận tiền của bạn.'
-      return
-    }
 
     processingAction.value = true
     error.value = ''
     try {
-      await marketplaceApi.listEntitlement(slot.id, {
-        asking_price: asking,
-        ...(asking > 0 && receiver ? { seller_receiver: receiver } : {}),
-      })
+      await marketplaceApi.listEntitlement(slot.id, { asking_price: asking })
       showNotice(`Đã đăng pass đơn ${slot.timeSlot} tại ${slot.courtName} lên chợ.`)
       closeSellModal()
       activeTab.value = 'my-listings'

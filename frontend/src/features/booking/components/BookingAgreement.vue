@@ -6,16 +6,19 @@ import { formatCurrency } from '@/i18n'
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import type { PriceChange } from '../types/reservation'
 import { validBookerPhone } from '../utils/reservation'
+import BookingVenueCreditPicker from './BookingVenueCreditPicker.vue'
 
 // What the customer agrees to before submitting: the booker contact the booking will record (once
 // signed in), the amounts (payable is the expected_total sent) and a PRICE_CHANGED awaiting confirmation.
 // A null payable is a server quote still pending or failed (quoteError): no amount is shown then.
+// organizationId offers the customer's venue credit there (venue-credit spec).
 defineProps<{
   rental: number | null
   payable: number | null
   quoteError?: string
   priceChange?: PriceChange | null
   busy?: boolean
+  organizationId?: number | null
 }>()
 
 const emit = defineEmits<{ (e: 'confirmPrice'): void; (e: 'retryQuote'): void }>()
@@ -76,6 +79,11 @@ const phoneMissing = computed(() => !validBookerPhone(auth.user?.phone))
     <p v-else class="agreement-quoting" data-testid="quote-pending">
       {{ t('reservations.agreement.quoting') }}
     </p>
+    <BookingVenueCreditPicker
+      v-if="auth.user && organizationId"
+      :organization-id="organizationId"
+      :payable="payable"
+    />
 
     <div v-if="priceChange" class="agreement-price-change" role="alert" data-testid="price-changed">
       <strong>{{ t('reservations.agreement.priceChanged') }}</strong>

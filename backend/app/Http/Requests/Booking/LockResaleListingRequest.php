@@ -18,6 +18,7 @@ class LockResaleListingRequest extends FormRequest
     {
         return [
             'accept_free_transfer' => ['sometimes', 'boolean'],
+            'venue_credit_amount' => ['prohibited'],
         ];
     }
 }

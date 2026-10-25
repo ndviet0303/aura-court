@@ -2,6 +2,11 @@ import type { ApiError } from '@/core/types/api'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { i18n } from '@/i18n'
 import type { PriceQuote, Reservation } from '../types/reservation'
+import type { Court } from '@/features/court/types/court'
+
+// Venue credit pays only at direct-owner venues, so only those offer it at checkout (venue-credit spec).
+export const creditOrganizationOf = (court?: Court | null): number | null =>
+  court?.venue?.payment_model === 'direct_owner_v1' ? (court.venue.organization_id ?? null) : null
 
 type Displayable = Pick<Reservation, 'code' | 'status' | 'legacy_mapping' | 'metadata'>
 

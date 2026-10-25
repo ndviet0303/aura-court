@@ -1,12 +1,18 @@
 import { ref, computed } from 'vue'
-import type { CartItem, Product, CustomerProfile, VatBreakdown } from '../types/pos'
+import type {
+  CartItem,
+  Product,
+  CustomerProfile,
+  PosPaymentMethod,
+  VatBreakdown,
+} from '../types/pos'
 
 export function usePosCart() {
   const cart = ref<CartItem[]>([])
   const selectedCustomer = ref<CustomerProfile | null>(null)
   const selectedReservationId = ref<number | null>(null)
   const customDiscountPercent = ref(0)
-  const paymentMethod = ref<'cash' | 'qr' | 'wallet' | 'court_tab'>('cash')
+  const paymentMethod = ref<PosPaymentMethod>('cash')
   const cashTendered = ref<number>(0)
   const checkoutKey = ref<string | null>(null)
 

@@ -5,16 +5,13 @@ namespace App\Models;
 use App\Casts\UtcDateTime;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Crypt;
 
 #[Fillable(['organization_id', 'reservation_entitlement_id', 'seller_id', 'original_price', 'asking_price', 'fee_bps', 'status', 'cutoff_at', 'sold_at', 'metadata'])]
-#[Hidden(['seller_receiver_ciphertext'])]
 class MarketplaceListing extends Model
 {
     use BelongsToTenant;
@@ -55,24 +52,6 @@ class MarketplaceListing extends Model
     public function transfers(): HasMany
     {
         return $this->hasMany(EntitlementTransfer::class);
-    }
-
-    /** @param  array{bank_code: string, account_number: string, account_name: string}  $receiver */
-    public function setSellerReceiver(array $receiver): void
-    {
-        $this->seller_receiver_ciphertext = Crypt::encryptString(json_encode([
-            'bank_code' => $receiver['bank_code'],
-            'account_number' => $receiver['account_number'],
-            'account_name' => $receiver['account_name'],
-        ], JSON_THROW_ON_ERROR));
-    }
-
-    /** @return array{bank_code: string, account_number: string, account_name: string}|null */
-    public function sellerReceiver(): ?array
-    {
-        return $this->seller_receiver_ciphertext
-            ? json_decode(Crypt::decryptString($this->seller_receiver_ciphertext), true, 512, JSON_THROW_ON_ERROR)
-            : null;
     }
 
     /** A checkout lock counts only until locked_until; an expired one reads as released before any sweep runs. */

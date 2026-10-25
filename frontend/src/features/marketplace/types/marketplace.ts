@@ -1,14 +1,9 @@
+import type { ReservationPaymentAttempt } from '@/features/booking/api/bookingApi'
+
 export type ResaleListingStatus = 'listed' | 'checkout' | 'sold' | 'withdrawn'
 export type ResaleBadge = 'urgent' | 'deal' | 'hot'
 
-/** The seller's own bank account. Only the seller and the buyer holding the lock ever receive it. */
-export type ResaleReceiver = {
-  bank_code: string
-  account_number: string
-  account_name: string
-}
-
-/** Listing as the API returns it. It never carries receiver data. */
+/** Listing as the API returns it. It never carries the hold's buyer or reference. */
 export type ApiResaleListing = {
   id: number
   organization_id: number
@@ -27,7 +22,6 @@ export type ApiResaleListing = {
     notes?: string
     locked_by?: number
     locked_until?: string
-    payment_reported_at?: string
   } | null
   entitlement?: {
     starts_at: string
@@ -40,17 +34,9 @@ export type ApiResaleListing = {
 
 export type ResaleLock = {
   locked_until: string
-  payment_reported_at: string | null
-  reference: string
+  /** Only the buyer holding the lock sees the reference. */
+  reference: string | null
   held_by_me: boolean
-}
-
-export type ResalePayment = {
-  amount: number
-  currency: 'VND'
-  reference: string
-  transfer_content: string
-  qr_url: string
 }
 
 export type ResaleState = {
@@ -58,8 +44,8 @@ export type ResaleState = {
   role: 'seller' | 'buyer'
   status: ResaleListingStatus
   lock: ResaleLock | null
-  receiver: ResaleReceiver | null
-  payment: ResalePayment | null
+  /** The venue owner's QR, only for the buyer holding the lock. */
+  payment: ReservationPaymentAttempt | null
   transfer: {
     id: number
     status: string
@@ -68,10 +54,11 @@ export type ResaleState = {
     seller_refund: number
     settlement_mode: string
   } | null
+  /** Venue credit the seller received for the sale; null for the buyer and for a free transfer. */
+  credit_issued: number | null
   last_release: {
-    by: 'buyer' | 'seller' | 'expiry'
+    by: 'buyer' | 'expiry' | 'cutover'
     at: string
-    payment_reported: boolean
     reason: string | null
   } | null
 }
@@ -123,14 +110,12 @@ export interface MyResaleListing {
   askingPrice: number
   status: ResaleListingStatus
   lockedUntil?: string
-  paymentReportedAt?: string
   cutoffAt?: string
   createdAt?: string
 }
 
 export interface CreateListingPayload {
   asking_price: number
-  seller_receiver?: ResaleReceiver
 }
 
 /** The parts of `GET /reservations` the sell tab reads. */

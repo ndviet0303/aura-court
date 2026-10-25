@@ -2,16 +2,21 @@
 
 namespace Database\Seeders;
 
+use App\Models\CashShift;
 use App\Models\Court;
-use App\Models\EntitlementTransfer;
 use App\Models\MarketplaceListing;
+use App\Models\OwnerPaymentAllocation;
 use App\Models\Reservation;
 use App\Models\ReservationEntitlement;
 use App\Models\ReservationSlot;
 use App\Models\User;
 use App\Models\Venue;
+use App\Models\VenueCreditEntry;
+use App\Services\Finance\VenueCreditCashOutService;
+use App\Services\Finance\VenueCreditService;
 use App\Services\Reservation\PriceQuoteService;
 use App\Services\Social\MarketplaceService;
+use App\Services\Social\ResaleTransfer;
 use Carbon\Carbon;
 use Database\Seeders\Concerns\FindsFreeCourtTime;
 use Database\Seeders\Concerns\PaysVenueOwner;
@@ -19,10 +24,11 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 /**
- * Peer-to-peer resale. Each seller paid the venue owner for the slot (owner receipt), then listed it with the bank
- * account the buyer transfers to; the seller confirms receipt and the slot moves, with no platform fee.
- * Rows are written directly in the shapes MarketplaceService::list and PeerToPeerResaleService write, so seeding
- * neither depends on feature flags nor sends the resale notifications.
+ * Owner-collected resale. Each seller paid the venue owner for the slot, then listed it; a buyer paid the asking price
+ * into the venue's account, the slot moved and the seller got that much venue credit. The demo customer then pays part
+ * of a booking with credit and another seller cashes credit out at the open counter shift.
+ * Rows are written in the shapes MarketplaceService::list, OwnerCollectedResaleService and VenueCreditService write,
+ * so seeding neither depends on feature flags nor sends the resale notifications.
  */
 class MarketplaceSeeder extends Seeder
 {
@@ -52,7 +58,15 @@ class MarketplaceSeeder extends Seeder
         ['RES-P2P-101', 5, 11, 'Sân 2 - Tiêu Chuẩn', 4, 20, 90, 'Lịch làm thêm giờ nên nhượng lại sân tối.'],
         ['RES-P2P-102', 17, 0, 'Sân Pickleball 1 - Aura Neon', 5, 19, 85, 'Bạn tập cùng bị ốm, pass lại sân cho người cần.'],
         ['RES-P2P-103', 20, 7, 'Sân Tennis 1 - Đất Nện French Open Tây Hồ', 6, 17, 100, 'Đi công tác đột xuất, nhượng lại đúng giá gốc.'],
+        // The demo customer sold one too, so their profile shows venue credit.
+        ['RES-MY-101', 0, 14, 'Sân 2 - Tiêu Chuẩn', 5, 18, 100, 'Trùng lịch họp nên nhượng lại sân, đúng giá gốc.'],
     ];
+
+    /** [reservation code, customer, court code, days ahead, start hour]: half of it, at most their balance, paid with credit. */
+    private const CREDIT_BOOKING = ['RES-CREDIT-001', 0, 'Sân 2 - Tiêu Chuẩn', 3, 20];
+
+    /** [seller, cashier email, amount]: cashed out at the cashier's open shift an hour ago. */
+    private const CASH_OUT = [5, 'cashier@demo.auracourt.vn', 50000];
 
     private Carbon $now;
 
@@ -89,12 +103,50 @@ class MarketplaceSeeder extends Seeder
             $reservation = $this->paidReservation($code, $seller, $buyer, $court, $daysAhead, $hour, 1, count(self::RESALES) + $index);
             $listedAt = $this->now->copy()->subDays(2)->setTime(20, 0)->addMinutes($index * 13);
             $listing = $this->list($marketplace, $reservation->entitlements->first(), $seller, $percent, $listedAt, ['badge' => 'deal', 'notes' => $notes]);
-            $this->sell($listing, $buyer, $this->now->copy()->subDay()->setTime(12, 0)->addMinutes($index * 17));
+            $this->sell($court->venue, $listing, $buyer, $this->now->copy()->subDay()->setTime(12, 0)->addMinutes($index * 17));
+        }
+
+        $this->creditBooking();
+        $this->cashOut();
+    }
+
+    /** Booked three hours ago with credit from the sale; the QR paid the rest within minutes. */
+    private function creditBooking(): void
+    {
+        [$code, $customerNo, $courtCode, $daysAhead, $hour] = self::CREDIT_BOOKING;
+        $customer = $this->customer($customerNo);
+        $court = Court::with(['venue'])->where('code', $courtCode)->first();
+        if (! $customer || ! $court || Reservation::withoutGlobalScope('tenant_isolation')->where('code', $code)->exists()) {
+            return;
+        }
+        $balance = app(VenueCreditService::class)->balance($court->venue->organization_id, $customer->id);
+        if ($balance > 0) {
+            $this->paidReservation($code, $customer, null, $court, $daysAhead, $hour, 1, 0, $this->now->copy()->subHours(3), $balance);
         }
     }
 
-    /** A booking the seller held and paid to the venue owner two to four days ago, shaped like ReservationService::hold. */
-    private function paidReservation(string $code, User $seller, ?User $buyer, Court $court, int $daysAhead, int $hour, int $hours, int $index): Reservation
+    /** The cashier counted the cash out after the seller showed their one-time code (design D7). */
+    private function cashOut(): void
+    {
+        [$sellerNo, $cashierEmail, $amount] = self::CASH_OUT;
+        $seller = $this->customer($sellerNo);
+        $cashier = User::where('email', $cashierEmail)->first();
+        $shift = $cashier ? CashShift::where('cashier_id', $cashier->id)->where('status', 'open')->first() : null;
+        if (! $seller || ! $shift || VenueCreditEntry::withoutGlobalScope('tenant_isolation')->where('user_id', $seller->id)->where('type', 'cash_out')->exists()
+            || app(VenueCreditService::class)->balance($shift->organization_id, $seller->id) < $amount) {
+            return;
+        }
+        $this->atClock($this->now->copy()->subHour()->max($shift->opened_at), function () use ($seller, $cashier, $shift, $amount): void {
+            $cashOuts = app(VenueCreditCashOutService::class);
+            $cashOuts->confirm($shift, $cashier, $cashOuts->create($seller, $shift->organization()->firstOrFail(), $amount)['code']);
+        });
+    }
+
+    /**
+     * A booking the seller held and paid to the venue owner two to four days ago, shaped like ReservationService::hold.
+     * With $credit, up to half the total was paid with venue credit, reserved at booking and captured on payment.
+     */
+    private function paidReservation(string $code, User $seller, ?User $buyer, Court $court, int $daysAhead, int $hour, int $hours, int $index, ?Carbon $bookedAt = null, int $credit = 0): Reservation
     {
         $day = $this->now->copy()->startOfDay()->addDays($daysAhead);
         [$court, $startHour] = $this->firstFit($court, $hour, $hours, fn (Court $candidate, int $at): bool => $this->isFree(
@@ -103,8 +155,9 @@ class MarketplaceSeeder extends Seeder
         $starts = array_map(fn (int $offset): Carbon => $day->copy()->setTime($startHour + $offset, 0), range(0, $hours - 1));
         $snapshots = app(PriceQuoteService::class)->priceSnapshots($court, $starts, 60);
         $total = (int) array_sum(array_column($snapshots, 'unit_price'));
-        $bookedAt = $this->now->copy()->subDays(2 + $index % 3)->setTime(10, 0)->addMinutes($index * 11);
+        $bookedAt ??= $this->now->copy()->subDays(2 + $index % 3)->setTime(10, 0)->addMinutes($index * 11);
         $paidAt = $bookedAt->copy()->addMinutes(3);
+        $credit = min($credit, intdiv($total, 2));
 
         $reservation = Reservation::query()->forceCreateQuietly([
             'organization_id' => $court->venue->organization_id,
@@ -117,6 +170,7 @@ class MarketplaceSeeder extends Seeder
             'hold_expires_at' => $bookedAt->copy()->addMinutes(15),
             'confirmed_at' => $paidAt,
             'payment_model' => 'direct_owner_v1',
+            'metadata' => $credit > 0 ? ['venue_credit_amount' => $credit] : null,
             'created_at' => $bookedAt,
             'updated_at' => $paidAt,
         ]);
@@ -147,20 +201,22 @@ class MarketplaceSeeder extends Seeder
                 'updated_at' => $paidAt,
             ]);
         }
-        $this->payOwner($court->venue, $seller, 'booking', $code, $total, $bookedAt, $paidAt);
+        if ($credit > 0) {
+            $this->atClock($bookedAt, fn () => app(VenueCreditService::class)->reserve($reservation, $credit));
+            $this->atClock($paidAt, fn () => app(VenueCreditService::class)->capture($reservation));
+        }
+        $this->payOwner($court->venue, $seller, 'booking', $code, $total - $credit, $bookedAt, $paidAt);
 
         return $reservation->load('entitlements');
     }
 
-    /** Listed through MarketplaceService at $listedAt, to the configured demo account the buyer transfers to. */
+    /** Listed through MarketplaceService at $listedAt. */
     private function list(MarketplaceService $marketplace, ReservationEntitlement $entitlement, User $seller, int $percent, Carbon $listedAt, array $metadata): MarketplaceListing
     {
-        $connection = Venue::where('slug', 'aura-court')->firstOrFail()->currentReceivingConnection()->firstOrFail();
-        $receiver = ['bank_code' => $connection->bank_code, 'account_number' => $connection->accountNumber(), 'account_name' => $connection->accountName()];
         $asking = intdiv($entitlement->amount * $percent, 100 * 5000) * 5000;
 
-        return $this->atClock($listedAt, function () use ($marketplace, $entitlement, $seller, $asking, $receiver, $metadata): MarketplaceListing {
-            $listing = $marketplace->list($entitlement, $seller, $asking, $receiver);
+        return $this->atClock($listedAt, function () use ($marketplace, $entitlement, $seller, $asking, $metadata): MarketplaceListing {
+            $listing = $marketplace->list($entitlement, $seller, $asking);
             // Keeps the max_resale_price list() stored (D23).
             $listing->forceFill(['metadata' => [...(array) $listing->metadata, ...$metadata]])->saveQuietly();
 
@@ -168,60 +224,29 @@ class MarketplaceSeeder extends Seeder
         });
     }
 
-    /** The buyer locked the listing, reported the transfer, and the seller confirmed receipt: PeerToPeerResaleService::transfer. */
-    private function sell(MarketplaceListing $listing, User $buyer, Carbon $lockedAt): void
+    /**
+     * The buyer held the listing and paid the venue's QR within minutes; the receipt moved the slot and issued the
+     * seller credit, as OwnerCollectedResaleService::confirmPaidAttempt does.
+     */
+    private function sell(Venue $venue, MarketplaceListing $listing, User $buyer, Carbon $lockedAt): void
     {
-        $reportedAt = $lockedAt->copy()->addMinutes(6);
-        $soldAt = $reportedAt->copy()->addMinutes(20);
-        $reference = 'RS'.Str::upper(Str::random(10));
-        $metadata = [
+        $paidAt = $lockedAt->copy()->addMinutes(6);
+        $reference = 'AC'.Str::upper(Str::random(18));
+        $listing->forceFill(['status' => 'checkout', 'metadata' => [
             ...(array) $listing->metadata,
             'buyer_ids' => [$buyer->id],
             'locked_by' => $buyer->id,
-            'locked_until' => $listing->cutoff_at->copy()->utc()->toIso8601String(),
+            'locked_until' => $lockedAt->copy()->addMinutes(15)->utc()->toIso8601String(),
             'reference' => $reference,
-            'payment_reported_at' => $reportedAt->copy()->utc()->toIso8601String(),
-        ];
+        ]])->saveQuietly();
+        $attempt = $this->payOwner($venue, $buyer, 'resale', (string) $listing->id, (int) $listing->asking_price, $lockedAt, $paidAt, $reference);
 
-        $this->atClock($soldAt, function () use ($listing, $buyer, $metadata, $reference): void {
+        $this->atClock($paidAt, function () use ($listing, $buyer, $attempt, $paidAt): void {
             $entitlement = ReservationEntitlement::withoutGlobalScope('tenant_isolation')->findOrFail($listing->reservation_entitlement_id);
-            $entitlement->update(['status' => 'transferred']);
-            $buyerEntitlement = ReservationEntitlement::create([
-                'organization_id' => $entitlement->organization_id,
-                'reservation_id' => $entitlement->reservation_id,
-                'reservation_slot_id' => $entitlement->reservation_slot_id,
-                'user_id' => $buyer->id,
-                'court_id' => $entitlement->court_id,
-                'starts_at' => $entitlement->starts_at,
-                'ends_at' => $entitlement->ends_at,
-                'amount' => $entitlement->amount,
-                'status' => 'active',
-            ]);
-            // One-slot bookings: the buyer now holds every active entitlement, so the booking follows.
-            Reservation::withoutGlobalScope('tenant_isolation')->whereKey($entitlement->reservation_id)->update(['user_id' => $buyer->id, 'updated_at' => now()]);
-
-            EntitlementTransfer::create([
-                'organization_id' => $listing->organization_id,
-                'marketplace_listing_id' => $listing->id,
-                'seller_id' => $listing->seller_id,
-                'buyer_id' => $buyer->id,
-                'seller_entitlement_id' => $entitlement->id,
-                'buyer_entitlement_id' => $buyerEntitlement->id,
-                'buyer_amount' => (int) $listing->asking_price,
-                'marketplace_fee' => 0,
-                'seller_refund' => 0,
-                'buyer_payment_reference' => $reference,
-                'idempotency_key' => 'p2p:listing:'.$listing->id,
-                'status' => 'completed',
-                'metadata' => [
-                    'settlement_mode' => 'peer_to_peer',
-                    'original_price' => (int) $entitlement->amount,
-                    'max_resale_price' => $metadata['max_resale_price'] ?? null,
-                    'consideration_amount' => (int) $listing->asking_price,
-                    'payment_reported_at' => $metadata['payment_reported_at'],
-                ],
-            ]);
-            $listing->forceFill(['status' => 'sold', 'sold_at' => now(), 'metadata' => $metadata])->save();
+            $transfer = app(ResaleTransfer::class)->move($listing, $buyer, $entitlement, $attempt->reference);
+            app(VenueCreditService::class)->issue($listing->organization_id, $listing->seller_id, (int) $listing->asking_price, 'entitlement_transfer', $transfer->id,
+                'receipt:'.OwnerPaymentAllocation::where('payment_attempt_id', $attempt->id)->value('payment_receipt_id'),
+                ['marketplace_listing_id' => $listing->id, 'paid_at' => $paidAt->toIso8601String()]);
         });
     }
 

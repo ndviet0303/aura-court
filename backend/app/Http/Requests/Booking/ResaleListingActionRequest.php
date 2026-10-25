@@ -4,7 +4,7 @@ namespace App\Http\Requests\Booking;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-/** payment-sent, release and confirm-receipt on a locked resale listing. */
+/** The buyer cancels their own resale hold. */
 class ResaleListingActionRequest extends FormRequest
 {
     public function authorize(): bool

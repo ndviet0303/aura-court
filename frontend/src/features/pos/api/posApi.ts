@@ -1,7 +1,14 @@
 import { api } from '@/core/api/client'
 import { venueClockRange } from '@/core/utils/venueTime'
 import { resolveLocalizedText } from '@/i18n'
-import type { Product, PosShift, CustomerProfile, CourtReservation } from '../types/pos'
+import type {
+  Product,
+  PosShift,
+  CustomerProfile,
+  CourtReservation,
+  PosTender,
+  VenueCreditCashOut,
+} from '../types/pos'
 import type { ReservationPaymentAttempt } from '@/features/booking/api/bookingApi'
 
 export const posApi = {
@@ -65,7 +72,9 @@ export const posApi = {
       customer_id?: number | null
       reservation_id?: number | null
       venue_id?: number | null
-      payment_method: 'cash' | 'qr' | 'wallet'
+      payment_method: 'cash' | 'qr' | 'wallet' | 'credit' | 'mixed'
+      allow_mixed_tender?: boolean
+      tenders?: PosTender[]
       payment_reference?: string
       discount_amount?: number
       cash_tendered?: number
@@ -214,4 +223,19 @@ export const posApi = {
       return []
     }
   },
+
+  // Venue credit at the counter (venue-credit spec): the served customer's balance at this organization.
+  getCustomerCredit: (userId: number) =>
+    api.get<{ user_id: number; balance: number }>(`/pos/venue-credits/customers/${userId}`),
+
+  lookupCashOut: (shiftId: number, code: string) =>
+    api.post<VenueCreditCashOut>(`/pos/shifts/${shiftId}/venue-credit-cash-outs/lookup`, { code }),
+
+  // Run after the cash is handed over; the key keeps a double click to one cash-out.
+  confirmCashOut: (shiftId: number, code: string, idempotencyKey: string) =>
+    api.post<VenueCreditCashOut & { balance: number }>(
+      `/pos/shifts/${shiftId}/venue-credit-cash-outs`,
+      { code },
+      { headers: { 'Idempotency-Key': idempotencyKey } },
+    ),
 }

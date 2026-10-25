@@ -3,9 +3,9 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
 import { AuraButton } from '@/shared/components'
+import OwnerPaymentInstructionsPanel from '@/features/booking/components/OwnerPaymentInstructionsPanel.vue'
 import type { ResaleListing } from '../types/marketplace'
 import { useResaleLock } from '../composables/useResaleLock'
-import ResalePaymentDetails from './ResalePaymentDetails.vue'
 
 const props = defineProps<{
   listing: ResaleListing | null
@@ -18,7 +18,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const lock = useResaleLock(() => emit('changed'))
-const { state, phase, remainingSeconds, busy, error, disputeOpened } = lock
+const { state, phase, remainingSeconds, busy, error } = lock
 const acceptFree = ref(false)
 const isFree = computed(() => props.listing?.resalePrice === 0)
 const countdown = computed(() => {
@@ -34,10 +34,6 @@ watch(
     else lock.close()
   },
   { immediate: true },
-)
-
-const unresolvedKey = computed(() =>
-  state.value?.last_release?.by === 'seller' ? 'sellerNotReceived' : 'lapsed',
 )
 
 function close() {
@@ -116,75 +112,44 @@ function close() {
           <p v-else class="state-box">{{ t('resale.p2p.lockHint') }}</p>
         </template>
 
-        <ResalePaymentDetails
-          v-else-if="phase === 'holding' && state?.payment"
-          :payment="state.payment"
-          :receiver="state.receiver"
-          :countdown="countdown"
-        />
-
-        <div
-          v-else-if="phase === 'reported'"
-          class="state-box tone-wait"
-          data-testid="resale-reported"
-        >
-          <strong>{{ t('resale.p2p.reportedTitle') }}</strong>
-          <span>{{ t('resale.p2p.reportedDesc') }}</span>
-        </div>
+        <template v-else-if="phase === 'holding'">
+          <p class="state-box tone-wait" data-testid="resale-countdown">
+            <strong>{{ t('resale.p2p.countdown', { time: countdown }) }}</strong>
+            <span>{{ t('resale.p2p.holdingDesc') }}</span>
+          </p>
+          <OwnerPaymentInstructionsPanel
+            v-if="state?.payment"
+            :attempt="state.payment"
+            reservation-status="held"
+            :loading="false"
+            :refreshing="busy"
+            @refresh="lock.refresh()"
+          />
+        </template>
 
         <div v-else-if="phase === 'sold'" class="state-box tone-ok" data-testid="resale-sold">
           <strong>{{ t('resale.p2p.soldTitle') }}</strong>
           <span>{{ t('resale.p2p.soldDesc') }}</span>
         </div>
-
-        <div
-          v-else-if="phase === 'unresolved'"
-          class="state-box tone-error"
-          data-testid="resale-unresolved"
-        >
-          <strong>{{ t(`resale.p2p.${unresolvedKey}`) }}</strong>
-          <span v-if="state?.last_release?.reason">
-            {{ t('resale.p2p.releaseReason', { reason: state.last_release.reason }) }}
-          </span>
-          <span>{{
-            disputeOpened ? t('resale.p2p.disputeOpened') : t('resale.p2p.disputeHint')
-          }}</span>
-        </div>
       </div>
 
       <div class="modal-footer">
-        <template v-if="phase === 'holding'">
-          <AuraButton variant="secondary" size="md" :disabled="busy" @click="lock.cancel()">
-            {{ t('resale.p2p.cancelHoldBtn') }}
-          </AuraButton>
-          <AuraButton
-            variant="primary"
-            size="md"
-            icon="task_alt"
-            :loading="busy"
-            data-testid="resale-paid-btn"
-            @click="lock.reportPaid()"
-          >
-            {{ t('resale.p2p.paidBtn') }}
-          </AuraButton>
-        </template>
+        <AuraButton
+          v-if="phase === 'holding'"
+          variant="secondary"
+          size="md"
+          :disabled="busy"
+          data-testid="resale-cancel-hold-btn"
+          @click="lock.cancel()"
+        >
+          {{ t('resale.p2p.cancelHoldBtn') }}
+        </AuraButton>
         <template v-else>
           <AuraButton variant="secondary" size="md" @click="close">
             {{ t('resale.p2p.close') }}
           </AuraButton>
           <AuraButton
-            v-if="phase === 'unresolved' && !disputeOpened"
-            variant="danger"
-            size="md"
-            icon="support_agent"
-            :loading="busy"
-            data-testid="resale-dispute-btn"
-            @click="lock.openDispute()"
-          >
-            {{ t('resale.p2p.disputeBtn') }}
-          </AuraButton>
-          <AuraButton
-            v-else-if="phase === 'idle' || phase === 'expired'"
+            v-if="phase === 'idle' || phase === 'expired'"
             variant="primary"
             size="md"
             icon="lock_clock"
