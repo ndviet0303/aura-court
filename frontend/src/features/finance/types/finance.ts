@@ -1,3 +1,5 @@
+import type { VenueCreditEntry } from '@/core/types/venueCredit'
+
 export interface SettlementRecord {
   id: number
   organization_id?: number
@@ -153,4 +155,11 @@ export interface OwnerPaymentException {
 export interface OwnerPaymentExceptionPage {
   data: OwnerPaymentException[]
   meta: { current_page: number; last_page: number; total: number }
+}
+
+/** The owner's venue credit entries plus the organization's total unspent credit (design D8). */
+export interface OwnerVenueCreditPage {
+  data: VenueCreditEntry[]
+  meta: { current_page: number; last_page: number; total: number }
+  outstanding: number
 }

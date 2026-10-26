@@ -8,6 +8,7 @@ import { i18n, formatCurrency, getCurrentLocale } from '@/i18n'
 import { bookingErrorMessage, displayCode, displayStatus } from '../utils/reservation'
 import { venueClock, venueInstant } from '@/core/utils/venueTime'
 import { usePriceChange } from './usePriceChange'
+import { useBookingStore } from '../stores/bookingStore'
 
 const t = (key: string, params?: Record<string, unknown>) => i18n.global.t(key, params || {})
 
@@ -20,6 +21,7 @@ const TAB_STATUSES = {
 
 export function useReservations() {
   const route = useRoute()
+  const bookingStore = useBookingStore()
   const courts = ref<Court[]>([])
   const reservations = ref<Reservation[]>([])
   const selectedCourtId = ref<number | null>(null)
@@ -178,6 +180,7 @@ export function useReservations() {
       await bookingApi.holdReservation({
         quote_token: activeQuote.value.quote_token,
         expected_total: agreedTotal ?? activeQuote.value.total_amount,
+        ...bookingStore.venueCreditPayload(),
       })
       activeQuote.value = null
       clearInterval(quoteTimerInterval)

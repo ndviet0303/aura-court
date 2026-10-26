@@ -12,7 +12,7 @@ use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Infrastructure\ScheduledRecoveryService;
 use App\Services\Payment\SplitPaymentService;
 use App\Services\POS\PosService;
-use App\Services\Social\PeerToPeerResaleService;
+use App\Services\Social\OwnerCollectedResaleService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
@@ -58,8 +58,8 @@ Schedule::call(function () {
     ->everyMinute()
     ->onFailure($reportScheduleFailure('pos:release-expired-orders'));
 
-// 1d. Peer-to-peer resale: release lapsed buyer locks and withdraw unsold listings past their cutoff
-Schedule::call(fn () => app(PeerToPeerResaleService::class)->sweep())
+// 1d. Owner-collected resale: release lapsed buyer holds, expire their payment requests, withdraw unsold listings past cutoff
+Schedule::call(fn () => app(OwnerCollectedResaleService::class)->sweep())
     ->name('marketplace:sweep-resale-locks')
     ->withoutOverlapping(10)
     ->everyMinute()

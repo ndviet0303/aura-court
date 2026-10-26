@@ -5,6 +5,7 @@ import { bookingApi } from '../api/bookingApi'
 import type { Court, AvailabilitySlot } from '@/features/court/types/court'
 import { usePriceChange } from '../composables/usePriceChange'
 import { useVoucherChoice } from '../composables/useVoucherChoice'
+import { useVenueCreditChoice } from '../composables/useVenueCreditChoice'
 
 export const useBookingStore = defineStore('booking', () => {
   const courts = ref<Court[]>([])
@@ -113,6 +114,8 @@ export const useBookingStore = defineStore('booking', () => {
 
   // The voucher the booking form applies; BookingVoucherPicker loads it for the selection (module 3 D10).
   const vouchers = useVoucherChoice()
+  // The venue credit the booking spends; BookingVenueCreditPicker sets it for every checkout form.
+  const credit = useVenueCreditChoice()
 
   // Checks out the selected interval at the amount payable the customer was shown; the server prices
   // it in the same transaction.
@@ -123,6 +126,7 @@ export const useBookingStore = defineStore('booking', () => {
       ends_at: selection.value?.endsAt,
       expected_total: expectedTotal,
       ...vouchers.payload(),
+      ...credit.payload(),
     })
     return reservation
   }
@@ -158,6 +162,11 @@ export const useBookingStore = defineStore('booking', () => {
     continueWithoutVoucher: vouchers.continueWithout,
     chooseOtherVoucher: vouchers.chooseOther,
     clearVouchers: vouchers.clear,
+    venueCreditAmount: credit.amount,
+    loadVenueCredits: credit.load,
+    venueCreditBalanceAt: credit.balanceAt,
+    venueCreditPayload: credit.payload,
+    clearVenueCredit: credit.clear,
     fetchWalletBalance,
   }
 })

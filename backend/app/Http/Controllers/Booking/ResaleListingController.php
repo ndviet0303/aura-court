@@ -11,19 +11,19 @@ use App\Models\MarketplaceListing;
 use App\Models\ReservationEntitlement;
 use App\Services\Infrastructure\IdempotencyService;
 use App\Services\Social\MarketplaceService;
-use App\Services\Social\PeerToPeerResaleService;
+use App\Services\Social\OwnerCollectedResaleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-/** Peer-to-peer resale: list, lock, report payment, release and confirm receipt. */
+/** Owner-collected resale: list, hold (opens the owner's QR) and cancel the hold; the verified receipt does the rest. */
 class ResaleListingController extends Controller
 {
     use ResolvesOrganization;
 
     public function __construct(
         private readonly MarketplaceService $marketplace,
-        private readonly PeerToPeerResaleService $resale,
+        private readonly OwnerCollectedResaleService $resale,
         private readonly IdempotencyService $idempotency,
     ) {}
 
@@ -34,7 +34,7 @@ class ResaleListingController extends Controller
         $data = $request->validated();
 
         return $this->idempotency->run($request, fn () => response()->json([
-            'listing' => $this->marketplace->list($entitlement, $request->user(), (int) $data['asking_price'], $data['seller_receiver'] ?? null),
+            'listing' => $this->marketplace->list($entitlement, $request->user(), (int) $data['asking_price']),
         ], 201));
     }
 
@@ -54,13 +54,6 @@ class ResaleListingController extends Controller
         ));
     }
 
-    public function paymentSent(ResaleListingActionRequest $request, MarketplaceListing $listing): Response
-    {
-        $this->assertTenant($request, $listing);
-
-        return $this->idempotency->run($request, fn () => response()->json($this->resale->paymentSent($listing, $request->user())));
-    }
-
     public function release(ResaleListingActionRequest $request, MarketplaceListing $listing): Response
     {
         $this->assertTenant($request, $listing);
@@ -68,13 +61,6 @@ class ResaleListingController extends Controller
         return $this->idempotency->run($request, fn () => response()->json(
             $this->resale->release($listing, $request->user(), $request->validated('reason'))
         ));
-    }
-
-    public function confirmReceipt(ResaleListingActionRequest $request, MarketplaceListing $listing): Response
-    {
-        $this->assertTenant($request, $listing);
-
-        return $this->idempotency->run($request, fn () => response()->json($this->resale->confirmReceipt($listing, $request->user())));
     }
 
     private function assertTenant(Request $request, MarketplaceListing $listing): void

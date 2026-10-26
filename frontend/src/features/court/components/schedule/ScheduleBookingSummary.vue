@@ -44,6 +44,7 @@ const blocked = computed(
     !!auth.user &&
     (!validBookerPhone(auth.user.phone) || !!bookingStore.priceChange || quote.total === null),
 )
+const walletShort = computed(() => quote.total !== null && bookingStore.walletBalance < quote.total)
 
 const formattedDate = computed(() => {
   try {
@@ -202,16 +203,11 @@ const formattedDate = computed(() => {
             <span>{{ $t('payment.currentBalance') || 'Số dư ví' }}:</span>
           </div>
           <div class="wallet-status-right">
-            <strong
-              class="font-mono"
-              :class="
-                bookingStore.walletBalance >= (quote.total ?? 0) ? 'text-emerald' : 'text-danger'
-              "
-            >
+            <strong class="font-mono" :class="walletShort ? 'text-danger' : 'text-emerald'">
               {{ formatCurrency(bookingStore.walletBalance) }}
             </strong>
             <RouterLink
-              v-if="quote.total !== null && bookingStore.walletBalance < quote.total"
+              v-if="walletShort"
               to="/wallet"
               class="badge-topup-link"
               :title="$t('payment.topupNowCta') || 'Nạp ví ngay'"
@@ -230,6 +226,7 @@ const formattedDate = computed(() => {
         :quote-error="quote.error"
         :price-change="bookingStore.priceChange"
         :busy="loading"
+        :organization-id="directOwnerPayments ? court.venue?.organization_id : null"
         @confirm-price="bookingStore.confirmPrice"
         @retry-quote="quote.retry"
       />

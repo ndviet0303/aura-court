@@ -18,6 +18,7 @@ use App\Models\StockMovement;
 use App\Models\TenantMembershipPlan;
 use App\Services\Infrastructure\IdempotencyService;
 use App\Services\POS\PosQrPaymentService;
+use App\Services\POS\PosRefundService;
 use App\Services\POS\PosService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -349,13 +350,7 @@ class PosController extends Controller
         ]);
 
         return $this->idempotency->run($request, function () use ($order, $request, $data) {
-            $refunded = $this->pos->refundOrder(
-                $order,
-                $request->user(),
-                $data['items'] ?? [],
-                $data['reason'] ?? 'Customer return',
-                $data['refund_method'] ?? 'cash'
-            );
+            $refunded = app(PosRefundService::class)->refundOrder($order, $request->user(), $data['items'] ?? [], $data['reason'] ?? 'Customer return', $data['refund_method'] ?? 'cash');
 
             return response()->json([
                 'order' => $refunded,

@@ -633,6 +633,18 @@ const router = createRouter({
           },
         },
         {
+          // The organization's unspent venue credit from resale (design D8).
+          path: 'venue-credits',
+          name: 'admin-venue-credits',
+          component: () => import('@/features/finance/views/OwnerVenueCreditsView.vue'),
+          meta: {
+            orgRoles: ['organization_owner'],
+            capability: 'direct_owner_payments',
+            titleKey: 'seo.adminVenueCreditsTitle',
+            indexable: false,
+          },
+        },
+        {
           path: 'finance',
           name: 'admin-finance',
           component: () => import('@/features/owner-finance/views/OwnerFinanceView.vue'),

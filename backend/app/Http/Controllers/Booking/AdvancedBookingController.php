@@ -57,6 +57,7 @@ class AdvancedBookingController extends Controller
         $organization = $this->organization($request);
         $data = $request->validate([
             'court_id' => 'required|integer',
+            'venue_credit_amount' => 'prohibited',
             'frequency' => 'required|in:weekly,biweekly,monthly',
             'weekdays' => 'sometimes|array',
             'weekdays.*' => 'integer|min:1|max:7',
@@ -142,7 +143,7 @@ class AdvancedBookingController extends Controller
     {
         $organization = $this->organization($request);
         abort_unless($reservation->organization_id === $organization->id && $reservation->user_id === $request->user()->id, 404);
-        $data = $request->validate(['shares' => 'required|array|min:2|max:8', 'shares.*.amount' => 'required|integer|min:1']);
+        $data = $request->validate(['venue_credit_amount' => 'prohibited', 'shares' => 'required|array|min:2|max:8', 'shares.*.amount' => 'required|integer|min:1']);
 
         return $this->idempotency->run($request, fn () => response()->json(['split' => $this->splits->create($reservation, $request->user(), $data['shares'])], 201));
     }
@@ -159,7 +160,7 @@ class AdvancedBookingController extends Controller
     {
         $organization = $this->organization($request);
         abort_unless($share->organization_id === $organization->id, 404);
-        $data = $request->validate(['amount' => 'required|integer|min:1', 'payment_reference' => 'required|string|max:160']);
+        $data = $request->validate(['venue_credit_amount' => 'prohibited', 'amount' => 'required|integer|min:1', 'payment_reference' => 'required|string|max:160']);
 
         return $this->idempotency->run($request, fn () => response()->json(['split' => $this->splits->payShare($share, $request->user(), $data['amount'], $data['payment_reference'])]));
     }
@@ -168,7 +169,7 @@ class AdvancedBookingController extends Controller
     {
         $organization = $this->organization($request);
         abort_unless($split->organization_id === $organization->id, 404);
-        $data = $request->validate(['payment_reference' => 'nullable|string|max:160']);
+        $data = $request->validate(['venue_credit_amount' => 'prohibited', 'payment_reference' => 'nullable|string|max:160']);
 
         return $this->idempotency->run($request, fn () => response()->json(['split' => $this->splits->coverShortfall($split, $request->user(), $data['payment_reference'] ?? null)]));
     }

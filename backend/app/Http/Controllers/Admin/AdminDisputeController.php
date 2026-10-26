@@ -17,7 +17,7 @@ use App\Http\Resources\Admin\DisputeCaseResource;
 use App\Models\DisputeCase;
 use App\Models\OrganizationMember;
 use App\Models\Reservation;
-use App\Services\Social\PeerToPeerResaleService;
+use App\Services\Social\OwnerCollectedResaleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -31,7 +31,7 @@ class AdminDisputeController extends Controller
         private readonly ArbitrateDispute $arbitrateDispute,
         private readonly DisputeRepositoryInterface $disputeRepository,
         private readonly NotifyDisputeFiled $notifyDisputeFiled,
-        private readonly PeerToPeerResaleService $resale,
+        private readonly OwnerCollectedResaleService $resale,
     ) {}
 
     public function index(ListDisputeRequest $request): AnonymousResourceCollection

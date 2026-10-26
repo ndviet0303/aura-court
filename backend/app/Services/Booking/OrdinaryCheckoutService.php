@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\Venue;
 use App\Models\WalletAccount;
 use App\Services\Finance\FinancialPostingService;
+use App\Services\Finance\VenueCreditService;
 use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Payment\ReservationPaymentService;
@@ -79,6 +80,11 @@ class OrdinaryCheckoutService
                 if ($expectedTotal !== null) {
                     $this->intake->assertAgreedAmount($expectedTotal, (int) $quote->subtotal, $netPayable);
                 }
+                // Venue credit covers part or all of P; staff never spend a customer's credit, and only direct-owner venues issue it (D5).
+                $creditAmount = (int) ($data['venue_credit_amount'] ?? 0);
+                abort_if($creditAmount > 0 && ($actor !== null || ! $directOwnerPayments), 422, 'Credit sân chỉ dùng khi khách tự đặt tại sân nhận thanh toán trực tiếp.');
+                abort_if($creditAmount > $netPayable, 422, 'Số credit vượt quá số tiền phải trả.');
+                $cashPayable = $netPayable - $creditAmount;
 
                 // Get and lock wallet
                 $wallet = null;
@@ -93,7 +99,7 @@ class OrdinaryCheckoutService
 
                 // Check court blocks
                 $this->slotPolicy->assertAllowed($court, $intervals());
-                $holdExpiresAt = $directOwnerPayments && $netPayable > 0 ? $this->intake->paymentDeadline($quote, $applied) : null;
+                $holdExpiresAt = $directOwnerPayments && $cashPayable > 0 ? $this->intake->paymentDeadline($quote, $applied) : null;
 
                 $metadata = (array) ($data['metadata'] ?? []);
                 if ($actor !== null && $actor->id !== $user->id) {
@@ -113,6 +119,9 @@ class OrdinaryCheckoutService
                 if ($directOwnerPayments && $netPayable === 0) {
                     $metadata['zero_payable'] = true;
                 }
+                if ($creditAmount > 0) {
+                    $metadata['venue_credit_amount'] = $creditAmount;
+                }
 
                 $reservation = Reservation::create([
                     'organization_id' => $organizationId,
@@ -120,11 +129,11 @@ class OrdinaryCheckoutService
                     'court_id' => $quote->court_id,
                     'price_quote_id' => $quote->id,
                     'code' => $this->uniqueReservationCode(),
-                    'status' => $directOwnerPayments && $netPayable > 0 ? 'held' : 'confirmed',
+                    'status' => $directOwnerPayments && $cashPayable > 0 ? 'held' : 'confirmed',
                     'currency' => $quote->currency,
                     'total_amount' => $netPayable,
                     'hold_expires_at' => $holdExpiresAt,
-                    'confirmed_at' => $directOwnerPayments && $netPayable > 0 ? null : now(),
+                    'confirmed_at' => $directOwnerPayments && $cashPayable > 0 ? null : now(),
                     'metadata' => $metadata,
                     'payment_model' => $directOwnerPayments ? 'direct_owner_v1' : 'legacy_wallet_v1',
                 ]);
@@ -137,7 +146,7 @@ class OrdinaryCheckoutService
                         'starts_at' => $slotSnapshot['starts_at'],
                         'ends_at' => $slotSnapshot['ends_at'],
                         'unit_price' => $slotSnapshot['unit_price'],
-                        'status' => $directOwnerPayments && $netPayable > 0 ? 'held' : 'confirmed',
+                        'status' => $directOwnerPayments && $cashPayable > 0 ? 'held' : 'confirmed',
                         'snapshot' => $slotSnapshot,
                     ]);
 
@@ -150,7 +159,7 @@ class OrdinaryCheckoutService
                         'starts_at' => $slot->starts_at,
                         'ends_at' => $slot->ends_at,
                         'amount' => $slot->unit_price,
-                        'status' => $directOwnerPayments && $netPayable > 0 ? 'held' : 'active',
+                        'status' => $directOwnerPayments && $cashPayable > 0 ? 'held' : 'active',
                     ]);
                 }
 
@@ -159,6 +168,14 @@ class OrdinaryCheckoutService
                     $this->voucherUses->hold($reservation, $voucher);
                     if ($reservation->status === 'confirmed') {
                         $this->voucherUses->consume($reservation, now());
+                    }
+                }
+
+                if ($creditAmount > 0) {
+                    // Reserved with the hold; a booking the credit pays in full is confirmed here and consumes it at once.
+                    app(VenueCreditService::class)->reserve($reservation, $creditAmount);
+                    if ($reservation->status === 'confirmed') {
+                        app(VenueCreditService::class)->capture($reservation);
                     }
                 }
 
@@ -191,7 +208,7 @@ class OrdinaryCheckoutService
                     ],
                 ]);
 
-                if ($directOwnerPayments && $netPayable > 0) {
+                if ($directOwnerPayments && $cashPayable > 0) {
                     app(ReservationPaymentService::class)->initiate($reservation, $user);
                 }
 

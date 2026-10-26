@@ -16,6 +16,14 @@ const emit = defineEmits<{
   (e: 'update:activeTab', tab: ProfileTabType): void
   (e: 'resendVerification'): void
 }>()
+
+const TABS: { id: ProfileTabType; icon: string; label: string }[] = [
+  { id: 'general', icon: 'person', label: 'profile.tabGeneral' },
+  { id: 'security', icon: 'lock', label: 'profile.tabSecurity' },
+  { id: 'membership', icon: 'workspace_premium', label: 'profile.tabMembership' },
+  { id: 'credit', icon: 'account_balance_wallet', label: 'profile.tabCredit' },
+  { id: 'shortcuts', icon: 'grid_view', label: 'profile.tabQuickLinks' },
+]
 </script>
 
 <template>
@@ -79,43 +87,16 @@ const emit = defineEmits<{
     <!-- Clean Navigation Tabs (No Raw Emojis) -->
     <nav class="profile-tabs-nav" aria-label="Profile navigation tabs">
       <button
+        v-for="tab in TABS"
+        :key="tab.id"
         type="button"
         class="tab-item-btn"
-        :class="{ 'is-active': activeTab === 'general' }"
-        @click="emit('update:activeTab', 'general')"
+        :class="{ 'is-active': activeTab === tab.id }"
+        :data-testid="`profile-tab-${tab.id}`"
+        @click="emit('update:activeTab', tab.id)"
       >
-        <span class="material-symbols-outlined tab-ico">person</span>
-        <span class="tab-text">{{ $t('profile.tabGeneral') }}</span>
-      </button>
-
-      <button
-        type="button"
-        class="tab-item-btn"
-        :class="{ 'is-active': activeTab === 'security' }"
-        @click="emit('update:activeTab', 'security')"
-      >
-        <span class="material-symbols-outlined tab-ico">lock</span>
-        <span class="tab-text">{{ $t('profile.tabSecurity') }}</span>
-      </button>
-
-      <button
-        type="button"
-        class="tab-item-btn"
-        :class="{ 'is-active': activeTab === 'membership' }"
-        @click="emit('update:activeTab', 'membership')"
-      >
-        <span class="material-symbols-outlined tab-ico">workspace_premium</span>
-        <span class="tab-text">{{ $t('profile.tabMembership') }}</span>
-      </button>
-
-      <button
-        type="button"
-        class="tab-item-btn"
-        :class="{ 'is-active': activeTab === 'shortcuts' }"
-        @click="emit('update:activeTab', 'shortcuts')"
-      >
-        <span class="material-symbols-outlined tab-ico">grid_view</span>
-        <span class="tab-text">{{ $t('profile.tabQuickLinks') }}</span>
+        <span class="material-symbols-outlined tab-ico">{{ tab.icon }}</span>
+        <span class="tab-text">{{ $t(tab.label) }}</span>
       </button>
     </nav>
   </div>

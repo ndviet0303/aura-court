@@ -23,7 +23,7 @@ export const marketplaceApi = {
   withdrawListing: (listingId: number) =>
     api.post<{ listing: ApiResaleListing }>(`${listing(listingId)}/withdraw`),
 
-  // Peer-to-peer lock: the buyer pays the seller directly; the seller confirms receipt.
+  // Owner-collected hold: the buyer pays the venue owner's QR; the verified receipt transfers the slot.
   getListingState: (listingId: number) => api.get<ResaleState>(listing(listingId)),
 
   lockListing: (listingId: number, acceptFreeTransfer = false) =>
@@ -32,23 +32,7 @@ export const marketplaceApi = {
       acceptFreeTransfer ? { accept_free_transfer: true } : {},
     ),
 
-  reportPaymentSent: (listingId: number) =>
-    api.post<ResaleState>(`${listing(listingId)}/payment-sent`),
-
-  releaseLock: (listingId: number, reason?: string) =>
-    api.post<ResaleState>(`${listing(listingId)}/release`, reason ? { reason } : {}),
-
-  confirmReceipt: (listingId: number) =>
-    api.post<ResaleState>(`${listing(listingId)}/confirm-receipt`),
-
-  openPaymentDispute: (listingId: number, title: string, summary: string) =>
-    api.post<unknown>('/disputes', {
-      title,
-      summary,
-      dispute_type: 'payment_issue',
-      reference_type: 'marketplace_listing',
-      reference_id: listingId,
-    }),
+  releaseLock: (listingId: number) => api.post<ResaleState>(`${listing(listingId)}/release`),
 
   getUserReservations: () => api.get<{ data: ResaleSourceReservation[] }>('/reservations'),
 }

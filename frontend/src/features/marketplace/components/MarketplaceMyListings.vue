@@ -4,7 +4,6 @@ import { formatTime } from '@/i18n'
 import type { MyResaleListing } from '../types/marketplace'
 import { AuraButton } from '@/shared/components'
 import { usePolling } from '../composables/usePolling'
-import { useResaleSellerActions } from '../composables/useResaleLock'
 
 const props = defineProps<{
   listings: MyResaleListing[]
@@ -18,13 +17,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const {
-  busyId,
-  error: sellerError,
-  confirmReceipt,
-  reportNotReceived,
-} = useResaleSellerActions(() => emit('refresh'))
-// A buyer may report payment at any moment while holding one of my hours.
+// A held hour turns sold once the owner's bank receipt arrives; refresh to show the credit.
 usePolling(
   () => props.listings.some((l) => l.status === 'checkout'),
   10000,
@@ -50,8 +43,6 @@ function formatMoney(amount: number): string {
         Pass Thêm Giờ Chơi
       </AuraButton>
     </div>
-
-    <p v-if="sellerError" class="seller-error" role="alert">{{ sellerError }}</p>
 
     <!-- Empty state -->
     <div v-if="listings.length === 0" class="empty-state-card">
@@ -89,7 +80,9 @@ function formatMoney(amount: number): string {
                   : item.status === 'checkout'
                     ? t('resale.p2p.statusCheckout')
                     : item.status === 'sold'
-                      ? 'Đã bán'
+                      ? item.askingPrice > 0
+                        ? t('resale.p2p.soldWithCredit', { amount: formatMoney(item.askingPrice) })
+                        : 'Đã bán'
                       : 'Đã rút tin'
               }}</span>
             </span>
@@ -110,10 +103,7 @@ function formatMoney(amount: number): string {
             <span v-if="item.lockedUntil">
               {{ t('resale.p2p.sellerHolding', { time: formatTime(item.lockedUntil) }) }}
             </span>
-            <strong v-if="item.paymentReportedAt" class="reported">
-              {{ t('resale.p2p.sellerReported') }}
-            </strong>
-            <span>{{ t('resale.p2p.sellerCheckBank') }}</span>
+            <span>{{ t('resale.p2p.sellerAwaitReceipt') }}</span>
           </div>
         </div>
 
@@ -134,27 +124,9 @@ function formatMoney(amount: number): string {
           >
             Rút tin
           </AuraButton>
-          <template v-else-if="item.status === 'checkout'">
-            <AuraButton
-              variant="primary"
-              size="sm"
-              icon="task_alt"
-              :loading="busyId === item.id"
-              data-testid="resale-confirm-receipt"
-              @click="confirmReceipt(item.id)"
-            >
-              {{ t('resale.p2p.confirmReceiptBtn') }}
-            </AuraButton>
-            <AuraButton
-              variant="danger"
-              size="sm"
-              :disabled="busyId !== null"
-              @click="reportNotReceived(item.id)"
-            >
-              {{ t('resale.p2p.notReceivedBtn') }}
-            </AuraButton>
-          </template>
-          <span v-else class="text-muted-status">Không còn khả dụng</span>
+          <span v-else-if="item.status !== 'checkout'" class="text-muted-status">
+            Không còn khả dụng
+          </span>
         </div>
       </div>
     </div>
@@ -302,16 +274,6 @@ function formatMoney(amount: number): string {
   background: rgba(239, 108, 0, 0.08);
   font-size: 12px;
   color: var(--ink);
-}
-
-.reported {
-  color: #9a5a00;
-}
-
-.seller-error {
-  margin: 0;
-  color: #c62828;
-  font-size: 13px;
 }
 
 .status-sold {

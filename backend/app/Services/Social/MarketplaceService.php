@@ -12,13 +12,8 @@ class MarketplaceService
 {
     public function __construct(private readonly ResalePriceCap $caps) {}
 
-    /**
-     * Lists one booked slot. A paid listing carries the seller's own receiving account; one without it
-     * (seeded or older rows) stays visible but cannot be locked until the seller adds it.
-     *
-     * @param  array{bank_code: string, account_number: string, account_name: string}|null  $receiver
-     */
-    public function list(ReservationEntitlement $entitlement, User $seller, int $askingPrice, ?array $receiver = null): MarketplaceListing
+    /** Lists one booked slot. A buyer pays the venue owner, so a listing never carries the seller's bank account. */
+    public function list(ReservationEntitlement $entitlement, User $seller, int $askingPrice): MarketplaceListing
     {
         abort_if($seller->isRestricted(), 403, 'Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.');
         abort_unless($entitlement->user_id === $seller->id, 403);
@@ -58,10 +53,6 @@ class MarketplaceService
             'cutoff_at' => $cutoffAt,
             'metadata' => ['max_resale_price' => $maxPrice],
         ]);
-        if ($askingPrice > 0 && $receiver !== null) {
-            $listing->setSellerReceiver($receiver);
-        }
-
         try {
             $listing->save();
 

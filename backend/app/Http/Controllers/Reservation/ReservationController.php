@@ -154,6 +154,7 @@ class ReservationController extends Controller
             'customer_id' => 'nullable|integer',
             'expected_total' => 'required|integer|min:0',
             ...self::VOUCHER,
+            'venue_credit_amount' => 'prohibited',
             ...self::NO_BENEFITS,
         ], self::NO_BENEFIT_MESSAGES);
 
@@ -204,6 +205,7 @@ class ReservationController extends Controller
             'customer_id' => 'nullable|integer',
             'expected_total' => 'required|integer|min:0',
             ...self::VOUCHER,
+            'venue_credit_amount' => 'nullable|integer|min:0|prohibits:customer_id',
             ...self::NO_BENEFITS,
         ], self::NO_BENEFIT_MESSAGES);
         if (isset($data['court_id'])) {

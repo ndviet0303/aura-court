@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { ResaleReceiver, UserBookingSlot } from '../types/marketplace'
+import type { UserBookingSlot } from '../types/marketplace'
 import { AuraButton } from '@/shared/components'
-import ResaleReceiverFields from './ResaleReceiverFields.vue'
 
 const props = defineProps<{
   show: boolean
@@ -15,11 +14,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'update:askingPrice', price: number): void
-  (e: 'confirm', receiver: ResaleReceiver | null): void
+  (e: 'confirm'): void
 }>()
 
 const { t } = useI18n()
-const receiver = ref<ResaleReceiver | null>(null)
 
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0)
@@ -37,10 +35,8 @@ const priceValid = computed(
     props.askingPrice >= 0 &&
     props.askingPrice <= maxPrice.value,
 )
-const canSubmit = computed(() => priceValid.value && (isFree.value || receiver.value !== null))
-
 function submit() {
-  if (canSubmit.value) emit('confirm', isFree.value ? null : receiver.value)
+  if (priceValid.value) emit('confirm')
 }
 </script>
 
@@ -113,13 +109,14 @@ function submit() {
           </div>
         </div>
 
-        <ResaleReceiverFields v-if="!isFree" @update:receiver="receiver = $event" />
-        <p v-else class="notice-text">{{ t('resale.p2p.freeListingNote') }}</p>
+        <p v-if="isFree" class="notice-text">{{ t('resale.p2p.freeListingNote') }}</p>
 
-        <div class="payout-calc-box">
+        <div class="payout-calc-box" data-testid="resale-sell-credit">
           <div class="p-row">
-            <span>{{ t('resale.p2p.buyerPaysYou') }}</span>
-            <strong class="font-mono text-ink">{{ formatMoney(askingPrice) }}</strong>
+            <span>{{ t('resale.p2p.sellerCredit') }}</span>
+            <strong class="font-mono text-ink">
+              {{ t('resale.p2p.creditAmount', { amount: formatMoney(askingPrice) }) }}
+            </strong>
           </div>
           <div class="p-row">
             <span>{{ t('resale.p2p.feeRow') }}</span>
@@ -129,7 +126,9 @@ function submit() {
 
         <div class="policy-notice">
           <span class="material-symbols-outlined notice-icon">info</span>
-          <p class="notice-text">{{ t('resale.p2p.directNotice') }}</p>
+          <p class="notice-text">
+            {{ t('resale.p2p.sellerCreditNotice', { venue: bookingSlot.venueName }) }}
+          </p>
         </div>
       </div>
 
@@ -140,7 +139,7 @@ function submit() {
           variant="gold"
           size="md"
           :loading="processing"
-          :disabled="!canSubmit"
+          :disabled="!priceValid"
           icon="publish"
           @click="submit"
         >

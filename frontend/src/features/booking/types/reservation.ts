@@ -173,6 +173,8 @@ export type HoldReservationPayload = {
   // A public program or a private code, never both (module 3 D17).
   voucher_program_id?: number
   voucher_code?: string
+  // Venue credit paying part or all of expected_total; the rest is paid by QR.
+  venue_credit_amount?: number
 }
 
 // New amounts of a 409 PRICE_CHANGED: nothing was created and the customer must confirm them first.

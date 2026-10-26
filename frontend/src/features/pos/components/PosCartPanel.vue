@@ -2,7 +2,10 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CartItem, CustomerProfile, CourtReservation, VatBreakdown } from '../types/pos'
+import type { PosPaymentMethod } from '../types/pos'
 import SelectDropdown from '@/shared/components/forms/SelectDropdown.vue'
+import type { PosVenueCredit } from '../composables/usePosVenueCredit'
+import PosCreditTender from './PosCreditTender.vue'
 
 const props = defineProps<{
   cart: CartItem[]
@@ -12,7 +15,7 @@ const props = defineProps<{
   vatBreakdown: VatBreakdown[]
   discountPercent: number
   customDiscountPercent: number
-  paymentMethod: 'cash' | 'qr' | 'wallet' | 'court_tab'
+  paymentMethod: PosPaymentMethod
   cashTendered: number
   subtotal: number
   discountAmount: number
@@ -26,13 +29,15 @@ const props = defineProps<{
   activeTab?: any
   hideQr?: boolean
   hideWallet?: boolean
+  // The selected customer's venue credit; the tender shows only with a balance.
+  credit?: PosVenueCredit
 }>()
 
 const emit = defineEmits<{
   (e: 'updateItemVat', idx: number, val: number): void
   (e: 'applyBulkTax', val: number): void
   (e: 'update:customDiscountPercent', val: number): void
-  (e: 'update:paymentMethod', val: 'cash' | 'qr' | 'wallet' | 'court_tab'): void
+  (e: 'update:paymentMethod', val: PosPaymentMethod): void
   (e: 'update:cashTendered', val: number): void
   (e: 'update:selectedReservationId', val: number | null): void
   (e: 'updateQuantity', idx: number, delta: number): void
@@ -50,12 +55,13 @@ const { t } = useI18n()
 const tenders = computed(() =>
   (
     [
-      ['cash', 'payments', 'admin.pos.payCash'],
-      ['qr', 'qr_code_scanner', 'admin.pos.payQr'],
-      ['wallet', 'account_balance_wallet', 'admin.pos.payWallet'],
-      ['court_tab', 'sports_tennis', 'admin.pos.payCourtTab'],
+      ['cash', 'payments', 'admin.pos.payCash', true],
+      ['qr', 'qr_code_scanner', 'admin.pos.payQr', !props.hideQr],
+      ['wallet', 'account_balance_wallet', 'admin.pos.payWallet', !props.hideWallet],
+      ['court_tab', 'sports_tennis', 'admin.pos.payCourtTab', true],
+      ['credit', 'redeem', 'admin.pos.payCredit', !!props.credit?.balance],
     ] as const
-  ).filter(([key]) => !(key === 'qr' && props.hideQr) && !(key === 'wallet' && props.hideWallet)),
+  ).filter(([, , , shown]) => shown),
 )
 const quickCashScrollRef = ref<HTMLElement | null>(null)
 
@@ -270,28 +276,14 @@ function handleCourtChange(val: string | number) {
             <label class="ctrl-sublabel">{{ t('admin.pos.vatRateLabel') }}</label>
             <div class="vat-pill-group">
               <button
+                v-for="vat in [0, 0.08, 0.1]"
+                :key="vat"
                 type="button"
                 class="vat-pill-btn"
-                title="Đặt tất cả món thành 0% VAT"
-                @click="emit('applyBulkTax', 0)"
+                :title="`Đặt tất cả món thành ${vat * 100}% VAT`"
+                @click="emit('applyBulkTax', vat)"
               >
-                0%
-              </button>
-              <button
-                type="button"
-                class="vat-pill-btn"
-                title="Đặt tất cả món thành 8% VAT"
-                @click="emit('applyBulkTax', 0.08)"
-              >
-                8%
-              </button>
-              <button
-                type="button"
-                class="vat-pill-btn"
-                title="Đặt tất cả món thành 10% VAT"
-                @click="emit('applyBulkTax', 0.1)"
-              >
-                10%
+                {{ vat * 100 }}%
               </button>
             </div>
           </div>
@@ -329,6 +321,13 @@ function handleCourtChange(val: string | number) {
           <span class="method-text">{{ t(label) }}</span>
         </button>
       </div>
+
+      <PosCreditTender
+        v-if="paymentMethod === 'credit' && credit"
+        :credit="credit"
+        :total="grandTotal"
+        :hide-qr="hideQr"
+      />
 
       <!-- Cash Tendered & Quick Suggestions (If Cash Selected) -->
       <div v-if="paymentMethod === 'cash'" class="cash-tendered-section">

@@ -190,7 +190,10 @@ class VerifyEffectiveBookingEligibility
     {
         abort_unless($lockedCourt->status === Court::STATUS_ACTIVE, 409, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
         $venue = $this->evaluateVenue($lockedCourt->venue);
-        abort_unless($venue['eligible'], 409, $venue['message']);
+        // An eligible result carries no message, so it is read only on refusal.
+        if (! $venue['eligible']) {
+            abort(409, $venue['message']);
+        }
         $this->slots->assertNoStop($lockedCourt, $start, $end);
     }
 
