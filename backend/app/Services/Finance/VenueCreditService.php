@@ -113,6 +113,7 @@ class VenueCreditService
             if ($settled) {
                 return $settled->type === $type ? $settled : null;
             }
+
             return $this->apply($type, (int) $reserve->organization_id, (int) $reserve->user_id, (int) $reserve->reserved_delta, 'reservation', $reserve->source_id, $reserve->reference);
         });
     }
