@@ -5,16 +5,19 @@ namespace App\Domain\Booking\Actions;
 use App\Domain\Booking\DTOs\OccurrenceRefusal;
 use App\Domain\Booking\DTOs\RecurringBookingData;
 use App\Domain\Promotion\DTOs\VoucherQuoteData;
+use App\Domain\Venue\Actions\VerifyEffectiveBookingEligibility;
 use App\Exceptions\VoucherNoLongerApplies;
 use App\Models\User;
 use App\Services\Promotion\VoucherChoiceService;
 use App\Services\Reservation\PriceQuoteService;
+use App\Services\Reservation\SlotSelectionPolicy;
 use Carbon\CarbonImmutable;
 use Throwable;
 
 /**
- * FR-136, FR-137, BR-169..BR-172: checks each occurrence on its own with the ordinary booking checks (a price quote:
- * service hours, blocks, live bookings and holds, price) and lists the vouchers that apply to it, as the booking
+ * FR-135..FR-137, BR-169..BR-172: checks each occurrence on its own with the ordinary booking checks (the venue's
+ * booking rules the checkout applies: started times, book-ahead horizon, duration bounds; then a price quote: service
+ * hours, blocks, live bookings and holds, price) and lists the vouchers that apply to it, as the booking
  * form does. A refused occurrence says why; none is moved to another day, time or court. Nothing is held.
  */
 class CheckRecurringBookings
@@ -22,15 +25,20 @@ class CheckRecurringBookings
     public function __construct(
         private readonly PriceQuoteService $quotes,
         private readonly VoucherChoiceService $choices,
+        private readonly SlotSelectionPolicy $slotPolicy,
+        private readonly VerifyEffectiveBookingEligibility $eligibility,
     ) {}
 
     /** @return list<array<string, mixed>> */
     public function execute(User $user, int $organizationId, RecurringBookingData $data): array
     {
         $rows = [];
+        $court = null;
         foreach ($data->occurrences as $occurrence) {
             $row = ['starts_at' => $occurrence['starts_at'], 'ends_at' => $occurrence['ends_at']];
             try {
+                $court ??= $this->eligibility->assertEligible($data->courtId, publicFacing: true);
+                $this->slotPolicy->assertAllowed($court, [['start' => $occurrence['starts_at'], 'end' => $occurrence['ends_at']]]);
                 $this->quotes->create($user->id, $organizationId, $data->courtId, $occurrence['starts_at'], $occurrence['ends_at']);
                 $interval = fn (?string $code): VoucherQuoteData => new VoucherQuoteData(
                     $data->courtId,

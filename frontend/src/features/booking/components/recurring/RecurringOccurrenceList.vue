@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { formatCurrency } from '@/i18n'
+import { formatCurrency, formatDateTime } from '@/i18n'
 import type { OccurrenceRow } from '../../types/recurring'
 import { chosenVoucher, payable, refusalMessage } from '../../composables/useRecurringBooking'
 import { HALF_HOURS, validTimes } from '../../utils/recurringDates'
@@ -19,7 +19,7 @@ const { t } = useI18n()
 const weekday = (date: string) =>
   t(`recurring.weekday.${new Date(`${date}T00:00:00Z`).getUTCDay() || 7}`)
 const shortDate = (date: string) => `${date.slice(8)}/${date.slice(5, 7)}/${date.slice(0, 4)}`
-const selectedVoucher = (row: OccurrenceRow) => (row.code ? 0 : (chosenVoucher(row)?.id ?? 0))
+const selectedVoucher = (row: OccurrenceRow) => chosenVoucher(row)?.id ?? 0
 </script>
 
 <template>
@@ -57,9 +57,17 @@ const selectedVoucher = (row: OccurrenceRow) => (row.code ? 0 : (chosenVoucher(r
 
       <div v-if="row.booked" class="occ-state">
         <span class="badge ok">{{ t('recurring.booked', { code: row.booked.code }) }}</span>
+        <span>{{
+          t(row.booked.status === 'confirmed' ? 'booking.statusConfirmed' : 'booking.statusPending')
+        }}</span>
         <span>{{ formatCurrency(row.booked.total_amount) }}</span>
+        <span v-if="row.booked.status === 'held' && row.booked.hold_expires_at">
+          {{ t('recurring.payBy', { time: formatDateTime(row.booked.hold_expires_at) }) }}
+        </span>
         <RouterLink :to="{ name: 'reservations', params: { code: row.booked.code } }">
-          {{ t('recurring.viewBooking') }}
+          {{
+            t(row.booked.status === 'held' ? 'recurring.viewBooking' : 'recurring.viewConfirmed')
+          }}
         </RouterLink>
       </div>
       <div v-else class="occ-state">
@@ -74,9 +82,9 @@ const selectedVoucher = (row: OccurrenceRow) => (row.code ? 0 : (chosenVoucher(r
         </p>
         <template v-else>
           <select
-            v-if="row.check.vouchers?.length"
+            v-if="row.check.vouchers?.length && !row.code.trim()"
             :value="selectedVoucher(row)"
-            :disabled="disabled || !!row.code"
+            :disabled="disabled"
             :aria-label="t('recurring.voucher')"
             @change="emit('voucher', row, Number(($event.target as HTMLSelectElement).value))"
           >
@@ -96,8 +104,20 @@ const selectedVoucher = (row: OccurrenceRow) => (row.code ? 0 : (chosenVoucher(r
           <span v-if="row.check.code_refusal" class="occ-refusal">
             {{ refusalMessage(row.check.code_refusal) }}
           </span>
+          <span class="occ-money">
+            {{ t('recurring.rental', { amount: formatCurrency(row.check.rental ?? 0) }) }}
+            <template v-if="chosenVoucher(row)">
+              ·
+              {{
+                t('recurring.discount', {
+                  name: chosenVoucher(row)!.name,
+                  amount: formatCurrency(chosenVoucher(row)!.discount),
+                })
+              }}
+            </template>
+          </span>
           <strong v-if="payable(row) !== null" class="occ-amount">
-            {{ formatCurrency(payable(row)!) }}
+            {{ t('recurring.payable', { amount: formatCurrency(payable(row)!) }) }}
           </strong>
         </template>
       </div>
@@ -175,6 +195,10 @@ input {
 .occ-refusal {
   margin: 0;
   color: #dc2626;
+  font-size: 12px;
+}
+.occ-money {
+  color: var(--muted);
   font-size: 12px;
 }
 .occ-amount {

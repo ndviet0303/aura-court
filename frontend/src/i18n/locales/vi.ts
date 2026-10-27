@@ -600,6 +600,11 @@ export default {
     voucherCode: 'Mã voucher',
     booked: 'Đã tạo {code}',
     viewBooking: 'Xem & thanh toán',
+    viewConfirmed: 'Xem đơn',
+    payBy: 'Hạn thanh toán {time}',
+    rental: 'Tiền thuê {amount}',
+    discount: '{name}: giảm {amount}',
+    payable: 'Phải trả {amount}',
     bookedCount:
       'Đã tạo {count} lượt đặt. Mỗi lượt có hạn thanh toán riêng trong trang Lượt đặt của tôi.',
     submitNote:

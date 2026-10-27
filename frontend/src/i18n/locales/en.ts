@@ -604,6 +604,11 @@ export default {
     voucherCode: 'Voucher code',
     booked: 'Created {code}',
     viewBooking: 'View & pay',
+    viewConfirmed: 'View booking',
+    payBy: 'Pay by {time}',
+    rental: 'Rent {amount}',
+    discount: '{name}: -{amount}',
+    payable: 'To pay {amount}',
     bookedCount: '{count} bookings created. Each has its own payment deadline under My bookings.',
     submitNote:
       'Each occurrence becomes its own booking with its own code and payment. A refused one stays as it is and is never moved.',

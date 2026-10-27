@@ -5,6 +5,7 @@ namespace Tests\Feature\Module08;
 use App\Models\Court;
 use App\Models\Reservation;
 use App\Models\User;
+use App\Models\VenueBookingPolicy;
 use App\Models\VoucherUse;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -51,6 +52,27 @@ class RecurringBookingTest extends TestCase
         $this->assertSame('2026-11-10 18:00', $rows[4]['starts_at']);
         $this->assertSame(1, Reservation::count());
         $this->assertSame(0, VoucherUse::count());
+    }
+
+    public function test_fr_135_br_169_check_applies_the_venue_booking_rules_the_checkout_applies(): void
+    {
+        $court = $this->payableCourt();
+        VenueBookingPolicy::create([
+            'venue_id' => $court->venue_id, 'version' => 2, 'effective_at' => now()->subDay(),
+            'settings' => ['hold_ttl_minutes' => 30, 'booking' => ['max_days_ahead' => 30, 'max_duration_minutes' => 120]],
+        ]);
+
+        $rows = $this->check($this->customer(), $court, [
+            ['2026-11-02 08:00', '2026-11-02 09:00'],
+            ['2026-11-03 18:00', '2026-11-03 20:00'],
+            ['2026-11-04 18:00', '2026-11-04 21:00'],
+            ['2026-12-15 18:00', '2026-12-15 19:00'],
+        ])->assertOk()->json('data');
+
+        $this->assertSame('Không thể đặt giờ đã qua.', $rows[0]['refusal']['message']);
+        $this->assertTrue($rows[1]['ok']);
+        $this->assertSame('Tổng thời lượng đặt sân vượt quá mức tối đa cho phép của sân.', $rows[2]['refusal']['message']);
+        $this->assertSame('Khung giờ đã chọn vượt quá thời hạn đặt trước cho phép của sân.', $rows[3]['refusal']['message']);
     }
 
     public function test_fr_138_br_174_each_occurrence_becomes_its_own_booking_and_payment(): void
