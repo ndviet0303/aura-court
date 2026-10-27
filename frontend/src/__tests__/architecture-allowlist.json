@@ -76,7 +76,7 @@
   ["component-lines", "shared/layouts/footer/SiteFooter.vue", 571],
   ["component-lines", "shared/layouts/header/components/NavbarDrawerNavList.vue", 438],
   ["component-lines", "shared/layouts/header/components/NavbarUserProfile.vue", 1058],
-  ["eager-route", "router/index.ts", 16],
+  ["eager-route", "router/index.ts", 1],
   ["legacy-store", "stores/auth.ts", 1],
   ["legacy-store", "stores/booking.ts", 1],
   ["legacy-store", "stores/counter.ts", 1],
