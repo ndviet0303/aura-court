@@ -7,7 +7,6 @@ use App\Domain\Package\Actions\SendPackageExpiryReminders;
 use App\Domain\Venue\Actions\ApplyStartedOperationalStops;
 use App\Jobs\RunDailyReconciliation;
 use App\Models\Organization;
-use App\Services\Booking\RecurringSeriesService;
 use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Infrastructure\ScheduledRecoveryService;
 use App\Services\Payment\SplitPaymentService;
@@ -127,19 +126,6 @@ Schedule::call(function () {
     ->withoutOverlapping(60)
     ->dailyAt('01:00')
     ->onFailure($reportScheduleFailure('finance:daily-reconciliation'));
-
-// 4. Invoicing schedules with overlap protection
-Schedule::call(fn () => app(RecurringSeriesService::class)->notifyUpcomingInvoices())
-    ->name('invoices:notify-upcoming')
-    ->withoutOverlapping(30)
-    ->daily()
-    ->onFailure($reportScheduleFailure('invoices:notify-upcoming'));
-
-Schedule::call(fn () => app(RecurringSeriesService::class)->markOverdueAndReleaseFuture())
-    ->name('invoices:mark-overdue')
-    ->withoutOverlapping(30)
-    ->hourly()
-    ->onFailure($reportScheduleFailure('invoices:mark-overdue'));
 
 // 4b. Loyalty point expiry: append-only reversals for lots past their book-ahead expiry
 Schedule::command('loyalty:expire-points')

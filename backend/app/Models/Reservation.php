@@ -159,11 +159,6 @@ class Reservation extends Model
         return $this->hasMany(LegacyBookingMapping::class);
     }
 
-    public function recurringOccurrence(): HasOne
-    {
-        return $this->hasOne(RecurringOccurrence::class);
-    }
-
     public function splitGroup(): HasOne
     {
         return $this->hasOne(SplitGroup::class);

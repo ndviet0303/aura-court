@@ -11,7 +11,6 @@ use App\Models\ReceivingConnectionEvidence;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Venue;
-use App\Services\Booking\RecurringSeriesService;
 use App\Services\Finance\FinancialPostingService;
 use App\Services\Finance\VenueCreditService;
 use App\Services\POS\PosQrPaymentService;
@@ -30,11 +29,10 @@ class OwnerPaymentAttemptService
         private readonly OwnerPaymentExceptionRecorder $exceptions,
     ) {}
 
-    private const PURPOSES = ['booking', 'recurring_period', 'split_share', 'pos_order', 'tournament_registration', 'resale'];
+    private const PURPOSES = ['booking', 'split_share', 'pos_order', 'tournament_registration', 'resale'];
 
     /** Purposes confirmed by their own service: [service, check that locks and re-reads it, exception when it is gone]. */
     private const CONFIRMERS = [
-        'recurring_period' => [RecurringSeriesService::class, 'hasConfirmablePeriod', 'recurring_hold_unavailable'],
         'split_share' => [SplitPaymentService::class, 'hasConfirmableShare', 'split_share_unavailable'],
         'pos_order' => [PosQrPaymentService::class, 'hasConfirmableOrder', 'pos_order_unavailable'],
         'tournament_registration' => [ConfirmEntryPayment::class, 'hasConfirmableRegistration', 'tournament_registration_unavailable'],

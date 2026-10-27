@@ -115,7 +115,7 @@ class BookingCreditTest extends TestCase
         $seller = $this->customer();
         $listing = $this->listSlot($this->paidSlot($this->court, $seller), $seller, 80000);
 
-        $this->command($this->customer, '/api/recurring-series', ['court_id' => $this->court->id, 'venue_credit_amount' => 1000])
+        $this->command($this->customer, '/api/recurring-bookings', ['court_id' => $this->court->id, 'venue_credit_amount' => 1000])
             ->assertJsonValidationErrors('venue_credit_amount');
         $this->hold($listing, $this->customer, ['venue_credit_amount' => 1000])->assertJsonValidationErrors('venue_credit_amount');
         $this->assertSame(['prohibited'], (new SaveEntryRequest)->rules()['venue_credit_amount']);

@@ -17,7 +17,6 @@ use App\Services\Payment\ReservationPaymentService;
 use App\Services\Payment\WalletAvailabilityService;
 use App\Services\Payment\WalletPaymentService;
 use App\Services\Promotion\VoucherUsageService;
-use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -73,7 +72,7 @@ class ReservationService
             // A voucher is locked and judged before the amounts are compared and the deadline is set (D11, D20).
             $voucher = $this->intake->voucherChoice($data);
             $applied = $voucher === null ? null : $this->quotes->repriceWithVoucher($quote, $lockedCourt, $voucher);
-            // The client always sends the amount it showed; recurring periods price their own fresh quote.
+            // The client always sends the amount it showed.
             if (isset($data['expected_total'])) {
                 if ($voucher === null) {
                     $this->quotes->reprice($quote, $lockedCourt);
@@ -91,10 +90,7 @@ class ReservationService
             $holdExpiresAt = $voucherEndsAt !== null && $voucherEndsAt->lessThan($quote->expires_at) ? $voucherEndsAt : $quote->expires_at;
             if ($directOwnerPayments) {
                 $bookingPolicySnapshot = $this->intake->bookingPolicySnapshot($lockedVenue);
-                // Recurring periods hold until their own period deadline (design D3 leaves them out).
-                if (! empty($data['hold_expires_at_override'])) {
-                    $holdExpiresAt = Carbon::parse($data['hold_expires_at_override']);
-                } elseif ((int) $quote->total_amount > 0) {
+                if ((int) $quote->total_amount > 0) {
                     $holdExpiresAt = $this->intake->paymentDeadline($quote, $applied);
                 }
             }
@@ -171,7 +167,7 @@ class ReservationService
                 ],
             ]);
 
-            if ($directOwnerPayments && (int) $quote->total_amount > 0 && empty($data['defer_payment_initiation'])) {
+            if ($directOwnerPayments && (int) $quote->total_amount > 0) {
                 app(ReservationPaymentService::class)->initiate($reservation, $user);
             }
 
@@ -203,10 +199,8 @@ class ReservationService
             }
             $totalAmount = (int) $reservation->total_amount;
             if ($totalAmount > 0) {
-                $isSpecialized = ($reservation->metadata['type'] ?? null) === 'recurring_series'
-                    || ($reservation->splitGroup && in_array($reservation->splitGroup->status, ['confirmed', 'completed', 'settled'], true))
-                    || ($reservation->splitGroup && (int) $reservation->splitGroup->paid_amount >= (int) $reservation->splitGroup->expected_amount)
-                    || $reservation->recurringOccurrence()->exists();
+                $isSpecialized = ($reservation->splitGroup && in_array($reservation->splitGroup->status, ['confirmed', 'completed', 'settled'], true))
+                    || ($reservation->splitGroup && (int) $reservation->splitGroup->paid_amount >= (int) $reservation->splitGroup->expected_amount);
                 if (! $isSpecialized) {
                     app(WalletAvailabilityService::class)->assertAvailable((int) $reservation->organization_id);
                     $walletService = app(WalletPaymentService::class);

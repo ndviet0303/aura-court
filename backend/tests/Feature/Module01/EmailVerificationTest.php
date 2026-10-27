@@ -100,7 +100,7 @@ class EmailVerificationTest extends TestCase
         $payload = ['court_id' => $court->id, 'start_time' => $start->toIso8601String(), 'end_time' => $start->copy()->addHour()->toIso8601String()];
         $unverified = User::factory()->unverified()->create();
 
-        foreach (['/api/reservations', '/api/reservations/checkout', '/api/recurring-series'] as $uri) {
+        foreach (['/api/reservations', '/api/reservations/checkout', '/api/recurring-bookings'] as $uri) {
             $this->actingAs($unverified)->postJson($uri, $payload)
                 ->assertForbidden()->assertJsonPath('message', 'Your email address is not verified.');
         }

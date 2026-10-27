@@ -1,7 +1,6 @@
 [
   ["class-lines", "Http/Controllers/Admin/AdminDisputeController.php", 410],
   ["class-lines", "Http/Controllers/POS/PosController.php", 603],
-  ["class-lines", "Services/Booking/RecurringSeriesService.php", 797],
   ["class-lines", "Services/Finance/FinancialPostingService.php", 493],
   ["class-lines", "Services/Finance/ReconciliationService.php", 535],
   ["class-lines", "Services/Loyalty/LoyaltyPointService.php", 316],
@@ -14,7 +13,6 @@
   ["controller-public-methods", "Http/Controllers/Admin/AdminDisputeController.php", 9],
   ["controller-public-methods", "Http/Controllers/Admin/AdminMembershipController.php", 12],
   ["controller-public-methods", "Http/Controllers/Auth/AuthController.php", 10],
-  ["controller-public-methods", "Http/Controllers/Booking/AdvancedBookingController.php", 10],
   ["controller-public-methods", "Http/Controllers/Finance/FinanceController.php", 14],
   ["controller-public-methods", "Http/Controllers/Organization/OrganizationController.php", 10],
   ["controller-public-methods", "Http/Controllers/POS/PosController.php", 28],

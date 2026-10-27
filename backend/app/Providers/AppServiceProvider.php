@@ -84,6 +84,10 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('auth-reset', fn (Request $request) => Limit::perMinute(5)->by($request->ip())->response($tooMany));
         // D20: the public code check answers per code, so it is capped per address to blunt enumeration.
         RateLimiter::for('voucher-check', fn (Request $request) => Limit::perMinute(20)->by('voucher-check:'.$request->ip())->response($tooMany));
+        // Module 08 D8: a recurring booking also answers per voucher code, so a request carrying one shares that cap.
+        RateLimiter::for('recurring-booking', fn (Request $request) => collect($request->input('occurrences'))->pluck('voucher_code')->filter()->isEmpty()
+            ? Limit::none()
+            : Limit::perMinute(20)->by('voucher-check:'.$request->ip())->response($tooMany));
         // D7: cash-out code lookups are capped per shift, so a register cannot be used to guess codes.
         RateLimiter::for('venue-credit-lookup', fn (Request $request) => Limit::perMinute(10)->by('venue-credit-lookup:'.$request->route()?->originalParameter('shift'))->response($tooMany));
         // BR-05/BR-10: verification and reset emails at least 60 s apart and at most 5 an hour per account.

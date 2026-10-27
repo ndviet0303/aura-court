@@ -30,7 +30,6 @@ use App\Contracts\Repositories\PlatformFeeVenueRepositoryInterface;
 use App\Contracts\Repositories\PriceTableRepositoryInterface;
 use App\Contracts\Repositories\PromotionProgramRepositoryInterface;
 use App\Contracts\Repositories\ReconciliationRepositoryInterface;
-use App\Contracts\Repositories\RecurringContractRepositoryInterface;
 use App\Contracts\Repositories\ReservationRepositoryInterface;
 use App\Contracts\Repositories\ReviewRepositoryInterface;
 use App\Contracts\Repositories\StockTransferRepositoryInterface;
@@ -75,7 +74,6 @@ use App\Infrastructure\Repositories\Eloquent\EloquentPlatformFeeVenueRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPriceTableRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPromotionProgramRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReconciliationRepository;
-use App\Infrastructure\Repositories\Eloquent\EloquentRecurringContractRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReservationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReviewRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentStockTransferRepository;
@@ -117,7 +115,6 @@ class RepositoryServiceProvider extends ServiceProvider
         HostKycRepositoryInterface::class => EloquentHostKycRepository::class,
         ReconciliationRepositoryInterface::class => EloquentReconciliationRepository::class,
         DisputeRepositoryInterface::class => EloquentDisputeRepository::class,
-        RecurringContractRepositoryInterface::class => EloquentRecurringContractRepository::class,
         TenantMembershipPlanRepositoryInterface::class => EloquentTenantMembershipPlanRepository::class,
         LoyaltyRuleRepositoryInterface::class => EloquentLoyaltyRuleRepository::class,
         FileStorageServiceInterface::class => FileStorageService::class,

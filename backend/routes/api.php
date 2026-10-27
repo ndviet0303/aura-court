@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Admin\AdminContractController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminDisputeController;
 use App\Http\Controllers\Admin\AdminKycController;
@@ -22,6 +21,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\SocialEmailController;
 use App\Http\Controllers\Booking\AdvancedBookingController;
 use App\Http\Controllers\Booking\AvailabilityController;
+use App\Http\Controllers\Booking\RecurringBookingController;
 use App\Http\Controllers\Booking\ResaleListingController;
 use App\Http\Controllers\Booking\WaitlistController;
 use App\Http\Controllers\Chat\ConversationController;
@@ -457,10 +457,6 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             Route::post('courts/{court}/close', [CourtLifecycleController::class, 'close']);
             Route::post('courts/{court}/pause/preview', [CourtLifecycleController::class, 'previewPause']);
             Route::post('courts/{court}/close/preview', [CourtLifecycleController::class, 'previewClose']);
-            Route::get('contracts', [AdminContractController::class, 'index']);
-            Route::get('contracts/{id}', [AdminContractController::class, 'show']);
-            Route::post('contracts/{id}/cancel', [AdminContractController::class, 'cancel']);
-            Route::get('contracts.csv', [AdminContractController::class, 'exportCsv']);
             Route::post('upload', [AdminController::class, 'upload']);
         });
     });
@@ -523,10 +519,9 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::post('service-tabs/{tab}/cancel', [ServiceTabController::class, 'cancel']);
         });
 
-        Route::get('recurring-series', [AdvancedBookingController::class, 'series']);
-        Route::post('recurring-series', [AdvancedBookingController::class, 'createSeries'])->middleware('verified');
-        Route::post('recurring-series/preview', [AdvancedBookingController::class, 'previewSeries'])->middleware('verified');
-        Route::get('monthly-invoices/{invoice}', [AdvancedBookingController::class, 'invoice']);
+        // Module 08: a recurring booking checks and submits each occurrence as an ordinary booking.
+        Route::post('recurring-bookings/check', [RecurringBookingController::class, 'check'])->middleware(['verified', 'throttle:recurring-booking']);
+        Route::post('recurring-bookings', [RecurringBookingController::class, 'store'])->middleware(['verified', 'throttle:recurring-booking']);
         Route::middleware('feature:marketplace_split_payments')->group(function () {
             Route::post('reservations/{reservation}/split', [AdvancedBookingController::class, 'createSplit']);
             Route::get('split-groups/{split}', [AdvancedBookingController::class, 'split']);

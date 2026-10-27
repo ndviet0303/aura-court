@@ -194,12 +194,6 @@ class OrganizationVenueSeeder extends Seeder
                 'min_duration_minutes' => 60,
                 'max_duration_minutes' => 240,
             ],
-            'recurring' => [
-                'payment_policy' => 'per_period',
-                'conflict_policy' => 'all_or_nothing',
-                'overdue_release_hours' => 24,
-                'guarantee_confirm' => false,
-            ],
             'transfer' => [
                 'cutoff_hours' => 24,
                 'max_consideration_percent' => 100,

@@ -130,7 +130,7 @@ class HeldReservationRelease
     private function pendingAttempts(string $code): Builder
     {
         return OwnerPaymentAttempt::query()
-            ->whereIn('purpose', ['booking', 'recurring_period'])
+            ->where('purpose', 'booking')
             ->where('purpose_id', $code)
             ->where('status', OwnerPaymentAttempt::STATUS_PENDING);
     }
