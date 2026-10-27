@@ -1,4 +1,4 @@
-import { api } from '@/core/api/client'
+import { api, hasSessionCookie } from '@/core/api/client'
 import type {
   User,
   LoginPayload,
@@ -13,7 +13,9 @@ import type {
 export const authApi = {
   csrf: () => api.csrf(),
 
-  me: () => api.get<User>('/auth/me'),
+  // Without a session cookie /auth/me can only answer 401 (logged as a console error), so skip it.
+  me: () =>
+    hasSessionCookie() ? api.get<User>('/auth/me') : Promise.reject(new Error('No session')),
 
   login: async (payload: LoginPayload) => {
     await api.csrf()

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import FooterSocialLinks from './FooterSocialLinks.vue'
 </script>
 
 <template>
@@ -89,23 +90,7 @@ import { RouterLink } from 'vue-router'
             </div>
           </div>
 
-          <!-- Social Badges -->
-          <div class="social-row">
-            <a href="javascript:void(0)" class="social-btn" title="Facebook" aria-label="Facebook">
-              <span class="material-symbols-outlined">public</span>
-            </a>
-            <a
-              href="javascript:void(0)"
-              class="social-btn"
-              title="Zalo / Chat"
-              aria-label="Zalo / Chat"
-            >
-              <span class="material-symbols-outlined">chat</span>
-            </a>
-            <a href="javascript:void(0)" class="social-btn" title="Chia sẻ" aria-label="Share">
-              <span class="material-symbols-outlined">share</span>
-            </a>
-          </div>
+          <FooterSocialLinks />
         </div>
       </div>
 
@@ -413,48 +398,6 @@ import { RouterLink } from 'vue-router'
 }
 
 /* Social Buttons */
-.social-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 6px;
-}
-
-.social-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--surface-subtle, #f7f3ed);
-  border: 1px solid var(--border, #e8e1d7);
-  color: var(--muted, #6e6668);
-  display: grid;
-  place-items: center;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-
-.social-btn:hover {
-  background: var(--accent-container, #faf2e3);
-  color: var(--on-accent-container, #684f17);
-  border-color: rgba(201, 161, 90, 0.4);
-  transform: translateY(-2px);
-}
-
-:global(html.dark .social-btn) {
-  background: #262024;
-  color: #faf7f3;
-  border-color: #382f35;
-}
-
-:global(html.dark .social-btn:hover) {
-  background: rgba(223, 186, 114, 0.18);
-  color: #dfba72;
-  border-color: rgba(223, 186, 114, 0.45);
-}
-
-.social-btn .material-symbols-outlined {
-  font-size: 18px;
-}
 
 /* Bottom Bar */
 .footer-bottom {
