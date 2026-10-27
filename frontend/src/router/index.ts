@@ -771,7 +771,10 @@ router.beforeEach(async (to) => {
   if (to.meta.guestOnly) {
     await auth.load(true)
   } else if (!auth.user) {
-    await auth.load()
+    // Public pages render for guests either way, so they don't wait on /auth/me (it gated LCP).
+    const gated = to.meta.auth || to.meta.admin || to.meta.platformAdmin || to.meta.orgRoles
+    if (gated) await auth.load()
+    else void auth.load()
   }
   if (to.meta.auth && !auth.user) return { name: 'login', query: { redirect: to.fullPath } }
   // The server turns the legacy wallet off for direct-owner cohorts (`/auth/me` capabilities).
