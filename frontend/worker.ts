@@ -27,6 +27,13 @@ export default {
 
     // All other requests are served by the uploaded Vite assets. The Worker
     // entrypoint is intentionally kept small so static delivery remains fast.
-    return env.ASSETS.fetch(request)
+    const response = await env.ASSETS.fetch(request)
+    // The SPA fallback answers every path with index.html; a missing file (/llms.txt,
+    // /.well-known/*.json, a chunk from an old deploy) must be a 404, not HTML.
+    const missingFile =
+      /\.[a-z0-9]+$/i.test(url.pathname) &&
+      !url.pathname.endsWith('.html') &&
+      response.headers.get('Content-Type')?.startsWith('text/html')
+    return missingFile ? new Response('Not found', { status: 404 }) : response
   },
 }

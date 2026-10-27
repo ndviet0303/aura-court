@@ -57,6 +57,9 @@ function xsrfHeader(): Record<string, string> {
   return value ? { 'X-XSRF-TOKEN': decodeURIComponent(value) } : {}
 }
 
+// Sanctum's XSRF-TOKEN cookie (shared on the parent domain) lives exactly as long as the session.
+export const hasSessionCookie = () => 'X-XSRF-TOKEN' in xsrfHeader()
+
 function normalizeBody(body: unknown): { bodyPayload?: BodyInit; isFormData: boolean } {
   if (body === undefined || body === null) {
     return { bodyPayload: undefined, isFormData: false }

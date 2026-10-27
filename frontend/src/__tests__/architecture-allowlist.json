@@ -73,7 +73,7 @@
   ["component-lines", "shared/components/feedback/ErrorModal.vue", 561],
   ["component-lines", "shared/components/feedback/SkeletonLoader.vue", 444],
   ["component-lines", "shared/layouts/admin/AdminLayout.vue", 1176],
-  ["component-lines", "shared/layouts/footer/SiteFooter.vue", 571],
+  ["component-lines", "shared/layouts/footer/SiteFooter.vue", 514],
   ["component-lines", "shared/layouts/header/components/NavbarDrawerNavList.vue", 438],
   ["component-lines", "shared/layouts/header/components/NavbarUserProfile.vue", 1058],
   ["eager-route", "router/index.ts", 1],

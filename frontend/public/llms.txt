@@ -1,0 +1,20 @@
+# Aura Court
+
+> Aura Court is a Vietnamese sports-court booking platform (badminton, pickleball, tennis, football, table tennis and more): browse venues, see live availability, hold a slot and pay by QR. This site is a demo; prices and bookings are sample data.
+
+The interface is in Vietnamese with an English option. Booking and payment need a signed-in account.
+
+## Pages
+
+- [Home](https://court.ziet.dev/): featured courts and a quick availability search
+- [Courts](https://court.ziet.dev/courts): every court with sport, area and hourly price
+- [About](https://court.ziet.dev/about): the venues and how booking works
+
+## Policies
+
+- [Terms of service](https://court.ziet.dev/terms)
+- [Privacy policy](https://court.ziet.dev/privacy)
+
+## Optional
+
+- [Sitemap](https://court.ziet.dev/sitemap.xml)
