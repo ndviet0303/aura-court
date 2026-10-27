@@ -1,19 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/features/home/views/HomeView.vue'
-import LoginView from '@/features/auth/views/LoginView.vue'
-import BookingView from '@/features/booking/views/BookingView.vue'
-import AdminView from '@/features/admin/views/AdminView.vue'
-import CourtsView from '@/features/court/views/CourtsView.vue'
-import ScheduleView from '@/features/court/views/ScheduleView.vue'
-import CourtDetailView from '@/features/court/views/CourtDetailView.vue'
-import AdminManageView from '@/features/admin/views/AdminManageView.vue'
-import ForgotPasswordView from '@/features/auth/views/ForgotPasswordView.vue'
-import ResetPasswordView from '@/features/auth/views/ResetPasswordView.vue'
-import ProfileView from '@/features/profile/views/ProfileView.vue'
-import NotFoundView from '@/shared/views/NotFoundView.vue'
-import NotificationsView from '@/features/notification/views/NotificationsView.vue'
-import VenueDirectionsView from '@/features/court/views/VenueDirectionsView.vue'
-import AdminVenuesView from '@/features/admin/views/AdminVenuesView.vue'
 import { useAuthStore } from '@/stores/auth'
 import { applySeo } from '@/lib/seo'
 import { startRouteNav, endRouteNav } from '@/stores/navigation'
@@ -37,7 +23,7 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: LoginView,
+      component: () => import('@/features/auth/views/LoginView.vue'),
       meta: {
         guestOnly: true,
         titleKey: 'seo.loginTitle',
@@ -48,7 +34,7 @@ const router = createRouter({
     {
       path: '/register',
       name: 'register',
-      component: LoginView,
+      component: () => import('@/features/auth/views/LoginView.vue'),
       meta: {
         guestOnly: true,
         titleKey: 'seo.registerTitle',
@@ -100,7 +86,7 @@ const router = createRouter({
     {
       path: '/forgot-password',
       name: 'forgot-password',
-      component: ForgotPasswordView,
+      component: () => import('@/features/auth/views/ForgotPasswordView.vue'),
       meta: {
         titleKey: 'seo.forgotPasswordTitle',
         descriptionKey: 'seo.forgotPasswordDesc',
@@ -110,7 +96,7 @@ const router = createRouter({
     {
       path: '/reset-password',
       name: 'reset-password',
-      component: ResetPasswordView,
+      component: () => import('@/features/auth/views/ResetPasswordView.vue'),
       meta: {
         titleKey: 'seo.resetPasswordTitle',
         descriptionKey: 'seo.resetPasswordDesc',
@@ -132,14 +118,14 @@ const router = createRouter({
     {
       path: '/courts',
       name: 'courts',
-      component: CourtsView,
+      component: () => import('@/features/court/views/CourtsView.vue'),
       meta: { titleKey: 'seo.courtsTitle', descriptionKey: 'seo.courtsDesc' },
     },
     {
       // Courts are addressed by id only; old slug URLs fall through to not-found.
       path: '/courts/:id(\\d+)',
       name: 'court-detail',
-      component: CourtDetailView,
+      component: () => import('@/features/court/views/CourtDetailView.vue'),
       meta: {
         titleKey: 'seo.courtDetailTitle',
         descriptionKey: 'seo.courtDetailDesc',
@@ -149,14 +135,14 @@ const router = createRouter({
     {
       path: '/courts/:id(\\d+)/schedule',
       name: 'schedule',
-      component: ScheduleView,
+      component: () => import('@/features/court/views/ScheduleView.vue'),
       meta: { titleKey: 'seo.scheduleTitle', descriptionKey: 'seo.scheduleDesc', indexable: false },
     },
     {
       // A court id, or a venue slug from the venue QR and card links.
       path: '/courts/:id/directions',
       name: 'court-directions',
-      component: VenueDirectionsView,
+      component: () => import('@/features/court/views/VenueDirectionsView.vue'),
       meta: {
         titleKey: 'seo.courtDirectionsTitle',
         descriptionKey: 'seo.courtDirectionsDesc',
@@ -167,7 +153,7 @@ const router = createRouter({
       path: '/booking',
       alias: ['/bookings', '/history', '/my-bookings'],
       name: 'booking',
-      component: BookingView,
+      component: () => import('@/features/booking/views/BookingView.vue'),
       meta: {
         auth: true,
         titleKey: 'seo.bookingTitle',
@@ -345,13 +331,13 @@ const router = createRouter({
         {
           path: '',
           name: 'admin',
-          component: AdminView,
+          component: () => import('@/features/admin/views/AdminView.vue'),
           meta: { platformAdmin: true, titleKey: 'seo.adminTitle', indexable: false },
         },
         {
           path: 'manage',
           name: 'admin-manage',
-          component: AdminManageView,
+          component: () => import('@/features/admin/views/AdminManageView.vue'),
           meta: {
             orgRoles: ['organization_owner'],
             titleKey: 'seo.adminManageTitle',
@@ -371,7 +357,7 @@ const router = createRouter({
         {
           path: 'venues',
           name: 'admin-venues',
-          component: AdminVenuesView,
+          component: () => import('@/features/admin/views/AdminVenuesView.vue'),
           meta: {
             // Staff list their assigned venues read-only (the API scopes the list).
             orgRoles: ['organization_owner', 'staff'],
@@ -734,7 +720,7 @@ const router = createRouter({
     {
       path: '/profile',
       name: 'profile',
-      component: ProfileView,
+      component: () => import('@/features/profile/views/ProfileView.vue'),
       meta: {
         auth: true,
         titleKey: 'seo.profileTitle',
@@ -745,7 +731,7 @@ const router = createRouter({
     {
       path: '/notifications',
       name: 'notifications',
-      component: NotificationsView,
+      component: () => import('@/features/notification/views/NotificationsView.vue'),
       meta: {
         auth: true,
         titleKey: 'seo.notificationsTitle',
@@ -773,7 +759,7 @@ const router = createRouter({
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
-      component: NotFoundView,
+      component: () => import('@/shared/views/NotFoundView.vue'),
       meta: { titleKey: 'seo.notFoundTitle', descriptionKey: 'seo.notFoundDesc', indexable: false },
     },
   ],
