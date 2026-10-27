@@ -13,8 +13,21 @@ export const useAuthStore = defineStore('auth', () => {
     return !Array.isArray(capabilities) && capabilities?.wallet_enabled === true
   })
 
+  let inflight: Promise<User | null> | null = null
+
   async function load(force = false) {
     if (loaded.value && !force) return user.value
+    // Public pages start /auth/me in the background; a gated route entered meanwhile reuses it.
+    if (inflight && !force) return inflight
+    inflight = fetchUser()
+    try {
+      return await inflight
+    } finally {
+      inflight = null
+    }
+  }
+
+  async function fetchUser() {
     loading.value = true
     try {
       user.value = await authApi.me()
