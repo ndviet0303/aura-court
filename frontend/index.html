@@ -19,6 +19,8 @@
     <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/inter-vietnamese.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/material-symbols-outlined.woff2" as="font" type="font/woff2" crossorigin fetchpriority="low">
+    <!-- On narrow screens the hero tennis photo is the LCP element; fetch it while the scripts load. -->
+    <link rel="preload" href="/aura/hero-tennis.webp" as="image" type="image/webp" media="(max-width: 960px)" fetchpriority="high">
 
     <title>Aura Court · Đặt Sân Thể Thao Cao Cấp & Trực Tuyến</title>
 

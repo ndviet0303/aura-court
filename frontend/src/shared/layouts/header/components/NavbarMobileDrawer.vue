@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { watch } from 'vue'
-import { ThemeToggle, LanguageSwitcher } from '@/shared/components'
+import ThemeToggle from '@/shared/components/controls/ThemeToggle.vue'
+import LanguageSwitcher from '@/shared/components/controls/LanguageSwitcher.vue'
 import NavbarBrand from './NavbarBrand.vue'
 
 import NavbarDrawerUserCard from './NavbarDrawerUserCard.vue'
