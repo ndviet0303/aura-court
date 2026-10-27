@@ -1,7 +1,6 @@
 import { createI18n } from 'vue-i18n'
 import { VENUE_TIME_ZONE } from '@/core/utils/venueTime'
 import vi from './locales/vi'
-import en from './locales/en'
 
 export type AppLocale = 'vi' | 'en'
 
@@ -39,14 +38,19 @@ export const i18n = createI18n({
   legacy: false,
   locale: getSavedLocale(),
   fallbackLocale: 'vi',
-  messages: {
-    vi,
-    en,
-  },
+  messages: { vi },
   datetimeFormats: { vi: venueDatetimeFormats, en: venueDatetimeFormats },
 })
 
-export function setAppLocale(locale: AppLocale): void {
+// English is a lazy chunk: most visitors read Vietnamese, and both catalogues sat on the first-paint path.
+export async function loadLocaleMessages(locale: AppLocale): Promise<void> {
+  if (locale === 'en' && !i18n.global.availableLocales.includes('en')) {
+    i18n.global.setLocaleMessage('en', (await import('./locales/en')).default)
+  }
+}
+
+export async function setAppLocale(locale: AppLocale): Promise<void> {
+  await loadLocaleMessages(locale)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(i18n.global.locale as any).value = locale
   localStorage.setItem(STORAGE_KEY, locale)
