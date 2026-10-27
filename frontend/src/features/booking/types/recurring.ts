@@ -1,131 +1,58 @@
-import type { Court } from '@/features/court/types/court'
+import type { VoucherQuote } from './reservation'
 
-export type RecurringFrequency = 'weekly' | 'biweekly' | 'monthly'
-export type RecurringStatus =
-  'draft' | 'pending' | 'confirmed' | 'active' | 'paused' | 'cancelled' | 'delinquent'
-export type InvoiceStatus =
-  'pending' | 'paid' | 'overdue' | 'guaranteed' | 'zero_payable' | 'cancelled'
-export type OccurrenceStatus = 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'released'
+// BR-162: how the customer picks the days of a recurring booking.
+export type RecurringMode = 'weekdays' | 'monthDays' | 'dates'
 
-export interface RecurringInvoice {
-  id: number | string
-  uuid?: string
-  recurring_series_id: number
-  organization_id?: number
-  period_start: string
-  period_end: string
-  due_at: string
-  amount: number
-  status: InvoiceStatus
-  payment_reference?: string | null
-  paid_at?: string | null
-  series?: RecurringSeries
-}
+// A day of month that a month lacks, such as 31 in November (BR-166); month is YYYY-MM.
+export type SkippedDay = { month: string; day: number }
 
-export interface RecurringOccurrence {
-  id: number
-  recurring_series_id: number
-  organization_id?: number
-  reservation_id?: number
-  sequence: number
-  starts_at: string
-  ends_at: string
-  amount: number
-  status: OccurrenceStatus
-}
+// Why the ordinary booking flow refused one occurrence: its message, and a code with amounts when it has one.
+export type OccurrenceRefusal = { message: string; code?: string; total?: number }
 
-export interface RecurringSeries {
-  id: number
-  organization_id?: number
-  user_id?: number
-  court_id: number
-  court?: Court
-  frequency: RecurringFrequency
-  starts_at: string
-  ends_at: string
-  occurrence_count?: number
-  status: RecurringStatus
+export type RecurringReservation = {
+  code: string
+  status: string
   total_amount: number
-  next_invoice_due_at?: string | null
-  invoices?: RecurringInvoice[]
-  occurrences?: RecurringOccurrence[]
-  metadata?: Record<string, unknown>
-  created_at?: string
-  updated_at?: string
+  hold_expires_at: string | null
 }
 
-export interface CreateRecurringSeriesPayload {
-  court_id: number
-  frequency: RecurringFrequency
-  starts_at: string
-  ends_at?: string
-  until?: string
-  occurrences?: number
-  weekdays?: number[]
-  accepted?: AcceptedPreview
-  accept_partial?: boolean
-}
-
-export interface RecurringSeriesPreviewOccurrence {
-  index: number
+// One occurrence as POST /recurring-bookings/check or /recurring-bookings answered it (FR-137, FR-138).
+export type RecurringOccurrenceResult = {
   starts_at: string
   ends_at: string
-  weekday: number
-  price: number
-  conflict: boolean
-  conflict_reason: string | null
+  ok: boolean
+  refusal: OccurrenceRefusal | null
+  rental: number | null
+  vouchers: VoucherQuote[] | null
+  code_voucher: VoucherQuote | null
+  code_refusal: OccurrenceRefusal | null
+  reservation: RecurringReservation | null
 }
 
-export interface RecurringSeriesPreview {
-  frequency: RecurringFrequency
-  weekdays: number[]
-  count: number
-  currency: string
-  total_amount: number
-  occurrences: RecurringSeriesPreviewOccurrence[]
-  truncated_by: 'count' | 'until' | 'cap' | null
-}
-
-export interface RecurringSeriesPreviewPayload {
-  court_id: number
-  frequency: RecurringFrequency
-  weekdays: number[]
-  starts_at: string
-  ends_at?: string
-  until?: string
-  occurrences?: number
-}
-
-export interface WeekdayOption {
-  id: number
-  label: string
-  name: string
-  fullName: string
-}
-
-export interface AcceptedOccurrence {
-  starts_at: string
-  price: number
-}
-
-export interface AcceptedPreview {
-  total: number
-  occurrences: AcceptedOccurrence[]
-}
-
-export interface RecurringPartialConflictExcluded {
-  index: number
+export type RecurringOccurrencePayload = {
   starts_at: string
   ends_at: string
-  conflict_reason: string | null
+  expected_total?: number
+  voucher_program_id?: number
+  voucher_code?: string
 }
 
-export interface RecurringPartialConflict {
-  status: 'partial_conflict'
-  currency: string
-  held_count: number
-  revised_total: number
-  excluded: RecurringPartialConflictExcluded[]
+export type RecurringBookingPayload = {
+  court_id: number
+  occurrences: RecurringOccurrencePayload[]
 }
 
-export type CreateRecurringSeriesResult = { series: RecurringSeries } | RecurringPartialConflict
+// A planned occurrence: its own day and time (BR-168), the last check, the voucher chosen for it and,
+// once submitted, the booking it became or why it was refused.
+export type OccurrenceRow = {
+  date: string
+  start: string
+  end: string
+  checking: boolean
+  check: RecurringOccurrenceResult | null
+  // null takes the first voucher that applies, as the booking form does; 0 is none.
+  voucherId: number | null
+  code: string
+  booked: RecurringReservation | null
+  refusal: OccurrenceRefusal | null
+}

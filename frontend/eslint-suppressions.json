@@ -19,11 +19,6 @@
       "count": 14
     }
   },
-  "src/features/admin/api/contractsApi.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    }
-  },
   "src/features/admin/api/disputeApi.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 9
@@ -32,11 +27,6 @@
   "src/features/admin/api/inventoryApi.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
-    }
-  },
-  "src/features/admin/components/contracts/ContractsTable.vue": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
     }
   },
   "src/features/admin/components/manage/AdminCourtsTable.vue": {
@@ -57,11 +47,6 @@
   "src/features/admin/components/venues/VenueFormModal.vue": {
     "@typescript-eslint/no-explicit-any": {
       "count": 4
-    }
-  },
-  "src/features/admin/composables/useAdminContracts.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 6
     }
   },
   "src/features/admin/composables/useAdminFinancialExceptions.ts": {
@@ -99,19 +84,9 @@
       "count": 3
     }
   },
-  "src/features/admin/types/contract.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/features/admin/types/exceptions.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    }
-  },
-  "src/features/booking/composables/useRecurringBooking.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
     }
   },
   "src/features/finance/api/financeApi.ts": {

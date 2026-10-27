@@ -50,18 +50,6 @@ const BILINGUAL_TRANSLATIONS: Record<string, { vi: string; en: string }> = {
     vi: 'Khung giờ bạn chọn trên sân này đã có người đặt hoặc bị trùng lịch. Vui lòng chọn khung giờ khác.',
     en: 'The selected court time is no longer available. Please choose another time.',
   },
-  'A recurring series may not exceed a 12-month horizon.': {
-    vi: 'Hợp đồng định kỳ không được vượt quá thời hạn 12 tháng.',
-    en: 'A recurring series may not exceed a 12-month horizon.',
-  },
-  'A recurring series may not exceed 104 occurrences.': {
-    vi: 'Số buổi trong hợp đồng định kỳ không được vượt quá 104 buổi.',
-    en: 'A recurring series may not exceed 104 occurrences.',
-  },
-  'Frequency must be weekly, biweekly or monthly.': {
-    vi: 'Tần suất phải là hàng tuần, 2 tuần/lần hoặc hàng tháng.',
-    en: 'Frequency must be weekly, biweekly or monthly.',
-  },
   'Price quote has already been accepted.': {
     vi: 'Báo giá đã được chấp nhận trước đó.',
     en: 'Price quote has already been accepted.',

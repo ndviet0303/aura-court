@@ -206,17 +206,6 @@ const router = createRouter({
       },
     },
     {
-      path: '/recurring-booking/cycles/:id',
-      name: 'payment-cycle-detail',
-      component: () => import('@/features/finance/views/PaymentCycleDetailView.vue'),
-      meta: {
-        auth: true,
-        titleKey: 'seo.paymentCycleDetailTitle',
-        descriptionKey: 'seo.paymentCycleDetailDesc',
-        indexable: false,
-      },
-    },
-    {
       path: '/tournaments',
       name: 'tournaments',
       component: () => import('@/features/tournament/views/TournamentsView.vue'),
@@ -461,16 +450,6 @@ const router = createRouter({
           meta: {
             orgRoles: ['organization_owner'],
             titleKey: 'seo.adminPromotionsTitle',
-            indexable: false,
-          },
-        },
-        {
-          path: 'contracts',
-          name: 'admin-contracts',
-          component: () => import('@/features/admin/views/AdminRecurringContractsView.vue'),
-          meta: {
-            orgRoles: ['organization_owner'],
-            titleKey: 'seo.adminContractsTitle',
             indexable: false,
           },
         },

@@ -73,10 +73,6 @@ export const financeApi = {
 
   getSplitGroup: (splitId: number) => api.get<{ split: SplitGroup }>(`/split-groups/${splitId}`),
 
-  getInvoice: <T = unknown>(id: number | string) => api.get<T>(`/monthly-invoices/${id}`),
-
-  getRecurringSeries: <T = unknown>() => api.get<T>('/recurring-series'),
-
   createReservationSplit: <T = unknown>(reservationId: number | string, payload: any) =>
     api.post<T>(`/reservations/${reservationId}/split`, payload),
 }

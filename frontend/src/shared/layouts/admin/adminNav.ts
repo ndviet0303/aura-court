@@ -48,12 +48,6 @@ export const navGroups: NavGroup[] = [
         icon: 'schedule',
       },
       {
-        id: 'courts-contracts',
-        path: '/admin/contracts',
-        labelKey: 'admin.nav.recurringContracts',
-        icon: 'contract',
-      },
-      {
         id: 'courts-venues',
         path: '/admin/venues',
         labelKey: 'admin.nav.manageVenues',
@@ -256,11 +250,10 @@ export const navGroups: NavGroup[] = [
   },
 ]
 
-// Owner-only: courts, contracts, venues, pricing, promotions, membership, organization profile & staff,
+// Owner-only: courts, venues, pricing, promotions, membership, organization profile & staff,
 // payment exceptions, venue packages, finance, customer reviews
 export const OWNER_ONLY_PATHS = [
   '/admin/manage',
-  '/admin/contracts',
   '/admin/pricing',
   '/admin/promotions',
   '/admin/membership',
