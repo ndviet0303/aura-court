@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
-import { SkeletonLoader } from '@/shared/components'
+import SkeletonLoader from '@/shared/components/feedback/SkeletonLoader.vue'
 import type { AvailabilitySlot } from '@/features/court/types/court'
 import { formatDuration } from '../utils/reservation'
 import { startTimes, type StartPeriod } from '../utils/startTimes'

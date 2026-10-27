@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
-import { Navbar, SiteFooter } from '@/shared/layouts'
-import { DemoWarningModal } from '@/shared/components'
+// Direct imports: the shared barrels would pull AdminLayout and every shared component into first load.
+import Navbar from '@/shared/layouts/header/Navbar.vue'
+import SiteFooter from '@/shared/layouts/footer/SiteFooter.vue'
+import DemoWarningModal from '@/shared/components/feedback/DemoWarningModal.vue'
 import { isRouteNavigating } from '@/stores/navigation'
 
 const route = useRoute()
