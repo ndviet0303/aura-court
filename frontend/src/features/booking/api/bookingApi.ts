@@ -93,7 +93,7 @@ export const bookingApi = {
 
   createReservationPayment: <
     T = {
-      reservation: { code: string; status: string }
+      reservation: { code: string; status: string; release_reason: string | null }
       payment_attempt: ReservationPaymentAttempt
     },
   >(
@@ -102,7 +102,7 @@ export const bookingApi = {
 
   getReservationPayment: <
     T = {
-      reservation: { code: string; status: string }
+      reservation: { code: string; status: string; release_reason: string | null }
       payment_attempt: ReservationPaymentAttempt | null
     },
   >(

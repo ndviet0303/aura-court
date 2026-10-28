@@ -1,12 +1,14 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
 import type { PriceTableDetail, PriceTableLink } from '../../types/priceTable'
 import { usePriceTableLabels } from '../../composables/usePriceTableLabels'
 
-defineProps<{
+const props = defineProps<{
   table: PriceTableDetail
   saving: boolean
+  errors: Record<string, string[]>
 }>()
 
 const emit = defineEmits<{
@@ -14,16 +16,48 @@ const emit = defineEmits<{
   (e: 'new-version'): void
   (e: 'end-link', link: PriceTableLink): void
   (e: 'retire'): void
+  (e: 'rename', name: string): void
 }>()
 
 const { t } = useI18n()
 const { kind, status, versionState, days, instant, linkPeriod, money } = usePriceTableLabels()
+
+// UC-3.5 step 3: the name is edited in place; a saved name (or another table) closes the editor.
+const name = ref<string | null>(null)
+watch([() => props.table.id, () => props.table.name], () => (name.value = null))
 </script>
 
 <template>
   <section class="price-table-detail">
     <header class="detail-header">
-      <div>
+      <form v-if="name !== null" class="rename-form" @submit.prevent="emit('rename', name.trim())">
+        <input
+          v-model="name"
+          class="form-input"
+          maxlength="120"
+          required
+          :aria-label="t('admin.priceTables.form.nameLabel')"
+        />
+        <AuraButton
+          type="submit"
+          size="sm"
+          :loading="saving"
+          :disabled="!name.trim() || name.trim() === table.name"
+        >
+          {{ t('common.save') }}
+        </AuraButton>
+        <AuraButton variant="secondary" size="sm" @click="name = null">
+          {{ t('common.cancel') }}
+        </AuraButton>
+        <span
+          v-for="m in [...(errors.name ?? []), ...(errors.price_table ?? [])]"
+          :key="m"
+          class="form-error"
+        >
+          {{ m }}
+        </span>
+      </form>
+      <div v-else>
         <h2 class="detail-title">{{ table.name }}</h2>
         <p class="detail-meta">{{ kind(table.kind) }} · {{ status(table.status) }}</p>
       </div>
@@ -45,6 +79,15 @@ const { kind, status, versionState, days, instant, linkPeriod, money } = usePric
           @click="emit('new-version')"
         >
           {{ t('admin.priceTables.newVersionBtn') }}
+        </AuraButton>
+        <AuraButton
+          v-if="table.status === 'active' && name === null"
+          variant="secondary"
+          size="sm"
+          :disabled="saving"
+          @click="name = table.name"
+        >
+          {{ t('admin.priceTables.renameBtn') }}
         </AuraButton>
         <AuraButton
           v-if="table.status === 'active'"
@@ -130,6 +173,17 @@ const { kind, status, versionState, days, instant, linkPeriod, money } = usePric
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 12px;
+}
+
+.rename-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.rename-form .form-input {
+  min-width: 200px;
 }
 
 .detail-title {

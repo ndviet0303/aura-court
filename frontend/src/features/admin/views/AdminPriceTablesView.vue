@@ -10,6 +10,7 @@ import PriceTableList from '../components/price-tables/PriceTableList.vue'
 import PriceTableDetailCard from '../components/price-tables/PriceTableDetailCard.vue'
 import PriceTableCreateModal from '../components/price-tables/PriceTableCreateModal.vue'
 import PriceTableLinkModal from '../components/price-tables/PriceTableLinkModal.vue'
+import PriceTableRetireModal from '../components/price-tables/PriceTableRetireModal.vue'
 
 const { t } = useI18n()
 const { kind } = usePriceTableLabels()
@@ -33,11 +34,13 @@ const {
   createVersion,
   applyLinks,
   endLink,
+  rename,
   retire,
 } = usePriceTables()
 
 const showCreate = ref(false)
 const showVersion = ref(false)
+const showRetire = ref(false)
 // The link modal stays open on failure, so the chosen courts and time survive the error dialog.
 const linkTarget = ref<{ mode: 'apply' } | { mode: 'end'; link: PriceTableLink } | null>(null)
 
@@ -72,6 +75,10 @@ function openLink(target: NonNullable<typeof linkTarget.value>) {
 
 async function submitCreate(payload: Parameters<typeof create>[0]) {
   if (await create(payload)) showCreate.value = false
+}
+
+async function submitRetire(payload: Parameters<typeof retire>[0]) {
+  if (await retire(payload)) showRetire.value = false
 }
 
 async function submitVersion(payload: Parameters<typeof createVersion>[0]) {
@@ -130,10 +137,12 @@ onMounted(loadVenues)
         v-if="detail"
         :table="detail"
         :saving="saving"
+        :errors="fieldErrors"
         @apply="openLink({ mode: 'apply' })"
         @new-version="openVersion"
         @end-link="openLink({ mode: 'end', link: $event })"
-        @retire="retire"
+        @retire="((fieldErrors = {}), (showRetire = true))"
+        @rename="rename"
       />
       <p v-else-if="tables.length > 0" class="page-sub">{{ t('admin.priceTables.selectHint') }}</p>
     </div>
@@ -152,6 +161,15 @@ onMounted(loadVenues)
       :errors="fieldErrors"
       @close="showVersion = false"
       @publish="submitVersion"
+    />
+    <PriceTableRetireModal
+      v-if="showRetire && detail"
+      :table="detail"
+      :tables="tables"
+      :saving="saving"
+      :errors="fieldErrors"
+      @close="showRetire = false"
+      @submit="submitRetire"
     />
     <PriceTableLinkModal
       v-if="linkTarget"

@@ -39,9 +39,13 @@ export type PromotionProgram = {
   updated_at: string
 }
 
-/** Terms an owner can still change after issuing; fields of the other discount or voucher kind are left out. */
+/**
+ * Terms an owner can still change after issuing, the discount kind too (UC-3.12); fields of the other discount or
+ * voucher kind are left out.
+ */
 export type PromotionProgramTerms = {
   name: string
+  discount_kind?: PromotionDiscountKind
   percent?: number
   amount?: number
   max_discount?: number | null
@@ -80,6 +84,8 @@ export type PromotionProgramCodes = {
 export type VoucherUse = {
   id: number
   status: 'held' | 'used'
+  /** The booking's rental before the discount; null when its quote is gone. */
+  rental: number | null
   discount: number
   /** Private programs only. */
   code: string | null
@@ -91,6 +97,8 @@ export type VoucherUse = {
     code: string
     /** Stays `cancelled` on a booking cancelled after confirmation; its use still counts as used. */
     status: string
+    /** in_use, completed or no_show while status stays confirmed. */
+    operational_status: 'in_use' | 'completed' | 'no_show' | null
     customer_name: string | null
     court: { id: number; name: string } | null
     starts_at: string | null

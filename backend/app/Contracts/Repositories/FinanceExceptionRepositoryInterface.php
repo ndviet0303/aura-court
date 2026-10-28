@@ -23,6 +23,9 @@ interface FinanceExceptionRepositoryInterface
     /** Direct-owner payment exceptions (`owner_payment_*`) of one organization, newest first. */
     public function paginateOwnerPaymentExceptions(Organization $organization, int $perPage = 30): LengthAwarePaginator;
 
+    /** One direct-owner payment exception (`owner_payment_*`) of the organization. */
+    public function findOwnerPaymentException(Organization $organization, int $id): ?FinanceException;
+
     public function getStatsForOrganization(Organization $organization): array;
 
     public function create(array $attributes): FinanceException;

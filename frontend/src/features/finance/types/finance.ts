@@ -152,6 +152,23 @@ export interface OwnerPaymentException {
   detected_at: string
 }
 
+/** UC-4.12 steps 4-5: one exception with the booking its code named, null when it named none. */
+export interface OwnerPaymentExceptionDetail extends OwnerPaymentException {
+  booking: {
+    code: string
+    status: string
+    release_reason: string | null
+    total_amount: number
+    /** ISO-8601 UTC; null once the booking no longer waits for payment. */
+    payment_deadline: string | null
+    court: string | null
+    venue: string | null
+    starts_at: string | null
+    ends_at: string | null
+    booker: { name: string | null; phone: string | null; email: string | null }
+  } | null
+}
+
 export interface OwnerPaymentExceptionPage {
   data: OwnerPaymentException[]
   meta: { current_page: number; last_page: number; total: number }

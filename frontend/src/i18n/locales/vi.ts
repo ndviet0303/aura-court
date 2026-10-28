@@ -535,6 +535,7 @@ export default {
     statusCancelled: 'Đã hủy',
     statusPaymentCancelled: 'Đã hủy thanh toán',
     statusOperatorCancelled: 'Sân đã hủy',
+    statusPriceChanged: 'Hết hiệu lực do đổi giá',
     statusExpired: 'Hết hạn thanh toán',
     statusInUse: 'Đang sử dụng',
     statusCompleted: 'Hoàn thành',
@@ -733,6 +734,14 @@ export default {
       withoutTotal: 'Nếu đặt không dùng voucher, số tiền phải trả là {total}.',
       continueWithout: 'Tiếp tục không dùng voucher',
       chooseOther: 'Chọn voucher khác',
+      scan: 'Quét QR',
+      scanStop: 'Đóng camera',
+      scanHint: 'Đưa mã QR voucher vào khung hình; mã được kiểm tra ngay khi đọc được.',
+      scanError: {
+        camera: 'Không mở được camera. Vui lòng nhập mã voucher thủ công.',
+        unrecognized:
+          'Không đọc được mã voucher từ QR này. Vui lòng thử lại hoặc nhập mã thủ công.',
+      },
     },
     agreement: {
       booker: 'Người đặt',
@@ -777,6 +786,9 @@ export default {
         kept: 'Giữ nguyên đơn',
       },
       reopenPayment: 'Mở lại thanh toán',
+      priceChangedNote:
+        'Giá sân đã thay đổi trước khi bạn thanh toán nên yêu cầu này không còn hiệu lực và chỗ đã được trả lại. Vui lòng xem giá mới và gửi yêu cầu đặt sân mới.',
+      priceChangedAction: 'Xem giá mới và đặt lại',
     },
   },
   payment: {
@@ -2430,6 +2442,7 @@ export default {
       courtsCount: '{count} sân',
       applyBtn: 'Áp cho sân',
       newVersionBtn: 'Tạo phiên bản mới',
+      renameBtn: 'Đổi tên',
       retireBtn: 'Ngừng bảng giá',
       retireConfirm:
         'Ngừng bảng giá "{name}"? Bảng đã ngừng không áp thêm cho sân được; các sân đang dùng vẫn tính theo bảng này tới khi bị thay hoặc kết thúc.',
@@ -2452,6 +2465,7 @@ export default {
       appliedNotice: 'Đã áp bảng giá cho sân.',
       endedNotice: 'Đã kết thúc bảng giá của sân.',
       retiredNotice: 'Đã ngừng bảng giá.',
+      renamedNotice: 'Đã đổi tên bảng giá.',
       versionCreatedNotice: 'Đã công bố phiên bản mới.',
       form: {
         title: 'Tạo bảng giá',
@@ -2478,6 +2492,12 @@ export default {
         note: 'Phiên bản đã công bố không sửa được. Từ thời điểm hiệu lực, phiên bản mới thay các phiên bản trước, kể cả phiên bản đang lên lịch chưa tới hiệu lực.',
         nowHint: 'Để trống để có hiệu lực ngay khi công bố.',
         submit: 'Công bố phiên bản',
+      },
+      retire: {
+        title: 'Ngừng bảng giá "{name}"',
+        noCourts: 'Bảng giá chưa áp cho sân nào nên không cần bảng giá thay thế.',
+        replacementLabel: 'Bảng giá thay thế cho các sân đang dùng',
+        noReplacement: 'Không thay thế, các sân tiếp tục dùng giá này',
       },
       link: {
         applyTitle: 'Áp "{name}" cho sân',
@@ -2566,6 +2586,8 @@ export default {
         colBooking: 'Đơn',
         colCustomer: 'Khách',
         colCourtTime: 'Sân và giờ chơi',
+        colStatus: 'Trạng thái đơn',
+        colRental: 'Tiền thuê trước giảm',
         colDiscount: 'Tiền giảm',
         colAt: {
           held: 'Giữ lúc',
@@ -2583,7 +2605,7 @@ export default {
         createTitle: 'Tạo chương trình khuyến mãi',
         editTitle: 'Sửa chương trình "{name}"',
         immutableHint:
-          'Loại voucher, hình thức giảm, các mã riêng và số mã không đổi được sau khi phát hành. Điều kiện mới áp cho các đơn chưa xác nhận.',
+          'Loại voucher, các mã riêng và số mã không đổi được sau khi phát hành. Hình thức, giá trị giảm và điều kiện mới áp cho các đơn chưa xác nhận; đơn đã xác nhận giữ nguyên tiền giảm.',
         nameLabel: 'Tên chương trình',
         typeLabel: 'Loại voucher',
         kindLabel: 'Hình thức giảm',
@@ -4235,6 +4257,29 @@ export default {
       prevPage: 'Trang trước',
       nextPage: 'Trang sau',
       pageOf: 'Trang {page}/{last}',
+      detail: {
+        open: 'Xem chi tiết',
+        title: 'Chi tiết giao dịch bất thường',
+        close: 'Đóng',
+        loadError: 'Không xem được chi tiết giao dịch. Vui lòng quay lại danh sách và thử lại.',
+        eventAt: 'Thời gian giao dịch',
+        code: 'Nguyên nhân',
+        amount: 'Số tiền nhận',
+        paymentCode: 'Mã thanh toán nhận được',
+        status: 'Trạng thái xử lý',
+        bookingTitle: 'Đơn liên quan',
+        noBooking:
+          'Chưa xác định được đơn tương ứng. Hệ thống không tự gán đơn theo số tiền trùng nhau.',
+        bookingCode: 'Mã đơn',
+        bookingStatus: 'Trạng thái đơn',
+        totalAmount: 'Tiền phải trả',
+        deadline: 'Hạn thanh toán',
+        court: 'Cơ sở · sân',
+        playTime: 'Thời gian sử dụng',
+        bookerName: 'Người đặt',
+        bookerPhone: 'Số điện thoại',
+        bookerEmail: 'Email',
+      },
     },
     venueCredits: {
       title: 'Credit tại sân',
@@ -4957,7 +5002,7 @@ export default {
       scanHint: 'Đưa mã QR của khách vào khung hình; thao tác được gửi ngay khi đọc được mã.',
       scanError: {
         camera: 'Không mở được camera. Hãy cấp quyền camera hoặc nhập mã.',
-        'not-booking': 'Mã QR này không phải mã đơn đặt sân.',
+        unrecognized: 'Mã QR này không phải mã đơn đặt sân.',
       },
     },
     grid: {

@@ -44,6 +44,13 @@ export type PriceTableDetail = PriceTable & {
   versions: PriceTableVersion[]
 }
 
+/** UC-3.6 A-1: an optional replacement for some of the table's courts from starts_at, now when left out. */
+export type RetirePriceTablePayload = {
+  replacement_table_id?: number
+  court_ids?: number[]
+  starts_at?: string
+}
+
 export type CreatePriceTablePayload = {
   name: string
   kind: PriceTableKind

@@ -583,6 +583,9 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
         // A direct-owner payment interface, so it follows direct_owner_payments rather than the payouts group below.
         Route::get('owner-payment-exceptions', [OwnerPaymentExceptionController::class, 'index'])
             ->middleware([RequireOrganizationRole::class.':organization_owner', 'feature:direct_owner_payments']);
+        Route::get('owner-payment-exceptions/{exception}', [OwnerPaymentExceptionController::class, 'show'])
+            ->whereNumber('exception')
+            ->middleware([RequireOrganizationRole::class.':organization_owner', 'feature:direct_owner_payments']);
         Route::get('owner-venue-credits', [OwnerVenueCreditController::class, 'index'])
             ->middleware([RequireOrganizationRole::class.':organization_owner', 'feature:direct_owner_payments']);
 
@@ -649,6 +652,7 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::get('venues/{venue}/price-tables', [PriceTableController::class, 'index']);
             Route::post('venues/{venue}/price-tables', [PriceTableController::class, 'store']);
             Route::get('price-tables/{table}', [PriceTableController::class, 'show']);
+            Route::patch('price-tables/{table}', [PriceTableController::class, 'update']);
             Route::post('price-tables/{table}/versions', [PriceTableController::class, 'publishVersion']);
             Route::post('price-tables/{table}/links', [PriceTableController::class, 'applyLinks']);
             Route::post('price-tables/{table}/retire', [PriceTableController::class, 'retire']);

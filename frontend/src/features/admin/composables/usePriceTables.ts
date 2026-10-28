@@ -13,6 +13,7 @@ import type {
   PriceTable,
   PriceTableDetail,
   PriceTableLink,
+  RetirePriceTablePayload,
 } from '../types/priceTable'
 import { usePriceTableLabels } from './usePriceTableLabels'
 
@@ -162,14 +163,17 @@ export function usePriceTables() {
     }, t('admin.priceTables.endedNotice'))
   }
 
-  async function retire() {
-    const name = detail.value?.name
-    if (!name || !window.confirm(t('admin.priceTables.retireConfirm', { name }))) return
-    await changeDetail(
-      async (table) => (await priceTableApi.retire(table.id)).data,
+  const rename = (name: string) =>
+    changeDetail(
+      async (table) => (await priceTableApi.rename(table.id, { name })).data,
+      t('admin.priceTables.renamedNotice'),
+    )
+
+  const retire = (payload: RetirePriceTablePayload) =>
+    changeDetail(
+      async (table) => (await priceTableApi.retire(table.id, payload)).data,
       t('admin.priceTables.retiredNotice'),
     )
-  }
 
   const errorDialogProps = computed(() => {
     const error = errorDialog.currentError.value as PriceTableError | null
@@ -204,6 +208,7 @@ export function usePriceTables() {
     createVersion,
     applyLinks,
     endLink,
+    rename,
     retire,
   }
 }

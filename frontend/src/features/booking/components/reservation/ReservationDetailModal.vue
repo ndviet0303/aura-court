@@ -61,6 +61,15 @@ const emit = defineEmits<{
 
         <ReservationDetailFacts :reservation="reservation" />
 
+        <p
+          v-if="reservation.metadata?.release_reason === 'price_changed'"
+          class="price-changed-note"
+          role="status"
+          data-testid="reservation-price-changed"
+        >
+          {{ t('reservations.detail.priceChangedNote') }}
+        </p>
+
         <!-- Slots Table -->
         <div class="slots-table-section">
           <h4 class="section-heading">{{ t('reservations.modal.slotsHeading') }}</h4>
@@ -135,6 +144,13 @@ const emit = defineEmits<{
             {{ t('reservations.detail.reopenPayment') }}
           </button>
         </template>
+        <RouterLink
+          v-if="reservation.metadata?.release_reason === 'price_changed' && reservation.court"
+          :to="{ name: 'schedule', params: { id: reservation.court.id } }"
+          class="btn btn-ghost"
+        >
+          {{ t('reservations.detail.priceChangedAction') }}
+        </RouterLink>
         <RouterLink
           v-if="reservation && reservation.status === 'confirmed'"
           :to="{ name: 'resale-marketplace' }"
@@ -311,6 +327,15 @@ const emit = defineEmits<{
 .slot-date-text {
   font-size: 11px;
   color: var(--muted);
+}
+
+.price-changed-note {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--outline);
+  background: var(--surface-subtle);
+  font-size: 12.5px;
 }
 
 .total-breakdown-card {

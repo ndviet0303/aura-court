@@ -92,7 +92,7 @@ class ReservationController extends Controller
         $attempt = $payments->latest($record);
 
         return response()->json([
-            'reservation' => ['code' => $record->code, 'status' => $record->status],
+            'reservation' => $this->paymentState($record),
             'payment_attempt' => $attempt ? $payments->instructions($attempt) : null,
         ]);
     }
@@ -109,7 +109,7 @@ class ReservationController extends Controller
         $existing = $payments->latest($record);
         if ($existing && ($existing->status === 'paid' || ($existing->status === 'pending' && $existing->expires_at?->isFuture()))) {
             return response()->json([
-                'reservation' => ['code' => $record->code, 'status' => $record->status],
+                'reservation' => $this->paymentState($record),
                 'payment_attempt' => $payments->instructions($existing),
             ]);
         }
@@ -118,7 +118,7 @@ class ReservationController extends Controller
         $record->refresh();
 
         return response()->json([
-            'reservation' => ['code' => $record->code, 'status' => $record->status],
+            'reservation' => $this->paymentState($record),
             'payment_attempt' => $payments->instructions($attempt),
         ], 201);
     }
@@ -263,5 +263,11 @@ class ReservationController extends Controller
         if ($request->has('slots')) {
             $this->intake->refuseBookingTime();
         }
+    }
+
+    /** The booking's status for the payment screen, with why a released hold ended (UC-4.6 A-3), e.g. price_changed. */
+    private function paymentState(Reservation $record): array
+    {
+        return ['code' => $record->code, 'status' => $record->status, 'release_reason' => $record->metadata['release_reason'] ?? null];
     }
 }

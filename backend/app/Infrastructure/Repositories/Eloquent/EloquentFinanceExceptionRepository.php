@@ -52,6 +52,14 @@ class EloquentFinanceExceptionRepository implements FinanceExceptionRepositoryIn
             ->paginate($perPage);
     }
 
+    public function findOwnerPaymentException(Organization $organization, int $id): ?FinanceException
+    {
+        return FinanceException::query()
+            ->where('organization_id', $organization->id)
+            ->where('type', 'like', 'owner\_payment\_%')
+            ->find($id);
+    }
+
     public function getStatsForOrganization(Organization $organization): array
     {
         $baseQuery = FinanceException::where('organization_id', $organization->id);
