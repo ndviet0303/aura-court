@@ -54,7 +54,6 @@ const disputeTypeOptions = computed<DropdownOption[]>(() => [
   { value: 'all', label: t('admin.disputes.filterAll') },
   { value: 'double_booking', label: t('admin.disputes.typeDoubleBooking'), icon: 'event_busy' },
   { value: 'match_stake', label: t('admin.disputes.typeMatchStake'), icon: 'sports_kabaddi' },
-  { value: 'resale_fraud', label: t('admin.disputes.typeResaleFraud'), icon: 'gavel' },
   {
     value: 'equipment_damage',
     label: t('admin.disputes.typeEquipmentDamage'),

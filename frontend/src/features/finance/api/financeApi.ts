@@ -5,7 +5,6 @@ import type {
   BeneficiaryAccount,
   FinanceExceptionItem,
   OwnerPaymentExceptionPage,
-  OwnerVenueCreditPage,
 } from '../types/finance'
 import type { SplitGroup } from '../types/split'
 
@@ -67,9 +66,6 @@ export const financeApi = {
 
   getOwnerPaymentExceptions: (page = 1) =>
     api.get<OwnerPaymentExceptionPage>(`/owner-payment-exceptions?page=${page}`),
-
-  getOwnerVenueCredits: (page = 1) =>
-    api.get<OwnerVenueCreditPage>(`/owner-venue-credits?page=${page}`),
 
   getSplitGroup: (splitId: number) => api.get<{ split: SplitGroup }>(`/split-groups/${splitId}`),
 

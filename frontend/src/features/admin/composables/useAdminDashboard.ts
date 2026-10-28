@@ -1,7 +1,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { adminApi } from '../api/adminApi'
 import { errorMessage } from '@/core/utils/errorMessage'
-import type { ReservationBooker } from '@/features/booking/types/reservation'
+import type { ReservationHolder } from '@/features/booking/types/reservation'
 
 // Item of GET /admin/reservations (C4).
 export interface AdminReservation {
@@ -10,8 +10,8 @@ export interface AdminReservation {
   status: string
   total_amount: number
   created_at?: string
-  // Contact recorded when the booking was made; null on a booking that has none.
-  booker?: ReservationBooker | null
+  // Who may use the booking: the booker, or the buyer after a transfer (D6); null when it has none.
+  holder?: ReservationHolder | null
   court?: { id?: number; code: string }
   slots?: { starts_at: string; ends_at?: string; status?: string }[]
   legacy_mapping?: { legacy_code: string; legacy_status: string }[]
@@ -31,9 +31,9 @@ export const RESERVATION_STATUSES = [
 export const reservationCode = (r: AdminReservation) => r.legacy_mapping?.[0]?.legacy_code ?? r.code
 export const reservationStatus = (r: AdminReservation) =>
   r.status === 'legacy' ? (r.legacy_mapping?.[0]?.legacy_status ?? r.status) : r.status
-// Phone and email of the booker recorded on the booking; empty when it has none.
-export const bookerContact = (r: AdminReservation) =>
-  [r.booker?.phone, r.booker?.email].filter(Boolean).join(' · ')
+// Phone and email of the booking's holder; empty when it has none.
+export const holderContact = (r: AdminReservation) =>
+  [r.holder?.phone, r.holder?.email].filter(Boolean).join(' · ')
 
 export interface ReviewPayment {
   id: number
@@ -66,7 +66,7 @@ export function useAdminDashboard() {
       (b) =>
         !kw ||
         reservationCode(b).toLowerCase().includes(kw) ||
-        (b.booker?.name || '').toLowerCase().includes(kw),
+        (b.holder?.name || '').toLowerCase().includes(kw),
     )
   })
 

@@ -5,7 +5,7 @@ import SelectDropdown from '@/shared/components/forms/SelectDropdown.vue'
 import { formatSlotRange, formatCurrency } from '@/i18n'
 import {
   RESERVATION_STATUSES,
-  bookerContact,
+  holderContact,
   reservationCode,
   reservationStatus,
   type AdminReservation,
@@ -123,8 +123,8 @@ const statusOptions = computed(() => [
           <div v-for="b in bookings" :key="b.id" class="booking-row">
             <strong class="font-mono text-pink">{{ reservationCode(b) }}</strong>
             <div class="user-col">
-              <strong>{{ b.booker?.name || '—' }}</strong>
-              <span class="email-sub">{{ bookerContact(b) }}</span>
+              <strong>{{ b.holder?.name || '—' }}</strong>
+              <span class="email-sub">{{ holderContact(b) }}</span>
             </div>
             <div class="court-col">
               <strong>{{ b.court?.code }}</strong>

@@ -63,11 +63,11 @@ const barStyle = (booking: OperationalReservation) => {
           class="bar"
           :class="[
             `is-${booking.operational_status}`,
-            { 'is-selected': booking.code === selectedCode },
+            { 'is-selected': booking.check_in_code === selectedCode },
           ]"
           :style="barStyle(booking)"
           :title="`${booking.code} · ${venueClockRange(booking.starts_at, booking.ends_at)}`"
-          @click="emit('select', booking.code)"
+          @click="emit('select', booking.check_in_code)"
         >
           <span class="bar-code">{{ booking.code }}</span>
           <span class="bar-status">{{ t(`operations.status.${booking.operational_status}`) }}</span>

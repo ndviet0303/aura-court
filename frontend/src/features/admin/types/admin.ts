@@ -34,11 +34,6 @@ export type VenueBookingPolicySettings = {
     min_duration_minutes: number
     max_duration_minutes: number
   }
-  transfer: {
-    cutoff_hours: number
-    max_consideration_percent: number
-    free_transfer_allowed: boolean
-  }
 }
 
 export type VenueBookingPolicyVersion = {

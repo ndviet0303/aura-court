@@ -73,9 +73,6 @@ function getStatusBadge(item: DisputeCase) {
   if (item.severity === 'critical') {
     return { label: t('admin.disputes.badgeCriticalSla'), class: 'badge-critical', icon: 'warning' }
   }
-  if (item.disputeType === 'resale_fraud') {
-    return { label: t('admin.disputes.badgeFraudSuspect'), class: 'badge-fraud', icon: 'gavel' }
-  }
   if (item.severity === 'high') {
     return { label: t('admin.disputes.badgeHighPriority'), class: 'badge-high', icon: 'error' }
   }
@@ -422,11 +419,6 @@ function formatRelativeTime(dateStr?: string): string {
 .badge-critical {
   background: var(--error-bg, rgba(198, 40, 40, 0.2));
   color: var(--error-text, #f87171);
-}
-
-.badge-fraud {
-  background: rgba(168, 85, 247, 0.2);
-  color: #c084fc;
 }
 
 .badge-high {

@@ -38,10 +38,6 @@ const BILINGUAL_TRANSLATIONS: Record<string, { vi: string; en: string }> = {
     vi: 'Dữ liệu cung cấp không hợp lệ. Vui lòng kiểm tra lại.',
     en: 'The provided data is invalid. Please check again.',
   },
-  'Listing is no longer available.': {
-    vi: 'Suất chơi này đã có người giữ chỗ hoặc không còn. Vui lòng chọn tin khác.',
-    en: 'Someone else is holding this slot or it is no longer available. Please pick another listing.',
-  },
   'Server Error': {
     vi: 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.',
     en: 'The server encountered an issue. Please try again later.',

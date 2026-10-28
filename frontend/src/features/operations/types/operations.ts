@@ -7,6 +7,8 @@ export type AttendanceCommand = 'check-in' | 'check-out' | 'no-show'
 export interface OperationalReservation {
   id: number
   code: string
+  /** D5: the only key attendance looks a booking up by; a transfer issues a new one. */
+  check_in_code: string
   operational_status: OperationalStatus
   usage_flag: UsageFlag | null
   venue: { id: number; name: string }

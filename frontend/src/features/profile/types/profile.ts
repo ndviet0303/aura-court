@@ -10,4 +10,4 @@ export interface SportOption {
   icon: string
 }
 
-export type ProfileTabType = 'general' | 'security' | 'membership' | 'credit' | 'shortcuts'
+export type ProfileTabType = 'general' | 'security' | 'membership' | 'shortcuts'

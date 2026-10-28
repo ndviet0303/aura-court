@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { formatCurrency, formatDateTime } from '@/i18n'
+import { formatCurrency, formatDateTime, formatSlotRange } from '@/i18n'
 import type { ChatMessage } from '../types/chat'
 
-/** BR-158 names the side; FR-111 shows a gifted code with what it offered when sent. */
+/**
+ * BR-158 names the side; FR-111 shows a gifted code with what it offered when sent; FR-142 shows the
+ * listing bookings a buyer asked about.
+ */
 const props = defineProps<{ message: ChatMessage }>()
 const { t } = useI18n()
 
@@ -40,6 +44,17 @@ const discount = computed(() => {
         <p v-if="message.voucher.ends_at">
           {{ t('chat.voucher.until') }} {{ formatDateTime(message.voucher.ends_at) }}
         </p>
+      </div>
+      <div v-if="message.transfer" class="transfer" data-testid="chat-transfer">
+        <p class="transfer-title">{{ t('chat.transfer.title') }}</p>
+        <p v-for="item in message.transfer.items" :key="item.reservation_id">
+          {{ item.court_name }} · {{ item.venue_name }} ·
+          {{ formatSlotRange(item.starts_at, item.ends_at) }} ·
+          <strong>{{ formatCurrency(item.price) }}</strong>
+        </p>
+        <RouterLink :to="{ name: 'resale-listing', params: { id: message.transfer.listing_id } }">
+          {{ t('chat.transfer.view') }}
+        </RouterLink>
       </div>
       <a v-if="message.image_url" :href="message.image_url" target="_blank" rel="noopener">
         <img :src="message.image_url" :alt="t('chat.image')" class="image" loading="lazy" />
@@ -100,15 +115,27 @@ const discount = computed(() => {
   border-radius: 10px;
 }
 
-.voucher {
+.voucher,
+.transfer {
   padding: 8px 10px;
   border: 1px dashed var(--primary);
   border-radius: 10px;
   font-size: 13px;
 }
 
-.voucher p {
+.voucher p,
+.transfer p {
   margin: 0;
+}
+
+.transfer {
+  display: grid;
+  gap: 2px;
+  overflow-wrap: anywhere;
+}
+
+.transfer-title {
+  font-weight: 700;
 }
 
 .voucher-code {

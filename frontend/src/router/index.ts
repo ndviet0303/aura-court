@@ -195,6 +195,50 @@ const router = createRouter({
       },
     },
     {
+      path: '/resale/new',
+      name: 'resale-new',
+      component: () => import('@/features/marketplace/views/TransferListingNewView.vue'),
+      meta: {
+        auth: true,
+        titleKey: 'seo.resaleNewTitle',
+        descriptionKey: 'seo.resaleDesc',
+        indexable: false,
+      },
+    },
+    {
+      path: '/resale/transfers',
+      name: 'resale-transfers',
+      component: () => import('@/features/marketplace/views/BookingTransfersView.vue'),
+      meta: {
+        auth: true,
+        titleKey: 'seo.resaleTransfersTitle',
+        descriptionKey: 'seo.resaleDesc',
+        indexable: false,
+      },
+    },
+    {
+      path: '/resale/transfers/:id(\\d+)',
+      name: 'resale-transfer',
+      component: () => import('@/features/marketplace/views/BookingTransferView.vue'),
+      meta: {
+        auth: true,
+        titleKey: 'seo.resaleTransfersTitle',
+        descriptionKey: 'seo.resaleDesc',
+        indexable: false,
+      },
+    },
+    {
+      path: '/resale/:id(\\d+)',
+      name: 'resale-listing',
+      component: () => import('@/features/marketplace/views/TransferListingView.vue'),
+      meta: {
+        auth: true,
+        titleKey: 'seo.resaleListingTitle',
+        descriptionKey: 'seo.resaleDesc',
+        indexable: false,
+      },
+    },
+    {
       path: '/recurring-booking',
       name: 'recurring-booking',
       component: () => import('@/features/booking/views/RecurringBookingView.vue'),
@@ -594,18 +638,6 @@ const router = createRouter({
             orgRoles: ['organization_owner'],
             capability: 'direct_owner_payments',
             titleKey: 'seo.adminPaymentExceptionsTitle',
-            indexable: false,
-          },
-        },
-        {
-          // The organization's unspent venue credit from resale (design D8).
-          path: 'venue-credits',
-          name: 'admin-venue-credits',
-          component: () => import('@/features/finance/views/OwnerVenueCreditsView.vue'),
-          meta: {
-            orgRoles: ['organization_owner'],
-            capability: 'direct_owner_payments',
-            titleKey: 'seo.adminVenueCreditsTitle',
             indexable: false,
           },
         },

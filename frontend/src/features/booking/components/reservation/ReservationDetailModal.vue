@@ -2,7 +2,7 @@
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { Reservation } from '../../types/reservation'
-import { displayCode, quoteDiscounts, statusLabel } from '../../utils/reservation'
+import { canOfferTransfer, displayCode, quoteDiscounts, statusLabel } from '../../utils/reservation'
 import CancelPaymentButton from './CancelPaymentButton.vue'
 import ReservationDetailFacts from './ReservationDetailFacts.vue'
 
@@ -136,8 +136,8 @@ const emit = defineEmits<{
           </button>
         </template>
         <RouterLink
-          v-if="reservation && reservation.status === 'confirmed'"
-          :to="{ name: 'resale-marketplace' }"
+          v-if="canOfferTransfer(reservation)"
+          :to="{ name: 'resale-new', query: { reservation: reservation.id } }"
           class="btn btn-ghost"
           data-testid="reservation-detail-resale"
         >
