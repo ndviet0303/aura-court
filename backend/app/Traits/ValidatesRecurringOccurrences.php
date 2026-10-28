@@ -19,8 +19,10 @@ trait ValidatesRecurringOccurrences
         return [
             'court_id' => ['required', 'integer'],
             'occurrences' => ['required', 'array', 'min:1', 'max:'.self::MAX_OCCURRENCES, function (string $attribute, mixed $value, Closure $fail): void {
-                // D8: one code per request, so a request cannot try many codes at once.
-                if (is_array($value) && collect($value)->pluck('voucher_code')->filter()->unique()->count() > 1) {
+                // D8: one code per request, so a request cannot try many codes at once; codes match after trim and
+                // upper case, as they are looked up.
+                $codes = is_array($value) ? collect($value)->pluck('voucher_code')->map(fn (mixed $code): string => is_string($code) ? strtoupper(trim($code)) : '') : collect();
+                if ($codes->filter()->unique()->count() > 1) {
                     $fail('Mỗi lần gửi chỉ dùng một mã voucher.');
                 }
             }],

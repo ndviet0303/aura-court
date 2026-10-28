@@ -24,11 +24,14 @@ class ContactTransferListing
         private readonly ConversationRepositoryInterface $conversations,
         private readonly OpenConversation $open,
         private readonly NotifyChatRecipients $notify,
+        private readonly TransferEligibility $eligibility,
     ) {}
 
     /** @param  list<int>  $reservationIds */
     public function execute(BookingTransferListing $listing, User $actor, array $reservationIds): Conversation
     {
+        // PRE-1: the one who asks for a booking meets the same account conditions as the parties to a transfer.
+        $this->eligibility->assertActor($actor);
         if ((int) $listing->seller_id === (int) $actor->id) {
             TransferEligibility::fail('TRANSFER_SELF', 'Bạn không thể liên hệ tin chuyển nhượng của chính mình.');
         }

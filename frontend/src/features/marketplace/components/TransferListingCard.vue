@@ -3,14 +3,17 @@ import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
-import type { TransferListing } from '../types/transfer'
+import type { ListingItemState, TransferListing } from '../types/transfer'
 import TransferBookingLine from './TransferBookingLine.vue'
 
-// UC-9.3: a listing on the market with its first open booking, how many are open and the lowest price.
+// UC-9.3: a listing on the market with its first open booking, how many of its bookings are open, held for a
+// transaction or already transferred (A-2), and the lowest open price.
 const props = defineProps<{ listing: TransferListing }>()
 const { t } = useI18n()
 
 const open = computed(() => props.listing.items.filter((item) => item.state === 'available'))
+const count = (state: ListingItemState) =>
+  props.listing.items.filter((item) => item.state === state).length
 const first = computed(() => open.value[0] ?? props.listing.items[0])
 const lowest = computed(() => Math.min(...open.value.map((item) => item.price)))
 </script>
@@ -32,6 +35,12 @@ const lowest = computed(() => Math.min(...open.value.map((item) => item.price)))
     <div class="listing-meta">
       <span>{{ t('resale.seller') }}: {{ listing.seller.name }}</span>
       <span class="chip">{{ t('resale.availableCount', { count: open.length }) }}</span>
+      <span v-if="count('held')" class="chip held">{{
+        t('resale.heldCount', { count: count('held') })
+      }}</span>
+      <span v-if="count('transferred')" class="chip done">{{
+        t('resale.transferredCount', { count: count('transferred') })
+      }}</span>
       <strong v-if="open.length">{{
         t('resale.priceFrom', { amount: formatCurrency(lowest) })
       }}</strong>
@@ -78,6 +87,14 @@ const lowest = computed(() => Math.min(...open.value.map((item) => item.price)))
   background: color-mix(in srgb, #16a34a 14%, transparent);
   color: #16a34a;
   font-size: 12px;
+}
+.chip.held {
+  background: color-mix(in srgb, #d97706 14%, transparent);
+  color: #d97706;
+}
+.chip.done {
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
+  color: var(--muted);
 }
 .chip.mine {
   background: color-mix(in srgb, var(--primary) 14%, transparent);

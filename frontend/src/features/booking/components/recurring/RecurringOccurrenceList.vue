@@ -1,18 +1,22 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency, formatDateTime } from '@/i18n'
 import type { OccurrenceRow } from '../../types/recurring'
 import { chosenVoucher, payable, refusalMessage } from '../../composables/useRecurringBooking'
-import { HALF_HOURS, validTimes } from '../../utils/recurringDates'
+import { validTimes } from '../../utils/recurringDates'
+import RecurringTimeDialog from './RecurringTimeDialog.vue'
 
-// FR-136..FR-138: every occurrence with its own time, its check, its voucher and, once submitted, its booking or
-// why it was refused (BR-169, BR-174). Nothing here moves an occurrence to another day or time.
+// FR-136..FR-138: every occurrence with whether it is picked for submitting (UC-8.7 A-1), its own time, its check,
+// its voucher and, once submitted, its booking or why it was refused (BR-169, BR-174). Nothing here moves an
+// occurrence to another day or time.
 defineProps<{ rows: OccurrenceRow[]; disabled: boolean }>()
 const emit = defineEmits<{
   (e: 'time', row: OccurrenceRow, start: string, end: string): void
   (e: 'voucher', row: OccurrenceRow, id: number): void
   (e: 'code', row: OccurrenceRow, code: string): void
+  (e: 'select', row: OccurrenceRow, selected: boolean): void
 }>()
 
 const { t } = useI18n()
@@ -20,6 +24,13 @@ const weekday = (date: string) =>
   t(`recurring.weekday.${new Date(`${date}T00:00:00Z`).getUTCDay() || 7}`)
 const shortDate = (date: string) => `${date.slice(8)}/${date.slice(5, 7)}/${date.slice(0, 4)}`
 const selectedVoucher = (row: OccurrenceRow) => chosenVoucher(row)?.id ?? 0
+
+// UC-8.5: the occurrence whose time is being changed in the dialog.
+const editing = ref<OccurrenceRow | null>(null)
+function confirmTime(start: string, end: string) {
+  if (editing.value) emit('time', editing.value, start, end)
+  editing.value = null
+}
 </script>
 
 <template>
@@ -32,27 +43,27 @@ const selectedVoucher = (row: OccurrenceRow) => chosenVoucher(row)?.id ?? 0
       :data-testid="`occurrence-${row.date}`"
     >
       <div class="occ-when">
+        <input
+          v-if="!row.booked"
+          type="checkbox"
+          :checked="row.selected"
+          :disabled="disabled"
+          :aria-label="t('recurring.select', { date: shortDate(row.date) })"
+          :data-testid="`occurrence-select-${row.date}`"
+          @change="emit('select', row, ($event.target as HTMLInputElement).checked)"
+        />
         <strong>{{ weekday(row.date) }} {{ shortDate(row.date) }}</strong>
-        <span v-if="row.booked">{{ row.start }} – {{ row.end }}</span>
-        <span v-else class="occ-times">
-          <select
-            :value="row.start"
-            :disabled="disabled"
-            :aria-label="t('recurring.start')"
-            @change="emit('time', row, ($event.target as HTMLSelectElement).value, row.end)"
-          >
-            <option v-for="time in HALF_HOURS" :key="time" :value="time">{{ time }}</option>
-          </select>
-          –
-          <select
-            :value="row.end"
-            :disabled="disabled"
-            :aria-label="t('recurring.end')"
-            @change="emit('time', row, row.start, ($event.target as HTMLSelectElement).value)"
-          >
-            <option v-for="time in HALF_HOURS" :key="time" :value="time">{{ time }}</option>
-          </select>
-        </span>
+        <span>{{ row.start }} – {{ row.end }}</span>
+        <button
+          v-if="!row.booked"
+          type="button"
+          class="occ-edit"
+          :disabled="disabled"
+          :data-testid="`occurrence-edit-${row.date}`"
+          @click="editing = row"
+        >
+          {{ t('recurring.editTime') }}
+        </button>
       </div>
 
       <div v-if="row.booked" class="occ-state">
@@ -123,6 +134,13 @@ const selectedVoucher = (row: OccurrenceRow) => chosenVoucher(row)?.id ?? 0
       </div>
     </li>
   </ol>
+  <RecurringTimeDialog
+    v-if="editing"
+    :row="editing"
+    :label="`${weekday(editing.date)} ${shortDate(editing.date)}`"
+    @confirm="confirmTime"
+    @close="editing = null"
+  />
 </template>
 
 <style scoped>
@@ -153,15 +171,14 @@ const selectedVoucher = (row: OccurrenceRow) => chosenVoucher(row)?.id ?? 0
   border-color: #dc2626;
 }
 .occ-when,
-.occ-state,
-.occ-times {
+.occ-state {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
 }
 select,
-input {
+input:not([type='checkbox']) {
   min-width: 0;
   padding: 5px 8px;
   border: 1px solid var(--outline);
@@ -177,7 +194,7 @@ select {
   padding-right: 28px;
   background-position: right 8px center;
 }
-input {
+input:not([type='checkbox']) {
   width: 120px;
 }
 .badge {
@@ -196,6 +213,16 @@ input {
   margin: 0;
   color: #dc2626;
   font-size: 12px;
+}
+.occ-edit {
+  padding: 3px 8px;
+  border: 1px solid var(--outline);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
 }
 .occ-money {
   color: var(--muted);

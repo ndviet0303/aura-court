@@ -18,6 +18,12 @@ readonly class OccurrenceRefusal
     /** @param  array<string, mixed>  $body */
     private function __construct(public array $body) {}
 
+    /** UC-8.6 E-3: the single-use code is also named on another occurrence of the list. */
+    public static function codeShared(): self
+    {
+        return new self(['message' => 'Mã voucher chỉ dùng được cho một lượt. Hãy giữ mã ở một lượt và bỏ ở các lượt còn lại.', 'code' => 'VOUCHER_CODE_SHARED']);
+    }
+
     public static function from(Throwable $e): self
     {
         return new self(match (true) {

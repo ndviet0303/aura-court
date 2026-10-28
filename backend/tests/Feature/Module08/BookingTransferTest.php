@@ -371,6 +371,38 @@ class BookingTransferTest extends TestCase
         $this->assertSame(1, ConversationMessage::where('conversation_id', $conversationId)->count());
     }
 
+    public function test_uc_9_6_pre1_contact_needs_a_complete_profile(): void
+    {
+        $seller = $this->customer();
+        $booking = $this->owned($seller, '2026-11-05 18:00');
+        $listingId = $this->postListing($seller, [$booking->id => 90000])->json('listing.id');
+
+        $this->command($this->customer(['phone' => null]), "/api/booking-transfers/listings/{$listingId}/contact", ['reservation_ids' => [$booking->id]])
+            ->assertStatus(422)->assertJsonPath('code', 'PROFILE_INCOMPLETE');
+        $this->assertSame(0, ConversationMessage::count());
+    }
+
+    public function test_uc_9_3_a2_the_market_keeps_held_listings_with_each_booking_state(): void
+    {
+        [$seller, $buyer, $viewer] = [$this->customer(), $this->customer(), $this->customer()];
+        $held = $this->owned($seller, '2026-11-05 18:00');
+        $heldListing = $this->postListing($seller, [$held->id => 100000])->json('listing.id');
+        $this->createTransfer($seller, $buyer, [$held->id => 100000], $heldListing)->assertCreated();
+        [$sold, $open] = [$this->owned($seller, '2026-11-06 18:00'), $this->owned($seller, '2026-11-06 20:00')];
+        $mixed = $this->postListing($seller, [$sold->id => 100000, $open->id => 100000])->json('listing.id');
+        $this->transferNow($seller, $buyer, [$sold->id => 100000], $mixed);
+        $done = $this->owned($seller, '2026-11-07 18:00');
+        $doneListing = $this->postListing($seller, [$done->id => 100000])->json('listing.id');
+        $this->transferNow($seller, $buyer, [$done->id => 100000], $doneListing);
+
+        $market = collect($this->actingAs($viewer)->getJson('/api/booking-transfers/listings')->assertOk()->json('data'))
+            ->mapWithKeys(fn (array $listing): array => [$listing['id'] => array_column($listing['items'], 'state')]);
+
+        // A fully held listing stays (the hold may be cancelled); one with nothing left to offer leaves (BR-190).
+        $this->assertEquals([$mixed => ['transferred', 'available'], $heldListing => ['held']], $market->all());
+        $this->assertArrayNotHasKey($doneListing, $market->all());
+    }
+
     public function test_fr_146_the_buyer_holds_the_booking_and_the_seller_no_longer_sees_it(): void
     {
         [$seller, $buyer] = [$this->customer(), $this->customer()];

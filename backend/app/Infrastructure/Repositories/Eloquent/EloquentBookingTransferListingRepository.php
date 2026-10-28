@@ -48,9 +48,11 @@ class EloquentBookingTransferListingRepository implements BookingTransferListing
         $cutoff = now()->utc()->addHours(2)->format('Y-m-d H:i:s');
         $term = '%'.addcslashes(trim((string) $search), '%_\\').'%';
 
+        // UC-9.3: a listing stays on the market while a booking in it is still offered, open or held for a pending
+        // transaction (a hold can be cancelled); one whose bookings are all transferred, withdrawn or past the cutoff
+        // offers nothing more (BR-190) and leaves it.
         return BookingTransferListing::query()
             ->whereHas('items', fn (Builder $item) => $item->where('status', BookingTransferListingItem::STATUS_LISTED)
-                ->whereDoesntHave('pendingTransferItems')
                 ->whereHas('reservation', fn (Builder $reservation) => $reservation->where('status', 'confirmed')->whereRaw(self::STARTS_AT.' > ?', [$cutoff])))
             ->when(trim((string) $search) !== '', fn (Builder $query) => $query->where(fn (Builder $match) => $match
                 ->where('note', 'ilike', $term)

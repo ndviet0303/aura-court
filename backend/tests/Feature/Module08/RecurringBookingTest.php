@@ -3,9 +3,11 @@
 namespace Tests\Feature\Module08;
 
 use App\Models\Court;
+use App\Models\PromotionProgram;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Models\VenueBookingPolicy;
+use App\Models\VoucherCode;
 use App\Models\VoucherUse;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -137,6 +139,29 @@ class RecurringBookingTest extends TestCase
         $free = $this->publicVoucher($court, now()->addMonth(), ['name' => 'Miễn phí', 'amount' => 100000]);
         $rows = $this->submit($user, $court, [['2026-11-06 18:00', '2026-11-06 19:00', 0, $free->id]])->json('data');
         $this->assertSame('confirmed', $rows[0]['reservation']['status']);
+    }
+
+    public function test_uc_8_6_e3_a_single_use_code_on_several_occurrences_is_a_conflict_at_check(): void
+    {
+        $court = $this->payableCourt();
+        $program = $this->publicVoucher($court, now()->addMonth(), ['type' => PromotionProgram::TYPE_PRIVATE, 'code_count' => 1, 'max_uses' => null]);
+        VoucherCode::create(['program_id' => $program->id, 'code' => 'RIENG1']);
+        $check = fn (array $codes) => $this->actingAs($this->customer())->postJson('/api/recurring-bookings/check', [
+            'court_id' => $court->id,
+            'occurrences' => array_map(fn (int $day, ?string $code): array => [
+                'starts_at' => "2026-11-0{$day} 18:00", 'ends_at' => "2026-11-0{$day} 19:00", 'voucher_code' => $code,
+            ], array_keys($codes), $codes),
+        ])->assertOk()->json('data');
+
+        $rows = $check([3 => 'RIENG1', 4 => null, 5 => ' rieng1 ']);
+
+        foreach ([0, 2] as $index) {
+            $this->assertNull($rows[$index]['code_voucher'], 'The code is not counted as usable twice.');
+            $this->assertSame('VOUCHER_CODE_SHARED', $rows[$index]['code_refusal']['code']);
+        }
+        $this->assertNull($rows[1]['code_refusal']);
+        $this->assertSame(80000, $check([3 => 'RIENG1'])[0]['code_voucher']['total'], 'On one occurrence the code applies.');
+        $this->assertSame(0, VoucherUse::count());
     }
 
     public function test_br_167_br_172_account_and_list_are_checked_before_anything_is_booked(): void

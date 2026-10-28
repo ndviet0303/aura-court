@@ -28,6 +28,8 @@ const newRow = (date: string, start: string, end: string): OccurrenceRow => ({
   date,
   start,
   end,
+  custom: false,
+  selected: true,
   checking: false,
   check: null,
   voucherId: null,
@@ -60,8 +62,9 @@ export const refusalMessage = (refusal: OccurrenceRefusal) =>
 
 /**
  * Module 08 (UC-8.1..UC-8.7): plan the days of a recurring booking in one of three modes, give every occurrence the
- * common time or its own, check each one as an ordinary booking (nothing held) and submit the bookable ones, each
- * becoming its own booking with its own payment. A refused occurrence is never moved to another day or time.
+ * common time or its own, check each one as an ordinary booking (nothing held) and submit the bookable ones the
+ * customer picked, each becoming its own booking with its own payment. A refused occurrence is never moved to another
+ * day or time.
  */
 export function useRecurringBooking() {
   const today = todayInVenue()
@@ -81,6 +84,9 @@ export function useRecurringBooking() {
   const checking = ref(false)
   const submitting = ref(false)
   const error = ref('')
+  // UC-8.4 A-2: once the common time was applied, or an occurrence has its own, applying again asks first.
+  const applied = ref(false)
+  const confirmingApply = ref(false)
 
   // BR-164: the end month may not come before the start month.
   const monthRangeInvalid = computed(
@@ -97,12 +103,14 @@ export function useRecurringBooking() {
   })
 
   // A new plan keeps the bookings already made (their days are not planned again) and an occurrence still planned,
-  // with its own time and check.
+  // with its own time. A list made again from weekdays or month days is checked again (UC-8.1 A-2, UC-8.2 A-2); a
+  // day picked or dropped on the calendar leaves the other days' checks (UC-8.3 A-1, A-2).
   watch(
     () => plan.value.dates,
     (planned) => {
       const booked = rows.value.filter((row) => row.booked)
       const kept = new Map(rows.value.filter((row) => !row.booked).map((row) => [row.date, row]))
+      if (mode.value !== 'dates') kept.forEach(reset)
       const bookedDays = new Set(booked.map((row) => row.date))
       const next = planned
         .filter((date) => !bookedDays.has(date))
@@ -125,13 +133,24 @@ export function useRecurringBooking() {
 
   // FR-135: the common time applies to every occurrence not yet booked.
   const commonTimeValid = computed(() => validTimes(start.value, end.value))
-  function applyTime() {
+  function requestApply() {
     if (!commonTimeValid.value) return
+    if (applied.value || open.value.some((row) => row.custom)) confirmingApply.value = true
+    else applyTime()
+  }
+
+  // UC-8.4 steps 5-7: every open occurrence, its own times included, takes the common time and is checked again.
+  function applyTime() {
+    confirmingApply.value = false
+    if (!commonTimeValid.value) return
+    applied.value = true
     open.value.forEach((row) => {
       row.start = start.value
       row.end = end.value
+      row.custom = false
       reset(row)
     })
+    void check()
   }
 
   function payload(row: OccurrenceRow): RecurringOccurrencePayload {
@@ -195,6 +214,7 @@ export function useRecurringBooking() {
   function setTime(row: OccurrenceRow, startsAt: string, endsAt: string) {
     row.start = startsAt
     row.end = endsAt
+    row.custom = true
     reset(row)
     if (validTimes(startsAt, endsAt)) void check([row])
   }
@@ -204,17 +224,31 @@ export function useRecurringBooking() {
     row.code = ''
   }
 
-  function setCode(row: OccurrenceRow, code: string) {
+  // UC-8.6 E-3: the occurrences naming one code are checked together, so a single-use code named on several of them
+  // shows as a conflict on each; the ones that named the previous code are checked again too.
+  const codeOf = (row: OccurrenceRow) => row.code.trim().toUpperCase()
+  const checkedWith = (code: string) =>
+    open.value.filter((other) => other.check?.ok && codeOf(other) === code)
+  async function setCode(row: OccurrenceRow, code: string) {
+    const previous = codeOf(row)
     row.code = code
-    if (row.check?.ok) void check([row])
+    if (!row.check?.ok) return
+    const now = codeOf(row)
+    await check(now ? checkedWith(now) : [row])
+    if (previous && previous !== now) await check(checkedWith(previous))
+  }
+
+  function setSelected(row: OccurrenceRow, selected: boolean) {
+    row.selected = selected
   }
 
   let submitKey = { body: '', key: '' }
-  const ready = computed(() => open.value.filter((row) => payable(row) !== null))
+  // UC-8.7 A-1: only the occurrences the customer picked are submitted; the others are neither booked nor held.
+  const ready = computed(() => open.value.filter((row) => row.selected && payable(row) !== null))
   const total = computed(() => ready.value.reduce((sum, row) => sum + (payable(row) ?? 0), 0))
 
-  // FR-138, BR-172, BR-174: each ready occurrence becomes its own booking; a refused one shows why and is checked
-  // again before another try.
+  // FR-138, BR-172, BR-174: each picked, ready occurrence becomes its own booking; a refused one shows why and is
+  // checked again before another try.
   async function submit() {
     const targets = [...ready.value]
     if (!guard(targets)) return
@@ -286,11 +320,14 @@ export function useRecurringBooking() {
     submitting,
     error,
     commonTimeValid,
+    confirmingApply,
+    requestApply,
     applyTime,
     check,
     setTime,
     setVoucher,
     setCode,
+    setSelected,
     submit,
     load,
   }

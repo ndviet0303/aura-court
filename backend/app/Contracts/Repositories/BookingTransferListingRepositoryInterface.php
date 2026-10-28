@@ -20,8 +20,8 @@ interface BookingTransferListingRepositoryInterface
     public function create(int $sellerId, ?string $note, array $items): BookingTransferListing;
 
     /**
-     * FR-141: listings with at least one available booking, newest first; $search matches venue name or address,
-     * court name or the note.
+     * FR-141, UC-9.3: listings with at least one booking still offered (available or held), newest first; $search
+     * matches venue name or address, court name or the note.
      *
      * @return LengthAwarePaginator<int, BookingTransferListing>
      */

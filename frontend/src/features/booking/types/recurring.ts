@@ -42,12 +42,15 @@ export type RecurringBookingPayload = {
   occurrences: RecurringOccurrencePayload[]
 }
 
-// A planned occurrence: its own day and time (BR-168), the last check, the voucher chosen for it and,
-// once submitted, the booking it became or why it was refused.
+// A planned occurrence: its own day and time (BR-168), whether the customer picked it for submitting (UC-8.7 A-1),
+// the last check, the voucher chosen for it and, once submitted, the booking it became or why it was refused.
 export type OccurrenceRow = {
   date: string
   start: string
   end: string
+  // Its time was set on its own (UC-8.5) rather than by the common time.
+  custom: boolean
+  selected: boolean
   checking: boolean
   check: RecurringOccurrenceResult | null
   // null takes the first voucher that applies, as the booking form does; 0 is none.

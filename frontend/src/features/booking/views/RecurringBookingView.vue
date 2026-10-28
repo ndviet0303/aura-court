@@ -9,6 +9,7 @@ import { useRecurringBooking } from '../composables/useRecurringBooking'
 import { validBookerPhone } from '../utils/reservation'
 import RecurringScheduleForm from '../components/recurring/RecurringScheduleForm.vue'
 import RecurringOccurrenceList from '../components/recurring/RecurringOccurrenceList.vue'
+import RecurringApplyDialog from '../components/recurring/RecurringApplyDialog.vue'
 
 // Module 08: a recurring booking is a set of ordinary bookings, each checked, priced and paid on its own.
 const { t } = useI18n()
@@ -39,17 +40,21 @@ const {
   submitting,
   error,
   commonTimeValid,
+  confirmingApply,
+  requestApply,
   applyTime,
   check,
   setTime,
   setVoucher,
   setCode,
+  setSelected,
   submit,
   load,
 } = useRecurringBooking()
 
 const unchecked = computed(() => open.value.filter((row) => !row.check).length)
 const bookedCount = computed(() => rows.value.length - open.value.length)
+const picked = computed(() => open.value.filter((row) => row.selected).length)
 
 onMounted(load)
 </script>
@@ -79,7 +84,15 @@ onMounted(load)
       :month-range-invalid="monthRangeInvalid"
       :time-valid="commonTimeValid"
       :busy="busy"
-      @apply-time="applyTime"
+      @apply-time="requestApply"
+    />
+    <RecurringApplyDialog
+      v-if="confirmingApply"
+      :time="`${start} – ${end}`"
+      :count="open.length"
+      :custom="open.filter((row) => row.custom).length"
+      @confirm="applyTime"
+      @close="confirmingApply = false"
     />
 
     <p v-if="error" class="recurring-error" role="alert">{{ error }}</p>
@@ -103,6 +116,7 @@ onMounted(load)
         @time="setTime"
         @voucher="setVoucher"
         @code="setCode"
+        @select="setSelected"
       />
     </section>
 
@@ -134,7 +148,9 @@ onMounted(load)
           @click="submit"
         >
           {{
-            ready.length ? t('recurring.submit', { count: ready.length }) : t('recurring.noneReady')
+            ready.length
+              ? t('recurring.submit', { count: ready.length })
+              : t(picked ? 'recurring.noneReady' : 'recurring.noneSelected')
           }}
         </AuraButton>
       </div>

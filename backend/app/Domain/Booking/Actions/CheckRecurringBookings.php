@@ -61,6 +61,28 @@ class CheckRecurringBookings
             $rows[] = $row;
         }
 
+        return $this->flagSharedCodes($rows, $data);
+    }
+
+    /**
+     * UC-8.6 E-3, BR-170: a private code is single-use, so one named on several occurrences is a conflict on each of
+     * them for the customer to resolve; it is never counted as usable more than once.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array<string, mixed>>
+     */
+    private function flagSharedCodes(array $rows, RecurringBookingData $data): array
+    {
+        // Codes are matched after trim and upper case, as VoucherEligibility looks them up.
+        $codes = array_map(fn (array $occurrence): string => strtoupper(trim((string) ($occurrence['voucher_code'] ?? ''))), $data->occurrences);
+        $counts = array_count_values(array_filter($codes));
+        foreach ($rows as $i => $row) {
+            if (($counts[$codes[$i]] ?? 0) > 1 && ! isset($row['refusal'])) {
+                unset($rows[$i]['code_voucher']);
+                $rows[$i]['code_refusal'] ??= OccurrenceRefusal::codeShared();
+            }
+        }
+
         return $rows;
     }
 }
