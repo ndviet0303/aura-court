@@ -36,15 +36,6 @@ class PriceQuoteService
         return $this->open($userId, $organizationId, $court, collect([Carbon::instance($start)]), intdiv($end->getTimestamp() - $start->getTimestamp(), 60));
     }
 
-    /** A recurring session's quote: slot starts of the court's own interval length. */
-    public function createForSlots(int $userId, int $organizationId, int $courtId, array $slots): PriceQuote
-    {
-        $court = app(VerifyEffectiveBookingEligibility::class)->assertEligible($courtId, publicFacing: true);
-        $duration = (int) $court->slot_duration;
-
-        return $this->open($userId, $organizationId, $court, $this->resolveSlots($slots, $duration, $court->venue?->timezone ?: config('app.timezone')), $duration);
-    }
-
     /** @param  Collection<int, Carbon>  $resolvedSlots */
     private function open(int $userId, int $organizationId, Court $court, Collection $resolvedSlots, int $duration): PriceQuote
     {
@@ -95,7 +86,7 @@ class PriceQuoteService
     {
         $slots = collect((array) $quote->slot_snapshot);
         $times = $slots->map(fn (array $slot): Carbon => Carbon::parse($slot['starts_at']))->all();
-        // A quote's slots share one length: the whole interval of a booking, or the court's interval in a recurring session.
+        // A quote's one slot is the whole interval of the booking.
         $duration = intdiv(Carbon::parse($slots->first()['ends_at'])->getTimestamp() - $times[0]->getTimestamp(), 60);
 
         $quote->forceFill($this->priceAttributes($court, $times, $duration))->save();
@@ -179,38 +170,5 @@ class PriceQuoteService
         }
 
         return $snapshot;
-    }
-
-    /** @return Collection<int,Carbon> */
-    private function resolveSlots(array $slots, int $duration = 60, ?string $zone = null): Collection
-    {
-        if (count($slots) < 1 || count($slots) > 24) {
-            throw ValidationException::withMessages(['slots' => 'Chọn từ 1 đến 24 giờ.']);
-        }
-
-        $zone ??= config('app.timezone');
-        $local = collect($slots)->map(function (mixed $value) use ($zone): Carbon {
-            $value = is_array($value) ? ($value['starts_at'] ?? null) : $value;
-            try {
-                $time = Carbon::parse((string) $value)->setTimezone($zone);
-            } catch (\Throwable) {
-                throw ValidationException::withMessages(['slots' => 'Giờ bắt đầu không hợp lệ.']);
-            }
-
-            if ($time->minute % 30 !== 0 || $time->second !== 0) {
-                throw ValidationException::withMessages(['slots' => 'Giờ bắt đầu phải theo mốc 30 phút.']);
-            }
-            if ($time->isPast()) {
-                throw ValidationException::withMessages(['slots' => 'Không thể báo giá giờ đã qua.']);
-            }
-
-            return $time;
-        })->sort()->values();
-
-        if ($local->unique(fn (Carbon $time): string => $time->toIso8601String())->count() !== $local->count()) {
-            throw ValidationException::withMessages(['slots' => 'Không được chọn trùng giờ.']);
-        }
-
-        return $local;
     }
 }

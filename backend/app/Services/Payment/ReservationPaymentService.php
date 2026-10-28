@@ -8,9 +8,7 @@ use App\Models\ReceivingConnection;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Venue;
-use App\Services\Finance\VenueCreditService;
 use Carbon\Carbon;
-use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -23,18 +21,10 @@ class ReservationPaymentService
      *
      * Defaults model a single 'booking' obligation keyed by the reservation code that expires
      * exactly at the reservation's payment deadline, so reopening payment never extends it.
-     * Recurring flows pass an explicit $purpose ('recurring_period'), a period/series $purposeId,
-     * the aggregate $amountOverride, and the period-deadline $expiresAtOverride.
      */
-    public function initiate(
-        Reservation $reservation,
-        User $payer,
-        string $purpose = 'booking',
-        ?string $purposeId = null,
-        ?int $amountOverride = null,
-        ?CarbonInterface $expiresAtOverride = null,
-    ): OwnerPaymentAttempt {
-        return DB::transaction(function () use ($reservation, $payer, $purpose, $purposeId, $amountOverride, $expiresAtOverride): OwnerPaymentAttempt {
+    public function initiate(Reservation $reservation, User $payer): OwnerPaymentAttempt
+    {
+        return DB::transaction(function () use ($reservation, $payer): OwnerPaymentAttempt {
             $venue = Venue::query()->whereKey($reservation->court()->value('venue_id'))->lockForUpdate()->firstOrFail();
             $connectionId = $venue->current_receiving_connection_id;
             abort_unless($connectionId, 409, 'This venue has no selected receiving account.');
@@ -43,8 +33,8 @@ class ReservationPaymentService
             abort_unless((int) $connection->venue_id === (int) $venue->id
                 && (int) $connection->organization_id === (int) $venue->organization_id, 409, 'The selected receiving account does not belong to this venue.');
 
-            $purpose = strtolower(trim($purpose));
-            $purposeId ??= $reservation->code;
+            $purpose = 'booking';
+            $purposeId = $reservation->code;
 
             // Receipt processing locks attempt then reservation; preserve the same order here.
             $latestAttempt = OwnerPaymentAttempt::query()
@@ -74,18 +64,12 @@ class ReservationPaymentService
                 $latestAttempt->forceFill(['status' => OwnerPaymentAttempt::STATUS_EXPIRED])->save();
             }
 
-            // Venue credit reserved at checkout already pays its part, so the QR asks only for the rest (D5).
-            $amount = $amountOverride ?? (int) $lockedReservation->total_amount - app(VenueCreditService::class)->reservedFor($lockedReservation);
+            $amount = (int) $lockedReservation->total_amount;
             abort_unless($lockedReservation->status === 'held', 409, 'This reservation is no longer awaiting payment.');
             abort_unless($lockedReservation->hold_expires_at?->isFuture(), 409, 'The reservation hold has expired.');
             abort_unless($amount > 0, 409, 'No bank payment is required for this reservation.');
 
-            if ($expiresAtOverride !== null) {
-                $expiresAt = Carbon::parse($expiresAtOverride);
-                abort_unless($expiresAt->isFuture(), 409, 'The payment deadline has already passed.');
-            } else {
-                $expiresAt = Carbon::parse($lockedReservation->hold_expires_at);
-            }
+            $expiresAt = Carbon::parse($lockedReservation->hold_expires_at);
             $reference = 'AC'.Str::upper(Str::random(18));
 
             return $this->attempts->createAttempt(

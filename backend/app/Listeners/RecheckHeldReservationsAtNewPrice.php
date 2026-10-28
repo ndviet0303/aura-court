@@ -36,8 +36,6 @@ class RecheckHeldReservationsAtNewPrice
         $candidates = Reservation::query()
             ->withoutGlobalScope('tenant_isolation')
             ->where('status', 'held')
-            // A recurring occurrence keeps the price of its contract and monthly invoice.
-            ->whereDoesntHave('recurringOccurrence')
             ->whereHas('slots', fn ($slots) => $slots->whereIn('court_id', $event->courtIds)->where('ends_at', '>', $event->effectiveAt->utc()))
             ->orderBy('id')
             ->get(['id', 'code']);

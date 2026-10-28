@@ -26,7 +26,6 @@ class DatabaseSeeder extends Seeder
             CommunitySeeder::class,
             DisputeFinanceSeeder::class,
             MarketplaceSeeder::class,
-            RecurringSeriesSeeder::class,
         ]);
     }
 }

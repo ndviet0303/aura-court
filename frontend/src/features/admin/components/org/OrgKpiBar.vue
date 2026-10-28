@@ -9,7 +9,6 @@ defineProps<{
   ownersCount: number
   staffCount: number
   autoApprove: boolean
-  resaleFee: number
   loading?: boolean
 }>()
 
@@ -19,7 +18,7 @@ const { t } = useI18n()
 <template>
   <div class="org-kpi-bar">
     <template v-if="loading">
-      <div v-for="i in 5" :key="i" class="kpi-card skeleton-card">
+      <div v-for="i in 4" :key="i" class="kpi-card skeleton-card">
         <SkeletonLoader type="rect" height="74px" />
       </div>
     </template>
@@ -83,20 +82,6 @@ const { t } = useI18n()
           </div>
         </div>
       </div>
-
-      <!-- KPI 5: P2P Resale Fee -->
-      <div class="kpi-card">
-        <div class="kpi-icon-box amber">
-          <span class="material-symbols-outlined kpi-icon">percent</span>
-        </div>
-        <div class="kpi-meta">
-          <span class="kpi-label">{{ t('admin.org.kpiResaleFee') }}</span>
-          <div class="kpi-val-row">
-            <span class="kpi-number">{{ resaleFee }}%</span>
-            <span class="kpi-unit">fee</span>
-          </div>
-        </div>
-      </div>
     </template>
   </div>
 </template>
@@ -104,7 +89,7 @@ const { t } = useI18n()
 <style scoped>
 .org-kpi-bar {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 14px;
   width: 100%;
 }
@@ -184,11 +169,6 @@ const { t } = useI18n()
 .kpi-icon-box.purple {
   background: rgba(147, 51, 234, 0.12);
   color: #9333ea;
-}
-
-.kpi-icon-box.amber {
-  background: rgba(245, 158, 11, 0.12);
-  color: #f59e0b;
 }
 
 .kpi-meta {

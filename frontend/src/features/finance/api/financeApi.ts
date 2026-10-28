@@ -6,7 +6,6 @@ import type {
   FinanceExceptionItem,
   OwnerPaymentExceptionDetail,
   OwnerPaymentExceptionPage,
-  OwnerVenueCreditPage,
 } from '../types/finance'
 import type { SplitGroup } from '../types/split'
 
@@ -72,14 +71,7 @@ export const financeApi = {
   getOwnerPaymentException: (id: number) =>
     api.get<{ data: OwnerPaymentExceptionDetail }>(`/owner-payment-exceptions/${id}`),
 
-  getOwnerVenueCredits: (page = 1) =>
-    api.get<OwnerVenueCreditPage>(`/owner-venue-credits?page=${page}`),
-
   getSplitGroup: (splitId: number) => api.get<{ split: SplitGroup }>(`/split-groups/${splitId}`),
-
-  getInvoice: <T = unknown>(id: number | string) => api.get<T>(`/monthly-invoices/${id}`),
-
-  getRecurringSeries: <T = unknown>() => api.get<T>('/recurring-series'),
 
   createReservationSplit: <T = unknown>(reservationId: number | string, payload: any) =>
     api.post<T>(`/reservations/${reservationId}/split`, payload),

@@ -27,6 +27,19 @@ export interface GiftedVoucher {
   ends_at: string | null
 }
 
+/** D11: the listing bookings a buyer asked about; a read-only snapshot, never the transaction (BR-183). */
+export interface ChatTransferSnapshot {
+  listing_id: number
+  items: {
+    reservation_id: number
+    venue_name: string
+    court_name: string
+    starts_at: string
+    ends_at: string
+    price: number
+  }[]
+}
+
 export interface ChatMessage {
   id: number
   side: ChatSide
@@ -38,6 +51,7 @@ export interface ChatMessage {
   body: string | null
   image_url: string | null
   voucher: GiftedVoucher | null
+  transfer: ChatTransferSnapshot | null
   created_at: string
 }
 

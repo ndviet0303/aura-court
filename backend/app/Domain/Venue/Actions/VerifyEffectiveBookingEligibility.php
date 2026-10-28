@@ -10,8 +10,6 @@ use App\Models\Venue;
 use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Pricing\PriceCoverageService;
 use App\Services\Reservation\CourtPriceRuleService;
-use App\Services\Reservation\SlotSelectionPolicy;
-use Carbon\CarbonInterface;
 use Illuminate\Validation\ValidationException;
 
 class VerifyEffectiveBookingEligibility
@@ -20,7 +18,6 @@ class VerifyEffectiveBookingEligibility
         private readonly VenuePackageRepositoryInterface $packages,
         private readonly CourtPriceRuleService $priceRules,
         private readonly PriceCoverageService $coverage,
-        private readonly SlotSelectionPolicy $slots,
         private readonly FeatureFlagService $features,
     ) {}
 
@@ -180,21 +177,6 @@ class VerifyEffectiveBookingEligibility
         }
 
         return $result['court'];
-    }
-
-    /**
-     * Slot resale (design "Kiểm eligibility dưới lock"): the narrower check on a court and venue the caller has locked.
-     * The slot keeps its recorded time and price, so price, booking policy and service time are not rechecked.
-     */
-    public function assertResalable(Court $lockedCourt, CarbonInterface $start, CarbonInterface $end): void
-    {
-        abort_unless($lockedCourt->status === Court::STATUS_ACTIVE, 409, 'Sân không tồn tại hoặc đã ngừng hoạt động.');
-        $venue = $this->evaluateVenue($lockedCourt->venue);
-        // An eligible result carries no message, so it is read only on refusal.
-        if (! $venue['eligible']) {
-            abort(409, $venue['message']);
-        }
-        $this->slots->assertNoStop($lockedCourt, $start, $end);
     }
 
     /** Re-read through the relation query so a public court or venue payload never carries the connection. */

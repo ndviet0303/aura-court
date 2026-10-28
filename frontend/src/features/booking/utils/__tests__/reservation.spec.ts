@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Reservation, ReservationReview } from '../../types/reservation'
-import { canEditReview, canReview } from '../reservation'
+import { canEditReview, canOfferTransfer, canReview, showsQr } from '../reservation'
 
 const DAY = 24 * 60 * 60 * 1000
 const checkedOut = '2026-10-01T10:00:00+07:00'
@@ -56,5 +56,37 @@ describe('canEditReview', () => {
   it('refuses a deleted or missing review', () => {
     expect(canEditReview({ review: review({ deleted_at: checkedOut }) }, out)).toBe(false)
     expect(canEditReview({ review: null }, out)).toBe(false)
+  })
+})
+
+describe('showsQr (D5)', () => {
+  it('needs a confirmed or in-use booking with a check-in code', () => {
+    const confirmed = booking({ metadata: null, check_in_code: 'CHK1' })
+    expect(showsQr(confirmed)).toBe(true)
+    expect(showsQr({ ...confirmed, check_in_code: null })).toBe(false)
+    expect(showsQr({ ...confirmed, status: 'held' })).toBe(false)
+  })
+})
+
+describe('canOfferTransfer (UC-9.1)', () => {
+  const upcoming = (startsAt: string, extra: Partial<Reservation> = {}) =>
+    booking({ metadata: null, slots: [{ starts_at: startsAt, unit_price: 0 }], ...extra })
+
+  it('offers a confirmed booking that has not started', () => {
+    expect(canOfferTransfer(upcoming('2026-11-01T18:00:00+07:00'), out)).toBe(true)
+  })
+
+  it('refuses a started, unconfirmed or checked-in booking', () => {
+    expect(canOfferTransfer(upcoming('2026-09-01T18:00:00+07:00'), out)).toBe(false)
+    expect(canOfferTransfer(upcoming('2026-11-01T18:00:00+07:00', { status: 'held' }), out)).toBe(
+      false,
+    )
+    expect(
+      canOfferTransfer(
+        upcoming('2026-11-01T18:00:00+07:00', { metadata: { operational_status: 'in_use' } }),
+        out,
+      ),
+    ).toBe(false)
+    expect(canOfferTransfer(booking({ metadata: null, slots: [] }), out)).toBe(false)
   })
 })

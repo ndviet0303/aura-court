@@ -10,16 +10,6 @@ type PolicyDraft = {
     min_duration_minutes: string
     max_duration_minutes: string
   }
-  recurring: {
-    payment_policy: string
-    conflict_policy: string
-    overdue_release_hours: string
-  }
-  transfer: {
-    cutoff_hours: string
-    max_consideration_percent: string
-    free_transfer_allowed: string
-  }
 }
 
 const props = defineProps<{
@@ -43,8 +33,6 @@ function emptyDraft(): PolicyDraft {
       min_duration_minutes: '',
       max_duration_minutes: '',
     },
-    recurring: { payment_policy: '', conflict_policy: '', overdue_release_hours: '' },
-    transfer: { cutoff_hours: '', max_consideration_percent: '', free_transfer_allowed: '' },
   }
 }
 
@@ -62,16 +50,6 @@ watch(
             min_duration_minutes: String(settings.booking.min_duration_minutes),
             max_duration_minutes: String(settings.booking.max_duration_minutes),
           },
-          recurring: {
-            payment_policy: settings.recurring.payment_policy,
-            conflict_policy: settings.recurring.conflict_policy,
-            overdue_release_hours: String(settings.recurring.overdue_release_hours),
-          },
-          transfer: {
-            cutoff_hours: String(settings.transfer.cutoff_hours),
-            max_consideration_percent: String(settings.transfer.max_consideration_percent),
-            free_transfer_allowed: String(settings.transfer.free_transfer_allowed),
-          },
         }
       : emptyDraft()
   },
@@ -84,12 +62,6 @@ function save() {
     draft.value.booking.max_days_ahead,
     draft.value.booking.min_duration_minutes,
     draft.value.booking.max_duration_minutes,
-    draft.value.recurring.payment_policy,
-    draft.value.recurring.conflict_policy,
-    draft.value.recurring.overdue_release_hours,
-    draft.value.transfer.cutoff_hours,
-    draft.value.transfer.max_consideration_percent,
-    draft.value.transfer.free_transfer_allowed,
   ]
 
   if (values.some((value) => value === '')) {
@@ -103,18 +75,6 @@ function save() {
       max_days_ahead: number(draft.value.booking.max_days_ahead),
       min_duration_minutes: number(draft.value.booking.min_duration_minutes),
       max_duration_minutes: number(draft.value.booking.max_duration_minutes),
-    },
-    recurring: {
-      payment_policy: draft.value.recurring
-        .payment_policy as VenueBookingPolicySettings['recurring']['payment_policy'],
-      conflict_policy: draft.value.recurring
-        .conflict_policy as VenueBookingPolicySettings['recurring']['conflict_policy'],
-      overdue_release_hours: number(draft.value.recurring.overdue_release_hours),
-    },
-    transfer: {
-      cutoff_hours: number(draft.value.transfer.cutoff_hours),
-      max_consideration_percent: number(draft.value.transfer.max_consideration_percent),
-      free_transfer_allowed: draft.value.transfer.free_transfer_allowed === 'true',
     },
   }
 
@@ -170,60 +130,6 @@ function save() {
             max="1440"
             required
         /></label>
-      </fieldset>
-      <fieldset>
-        <legend>{{ t('admin.venues.bookingPolicyRecurring') }}</legend>
-        <label
-          >{{ t('admin.venues.bookingPolicyRecurringPayment')
-          }}<select v-model="draft.recurring.payment_policy" required>
-            <option value="">—</option>
-            <option value="full_series">{{ t('admin.venues.bookingPolicyFullSeries') }}</option>
-            <option value="per_period">{{ t('admin.venues.bookingPolicyPerPeriod') }}</option>
-          </select></label
-        >
-        <label
-          >{{ t('admin.venues.bookingPolicyRecurringConflict')
-          }}<select v-model="draft.recurring.conflict_policy" required>
-            <option value="">—</option>
-            <option value="all_or_nothing">
-              {{ t('admin.venues.bookingPolicyAllOrNothing') }}
-            </option>
-            <option value="partial">{{ t('admin.venues.bookingPolicyPartial') }}</option>
-          </select></label
-        >
-        <label
-          >{{ t('admin.venues.bookingPolicyOverdueRelease')
-          }}<input
-            v-model="draft.recurring.overdue_release_hours"
-            type="number"
-            min="1"
-            max="720"
-            required
-        /></label>
-      </fieldset>
-      <fieldset>
-        <legend>{{ t('admin.venues.bookingPolicyTransfer') }}</legend>
-        <label
-          >{{ t('admin.venues.bookingPolicyTransferCutoff')
-          }}<input v-model="draft.transfer.cutoff_hours" type="number" min="0" max="8760" required
-        /></label>
-        <label
-          >{{ t('admin.venues.bookingPolicyMaxConsideration')
-          }}<input
-            v-model="draft.transfer.max_consideration_percent"
-            type="number"
-            min="0"
-            max="100"
-            required
-        /></label>
-        <label
-          >{{ t('admin.venues.bookingPolicyFreeTransfer')
-          }}<select v-model="draft.transfer.free_transfer_allowed" required>
-            <option value="">—</option>
-            <option value="true">{{ t('admin.venues.bookingPolicyYes') }}</option>
-            <option value="false">{{ t('admin.venues.bookingPolicyNo') }}</option>
-          </select></label
-        >
       </fieldset>
       <p v-if="validationError" class="policy-error">{{ validationError }}</p>
       <AuraButton type="submit" variant="secondary" :loading="saving">
@@ -288,8 +194,7 @@ label {
   color: var(--muted);
   font-size: 11px;
 }
-input,
-select {
+input {
   min-width: 0;
   padding: 7px 9px;
   border: 1px solid var(--outline);

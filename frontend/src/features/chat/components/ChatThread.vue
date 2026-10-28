@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
+import CreateTransferModal from '@/features/marketplace/components/CreateTransferModal.vue'
 import type { ChatMessage, Conversation } from '../types/chat'
 import MessageBubble from './MessageBubble.vue'
 import VoucherGiftPicker from './VoucherGiftPicker.vue'
 
-/** FR-118: text or one image per message; the venue owner can gift a voucher here (FR-111). */
+/**
+ * FR-118: text or one image per message; the venue owner can gift a voucher here (FR-111). When the other
+ * customer contacted me about my listing, I can create the transaction from here (UC-9.7).
+ */
 const props = defineProps<{
   conversation: Conversation
   messages: ChatMessage[]
@@ -25,6 +29,14 @@ const image = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const showGift = ref(props.giftOpen && props.canGift)
 const scroller = ref<HTMLElement | null>(null)
+const creatingTransfer = ref(false)
+
+// Contact messages are sent by the buyer to the listing's seller, so one I received is about my listing.
+const transferOffer = computed(() =>
+  props.conversation.type === 'customer_customer'
+    ? (props.messages.filter((m) => !m.mine && m.transfer).at(-1)?.transfer ?? null)
+    : null,
+)
 
 watch(
   () => props.messages.length,
@@ -96,6 +108,16 @@ function gift(code: string, note: string) {
         </label>
         <span v-if="image" class="file-name">{{ image.name }}</span>
         <AuraButton
+          v-if="transferOffer"
+          type="button"
+          size="sm"
+          variant="outline"
+          data-testid="chat-create-transfer"
+          @click="creatingTransfer = true"
+        >
+          {{ t('chat.transfer.create') }}
+        </AuraButton>
+        <AuraButton
           v-if="canGift && !showGift"
           type="button"
           size="sm"
@@ -107,6 +129,14 @@ function gift(code: string, note: string) {
         <AuraButton type="submit" size="sm" :loading="sending">{{ t('chat.send') }}</AuraButton>
       </div>
     </form>
+
+    <CreateTransferModal
+      v-if="creatingTransfer && transferOffer"
+      :listing-id="transferOffer.listing_id"
+      :conversation-id="conversation.id"
+      :reservation-ids="transferOffer.items.map((item) => item.reservation_id)"
+      @close="creatingTransfer = false"
+    />
   </section>
 </template>
 

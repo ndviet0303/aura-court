@@ -18,7 +18,6 @@ class SaveEntryRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:120'],
-            'venue_credit_amount' => ['prohibited'],
             'members' => ['required', 'array', 'min:1', 'max:50'],
             'members.*.full_name' => ['required', 'string', 'max:120'],
             'members.*.birth_date' => ['required', 'date_format:Y-m-d', 'before:today'],

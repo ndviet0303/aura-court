@@ -47,10 +47,13 @@ const emit = defineEmits<{
 
         <div class="qr-box">
           <QrImage
-            :value="`AURA_BOOKING_${reservation.code}`"
+            :value="`AURA_BOOKING_${reservation.check_in_code}`"
             :alt="`Aura QR #${displayCode(reservation)}`"
             class="qr-image"
           />
+          <span v-if="reservation.check_in_code" class="qr-code font-mono">{{
+            t('reservations.modal.checkInCode', { code: reservation.check_in_code })
+          }}</span>
           <span class="qr-instruction">
             {{ t('reservations.modal.qrInstruction') }}
           </span>
@@ -192,6 +195,12 @@ const emit = defineEmits<{
   width: 180px;
   height: 180px;
   display: block;
+}
+
+.qr-code {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1a1a1a;
 }
 
 .qr-instruction {

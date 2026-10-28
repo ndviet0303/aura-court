@@ -2,7 +2,7 @@
 
 namespace App\Services\Payment;
 
-/** VietQR image URL for a fixed amount and transfer content, shared by owner attempts and P2P resale. */
+/** VietQR image URL for a fixed amount and transfer content of an owner payment. */
 final class VietQrImage
 {
     public static function url(string $bankCode, string $accountNumber, string $accountName, int $amount, string $content): string

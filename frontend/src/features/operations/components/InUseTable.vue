@@ -27,7 +27,7 @@ const { t } = useI18n()
         <tr v-for="row in reservations" :key="row.id">
           <td>{{ row.court.code }}</td>
           <td>
-            <button type="button" class="link" @click="emit('select', row.code)">
+            <button type="button" class="link" @click="emit('select', row.check_in_code)">
               {{ row.code }}
             </button>
           </td>

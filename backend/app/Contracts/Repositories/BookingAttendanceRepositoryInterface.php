@@ -12,9 +12,9 @@ use Illuminate\Support\Collection;
 interface BookingAttendanceRepositoryInterface
 {
     /**
-     * D7: a booking of the organization by its code, with or without the AURA_BOOKING_ prefix of its QR, or by the
-     * code of the V1 booking it mirrors, with its court, venue, slots, booker and attendance. $lock locks the booking
-     * row so commands on one booking run one at a time.
+     * D7: a booking of the organization by its check-in code (module 08.2 D5), with or without the AURA_BOOKING_
+     * prefix of its QR, or by the code of the V1 booking it mirrors unless it has been transferred, with its court,
+     * venue, slots, holder and attendance. $lock locks the booking row so commands on one booking run one at a time.
      */
     public function findByCode(string $code, int $organizationId, bool $lock = false): ?Reservation;
 

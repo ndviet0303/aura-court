@@ -171,6 +171,15 @@ const partnerRoute = computed(() =>
             <span>{{ $t('nav.resale') }}</span>
           </RouterLink>
           <RouterLink
+            to="/resale/transfers"
+            class="nav-dropdown-item"
+            role="menuitem"
+            @click="closeMenu"
+          >
+            <span class="material-symbols-outlined">handshake</span>
+            <span>{{ $t('nav.resaleTransfers') }}</span>
+          </RouterLink>
+          <RouterLink
             to="/tournaments"
             class="nav-dropdown-item"
             role="menuitem"

@@ -16,13 +16,11 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const autoApprove = ref(props.org.auto_approve_booking ?? true)
-const resaleFee = ref(props.org.resale_fee_percent ?? 5)
 
 watch(
   () => props.org,
   (o) => {
     autoApprove.value = o.auto_approve_booking ?? true
-    resaleFee.value = o.resale_fee_percent ?? 5
   },
   { deep: true },
 )
@@ -30,7 +28,6 @@ watch(
 function handleSave() {
   emit('save', {
     auto_approve_booking: autoApprove.value,
-    resale_fee_percent: Number(resaleFee.value),
   })
 }
 </script>
@@ -63,38 +60,6 @@ function handleSave() {
           <input v-model="autoApprove" type="checkbox" />
           <span class="slider"></span>
         </label>
-      </div>
-
-      <!-- Resale Fee Rule -->
-      <div class="policy-card-item">
-        <div class="p-info">
-          <div class="p-header">
-            <span class="material-symbols-outlined p-icon">percent</span>
-            <strong class="p-title">{{ t('admin.org.resaleFeeLabel') }}</strong>
-          </div>
-          <p class="p-desc">{{ t('admin.org.resaleFeeDesc') }}</p>
-        </div>
-
-        <div class="p-control-box">
-          <input
-            v-model.number="resaleFee"
-            type="range"
-            min="0"
-            max="20"
-            step="1"
-            class="range-slider"
-          />
-          <div class="number-input-wrap">
-            <input
-              v-model.number="resaleFee"
-              type="number"
-              min="0"
-              max="20"
-              class="form-input font-mono num-input"
-            />
-            <span class="unit-tag">%</span>
-          </div>
-        </div>
       </div>
 
       <!-- Form Actions -->
@@ -209,52 +174,6 @@ function handleSave() {
   line-height: 1.5;
 }
 
-.p-control-box {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-shrink: 0;
-}
-
-.range-slider {
-  width: 130px;
-  accent-color: var(--pink-dark, #db2777);
-  cursor: pointer;
-}
-
-.number-input-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.num-input {
-  width: 84px;
-  padding: 8px 30px 8px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--outline);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 700;
-  text-align: right;
-}
-
-.num-input:focus {
-  outline: none;
-  border-color: var(--pink-dark, #db2777);
-  box-shadow: 0 0 0 3px rgba(219, 39, 119, 0.15);
-}
-
-.unit-tag {
-  position: absolute;
-  right: 10px;
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 700;
-  pointer-events: none;
-}
-
 /* Switch toggle */
 .switch-toggle {
   position: relative;
@@ -341,16 +260,6 @@ input:checked + .slider:before {
 }
 
 :global(html.dark) .p-desc {
-  color: var(--muted, #a89fa4);
-}
-
-:global(html.dark) .num-input {
-  background: var(--surface, #1e191c);
-  color: var(--ink, #faf7f3);
-  border-color: var(--outline, #4d4049);
-}
-
-:global(html.dark) .unit-tag {
   color: var(--muted, #a89fa4);
 }
 </style>

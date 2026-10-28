@@ -7,7 +7,6 @@ import ProfileGeneralTab from '../components/ProfileGeneralTab.vue'
 import ProfileSecurityTab from '../components/ProfileSecurityTab.vue'
 import ProfileMembershipTab from '../components/ProfileMembershipTab.vue'
 import ProfileShortcutsTab from '../components/ProfileShortcutsTab.vue'
-import ProfileVenueCreditTab from '../components/ProfileVenueCreditTab.vue'
 
 const {
   auth,
@@ -103,8 +102,6 @@ const {
       />
 
       <ProfileMembershipTab v-else-if="activeTab === 'membership'" :membership="membership" />
-
-      <ProfileVenueCreditTab v-else-if="activeTab === 'credit'" />
 
       <ProfileShortcutsTab v-else-if="activeTab === 'shortcuts'" />
     </main>

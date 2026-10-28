@@ -26,7 +26,12 @@ class ConversationResource extends JsonResource
             'venue' => $this->venue ? ['id' => $this->venue->id, 'name' => $this->venue->name, 'organization_id' => $this->venue->organization_id] : null,
             'customer_id' => $this->type === Conversation::TYPE_VENUE ? $this->user_a_id : null,
             'last_message' => $last ? [
-                'preview' => $last->voucher ? 'Voucher '.$last->voucher['code'] : ($last->body ? Str::limit($last->body, 80) : 'Ảnh'),
+                'preview' => match (true) {
+                    $last->voucher !== null => 'Voucher '.$last->voucher['code'],
+                    $last->transfer !== null => 'Hỏi nhận chuyển nhượng booking',
+                    $last->body !== null => Str::limit($last->body, 80),
+                    default => 'Ảnh',
+                },
                 'mine' => $last->sender_user_id === $viewer->id,
             ] : null,
             'last_message_at' => $this->last_message_at?->toIso8601String(),

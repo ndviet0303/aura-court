@@ -7,16 +7,14 @@ use App\Models\CashShift;
 use App\Models\PosOrder;
 use App\Models\User;
 use App\Services\Finance\FinancialPostingService;
-use App\Services\Finance\VenueCreditService;
 use Illuminate\Support\Facades\DB;
 
-/** Refunds of a completed POS order: stock back to the sale's venue, cash out of a register, credit back to the customer. */
+/** Refunds of a completed POS order: stock back to the sale's venue, cash out of a register. */
 class PosRefundService
 {
     public function __construct(
         private readonly FinancialPostingService $financials,
         private readonly VenueStockRepositoryInterface $stock,
-        private readonly VenueCreditService $credits,
     ) {}
 
     public function refundOrder(
@@ -91,14 +89,6 @@ class PosRefundService
                 'cashier_name' => $cashier->name,
                 'refunded_at' => now()->toIso8601String(),
             ];
-            // Credit the order was paid with goes back as credit first; only the rest is a money refund (design D6).
-            if ($refundMethod === 'original_method' && $order->customer_id) {
-                $creditPaid = (int) $order->payments->where('method', 'credit')->where('status', 'paid')->sum('amount');
-                $refundRecord['credit_returned'] = max(0, min($refundAmount, $creditPaid - (int) collect($refunds)->sum('credit_returned')));
-                if ($refundRecord['credit_returned'] > 0) {
-                    $this->credits->returnCredit($order->organization_id, (int) $order->customer_id, $refundRecord['credit_returned'], 'pos_refund', $refundRecord['id'], $cashier->id, $order->payment_reference);
-                }
-            }
             $refunds[] = $refundRecord;
             $meta['refunds'] = $refunds;
 
@@ -128,15 +118,13 @@ class PosRefundService
                 'metadata' => $meta,
             ]);
 
-            if ($refundAmount > ($refundRecord['credit_returned'] ?? 0)) {
-                $this->financials->postRefund(
-                    $order->organization_id,
-                    $order->payment_reference ?? "POS-{$order->id}",
-                    $refundAmount - ($refundRecord['credit_returned'] ?? 0),
-                    $refundRecord['id'],
-                    ['order_id' => $order->id, 'reason' => $reason]
-                );
-            }
+            $this->financials->postRefund(
+                $order->organization_id,
+                $order->payment_reference ?? "POS-{$order->id}",
+                $refundAmount,
+                $refundRecord['id'],
+                ['order_id' => $order->id, 'reason' => $reason]
+            );
 
             return $order->fresh(['items', 'payments']);
         });

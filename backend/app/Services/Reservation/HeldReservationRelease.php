@@ -8,7 +8,6 @@ use App\Models\OwnerPaymentAttempt;
 use App\Models\PointLedger;
 use App\Models\Reservation;
 use App\Notifications\AuraBookingNotification;
-use App\Services\Finance\VenueCreditService;
 use App\Services\Promotion\VoucherUsageService;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -30,7 +29,6 @@ class HeldReservationRelease
     public function __construct(
         private readonly VoucherUsageService $vouchers,
         private readonly DurableNotificationServiceInterface $notifications,
-        private readonly VenueCreditService $credits,
     ) {}
 
     /** Lock the reservation's pending payment attempts, then the reservation. */
@@ -46,7 +44,7 @@ class HeldReservationRelease
     }
 
     /**
-     * Release court-time, voucher use, reserved points and credit, and the pending payment attempt of a locked held
+     * Release court-time, voucher use, reserved points and the pending payment attempt of a locked held
      * reservation, each once. A reservation that is no longer held is left as it is.
      */
     public function releaseHeld(Reservation $locked, string $status, string $reason): bool
@@ -65,7 +63,6 @@ class HeldReservationRelease
         $locked->entitlements()->where('status', 'held')->update(['status' => $status]);
         // Ordinary checkout no longer spends points; holds created before that still give them back.
         $this->releaseReservedPoints('reservation', (int) $locked->id, $reason);
-        $this->credits->release($locked);
         $this->pendingAttempts((string) $locked->code)->update(['status' => OwnerPaymentAttempt::STATUS_EXPIRED]);
 
         return true;
@@ -130,7 +127,7 @@ class HeldReservationRelease
     private function pendingAttempts(string $code): Builder
     {
         return OwnerPaymentAttempt::query()
-            ->whereIn('purpose', ['booking', 'recurring_period'])
+            ->where('purpose', 'booking')
             ->where('purpose_id', $code)
             ->where('status', OwnerPaymentAttempt::STATUS_PENDING);
     }

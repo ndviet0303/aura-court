@@ -64,7 +64,8 @@ export function useAttendanceDesk(
     try {
       const { reservation, duplicate } = await work()
       notice.value = duplicate ? t('operations.duplicate') : done
-      if (selected.value?.code === reservation.code) await open(reservation.code)
+      if (selected.value?.check_in_code === reservation.check_in_code)
+        await open(reservation.check_in_code)
       await onChanged()
       return true
     } catch (e) {

@@ -1,14 +1,7 @@
 import { api } from '@/core/api/client'
 import { venueClockRange } from '@/core/utils/venueTime'
 import { resolveLocalizedText } from '@/i18n'
-import type {
-  Product,
-  PosShift,
-  CustomerProfile,
-  CourtReservation,
-  PosTender,
-  VenueCreditCashOut,
-} from '../types/pos'
+import type { Product, PosShift, CustomerProfile, CourtReservation, PosTender } from '../types/pos'
 import type { ReservationPaymentAttempt } from '@/features/booking/api/bookingApi'
 
 export const posApi = {
@@ -72,7 +65,7 @@ export const posApi = {
       customer_id?: number | null
       reservation_id?: number | null
       venue_id?: number | null
-      payment_method: 'cash' | 'qr' | 'wallet' | 'credit' | 'mixed'
+      payment_method: 'cash' | 'qr' | 'wallet' | 'mixed'
       allow_mixed_tender?: boolean
       tenders?: PosTender[]
       payment_reference?: string
@@ -190,9 +183,9 @@ export const posApi = {
           id: r.id,
           court_name: r.court?.code || `Sân #${r.court_id || 1}`,
           court_number: r.court?.id || r.court_id || 1,
-          // The contact recorded when the booking was made, never the account's current profile.
-          customer_name: r.booker?.name || 'Khách vãng lai',
-          phone: r.booker?.phone || '',
+          // Who may use the booking (the buyer after a transfer), never the account's current profile.
+          customer_name: r.holder?.name || 'Khách vãng lai',
+          phone: r.holder?.phone || '',
           status: r.status === 'confirmed' ? 'playing' : 'waiting',
           time_slot: timeSlot,
           deposit_paid: r.deposit_paid ?? r.total_amount ?? 0,
@@ -223,19 +216,4 @@ export const posApi = {
       return []
     }
   },
-
-  // Venue credit at the counter (venue-credit spec): the served customer's balance at this organization.
-  getCustomerCredit: (userId: number) =>
-    api.get<{ user_id: number; balance: number }>(`/pos/venue-credits/customers/${userId}`),
-
-  lookupCashOut: (shiftId: number, code: string) =>
-    api.post<VenueCreditCashOut>(`/pos/shifts/${shiftId}/venue-credit-cash-outs/lookup`, { code }),
-
-  // Run after the cash is handed over; the key keeps a double click to one cash-out.
-  confirmCashOut: (shiftId: number, code: string, idempotencyKey: string) =>
-    api.post<VenueCreditCashOut & { balance: number }>(
-      `/pos/shifts/${shiftId}/venue-credit-cash-outs`,
-      { code },
-      { headers: { 'Idempotency-Key': idempotencyKey } },
-    ),
 }

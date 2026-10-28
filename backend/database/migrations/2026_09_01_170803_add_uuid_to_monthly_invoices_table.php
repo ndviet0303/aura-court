@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\MonthlyInvoice;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
@@ -17,9 +17,9 @@ return new class extends Migration
             $table->uuid('uuid')->nullable()->after('id')->unique();
         });
 
-        // Populate existing rows with UUID v7
-        MonthlyInvoice::query()->withoutGlobalScope('tenant_isolation')->each(function (MonthlyInvoice $invoice) {
-            $invoice->update(['uuid' => (string) Str::uuid7()]);
+        // Populate existing rows with UUID v7 (the MonthlyInvoice model was retired by module 08).
+        DB::table('monthly_invoices')->orderBy('id')->each(function (object $invoice) {
+            DB::table('monthly_invoices')->where('id', $invoice->id)->update(['uuid' => (string) Str::uuid7()]);
         });
     }
 

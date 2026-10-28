@@ -10,7 +10,7 @@ const { t } = useI18n()
 const auth = useAuthStore()
 import type { Court } from '@/features/court/types/court'
 import type { PriceChange, PriceQuote } from '../../types/reservation'
-import { creditOrganizationOf, formatDuration, validBookerPhone } from '../../utils/reservation'
+import { formatDuration, validBookerPhone } from '../../utils/reservation'
 
 const props = defineProps<{
   courts: Court[]
@@ -234,7 +234,6 @@ const quotedRange = computed(() => {
           :payable="activeQuote.total_amount"
           :price-change="priceChange"
           :busy="holding"
-          :organization-id="creditOrganizationOf(selectedCourtObj)"
           @confirm-price="emit('confirmPrice')"
         />
 

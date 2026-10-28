@@ -109,7 +109,6 @@ class OrganizationController extends Controller
             'brand_color' => 'nullable|string|max:50',
             'logo_url' => 'nullable|string|max:255',
             'auto_approve_booking' => 'nullable|boolean',
-            'resale_fee_percent' => 'nullable|numeric|min:0|max:100',
             'cancellation_grace_hours' => 'prohibited',
             'settings.cancellation_grace_hours' => 'prohibited',
             'currency' => 'nullable|string|max:10',
@@ -128,7 +127,6 @@ class OrganizationController extends Controller
             'brand_color',
             'logo_url',
             'auto_approve_booking',
-            'resale_fee_percent',
             'currency',
             'timezone',
         ];

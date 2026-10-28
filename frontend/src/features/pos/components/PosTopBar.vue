@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { PosShift } from '../types/pos'
-import PosCreditCashOutModal from './PosCreditCashOutModal.vue'
 
 defineProps<{
   activeShift: PosShift | null
@@ -15,11 +13,9 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'openShiftModal'): void
   (e: 'toggleFullscreen'): void
-  (e: 'cashOutDone'): void
 }>()
 
 const { t } = useI18n()
-const showCashOut = ref(false)
 </script>
 
 <template>
@@ -48,17 +44,6 @@ const showCashOut = ref(false)
     </div>
 
     <div class="topbar-right">
-      <button
-        v-if="activeShift"
-        type="button"
-        class="topbar-btn"
-        data-testid="pos-cash-out-btn"
-        @click="showCashOut = true"
-      >
-        <span class="material-symbols-outlined icon-18">currency_exchange</span>
-        <span class="btn-text">{{ t('admin.pos.cashOutBtn') }}</span>
-      </button>
-
       <button
         type="button"
         class="topbar-btn shift-btn"
@@ -90,12 +75,6 @@ const showCashOut = ref(false)
         }}</span>
       </button>
     </div>
-    <PosCreditCashOutModal
-      v-if="showCashOut && activeShift"
-      :shift-id="activeShift.id"
-      @close="showCashOut = false"
-      @done="emit('cashOutDone')"
-    />
   </header>
 </template>
 

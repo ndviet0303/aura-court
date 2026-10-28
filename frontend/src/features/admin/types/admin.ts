@@ -34,16 +34,6 @@ export type VenueBookingPolicySettings = {
     min_duration_minutes: number
     max_duration_minutes: number
   }
-  recurring: {
-    payment_policy: 'full_series' | 'per_period'
-    conflict_policy: 'all_or_nothing' | 'partial'
-    overdue_release_hours: number
-  }
-  transfer: {
-    cutoff_hours: number
-    max_consideration_percent: number
-    free_transfer_allowed: boolean
-  }
 }
 
 export type VenueBookingPolicyVersion = {

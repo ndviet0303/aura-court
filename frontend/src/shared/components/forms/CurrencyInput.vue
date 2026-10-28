@@ -66,6 +66,8 @@ function onInput(event: Event) {
   const formatted =
     finalNumeric > 0 || target.value.trim() === '0' ? formatNumber(finalNumeric) : ''
   displayValue.value = formatted
+  // When the clamped value equals the current one Vue skips the re-render, so set the field directly.
+  target.value = formatted
 
   emit('update:modelValue', finalNumeric)
 

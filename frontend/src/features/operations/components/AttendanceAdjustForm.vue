@@ -43,7 +43,7 @@ const canSubmit = computed(
 function submit() {
   if (!canSubmit.value || props.busy) return
   emit('submit', {
-    code: props.reservation.code,
+    code: props.reservation.check_in_code,
     status: status.value,
     reason: reason.value.trim(),
     ...(needsCheckIn.value ? { checked_in_at: venueInstant(checkedInAt.value) } : {}),

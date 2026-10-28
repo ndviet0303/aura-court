@@ -4,6 +4,7 @@ namespace App\Infrastructure\Repositories\Eloquent;
 
 use App\Contracts\Repositories\BookingAttendanceRepositoryInterface;
 use App\Models\BookingAttendance;
+use App\Models\BookingTransferItem;
 use App\Models\Court;
 use App\Models\LegacyBookingMapping;
 use App\Models\OperationalStop;
@@ -23,10 +24,15 @@ class EloquentBookingAttendanceRepository implements BookingAttendanceRepository
         if ($code === '') {
             return null;
         }
-        // Booking codes are upper case; a code typed by hand may not be.
-        $id = Reservation::query()->where('organization_id', $organizationId)->where('code', Str::upper($code))->value('id')
+        // Booking codes are upper case; a code typed by hand may not be. A transfer issues a new check-in code and
+        // retires the old one, the V1 code included (module 08.2 D5, BR-188).
+        $id = Reservation::query()->where('organization_id', $organizationId)->where('check_in_code', Str::upper($code))->value('id')
             ?? LegacyBookingMapping::query()->where('organization_id', $organizationId)
-                ->whereIn('legacy_code', array_unique([$code, Str::upper($code)]))->value('reservation_id');
+                ->whereIn('legacy_code', array_unique([$code, Str::upper($code)]))
+                ->whereNotExists(fn ($transferred) => $transferred->from('booking_transfer_items')
+                    ->whereColumn('booking_transfer_items.reservation_id', 'legacy_booking_mappings.reservation_id')
+                    ->where('booking_transfer_items.status', BookingTransferItem::STATUS_COMPLETED))
+                ->value('reservation_id');
 
         return $id === null ? null : $this->withDetails(Reservation::query()->whereKey($id))
             ->when($lock, fn (Builder $query) => $query->lockForUpdate())

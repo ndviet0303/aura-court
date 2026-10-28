@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { Reservation } from '../../types/reservation'
 import { displayCode } from '../../utils/reservation'
 import { venueClockRange, venueDate } from '@/core/utils/venueTime'
 import { QrImage } from '@/shared/components'
+
+const { t } = useI18n()
 
 defineProps<{
   show: boolean
@@ -39,10 +42,13 @@ const emit = defineEmits<{
 
         <div class="qr-container">
           <QrImage
-            :value="`AURA_BOOKING_${booking.code}`"
+            :value="`AURA_BOOKING_${booking.check_in_code}`"
             :alt="`QR Check-in ${displayCode(booking)}`"
             class="qr-image"
           />
+          <span v-if="booking.check_in_code" class="qr-code font-mono">{{
+            t('reservations.modal.checkInCode', { code: booking.check_in_code })
+          }}</span>
           <span class="qr-caption">Xuất trình mã này tại quầy lễ tân hoặc máy quét cửa</span>
         </div>
 
@@ -190,6 +196,12 @@ const emit = defineEmits<{
   width: 190px;
   height: 190px;
   display: block;
+}
+
+.qr-code {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1a1a1a;
 }
 
 .qr-caption {

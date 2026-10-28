@@ -1,5 +1,3 @@
-import type { VenueCreditEntry } from '@/core/types/venueCredit'
-
 export interface SettlementRecord {
   id: number
   organization_id?: number
@@ -92,50 +90,6 @@ export interface FinanceExceptionItem {
   resolution_note?: string
 }
 
-export interface MonthlyInvoiceData {
-  id: number | string
-  uuid?: string
-  organization_id: number
-  recurring_series_id: number
-  period_start: string
-  period_end: string
-  due_at: string
-  amount: number
-  status: 'pending' | 'paid' | 'overdue' | 'guaranteed' | 'zero_payable' | 'cancelled'
-  payment_reference?: string
-  paid_at?: string
-  series?: {
-    id: number
-    court_id: number
-    frequency: string
-    status: string
-    occurrence_count?: number
-    starts_at?: string
-    ends_at?: string
-    court?: {
-      id: number
-      code: string
-      venue?: { id: number; name: string; address?: string; google_maps_url?: string }
-    }
-  }
-}
-
-export interface OccurrenceItem {
-  id: number
-  recurring_series_id: number
-  sequence: number
-  starts_at: string
-  ends_at: string
-  amount: number
-  status: string
-  court_name?: string
-  reservation?: {
-    id?: number
-    code?: string
-    status?: string
-  }
-}
-
 /** A direct-owner payment exception as the owner's read-only lookup returns it (FR-81). */
 export interface OwnerPaymentException {
   id: number
@@ -172,11 +126,4 @@ export interface OwnerPaymentExceptionDetail extends OwnerPaymentException {
 export interface OwnerPaymentExceptionPage {
   data: OwnerPaymentException[]
   meta: { current_page: number; last_page: number; total: number }
-}
-
-/** The owner's venue credit entries plus the organization's total unspent credit (design D8). */
-export interface OwnerVenueCreditPage {
-  data: VenueCreditEntry[]
-  meta: { current_page: number; last_page: number; total: number }
-  outstanding: number
 }
