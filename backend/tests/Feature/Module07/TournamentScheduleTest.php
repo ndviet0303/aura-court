@@ -46,7 +46,8 @@ class TournamentScheduleTest extends TestCase
         $this->actingAs($this->owner);
         $url = "/api/managed/tournaments/{$this->tournament->uuid}/allocations";
 
-        $this->postJson($url, $this->courtTime('2026-11-05 13:00', '2026-11-05 16:00'))->assertConflict()->assertJsonPath('code', 'ALLOCATION_CONFLICT');
+        $this->postJson($url, $this->courtTime('2026-11-05 13:00', '2026-11-05 16:00'))->assertConflict()->assertJsonPath('code', 'ALLOCATION_CONFLICT')
+            ->assertJsonCount(1, 'bookings')->assertJsonPath('bookings.0.status', 'confirmed')->assertJsonPath('bookings.0.starts_at', '2026-11-05T07:00:00+00:00');
         $this->postJson($url, $this->courtTime('2026-11-05 16:30', '2026-11-05 18:00'))->assertConflict()->assertJsonPath('code', 'ALLOCATION_CONFLICT');
         $this->postJson($url, $this->courtTime('2026-11-05 08:00', '2026-11-05 12:00', $this->bookableCourt()))->assertUnprocessable()->assertJsonValidationErrors('court_id');
         $this->postJson($url, $this->courtTime('2026-11-05 08:00', '2026-11-05 12:00'))->assertCreated()->assertJsonPath('allocation.court.id', $this->court->id);
@@ -79,6 +80,23 @@ class TournamentScheduleTest extends TestCase
         $this->putJson("/api/tournament-fixtures/{$second->id}/schedule", $this->courtTime('2026-11-13 08:30', '2026-11-13 09:30'))
             ->assertConflict()->assertJsonPath('code', 'FIXTURE_CLASH');
         $this->putJson("/api/tournament-fixtures/{$second->id}/schedule", $this->courtTime('2026-11-13 09:00', '2026-11-13 10:00'))->assertOk();
+    }
+
+    public function test_uc_7_31_e1_a_fixture_keeps_the_round_order(): void
+    {
+        $this->allocation($this->tournament, $this->court, 10, 8, 18);
+        $this->drawn($this->tournament, 4);
+        [$first, $second] = TournamentFixture::where('round', 1)->orderBy('position')->get()->all();
+        $final = TournamentFixture::where('round', 2)->firstOrFail();
+        $this->actingAs($this->owner);
+        $this->putJson("/api/tournament-fixtures/{$first->id}/schedule", $this->courtTime('2026-11-13 10:00', '2026-11-13 11:00'))->assertOk();
+
+        $this->putJson("/api/tournament-fixtures/{$final->id}/schedule", $this->courtTime('2026-11-13 09:00', '2026-11-13 10:00'))
+            ->assertUnprocessable()->assertJsonPath('code', 'FIXTURE_ROUND_ORDER')->assertJsonPath('fixture_ids', [$first->id]);
+        $this->putJson("/api/tournament-fixtures/{$final->id}/schedule", $this->courtTime('2026-11-13 13:00', '2026-11-13 14:00'))->assertOk();
+        $this->putJson("/api/tournament-fixtures/{$second->id}/schedule", $this->courtTime('2026-11-13 14:00', '2026-11-13 15:00'))
+            ->assertUnprocessable()->assertJsonPath('code', 'FIXTURE_ROUND_ORDER')->assertJsonPath('fixture_ids', [$final->id]);
+        $this->putJson("/api/tournament-fixtures/{$second->id}/schedule", $this->courtTime('2026-11-13 11:00', '2026-11-13 12:00'))->assertOk();
     }
 
     public function test_uc_7_30_court_time_with_a_scheduled_fixture_is_not_released(): void

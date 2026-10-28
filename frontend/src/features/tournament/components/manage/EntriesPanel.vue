@@ -9,11 +9,12 @@ import DirectEntryForm from './DirectEntryForm.vue'
 import ReasonDialog from './ReasonDialog.vue'
 import RosterImport from './RosterImport.vue'
 
-// UC-7.24 (public review) and UC-7.27 (internal roster by Excel or by hand).
+// UC-7.24 (public review) and UC-7.27 (internal roster by Excel or by hand, corrected before the lock).
 const props = defineProps<{ manage: ManagedTournament }>()
 const { t, d } = useI18n()
 const { data, tournament, can, busy, error } = props.manage
 const rejecting = ref<ManagedEntry | null>(null)
+const editing = ref<ManagedEntry | null>(null)
 
 async function reject(reason: string) {
   if (rejecting.value && (await props.manage.reject(rejecting.value, reason)))
@@ -22,6 +23,10 @@ async function reject(reason: string) {
 function openReject(entry: ManagedEntry) {
   props.manage.clearError()
   rejecting.value = entry
+}
+function edit(entry: ManagedEntry) {
+  props.manage.clearError()
+  editing.value = entry
 }
 function remove(entry: ManagedEntry) {
   if (window.confirm(t('tournament.roster.deleteConfirm', { name: entry.name })))
@@ -91,15 +96,14 @@ function remove(entry: ManagedEntry) {
                   {{ t('tournament.entries.reject') }}
                 </AuraButton>
               </template>
-              <AuraButton
-                v-if="can('roster') && tournament.type === 'internal'"
-                variant="ghost"
-                size="sm"
-                :disabled="busy"
-                @click="remove(entry)"
-              >
-                {{ t('common.delete') }}
-              </AuraButton>
+              <template v-if="can('roster') && tournament.type === 'internal'">
+                <AuraButton variant="outline" size="sm" :disabled="busy" @click="edit(entry)">
+                  {{ t('common.edit') }}
+                </AuraButton>
+                <AuraButton variant="ghost" size="sm" :disabled="busy" @click="remove(entry)">
+                  {{ t('common.delete') }}
+                </AuraButton>
+              </template>
             </td>
           </tr>
           <tr v-if="!data?.entries.length">
@@ -112,7 +116,7 @@ function remove(entry: ManagedEntry) {
 
   <template v-if="tournament && can('roster') && tournament.type === 'internal'">
     <RosterImport :tournament-id="tournament.id" @confirmed="manage.load(true)" />
-    <DirectEntryForm :manage="manage" />
+    <DirectEntryForm :manage="manage" :entry="editing" @done="editing = null" />
   </template>
 
   <ReasonDialog

@@ -200,6 +200,7 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
     Route::post('managed/tournaments/{tournament}/roster/preview', [TournamentRosterController::class, 'preview']);
     Route::post('managed/tournaments/{tournament}/roster/confirm', [TournamentRosterController::class, 'confirm']);
     Route::post('managed/tournaments/{tournament}/roster/entries', [TournamentRosterController::class, 'store']);
+    Route::put('tournament-entries/{entry}', [TournamentRosterController::class, 'update']);
     Route::put('tournament-fixtures/{fixture}/schedule', [TournamentFixtureController::class, 'schedule']);
     Route::post('tournament-fixtures/{fixture}/result', [TournamentFixtureController::class, 'result']);
     Route::post('tournament-fixtures/{fixture}/walkover', [TournamentFixtureController::class, 'result'])->name('tournament-fixtures.walkover');

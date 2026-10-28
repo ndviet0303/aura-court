@@ -90,9 +90,10 @@ final class TournamentAccess
             || $tournament->rentals()->whereHas('reservation', fn ($reservation) => $reservation->where('user_id', $user->id))->exists());
     }
 
-    public static function fail(string $code, string $message, int $status = 422): never
+    /** @param  array<string, mixed>  $details  what the screen lists with the message, e.g. the conflicting bookings */
+    public static function fail(string $code, string $message, int $status = 422, array $details = []): never
     {
-        abort(response()->json(['message' => $message, 'code' => $code], $status));
+        abort(response()->json(['message' => $message, 'code' => $code] + $details, $status));
     }
 
     /** @return array<string, bool> */
@@ -109,8 +110,8 @@ final class TournamentAccess
             'grant' => $live,
             'review' => $status === Tournament::STATUS_OPEN,
             'roster' => $status === Tournament::STATUS_DRAFT,
-            'lock' => $status === ($tournament->isPublic() ? Tournament::STATUS_OPEN : Tournament::STATUS_DRAFT),
-            'draw' => in_array($status, [Tournament::STATUS_ROSTER_LOCKED, Tournament::STATUS_DRAWN], true),
+            'lock' => $status === ($tournament->isPublic() ? Tournament::STATUS_OPEN : Tournament::STATUS_DRAFT) && ! $tournament->hasStarted(),
+            'draw' => in_array($status, [Tournament::STATUS_ROSTER_LOCKED, Tournament::STATUS_DRAWN], true) && ! $tournament->hasStarted(),
             'schedule' => $playing,
             'result' => $playing,
             'correct' => in_array($status, [Tournament::STATUS_IN_PROGRESS, Tournament::STATUS_FINISHED], true),

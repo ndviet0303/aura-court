@@ -100,6 +100,12 @@ class Tournament extends Model
         return $this->isPublic() ? TournamentEntry::STATUS_PAID : TournamentEntry::STATUS_CONFIRMED;
     }
 
+    /** UC-7.28 PRE-2, UC-7.29 PRE-3: the roster is locked and drawn only before the start time. */
+    public function hasStarted(): bool
+    {
+        return $this->starts_at !== null && ! $this->starts_at->isFuture();
+    }
+
     /** BR-153: public entry is open until the registration deadline. */
     public function acceptsEntries(): bool
     {

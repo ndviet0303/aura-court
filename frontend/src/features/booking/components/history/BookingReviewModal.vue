@@ -8,9 +8,12 @@ import ImageUploadField from '@/features/community/components/ImageUploadField.v
 import { REVIEW_BODY_MAX, REVIEW_IMAGES_MAX } from '@/features/community/types/review'
 import type { Reservation } from '../../types/reservation'
 import { displayCode } from '../../utils/reservation'
-import { useBookingReview } from '../../composables/useBookingReview'
+import { useBookingReview, type ReviewTarget } from '../../composables/useBookingReview'
 
-const props = defineProps<{ booking: Reservation }>()
+// The venue's review list opens it without the court; the booking history passes the whole booking.
+const props = defineProps<{
+  booking: ReviewTarget & Partial<Pick<Reservation, 'court' | 'legacy_mapping'>>
+}>()
 const emit = defineEmits<{ close: []; saved: [notice: string] }>()
 
 const { t } = useI18n()
@@ -43,8 +46,11 @@ async function done(action: () => Promise<string | null>) {
 
       <div class="modal-body review-modal-body">
         <p class="review-modal-booking">
-          <strong>{{ booking.court?.code }}</strong>
-          · {{ resolveLocalizedText(booking.court?.venue?.name) }} · #{{ displayCode(booking) }}
+          <template v-if="booking.court">
+            <strong>{{ booking.court.code }}</strong>
+            · {{ resolveLocalizedText(booking.court.venue?.name) }} ·
+          </template>
+          #{{ displayCode(booking) }}
         </p>
 
         <template v-if="mode === 'view' && existing">

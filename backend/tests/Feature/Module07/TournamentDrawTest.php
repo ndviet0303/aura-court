@@ -97,6 +97,24 @@ class TournamentDrawTest extends TestCase
         $this->postJson("/api/managed/tournaments/{$fresh->uuid}/draw")->assertConflict()->assertJsonPath('code', 'DRAW_NOT_ALLOWED');
     }
 
+    public function test_uc_7_28_pre2_uc_7_29_pre3_lock_and_first_draw_only_before_the_start(): void
+    {
+        $open = $this->tournament($this->court, ['status' => 'open']);
+        $this->entry($open, TournamentEntry::STATUS_PAID);
+        $this->entry($open, TournamentEntry::STATUS_PAID);
+        $locked = $this->tournament($this->court, ['status' => 'roster_locked']);
+        $this->entry($locked, TournamentEntry::STATUS_PAID);
+        $this->entry($locked, TournamentEntry::STATUS_PAID);
+        $this->travelTo($open->starts_at->copy()->addMinute());
+        $this->actingAs($this->owner);
+
+        $this->getJson("/api/managed/tournaments/{$open->uuid}")->assertJsonPath('tournament.permissions.lock', false);
+        $this->postJson("/api/managed/tournaments/{$open->uuid}/lock-roster")->assertConflict()->assertJsonPath('code', 'TOURNAMENT_STARTED');
+        $this->getJson("/api/managed/tournaments/{$locked->uuid}")->assertJsonPath('tournament.permissions.draw', false);
+        $this->postJson("/api/managed/tournaments/{$locked->uuid}/draw")->assertConflict()->assertJsonPath('code', 'DRAW_NOT_ALLOWED');
+        $this->assertSame(0, TournamentFixture::count());
+    }
+
     public function test_br_154_groups_need_two_units_each_and_enough_qualifiers(): void
     {
         $tournament = $this->tournament($this->court, ['status' => 'roster_locked', 'format' => 'group', 'group_count' => 2, 'advance_per_group' => 1]);
