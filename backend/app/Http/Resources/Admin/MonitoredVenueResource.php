@@ -32,7 +32,8 @@ class MonitoredVenueResource extends JsonResource
                 : ($venue->relationLoaded('suspensions') ? $venue->suspensions->firstWhere('lifted_at', null)?->only(['id', 'reason', 'suspended_at']) : null),
             'owners' => $this->when($venue->organization?->relationLoaded('members') === true, fn () => $venue->organization->members
                 ->map(fn ($member): array => $member instanceof OrganizationMember ? ($member->user?->only(['id', 'name', 'email', 'phone']) ?? []) : [])->values()),
-            'operating_hours' => $this->when($schedules !== null, fn () => $schedules->get('venue')?->weekly_hours),
+            // A Collection keeps the weekday keys 1..7; JsonResource re-indexes nested numeric-keyed arrays.
+            'operating_hours' => $this->when($schedules !== null, fn () => ($hours = $schedules->get('venue')?->weekly_hours) === null ? null : collect($hours)),
             'courts' => $this->whenLoaded('courts', fn () => $venue->courts->map(fn (Court $court): array => [
                 'id' => $court->id,
                 'code' => $court->code,

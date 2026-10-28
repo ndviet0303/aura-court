@@ -42,6 +42,8 @@ class PlatformVenueMonitoringTest extends TestCase
             ->assertJsonPath('data.status', 'active')
             ->assertJsonPath('data.active_suspension', null)
             ->assertJsonPath('data.courts.0.code', $court->code)
+            // Weekday keys 1..7 survive serialisation; a re-indexed list would hide Sunday.
+            ->assertJsonPath('data.operating_hours.7.intervals.0.start', '06:00')
             ->assertJsonStructure(['data' => ['address', 'operating_hours', 'suspensions', 'courts' => [['sport_type', 'description', 'images', 'service_schedule', 'status']]]]);
         $this->actingAs($admin)->getJson("/api/admin/monitoring/venues/{$other->id}")->assertOk()
             ->assertJsonPath('data.active_suspension.reason', 'Vi phạm quy định an toàn')
