@@ -121,12 +121,15 @@ class EloquentTournamentRepository implements TournamentRepositoryInterface
 
     public function courtTimeTaken(int $courtId, CarbonInterface $start, CarbonInterface $end): bool
     {
-        return TournamentCourtAllocation::blocks($courtId, $start, $end) || ReservationSlot::query()
-            ->where('court_id', $courtId)
-            ->where('starts_at', '<', $end->copy()->utc())
-            ->where('ends_at', '>', $start->copy()->utc())
-            ->whereHas('reservation', fn (Builder $reservation) => $reservation->withoutGlobalScope('tenant_isolation')->blocksInventory())
-            ->exists();
+        return TournamentCourtAllocation::blocks($courtId, $start, $end) || $this->bookingSlots($courtId, $start, $end)->exists();
+    }
+
+    public function bookingsIn(int $courtId, CarbonInterface $start, CarbonInterface $end): Collection
+    {
+        return $this->bookingSlots($courtId, $start, $end)
+            ->with(['reservation' => fn ($reservation) => $reservation->withoutGlobalScope('tenant_isolation')])
+            ->orderBy('starts_at')
+            ->get();
     }
 
     public function allocate(Tournament $tournament, array $attributes): TournamentCourtAllocation
@@ -178,6 +181,16 @@ class EloquentTournamentRepository implements TournamentRepositoryInterface
             ->where('starts_at', '<=', $start->copy()->utc())
             ->where('ends_at', '>=', $end->copy()->utc())
             ->exists();
+    }
+
+    /** @return Builder<ReservationSlot> */
+    private function bookingSlots(int $courtId, CarbonInterface $start, CarbonInterface $end): Builder
+    {
+        return ReservationSlot::query()
+            ->where('court_id', $courtId)
+            ->where('starts_at', '<', $end->copy()->utc())
+            ->where('ends_at', '>', $start->copy()->utc())
+            ->whereHas('reservation', fn (Builder $reservation) => $reservation->withoutGlobalScope('tenant_isolation')->blocksInventory());
     }
 
     /**

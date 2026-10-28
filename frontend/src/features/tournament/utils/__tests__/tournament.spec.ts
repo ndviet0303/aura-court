@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { Fixture } from '../../types/tournament'
-import { emptyMember, entryProblem, knockoutRounds, memberLimits, roundName } from '../tournament'
+import {
+  dependentFixtures,
+  emptyMember,
+  entryProblem,
+  knockoutRounds,
+  memberLimits,
+  roundName,
+} from '../tournament'
 
 const single = { entry_type: 'single' as const, team_main: null, team_reserve: null }
 const double = { entry_type: 'double' as const, team_main: null, team_reserve: null }
@@ -69,5 +76,28 @@ describe('knockoutRounds', () => {
     expect(roundName(3, 3)[0]).toBe('tournament.bracket.final')
     expect(roundName(2, 3)[0]).toBe('tournament.bracket.semi')
     expect(roundName(1, 4)).toEqual(['tournament.bracket.round', { round: 1 }])
+  })
+})
+
+describe('dependentFixtures', () => {
+  const fixture = (id: number, round: number, position: number, stage = 'knockout') =>
+    ({ id, round, position, stage }) as Fixture
+  const bracket = [
+    fixture(1, 1, 1),
+    fixture(2, 1, 2),
+    fixture(3, 1, 3),
+    fixture(4, 1, 4),
+    fixture(5, 2, 1),
+    fixture(6, 2, 2),
+    fixture(7, 3, 1),
+  ]
+
+  it('follows a knockout result through every later round (UC-7.33)', () => {
+    expect(dependentFixtures(bracket[2]!, bracket).map((f) => f.id)).toEqual([6, 7])
+    expect(dependentFixtures(bracket[6]!, bracket)).toEqual([])
+  })
+
+  it('makes the whole knockout depend on a group result', () => {
+    expect(dependentFixtures(fixture(9, 1, 1, 'group'), bracket)).toHaveLength(7)
   })
 })

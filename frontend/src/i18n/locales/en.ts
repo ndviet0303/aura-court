@@ -1345,6 +1345,7 @@ export default {
       group: 'Group {group} · round {round}',
       knockout: 'Round {round} · match {position}',
       walkover: '{name} forfeited',
+      dependents: 'Later fixtures that take this result',
       walkoverShort: 'Walkover',
       shootout: 'shoot-out {score}',
       schedule: 'Schedule',
@@ -1441,6 +1442,8 @@ export default {
       to: 'To',
       add: 'Reserve court time',
       releaseConfirm: 'Release this court time?',
+      conflicts: 'Bookings holding this time (handle them first, then reserve again):',
+      bookingStatus: { confirmed: 'Confirmed', held: 'On hold' },
     },
     grants: {
       title: 'Access',
@@ -1468,6 +1471,7 @@ export default {
       confirm: 'Confirm roster',
       importError: 'Could not process the file.',
       directTitle: 'Add an entry directly',
+      editTitle: 'Edit entry {name}',
       add: 'Add entry',
       deleteConfirm: 'Delete entry {name}?',
     },
@@ -4853,6 +4857,7 @@ export default {
     editWindow: 'You can edit or delete the review within 7 days of first sending it.',
     editClosed:
       'More than 7 days have passed since it was sent, so it can no longer be edited or deleted.',
+    manage: 'Edit or delete',
     saveError: 'Could not save the review.',
     created: 'Thank you for your review!',
     updated: 'Review updated.',

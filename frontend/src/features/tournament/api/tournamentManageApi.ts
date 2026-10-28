@@ -57,6 +57,8 @@ export const tournamentManageApi = {
   reject: (entryId: number, reason: string) =>
     api.post<{ entry: ManagedEntry }>(`/tournament-entries/${entryId}/reject`, { reason }),
   removeEntry: (entryId: number) => api.delete<void>(`/tournament-entries/${entryId}`),
+  updateEntry: (entryId: number, payload: EntryPayload) =>
+    api.put<{ entry: ManagedEntry }>(`/tournament-entries/${entryId}`, payload),
 
   // D24: Excel stays on the server; the browser only downloads the template and uploads the file.
   downloadTemplate: (id: string) =>

@@ -5,6 +5,7 @@ namespace App\Domain\Tournament\Actions;
 use App\Contracts\Repositories\TournamentPlayRepositoryInterface;
 use App\Contracts\Repositories\TournamentRepositoryInterface;
 use App\Domain\Tournament\Rules\TournamentAccess;
+use App\Domain\Tournament\Support\Bracket;
 use App\Models\Tournament;
 use App\Models\TournamentFixture;
 use App\Models\User;
@@ -15,6 +16,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * UC-7.31, FR-128, BR-152: a fixture gets a court and a time inside the court time the tournament holds (its
  * allocations, or for an internal tournament its confirmed rentals) and never overlaps another fixture of that court.
+ * E-1: it keeps the round order, after the fixtures it takes a result from and before those that take its result.
  */
 class ScheduleFixture
 {
@@ -41,6 +43,14 @@ class ScheduleFixture
             }
             if ($this->play->clashes($fixture, $courtId, $start, $end)) {
                 TournamentAccess::fail('FIXTURE_CLASH', 'Sân đã có trận khác trong khoảng giờ này.', 409);
+            }
+            $outOfOrder = $this->play->fixtures($locked)->filter(fn (TournamentFixture $row): bool => $row->starts_at !== null && (
+                (Bracket::feeds($row, $fixture) && $row->ends_at->gt($start)) || (Bracket::feeds($fixture, $row) && $row->starts_at->lt($end))
+            ));
+            if ($outOfOrder->isNotEmpty()) {
+                TournamentAccess::fail('FIXTURE_ROUND_ORDER', 'Lịch không đúng thứ tự vòng: trận phải diễn ra sau các trận vòng trước mà nó phụ thuộc và trước các trận vòng sau.', 422, [
+                    'fixture_ids' => $outOfOrder->pluck('id')->values()->all(),
+                ]);
             }
 
             return $this->play->updateFixture($this->play->lockFixture($fixture), ['court_id' => $courtId, 'starts_at' => $start, 'ends_at' => $end]);

@@ -4,7 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
 import type { ManagedTournament } from '../../composables/useManagedTournament'
 import type { Fixture, ResultPayload } from '../../types/tournament'
-import { isFootballScore } from '../../utils/tournament'
+import { dependentFixtures, isFootballScore } from '../../utils/tournament'
+import FixtureTable from '../FixtureTable.vue'
 
 /**
  * UC-7.32 result per sport, BR-156 walkover, UC-7.33 correction (owner, public, reason required).
@@ -13,7 +14,15 @@ import { isFootballScore } from '../../utils/tournament'
 const props = defineProps<{ manage: ManagedTournament; fixture: Fixture; correcting: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 const { t } = useI18n()
-const { tournament, busy, error } = props.manage
+const { data, tournament, busy, error, conflictFixtures } = props.manage
+// UC-7.33: a correction shows the later fixtures it affects; E-1 narrows them to the played ones in the way.
+const affected = computed(() =>
+  conflictFixtures.value.length
+    ? conflictFixtures.value
+    : props.correcting
+      ? dependentFixtures(props.fixture, data.value?.fixtures ?? [])
+      : [],
+)
 const football = computed(() => tournament.value?.sport === 'football')
 const maxGames = computed(() => 2 * (tournament.value?.games_to_win ?? 1) - 1)
 const old = props.fixture.score
@@ -188,6 +197,10 @@ async function save() {
           <textarea v-model="reason" rows="2" maxlength="1000" class="form-textarea" />
         </label>
         <p v-if="error" class="form-error" role="alert">{{ error }}</p>
+        <template v-if="affected.length">
+          <p class="form-label">{{ t('tournament.fixture.dependents') }}</p>
+          <FixtureTable :fixtures="affected" />
+        </template>
       </div>
       <div class="modal-footer">
         <AuraButton variant="outline" :disabled="busy" @click="emit('close')">

@@ -29,8 +29,11 @@ interface TournamentPlayRepositoryInterface
      */
     public function createEntry(Tournament $tournament, array $attributes, array $members): TournamentEntry;
 
-    /** @param  array<string, mixed>  $attributes */
-    public function updateEntry(TournamentEntry $entry, array $attributes): TournamentEntry;
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @param  list<array<string, mixed>>|null  $members  replaces the athletes when given
+     */
+    public function updateEntry(TournamentEntry $entry, array $attributes, ?array $members = null): TournamentEntry;
 
     public function deleteEntry(TournamentEntry $entry): void;
 

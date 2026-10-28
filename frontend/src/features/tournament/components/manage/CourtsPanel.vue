@@ -7,9 +7,10 @@ import type { ManagedTournament } from '../../composables/useManagedTournament'
 import { fromPicker } from '../../utils/tournament'
 
 // UC-7.30, BR-152: a public tournament reserves court time; an internal one plays in its bookings.
+// A-1: a refused reservation lists the bookings in the way, to be handled first.
 const props = defineProps<{ manage: ManagedTournament }>()
 const { t, d } = useI18n()
-const { data, can, busy } = props.manage
+const { data, can, busy, conflicts } = props.manage
 const draft = reactive({ court_id: null as number | null, starts_at: '', ends_at: '' })
 const courtOptions = computed(() =>
   (data.value?.courts ?? []).map((c) => ({ value: c.id, label: c.code })),
@@ -112,10 +113,30 @@ function release(id: number) {
         {{ t('tournament.courts.add') }}
       </AuraButton>
     </form>
+    <div v-if="conflicts.bookings.length" class="courts-conflicts" role="alert">
+      <p>{{ t('tournament.courts.conflicts') }}</p>
+      <ul>
+        <li v-for="booking in conflicts.bookings" :key="`${booking.code}${booking.starts_at}`">
+          <strong>{{ booking.code }}</strong> · {{ d(new Date(booking.starts_at), 'date') }}
+          {{ venueClockRange(booking.starts_at, booking.ends_at) }} ·
+          {{ t(`tournament.courts.bookingStatus.${booking.status}`) }}
+        </li>
+      </ul>
+    </div>
   </section>
 </template>
 
 <style scoped>
+.courts-conflicts {
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.courts-conflicts p,
+.courts-conflicts ul {
+  margin: 0 0 4px;
+}
+
 .courts-add {
   display: flex;
   flex-wrap: wrap;

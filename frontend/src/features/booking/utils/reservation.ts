@@ -11,7 +11,8 @@ export const creditOrganizationOf = (court?: Court | null): number | null =>
 type Displayable = Pick<Reservation, 'code' | 'status' | 'legacy_mapping' | 'metadata'>
 
 // A mirrored legacy booking is stored as `LEGACY-<code>`; customers only ever see the original code.
-export const displayCode = (r: Displayable): string => r.legacy_mapping?.[0]?.legacy_code ?? r.code
+export const displayCode = (r: Pick<Reservation, 'code' | 'legacy_mapping'>): string =>
+  r.legacy_mapping?.[0]?.legacy_code ?? r.code
 
 // Check-in, check-out and no-show are written to metadata.operational_status while status stays confirmed.
 export const displayStatus = (r: Displayable): string => {

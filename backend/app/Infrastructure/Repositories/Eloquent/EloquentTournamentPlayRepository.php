@@ -47,9 +47,15 @@ class EloquentTournamentPlayRepository implements TournamentPlayRepositoryInterf
         return $entry->load(self::ENTRY);
     }
 
-    public function updateEntry(TournamentEntry $entry, array $attributes): TournamentEntry
+    public function updateEntry(TournamentEntry $entry, array $attributes, ?array $members = null): TournamentEntry
     {
         $entry->update($attributes);
+        if ($members !== null) {
+            $entry->members()->delete();
+            foreach ($members as $index => $member) {
+                $entry->members()->create($member + ['position' => $index + 1]);
+            }
+        }
 
         return $entry->load(self::ENTRY);
     }

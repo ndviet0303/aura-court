@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * UC-7.28, FR-127, BR-153: the roster is locked before the draw. A public tournament plays its paid entries, and the payment
- * requests still open expire; an internal one plays its roster. At least two entries are needed.
+ * requests still open expire; an internal one plays its roster. At least two entries are needed, before the start.
  */
 class LockRoster
 {
@@ -35,6 +35,9 @@ class LockRoster
             $locked = $this->tournaments->lock($tournament);
             if ($locked->status !== ($locked->isPublic() ? Tournament::STATUS_OPEN : Tournament::STATUS_DRAFT)) {
                 TournamentAccess::fail('ROSTER_LOCKED', 'Danh sách đã chốt.', 409);
+            }
+            if ($locked->hasStarted()) {
+                TournamentAccess::fail('TOURNAMENT_STARTED', 'Giải đã bắt đầu nên không thể chốt danh sách.', 409);
             }
             $count = $this->play->acceptedCount($locked);
             if ($count < 2) {
