@@ -35,8 +35,7 @@ export function getNotificationCategory(
     ev.includes('review') ||
     ev.includes('chat') ||
     ev.includes('tournament') ||
-    ev.includes('social') ||
-    ev.includes('resale')
+    ev.includes('social')
   ) {
     return 'social'
   }
@@ -122,9 +121,6 @@ export function getNotificationMeta(event?: string): NotificationMeta {
   }
   if (ev.includes('tournament')) {
     return { icon: 'emoji_events', color: '#d97706', category: 'social', badgeText: 'GIẢI ĐẤU' }
-  }
-  if (ev.includes('resale')) {
-    return { icon: 'swap_horiz', color: '#059669', category: 'social', badgeText: 'CHỢ NHƯỢNG VÉ' }
   }
 
   return {

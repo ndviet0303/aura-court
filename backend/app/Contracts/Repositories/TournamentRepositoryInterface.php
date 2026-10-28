@@ -4,6 +4,7 @@ namespace App\Contracts\Repositories;
 
 use App\Models\Court;
 use App\Models\Reservation;
+use App\Models\ReservationSlot;
 use App\Models\Tournament;
 use App\Models\TournamentCourtAllocation;
 use App\Models\TournamentEvent;
@@ -60,6 +61,9 @@ interface TournamentRepositoryInterface
 
     /** Whether a confirmed booking, a live hold or another tournament's allocation takes some of [start, end) (BR-152). */
     public function courtTimeTaken(int $courtId, CarbonInterface $start, CarbonInterface $end): bool;
+
+    /** @return Collection<int, ReservationSlot> the confirmed or held booking slots in [start, end), by start, with reservation */
+    public function bookingsIn(int $courtId, CarbonInterface $start, CarbonInterface $end): Collection;
 
     /** @param  array<string, mixed>  $attributes */
     public function allocate(Tournament $tournament, array $attributes): TournamentCourtAllocation;

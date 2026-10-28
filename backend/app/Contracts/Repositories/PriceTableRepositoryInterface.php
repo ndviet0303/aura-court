@@ -40,6 +40,8 @@ interface PriceTableRepositoryInterface
 
     public function retire(PriceTable $table): PriceTable;
 
+    public function rename(PriceTable $table, string $name): PriceTable;
+
     public function findForUpdate(int $id): ?PriceTable;
 
     /**

@@ -98,7 +98,6 @@ const {
         :owners-count="ownersCount"
         :staff-count="staffCount"
         :auto-approve="currentOrg.auto_approve_booking ?? true"
-        :resale-fee="currentOrg.resale_fee_percent ?? 5"
         :loading="orgSwitchLoading"
       />
 

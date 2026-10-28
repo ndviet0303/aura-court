@@ -12,7 +12,7 @@ use Illuminate\Testing\TestResponse;
 use Tests\Concerns\BuildsVenues;
 use Tests\TestCase;
 
-/** Module 03 price tables: who manages them, what a table holds, its list and detail (FR-53, FR-54, UC-3.1..3.3). */
+/** Module 03 price tables: who manages them, what a table holds, its list, detail and name (FR-53, FR-54, FR-56, UC-3.1..3.3, UC-3.5). */
 class PriceTableManagementTest extends TestCase
 {
     use BuildsVenues;
@@ -152,6 +152,22 @@ class PriceTableManagementTest extends TestCase
             ->assertJsonPath('data.versions.0.intervals.0', ['weekdays' => [1, 2, 3], 'dates' => null, 'start' => '06:00', 'end' => '16:00', 'price_per_hour' => 100000]);
     }
 
+    public function test_fr_56_uc_3_5_owner_renames_a_table_in_use_but_not_a_retired_one(): void
+    {
+        $table = $this->priceCourt($this->activeCourt($this->venue));
+
+        $this->actingAs($this->owner)->patchJson("/api/admin/price-tables/{$table->id}", ['name' => ''])
+            ->assertUnprocessable()->assertJsonValidationErrors(['name' => 'Vui lòng nhập tên bảng giá.']);
+        $this->actingAs($this->owner)->patchJson("/api/admin/price-tables/{$table->id}", ['name' => 'Giá mùa hè'])
+            ->assertOk()
+            ->assertJsonPath('data.name', 'Giá mùa hè');
+        $this->assertSame(1, $table->versions()->count());
+
+        $this->actingAs($this->owner)->postJson("/api/admin/price-tables/{$table->id}/retire")->assertOk();
+        $this->actingAs($this->owner)->patchJson("/api/admin/price-tables/{$table->id}", ['name' => 'Giá cũ'])
+            ->assertUnprocessable()->assertJsonValidationErrors(['price_table']);
+    }
+
     public function test_br_49_staff_and_another_organizations_owner_cannot_read_or_change_prices(): void
     {
         $court = $this->activeCourt($this->venue);
@@ -166,6 +182,7 @@ class PriceTableManagementTest extends TestCase
             $this->actingAs($user)->postJson("/api/admin/price-tables/{$table->id}/versions", ['intervals' => $body['intervals']])->assertForbidden();
             $this->actingAs($user)->postJson("/api/admin/price-tables/{$table->id}/links", ['court_ids' => [$court->id]])->assertForbidden();
             $this->actingAs($user)->postJson("/api/admin/price-tables/{$table->id}/retire")->assertForbidden();
+            $this->actingAs($user)->patchJson("/api/admin/price-tables/{$table->id}", ['name' => 'Đổi tên'])->assertForbidden();
             $this->actingAs($user)->postJson("/api/admin/courts/{$court->id}/price-table-links/end", ['kind' => 'normal'])->assertForbidden();
             $this->actingAs($user)->getJson("/api/admin/courts/{$court->id}/price-coverage")->assertForbidden();
         }

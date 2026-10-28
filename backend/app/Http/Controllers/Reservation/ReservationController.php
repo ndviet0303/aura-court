@@ -18,7 +18,6 @@ use App\Services\Reservation\PriceQuoteService;
 use App\Services\Reservation\ReservationIntake;
 use App\Services\Reservation\ReservationService;
 use App\Services\Reservation\VisibleReservations;
-use App\Services\Social\ResalePriceCap;
 use Illuminate\Http\Request;
 
 class ReservationController extends Controller
@@ -48,7 +47,7 @@ class ReservationController extends Controller
         private readonly ReservationIntake $intake,
     ) {}
 
-    public function index(Request $request, ResalePriceCap $caps)
+    public function index(Request $request)
     {
         $organization = $this->organization($request);
         $query = Reservation::query()
@@ -57,8 +56,8 @@ class ReservationController extends Controller
             ->latest()
             ->where(fn ($q) => $this->visible->scope($q, $request->user(), $organization));
 
-        // The sell tab offers each slot up to its max_resale_price (design D23).
-        return $caps->onPage($query->paginate(20));
+        // D5: the scope above returns only the holder's own bookings or those of a venue the user operates.
+        return tap($query->paginate(20), fn ($page) => $page->getCollection()->each->makeVisible('check_in_code'));
     }
 
     public function show(Request $request, string $reservation, ReservationPaymentService $payments)
@@ -78,7 +77,7 @@ class ReservationController extends Controller
             ->with(['program:id,name', 'voucherCode:id,code'])->first();
         $voucher = $use === null ? null : ['name' => $use->program?->name, 'code' => $use->voucherCode?->code, 'discount' => $use->discount];
 
-        return response()->json(['reservation' => [...$record->toArray(), 'voucher' => $voucher, 'payment' => $payments->result($record)]]);
+        return response()->json(['reservation' => [...$record->makeVisible('check_in_code')->toArray(), 'voucher' => $voucher, 'payment' => $payments->result($record)]]);
     }
 
     public function payment(
@@ -92,7 +91,7 @@ class ReservationController extends Controller
         $attempt = $payments->latest($record);
 
         return response()->json([
-            'reservation' => ['code' => $record->code, 'status' => $record->status],
+            'reservation' => $this->paymentState($record),
             'payment_attempt' => $attempt ? $payments->instructions($attempt) : null,
         ]);
     }
@@ -109,7 +108,7 @@ class ReservationController extends Controller
         $existing = $payments->latest($record);
         if ($existing && ($existing->status === 'paid' || ($existing->status === 'pending' && $existing->expires_at?->isFuture()))) {
             return response()->json([
-                'reservation' => ['code' => $record->code, 'status' => $record->status],
+                'reservation' => $this->paymentState($record),
                 'payment_attempt' => $payments->instructions($existing),
             ]);
         }
@@ -118,7 +117,7 @@ class ReservationController extends Controller
         $record->refresh();
 
         return response()->json([
-            'reservation' => ['code' => $record->code, 'status' => $record->status],
+            'reservation' => $this->paymentState($record),
             'payment_attempt' => $payments->instructions($attempt),
         ], 201);
     }
@@ -154,7 +153,6 @@ class ReservationController extends Controller
             'customer_id' => 'nullable|integer',
             'expected_total' => 'required|integer|min:0',
             ...self::VOUCHER,
-            'venue_credit_amount' => 'prohibited',
             ...self::NO_BENEFITS,
         ], self::NO_BENEFIT_MESSAGES);
 
@@ -205,7 +203,6 @@ class ReservationController extends Controller
             'customer_id' => 'nullable|integer',
             'expected_total' => 'required|integer|min:0',
             ...self::VOUCHER,
-            'venue_credit_amount' => 'nullable|integer|min:0|prohibits:customer_id',
             ...self::NO_BENEFITS,
         ], self::NO_BENEFIT_MESSAGES);
         if (isset($data['court_id'])) {
@@ -263,5 +260,11 @@ class ReservationController extends Controller
         if ($request->has('slots')) {
             $this->intake->refuseBookingTime();
         }
+    }
+
+    /** The booking's status for the payment screen, with why a released hold ended (UC-4.6 A-3), e.g. price_changed. */
+    private function paymentState(Reservation $record): array
+    {
+        return ['code' => $record->code, 'status' => $record->status, 'release_reason' => $record->metadata['release_reason'] ?? null];
     }
 }

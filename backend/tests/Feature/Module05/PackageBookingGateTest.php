@@ -94,7 +94,7 @@ class PackageBookingGateTest extends TestCase
         $this->assertSame(now()->subDay()->utc()->toISOString(), $package['ends_at']);
         $this->actingAs($owner)->getJson("{$base}/finance/report?from=2026-11-01&to=2026-11-01")->assertOk();
         $this->actingAs($owner)->getJson("{$base}/finance/transactions?from=2026-11-01&to=2026-11-01")->assertOk();
-        $this->actingAs($owner)->postJson("{$base}/venues/{$venue->id}/package-requests", ['term_days' => 30])->assertCreated();
+        $this->actingAs($owner)->postJson("{$base}/venues/{$venue->id}/package-requests", ['term_days' => 30, 'expected_amount' => 300000])->assertCreated();
     }
 
     /** @param  array<string, mixed>|null  $package  a 30-day package with these attributes, or none */

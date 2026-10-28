@@ -30,6 +30,8 @@ class PackagePaymentReceipt extends Model
 
     public const OUTCOME_TERM_CONFLICT = 'term_conflict';
 
+    public const OUTCOME_ACCOUNT_MISMATCH = 'account_mismatch';
+
     protected function casts(): array
     {
         return [

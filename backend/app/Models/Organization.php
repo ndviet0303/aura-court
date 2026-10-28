@@ -38,7 +38,6 @@ class Organization extends Model
         'brand_color',
         'logo_url',
         'auto_approve_booking',
-        'resale_fee_percent',
         'currency',
         'timezone',
     ];
@@ -79,11 +78,6 @@ class Organization extends Model
     public function getAutoApproveBookingAttribute(): bool
     {
         return (bool) ($this->settings['auto_approve_booking'] ?? true);
-    }
-
-    public function getResaleFeePercentAttribute(): float
-    {
-        return (float) ($this->settings['resale_fee_percent'] ?? 5);
     }
 
     public function getCurrencyAttribute(): string

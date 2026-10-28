@@ -85,6 +85,7 @@ watch(
 function terms(): PromotionProgramTerms {
   return {
     name: draft.name.trim(),
+    discount_kind: draft.kind,
     ...(draft.kind === 'percent'
       ? { percent: draft.percent ?? 0, max_discount: draft.maxDiscount || null }
       : { amount: draft.amount ?? 0 }),
@@ -178,7 +179,6 @@ function submit() {
                 :model-value="draft.kind"
                 :options="kindOptions"
                 variant="bordered"
-                :disabled="!!program"
                 :aria-label="t('admin.promotions.form.kindLabel')"
                 @update:model-value="draft.kind = $event as PromotionDiscountKind"
               />

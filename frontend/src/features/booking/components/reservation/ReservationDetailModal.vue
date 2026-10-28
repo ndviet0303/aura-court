@@ -2,7 +2,7 @@
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { Reservation } from '../../types/reservation'
-import { displayCode, quoteDiscounts, statusLabel } from '../../utils/reservation'
+import { canOfferTransfer, displayCode, quoteDiscounts, statusLabel } from '../../utils/reservation'
 import CancelPaymentButton from './CancelPaymentButton.vue'
 import ReservationDetailFacts from './ReservationDetailFacts.vue'
 
@@ -60,6 +60,15 @@ const emit = defineEmits<{
         </div>
 
         <ReservationDetailFacts :reservation="reservation" />
+
+        <p
+          v-if="reservation.metadata?.release_reason === 'price_changed'"
+          class="price-changed-note"
+          role="status"
+          data-testid="reservation-price-changed"
+        >
+          {{ t('reservations.detail.priceChangedNote') }}
+        </p>
 
         <!-- Slots Table -->
         <div class="slots-table-section">
@@ -136,8 +145,15 @@ const emit = defineEmits<{
           </button>
         </template>
         <RouterLink
-          v-if="reservation && reservation.status === 'confirmed'"
-          :to="{ name: 'resale-marketplace' }"
+          v-if="reservation.metadata?.release_reason === 'price_changed' && reservation.court"
+          :to="{ name: 'schedule', params: { id: reservation.court.id } }"
+          class="btn btn-ghost"
+        >
+          {{ t('reservations.detail.priceChangedAction') }}
+        </RouterLink>
+        <RouterLink
+          v-if="canOfferTransfer(reservation)"
+          :to="{ name: 'resale-new', query: { reservation: reservation.id } }"
           class="btn btn-ghost"
           data-testid="reservation-detail-resale"
         >
@@ -311,6 +327,15 @@ const emit = defineEmits<{
 .slot-date-text {
   font-size: 11px;
   color: var(--muted);
+}
+
+.price-changed-note {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--outline);
+  background: var(--surface-subtle);
+  font-size: 12.5px;
 }
 
 .total-breakdown-card {

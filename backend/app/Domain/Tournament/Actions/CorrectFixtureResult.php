@@ -15,7 +15,8 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * UC-7.33, FR-130, BR-157: the owner of a public tournament corrects a saved result with a reason; the before and
- * after are kept in the history. A correction that would change a later fixture already played is refused.
+ * after are kept in the history. A correction that would change a later fixture already played is refused and those
+ * fixtures are listed (E-1).
  */
 class CorrectFixtureResult
 {
@@ -37,8 +38,12 @@ class CorrectFixtureResult
             if ($row->status !== TournamentFixture::STATUS_COMPLETED) {
                 TournamentAccess::fail('FIXTURE_NOT_READY', 'Chỉ sửa được trận đã có kết quả.', 409);
             }
-            if ($this->blocked($locked, $row)) {
-                TournamentAccess::fail('CORRECTION_BLOCKED', 'Trận ở vòng sau phụ thuộc kết quả này đã có kết quả nên không thể sửa.', 409);
+            $played = $this->play->fixtures($locked)
+                ->filter(fn (TournamentFixture $later): bool => $later->status === TournamentFixture::STATUS_COMPLETED && Bracket::feeds($row, $later));
+            if ($played->isNotEmpty()) {
+                TournamentAccess::fail('CORRECTION_BLOCKED', 'Các trận vòng sau phụ thuộc kết quả này đã có kết quả; cần xử lý các trận đó trước khi sửa.', 409, [
+                    'fixture_ids' => $played->pluck('id')->values()->all(),
+                ]);
             }
             $before = $row->only(['score', 'winner_entry_id', 'forfeit_entry_id']);
             $after = Score::outcome($locked, $row, $input);
@@ -47,17 +52,5 @@ class CorrectFixtureResult
 
             return $locked->refresh();
         });
-    }
-
-    /** A knockout result feeds the next fixture; group results feed the whole knockout once it is placed. */
-    private function blocked(Tournament $tournament, TournamentFixture $fixture): bool
-    {
-        if ($fixture->stage === TournamentFixture::STAGE_GROUP) {
-            return $this->play->fixtures($tournament)
-                ->contains(fn (TournamentFixture $row): bool => $row->stage === TournamentFixture::STAGE_KNOCKOUT && $row->status === TournamentFixture::STATUS_COMPLETED);
-        }
-        [$round, $position] = Bracket::nextSlot($fixture->round, $fixture->position);
-
-        return $this->play->findFixture($tournament, TournamentFixture::STAGE_KNOCKOUT, $round, $position)?->status === TournamentFixture::STATUS_COMPLETED;
     }
 }

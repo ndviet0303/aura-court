@@ -19,6 +19,7 @@ class StorePackagePriceRequest extends FormRequest
             'term_days' => ['required', 'integer', Rule::enum(PackageTerm::class)],
             'amount' => ['required', 'integer', 'min:1'],
             'effective_at' => ['nullable', 'date'],
+            'initial' => ['sometimes', 'boolean'],
         ];
     }
 

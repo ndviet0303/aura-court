@@ -6,6 +6,7 @@ import { formatCurrency } from '@/i18n'
 import { VENUE_TIME_ZONE, venueClockRange } from '@/core/utils/venueTime'
 import type { Reservation } from '../../types/reservation'
 import {
+  canOfferTransfer,
   canReview,
   canEditReview,
   displayCode,
@@ -40,7 +41,6 @@ function formatDate(iso: string): string {
 }
 
 const status = computed(() => displayStatus(props.booking))
-const isConfirmed = computed(() => status.value === 'confirmed')
 const isPendingPayment = computed(() => status.value === 'held')
 
 const STATUS_STYLE: Record<string, [icon: string, chipClass: string]> = {
@@ -179,10 +179,10 @@ const sportLabel = computed(() => t(`sportTypes.${props.booking.court?.sport_typ
           <span>{{ reviewLabel }}</span>
         </button>
 
-        <!-- Bookings are final: a confirmed booking can only be passed on via resale -->
+        <!-- Bookings are final: an upcoming confirmed booking can only be passed on by transfer (UC-9.1) -->
         <RouterLink
-          v-if="isConfirmed"
-          :to="{ name: 'resale-marketplace' }"
+          v-if="canOfferTransfer(booking)"
+          :to="{ name: 'resale-new', query: { reservation: booking.id } }"
           class="btn-card-secondary"
           data-testid="booking-resale-btn"
         >

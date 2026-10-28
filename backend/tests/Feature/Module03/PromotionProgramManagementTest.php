@@ -161,7 +161,7 @@ class PromotionProgramManagementTest extends TestCase
             ->assertJsonPath('data.courts.0.id', $this->court->id);
     }
 
-    public function test_fr_62_uc_3_12_owner_updates_terms_but_not_the_voucher_or_discount_kind(): void
+    public function test_fr_62_uc_3_12_owner_updates_terms_and_discount_kind_but_not_the_voucher_kind(): void
     {
         $program = $this->publicProgram($this->court, ['max_uses' => 5]);
         $other = $this->activeCourt($this->venue);
@@ -182,7 +182,13 @@ class PromotionProgramManagementTest extends TestCase
         $this->actingAs($this->owner)->patchJson("/api/admin/promotion-programs/{$program->id}", ['type' => 'private'])
             ->assertUnprocessable()->assertJsonValidationErrors(['type' => 'Không đổi được loại voucher của chương trình đã phát hành.']);
         $this->actingAs($this->owner)->patchJson("/api/admin/promotion-programs/{$program->id}", ['discount_kind' => 'fixed'])
-            ->assertUnprocessable()->assertJsonValidationErrors(['discount_kind']);
+            ->assertUnprocessable()->assertJsonValidationErrors(['amount' => 'Vui lòng nhập số tiền giảm.']);
+        $this->actingAs($this->owner)->patchJson("/api/admin/promotion-programs/{$program->id}", ['discount_kind' => 'fixed', 'amount' => 30000])
+            ->assertOk()
+            ->assertJsonPath('data.discount_kind', 'fixed')
+            ->assertJsonPath('data.amount', 30000)
+            ->assertJsonPath('data.percent_bp', null)
+            ->assertJsonPath('data.max_discount', null);
         $this->actingAs($this->owner)->patchJson("/api/admin/promotion-programs/{$program->id}", ['ends_at' => '2026-10-18T00:00:00+07:00'])
             ->assertUnprocessable()->assertJsonValidationErrors(['ends_at' => 'Thời điểm kết thúc phải sau thời điểm bắt đầu.']);
     }

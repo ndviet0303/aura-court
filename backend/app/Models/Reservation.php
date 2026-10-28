@@ -18,10 +18,18 @@ class Reservation extends Model
 {
     use BelongsToTenant;
 
-    protected $appends = ['loyalty_discount_amount', 'loyalty_points_redeemed', 'booker'];
+    protected $appends = ['loyalty_discount_amount', 'loyalty_points_redeemed', 'holder'];
+
+    /** Module 08.2 D5: the QR value; only the holder's and the venue's own reads make it visible. */
+    protected $hidden = ['check_in_code'];
 
     protected static function booted(): void
     {
+        // Module 08.2 D5: the QR starts as the booking code; a transfer issues the new holder a new one.
+        static::creating(function (Reservation $reservation): void {
+            $reservation->check_in_code ??= $reservation->code;
+        });
+
         static::saved(function (Reservation $reservation): void {
             DB::afterCommit(function () use ($reservation): void {
                 $court = $reservation->court ?? Court::find($reservation->court_id);
@@ -92,6 +100,29 @@ class Reservation extends Model
     }
 
     /**
+     * Module 08.2 D6: who holds the booking now: the transferee once transferred (BR-188), else the booker.
+     *
+     * @return array{name: string, phone: string, email: string}|null
+     */
+    public function getHolderAttribute(): ?array
+    {
+        $holder = $this->metadata['holder'] ?? null;
+
+        return is_array($holder) ? $holder : $this->booker;
+    }
+
+    /** D6: once transferred, the holder no longer reads the first booker's contact from the booking. */
+    public function toArray(): array
+    {
+        $array = parent::toArray();
+        if (isset($array['metadata']['holder'])) {
+            unset($array['metadata']['booker']);
+        }
+
+        return $array;
+    }
+
+    /**
      * Bookings that still own their court-time: confirmed, or held before their payment deadline.
      * A hold past its deadline no longer excludes anyone, whether or not the expiry job has run.
      *
@@ -159,11 +190,6 @@ class Reservation extends Model
         return $this->hasMany(LegacyBookingMapping::class);
     }
 
-    public function recurringOccurrence(): HasOne
-    {
-        return $this->hasOne(RecurringOccurrence::class);
-    }
-
     public function splitGroup(): HasOne
     {
         return $this->hasOne(SplitGroup::class);
@@ -179,6 +205,12 @@ class Reservation extends Model
     public function latestAffectedCase(): HasOne
     {
         return $this->hasOne(AffectedReservationCase::class)->latestOfMany();
+    }
+
+    /** @return HasMany<AffectedReservationCase, $this> */
+    public function affectedCases(): HasMany
+    {
+        return $this->hasMany(AffectedReservationCase::class);
     }
 
     /** The booking's voucher use (module 3 D11, D17), whatever its status. */

@@ -126,17 +126,10 @@ export interface OrderReceipt {
   change_due?: number
 }
 
-export type PosPaymentMethod = 'cash' | 'qr' | 'wallet' | 'court_tab' | 'credit'
+export type PosPaymentMethod = 'cash' | 'qr' | 'wallet' | 'court_tab'
 
 /** One part of a mixed POS payment; the parts add up to the order total exactly. */
 export interface PosTender {
-  method: 'cash' | 'qr' | 'wallet' | 'credit'
+  method: 'cash' | 'qr' | 'wallet'
   amount: number
-}
-
-/** A customer's one-time venue credit cash-out code as the cashier sees it. */
-export interface VenueCreditCashOut {
-  customer_name: string
-  amount: number
-  expires_at?: string
 }

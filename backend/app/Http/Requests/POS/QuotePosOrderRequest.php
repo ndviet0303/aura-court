@@ -32,7 +32,7 @@ class QuotePosOrderRequest extends FormRequest
             'reservation_id' => 'nullable|integer',
             'venue_id' => 'nullable|integer',
             'discount_amount' => 'nullable|integer|min:0',
-            'payment_method' => 'nullable|in:cash,qr,wallet,credit',
+            'payment_method' => 'nullable|in:cash,qr,wallet',
             'cash_tendered' => 'nullable|integer|min:0',
             'rounding_amount' => 'nullable|integer',
             ...self::NO_VOUCHER,

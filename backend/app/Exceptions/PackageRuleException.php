@@ -16,6 +16,7 @@ class PackageRuleException extends HttpException
         public readonly string $errorCode,
         string $message,
         public readonly ?PackagePaymentRequest $pendingRequest = null,
+        public readonly ?int $currentAmount = null,
     ) {
         parent::__construct($status, $message);
     }
@@ -25,6 +26,9 @@ class PackageRuleException extends HttpException
         $body = ['message' => $this->getMessage(), 'code' => $this->errorCode];
         if ($this->pendingRequest !== null) {
             $body['data'] = PackagePaymentRequestResource::make($this->pendingRequest)->resolve($request);
+        }
+        if ($this->currentAmount !== null) {
+            $body['current_amount'] = $this->currentAmount;
         }
 
         return new JsonResponse($body, $this->getStatusCode());

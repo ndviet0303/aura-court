@@ -29,7 +29,9 @@ class EloquentReservationRepository implements ReservationRepositoryInterface
                 'attendance' => fn ($query) => $query->withoutGlobalScope(self::TENANT_SCOPE)->select(['id', 'reservation_id', 'status', 'checked_out_at']),
             ])
             ->latest()
-            ->paginate($perPage);
+            ->paginate($perPage)
+            // Module 08.2 D5: the holder's own bookings, so the QR value is theirs to see.
+            ->through(fn (Reservation $reservation) => $reservation->makeVisible('check_in_code'));
     }
 
     public function paginateAdminReservations(array $filters, int $perPage = 30): LengthAwarePaginator
@@ -62,6 +64,15 @@ class EloquentReservationRepository implements ReservationRepositoryInterface
             ->whereIn('id', VoucherUse::query()->select('reservation_id')->where('program_id', $programId)->where('status', VoucherUse::STATUS_HELD))
             ->orderBy('id')
             ->get(['id', 'code']);
+    }
+
+    public function findInOrganizationByCode(int $organizationId, string $code): ?Reservation
+    {
+        return Reservation::query()->withoutGlobalScope(self::TENANT_SCOPE)
+            ->where('organization_id', $organizationId)
+            ->where('code', $code)
+            ->with(['court.venue', 'user:id,name,phone,email', 'slots' => $this->unscoped()])
+            ->first();
     }
 
     private function unscoped(): \Closure

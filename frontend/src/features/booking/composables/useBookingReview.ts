@@ -5,8 +5,11 @@ import { reviewApi } from '@/features/community/api/reviewApi'
 import type { Reservation } from '../types/reservation'
 import { canEditReview } from '../utils/reservation'
 
+/** The booking a review belongs to; the venue's review list builds one from the review (UC-7.10 A-2). */
+export type ReviewTarget = Pick<Reservation, 'code' | 'review'>
+
 /** FR-115: write, edit or delete the review of one booking; returns the notice to show on success. */
-export function useBookingReview(booking: Reservation) {
+export function useBookingReview(booking: ReviewTarget) {
   const { t } = useI18n()
   const existing = booking.review && !booking.review.deleted_at ? booking.review : null
   const mode = computed<'create' | 'edit' | 'view'>(() =>

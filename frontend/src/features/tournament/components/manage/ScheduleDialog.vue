@@ -5,12 +5,14 @@ import { AuraButton, DateTimePicker, SelectDropdown } from '@/shared/components'
 import type { ManagedTournament } from '../../composables/useManagedTournament'
 import type { Fixture } from '../../types/tournament'
 import { fromPicker, toPicker } from '../../utils/tournament'
+import FixtureTable from '../FixtureTable.vue'
 
-// UC-7.31: a court and a time inside the reserved court time (public) or the rentals (internal).
+// UC-7.31: a court and a time inside the reserved court time (public) or the rentals (internal);
+// E-1 lists the fixtures whose round order the time breaks.
 const props = defineProps<{ manage: ManagedTournament; fixture: Fixture }>()
 const emit = defineEmits<{ close: [] }>()
 const { t } = useI18n()
-const { data, busy, error } = props.manage
+const { data, busy, error, conflictFixtures } = props.manage
 const draft = reactive({
   court_id: props.fixture.court?.id ?? null,
   starts_at: toPicker(props.fixture.starts_at),
@@ -77,6 +79,7 @@ async function save() {
           <DateTimePicker v-model="draft.ends_at" />
         </div>
         <p v-if="error" class="form-error" role="alert">{{ error }}</p>
+        <FixtureTable v-if="conflictFixtures.length" :fixtures="conflictFixtures" />
       </div>
       <div class="modal-footer">
         <AuraButton variant="outline" :disabled="busy" @click="emit('close')">

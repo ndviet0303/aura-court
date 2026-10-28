@@ -180,6 +180,10 @@ export type Allocation = {
   starts_at: string
   ends_at: string
 }
+/** UC-7.30 A-1: a confirmed or held booking in the way of reserved court time. */
+export type ConflictBooking = { code: string; status: string; starts_at: string; ends_at: string }
+/** What the last refused write named: bookings (UC-7.30) or fixtures (UC-7.31 E-1, UC-7.33 E-1). */
+export type Conflicts = { bookings: ConflictBooking[]; fixtureIds: number[] }
 export type Rental = {
   reservation_code: string
   court: { id: number; code: string }

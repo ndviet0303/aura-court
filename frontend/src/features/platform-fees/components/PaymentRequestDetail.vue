@@ -226,7 +226,8 @@ const fields = computed(() => {
 .outcome-late,
 .outcome-amount_mismatch,
 .outcome-already_paid,
-.outcome-term_conflict {
+.outcome-term_conflict,
+.outcome-account_mismatch {
   color: var(--warning-text);
 }
 </style>

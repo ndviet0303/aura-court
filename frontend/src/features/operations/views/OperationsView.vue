@@ -66,7 +66,7 @@ const venueOptions = computed(() =>
         <OperationsDayGrid
           v-else-if="day"
           :day="day"
-          :selected-code="selected?.code"
+          :selected-code="selected?.check_in_code"
           @select="desk.open"
         />
       </section>
@@ -81,7 +81,7 @@ const venueOptions = computed(() =>
       :busy="busy"
       :error="failure"
       @close="desk.close"
-      @command="(command) => desk.run(command, selected!.code)"
+      @command="(command) => desk.run(command, selected!.check_in_code)"
       @adjust="desk.adjust"
     />
   </div>

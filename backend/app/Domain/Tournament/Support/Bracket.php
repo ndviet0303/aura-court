@@ -97,6 +97,23 @@ final class Bracket
         return self::rounds(array_map(fn (array $pair): array => [$pair[0][0], $pair[1][0] ?? null], $pairs));
     }
 
+    /**
+     * UC-7.31, UC-7.33: whether $later takes the result of $earlier. A knockout fixture takes its feeders of every earlier
+     * round; the knockout after the groups takes every group fixture.
+     */
+    public static function feeds(TournamentFixture $earlier, TournamentFixture $later): bool
+    {
+        if ($later->stage !== TournamentFixture::STAGE_KNOCKOUT) {
+            return false;
+        }
+        if ($earlier->stage === TournamentFixture::STAGE_GROUP) {
+            return true;
+        }
+        $gap = $later->round - $earlier->round;
+
+        return $gap > 0 && (int) ceil($earlier->position / 2 ** $gap) === $later->position;
+    }
+
     /** The next fixture's slot for the winner of round r position p: [round, position, column]. */
     public static function nextSlot(int $round, int $position): array
     {

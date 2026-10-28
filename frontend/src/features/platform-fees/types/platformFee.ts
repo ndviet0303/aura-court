@@ -31,12 +31,14 @@ export type SchedulePackagePricePayload = {
   amount: number | null
   /** UTC ISO instant; left out, the price takes effect now. */
   effective_at?: string
+  /** UC-5.2: the term's first price; refused with 409 PACKAGE_PRICE_EXISTS once it has one. */
+  initial: boolean
 }
 
 export type PlatformFeeOwner = { id: number; name: string | null; email: string | null }
 
 export type PlatformFeeReceiptOutcome =
-  'applied' | 'late' | 'amount_mismatch' | 'already_paid' | 'term_conflict'
+  'applied' | 'late' | 'amount_mismatch' | 'already_paid' | 'term_conflict' | 'account_mismatch'
 
 /** A stored transfer linked to a request; its amount may differ from the request's. */
 export type PlatformFeeReceipt = {

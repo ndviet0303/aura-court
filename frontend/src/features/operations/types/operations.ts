@@ -7,6 +7,8 @@ export type AttendanceCommand = 'check-in' | 'check-out' | 'no-show'
 export interface OperationalReservation {
   id: number
   code: string
+  /** D5: the only key attendance looks a booking up by; a transfer issues a new one. */
+  check_in_code: string
   operational_status: OperationalStatus
   usage_flag: UsageFlag | null
   venue: { id: number; name: string }
@@ -72,6 +74,8 @@ export interface AdjustmentForm {
   checked_in_at?: string
   checked_out_at?: string
   reason: string
+  /** UC-6.7 E-3: the data the owner loaded; the server refuses to overwrite a newer record. */
+  expected: AttendanceSnapshot
 }
 
 export interface AttendanceResult {

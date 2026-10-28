@@ -11,6 +11,7 @@ readonly class CreatePackagePaymentRequestData
         public int $organizationId,
         public int $venueId,
         public PackageTerm $term,
+        public int $expectedAmount,
         public int $createdBy,
     ) {}
 
@@ -20,6 +21,7 @@ readonly class CreatePackagePaymentRequestData
             organizationId: $organizationId,
             venueId: $venueId,
             term: PackageTerm::from((int) $request->validated('term_days')),
+            expectedAmount: (int) $request->validated('expected_amount'),
             createdBy: (int) $request->user()->id,
         );
     }

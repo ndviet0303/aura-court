@@ -226,7 +226,6 @@ const formattedDate = computed(() => {
         :quote-error="quote.error"
         :price-change="bookingStore.priceChange"
         :busy="loading"
-        :organization-id="directOwnerPayments ? court.venue?.organization_id : null"
         @confirm-price="bookingStore.confirmPrice"
         @retry-quote="quote.retry"
       />

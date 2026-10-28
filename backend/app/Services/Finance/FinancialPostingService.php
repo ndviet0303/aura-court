@@ -12,7 +12,6 @@ use App\Models\PackagePaymentReceipt;
 use App\Models\Payment;
 use App\Models\ProviderEvent;
 use App\Models\Reservation;
-use App\Models\VenueCreditEntry;
 
 class FinancialPostingService
 {
@@ -117,36 +116,7 @@ class FinancialPostingService
             ],
         ], [
             ['account_id' => $accounts['owner_bank_cash']->id, 'side' => 'debit', 'amount' => (int) $receipt->amount, 'source_type' => OwnerPaymentReceipt::class, 'source_id' => $receipt->id],
-            // A resale receipt is money the owner owes back as the seller's venue credit (resale-venue-credit D3).
-            ['account_id' => $accounts[$purpose === 'resale' ? 'owner_credit_liability' : 'owner_direct_revenue']->id, 'side' => 'credit', 'amount' => (int) $receipt->amount, 'source_type' => OwnerPaymentReceipt::class, 'source_id' => $receipt->id],
-        ]);
-    }
-
-    /** resale-venue-credit D3: credit spent becomes owner revenue, a POS refund to credit reverses it, a cash-out leaves the drawer. */
-    public function postVenueCredit(VenueCreditEntry $entry): Journal
-    {
-        $accounts = $this->ledger->systemAccounts((int) $entry->organization_id);
-        $amount = abs((int) $entry->balance_delta + (int) $entry->reserved_delta);
-        [$debit, $credit] = match ($entry->type) {
-            'capture', 'spend' => ['owner_credit_liability', 'owner_direct_revenue'],
-            'return' => ['owner_direct_revenue', 'owner_credit_liability'],
-            'cash_out' => ['owner_credit_liability', 'cash_clearing'],
-            default => throw new \LogicException("Venue credit {$entry->type} has no journal of its own."),
-        };
-
-        return $this->ledger->postOnce([
-            'organization_id' => $entry->organization_id,
-            'ledger_entity' => 'owner',
-            'payment_model' => 'direct_owner_v1',
-            'event_type' => 'venue_credit.'.$entry->type,
-            'event_id' => "venue-credit:{$entry->id}",
-            'reference' => $entry->reference,
-            'currency' => 'VND',
-            'description' => 'Venue credit '.$entry->type,
-            'metadata' => ['venue_credit_entry_id' => $entry->id, 'user_id' => $entry->user_id, 'source_type' => $entry->source_type, 'source_id' => $entry->source_id],
-        ], [
-            ['account_id' => $accounts[$debit]->id, 'side' => 'debit', 'amount' => $amount, 'source_type' => VenueCreditEntry::class, 'source_id' => $entry->id],
-            ['account_id' => $accounts[$credit]->id, 'side' => 'credit', 'amount' => $amount, 'source_type' => VenueCreditEntry::class, 'source_id' => $entry->id],
+            ['account_id' => $accounts['owner_direct_revenue']->id, 'side' => 'credit', 'amount' => (int) $receipt->amount, 'source_type' => OwnerPaymentReceipt::class, 'source_id' => $receipt->id],
         ]);
     }
 

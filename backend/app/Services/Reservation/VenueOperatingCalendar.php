@@ -11,8 +11,8 @@ use Illuminate\Support\Collection;
 
 /**
  * BR-31: a court is open where the venue's hours and the court's service schedule are both open. A dated exception
- * replaces the weekly hours of its own level on its date; a court without its own schedule inherits the venue's;
- * without venue hours nothing is open, never around the clock.
+ * replaces the weekly hours of its own level on its date. UC-2.7 A-1, BR-33: a court without its own schedule is
+ * closed and never inherits the venue's hours; without venue hours nothing is open either.
  *
  * A calendar is array{venue: ?VenueOperatingSchedule, court: ?VenueOperatingSchedule, exceptions: array<string,
  * array{venue?: VenueScheduleException, court?: VenueScheduleException}>}, the exceptions keyed by local date.
@@ -78,13 +78,12 @@ class VenueOperatingCalendar
     }
 
     /**
-     * The court's effective weekly service time (venue hours intersected with its own or the inherited schedule)
-     * in the stored weekly_hours shape, and whether it inherits the venue's schedule. The schedule is null while
-     * neither the venue nor the court has one.
+     * The court's effective weekly service time (venue hours intersected with its own schedule) in the stored
+     * weekly_hours shape; null while the court has no schedule of its own (UC-2.7 A-1).
      *
-     * @return array{inherited: bool, schedule: ?array{timezone: string, weekly_hours: array<int, array{closed: bool, intervals: list<array{start: string, end: string}>}>}}
+     * @return ?array{timezone: string, weekly_hours: array<int, array{closed: bool, intervals: list<array{start: string, end: string}>}>}
      */
-    public function serviceSchedule(Court $court): array
+    public function serviceSchedule(Court $court): ?array
     {
         $rows = VenueOperatingSchedule::query()
             ->where('venue_id', $court->venue_id)
@@ -92,9 +91,8 @@ class VenueOperatingCalendar
             ->get()
             ->keyBy('scope_key');
         $calendar = ['venue' => $rows->get('venue'), 'court' => $rows->get('court:'.$court->id), 'exceptions' => []];
-        $source = $calendar['court'] ?? $calendar['venue'];
-        if ($source === null) {
-            return ['inherited' => true, 'schedule' => null];
+        if ($calendar['court'] === null) {
+            return null;
         }
 
         $weeklyHours = [];
@@ -106,7 +104,7 @@ class VenueOperatingCalendar
             $weeklyHours[$weekday] = ['closed' => $intervals === [], 'intervals' => $intervals];
         }
 
-        return ['inherited' => $calendar['court'] === null, 'schedule' => ['timezone' => $source->timezone, 'weekly_hours' => $weeklyHours]];
+        return ['timezone' => $calendar['court']->timezone, 'weekly_hours' => $weeklyHours];
     }
 
     /**
@@ -119,10 +117,6 @@ class VenueOperatingCalendar
     {
         $exceptions = $date === null ? [] : ($calendar['exceptions'][$date] ?? []);
         $venue = self::openMinutes($calendar['venue'], $exceptions['venue'] ?? null, $weekday);
-        if ($calendar['court'] === null && ! isset($exceptions['court'])) {
-            return $venue;
-        }
-
         $court = self::openMinutes($calendar['court'], $exceptions['court'] ?? null, $weekday);
         $open = [];
         foreach ($venue as [$venueFrom, $venueTo]) {

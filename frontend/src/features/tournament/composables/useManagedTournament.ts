@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { tournamentManageApi as manageApi } from '../api/tournamentManageApi'
 import type {
+  Conflicts,
   EntryPayload,
   Fixture,
   Grant,
@@ -11,7 +12,7 @@ import type {
   Permission,
   ResultPayload,
 } from '../types/tournament'
-import { apiProblem } from '../utils/tournament'
+import { apiProblem, conflictsOf } from '../utils/tournament'
 
 type Slot = { court_id: number; starts_at: string; ends_at: string }
 
@@ -25,6 +26,7 @@ export function useManagedTournament(id: Ref<string>) {
   const loading = ref(false)
   const busy = ref(false)
   const error = ref('')
+  const conflicts = ref<Conflicts>({ bookings: [], fixtureIds: [] })
 
   async function load(quiet = false) {
     if (!quiet) loading.value = true
@@ -43,12 +45,14 @@ export function useManagedTournament(id: Ref<string>) {
   async function run(write: () => Promise<unknown>): Promise<boolean> {
     busy.value = true
     error.value = ''
+    conflicts.value = conflictsOf(null)
     try {
       await write()
       await load(true)
       return true
     } catch (e) {
       error.value = apiProblem(e, t('tournament.manage.actionError'))
+      conflicts.value = conflictsOf(e)
       return false
     } finally {
       busy.value = false
@@ -56,6 +60,9 @@ export function useManagedTournament(id: Ref<string>) {
   }
 
   const tournament = computed(() => data.value?.tournament ?? null)
+  const conflictFixtures = computed(() =>
+    (data.value?.fixtures ?? []).filter((f) => conflicts.value.fixtureIds.includes(f.id)),
+  )
   const can = (p: Permission) => !!tournament.value?.permissions[p]
   const tid = () => id.value
 
@@ -75,9 +82,14 @@ export function useManagedTournament(id: Ref<string>) {
     loading,
     busy,
     error,
+    conflicts,
+    conflictFixtures,
     can,
     load,
-    clearError: () => (error.value = ''),
+    clearError: () => {
+      error.value = ''
+      conflicts.value = conflictsOf(null)
+    },
     publish: () => run(() => manageApi.publish(tid())),
     lockRoster: () => run(() => manageApi.lockRoster(tid())),
     draw,
@@ -92,6 +104,8 @@ export function useManagedTournament(id: Ref<string>) {
       run(() => manageApi.reject(entry.id, reason.trim())),
     addEntry: (payload: EntryPayload) => run(() => manageApi.addRosterEntry(tid(), payload)),
     removeEntry: (entry: ManagedEntry) => run(() => manageApi.removeEntry(entry.id)),
+    updateEntry: (entry: ManagedEntry, payload: EntryPayload) =>
+      run(() => manageApi.updateEntry(entry.id, payload)),
     schedule: (fixture: Fixture, slot: Slot) => run(() => manageApi.schedule(fixture.id, slot)),
     result: (fixture: Fixture, payload: ResultPayload) =>
       run(() => manageApi.result(fixture.id, payload)),

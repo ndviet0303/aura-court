@@ -4,7 +4,7 @@ namespace App\Domain\Promotion\DTOs;
 
 use App\Http\Requests\Promotion\UpdatePromotionProgramRequest;
 
-/** The terms sent to change an issued program (design D14), as columns; a court set only when one was sent. */
+/** The terms sent to change an issued program, as columns; a court set only when one was sent. */
 readonly class UpdatePromotionProgramData
 {
     /**
@@ -15,6 +15,7 @@ readonly class UpdatePromotionProgramData
         public int $programId,
         public array $terms,
         public ?array $courtIds,
+        public string $discountKind,
     ) {}
 
     public static function from(UpdatePromotionProgramRequest $request): self
@@ -25,6 +26,7 @@ readonly class UpdatePromotionProgramData
             programId: (int) $program->id,
             terms: $request->validatedTerms(),
             courtIds: $request->validatedCourtIds(),
+            discountKind: $request->discountKind(),
         );
     }
 }

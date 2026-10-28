@@ -24,12 +24,11 @@ class PartnerVenueCourtController extends Controller
     {
         $court = $this->authorizeVenueRead($request, $organizationId, $venueId)->courts->firstWhere('id', $courtId);
         abort_unless($court instanceof Court, 404, 'Sân không thuộc cơ sở này.');
-        $service = $this->calendar->serviceSchedule($court);
 
         return response()->json(['data' => [
             ...$court->toArray(),
-            'service_schedule' => $service['schedule'],
-            'service_schedule_inherited' => $service['inherited'],
+            // UC-2.7 A-1: null while the court has no schedule of its own; never derived from the venue hours.
+            'service_schedule' => $this->calendar->serviceSchedule($court),
         ]]);
     }
 }

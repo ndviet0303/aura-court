@@ -92,6 +92,20 @@ class VenueInformationTest extends TestCase
         $this->actingAs($this->staffOf(Venue::find($id)))->putJson($url, self::VALID)->assertForbidden();
     }
 
+    public function test_uc_2_4_e2_an_update_naming_a_non_editable_field_is_refused_for_that_field(): void
+    {
+        $organization = $this->openVenue()->organization;
+        $owner = $this->ownerOf($organization);
+        $id = $this->create($owner, $organization->id, self::VALID)->json('data.id');
+        $url = "/api/partner/organizations/{$organization->id}/venues/{$id}";
+        $other = $this->openVenue()->organization_id;
+
+        $this->actingAs($owner)->putJson($url, ['name' => 'Tên mới', 'status' => Venue::STATUS_ACTIVE, 'organization_id' => $other, 'weekly_hours' => ['1' => ['closed' => true]]] + self::VALID)
+            ->assertStatus(422)->assertJsonValidationErrors(['status', 'organization_id', 'weekly_hours'])->assertJsonMissingValidationErrors('name');
+        $venue = Venue::find($id);
+        $this->assertSame([self::VALID['name'], Venue::STATUS_INACTIVE, $organization->id], [$venue->name, $venue->status, $venue->organization_id]);
+    }
+
     public function test_br_29_images_are_uploaded_jpg_or_png_up_to_5_mb_and_at_most_10(): void
     {
         Storage::fake('public', ['url' => config('filesystems.disks.public.url')]);
@@ -119,8 +133,6 @@ class VenueInformationTest extends TestCase
         $url = "/api/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/booking-policy";
         $settings = [
             'booking' => ['max_days_ahead' => 30, 'min_duration_minutes' => 60, 'max_duration_minutes' => 240],
-            'recurring' => ['payment_policy' => 'per_period', 'conflict_policy' => 'all_or_nothing', 'overdue_release_hours' => 24],
-            'transfer' => ['cutoff_hours' => 24, 'max_consideration_percent' => 0, 'free_transfer_allowed' => true],
         ];
 
         foreach (['hold_ttl_minutes' => 15, 'require_continuity' => true] as $key => $value) {

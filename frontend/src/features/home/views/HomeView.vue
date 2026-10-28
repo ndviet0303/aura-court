@@ -245,7 +245,12 @@ onMounted(async () => {
     <div class="hero-mosaic">
       <div>
         <img class="short" src="/aura/hero-football.webp" alt="Football Pitch" />
-        <img class="tall" src="/aura/hero-tennis.webp" alt="Tennis Court" style="margin-top: 12px" />
+        <img
+          class="tall"
+          src="/aura/hero-tennis.webp"
+          alt="Tennis Court"
+          style="margin-top: 12px"
+        />
       </div>
       <div>
         <img class="tall" src="/aura/hero-pickleball.webp" alt="Pickleball Court" />

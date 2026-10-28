@@ -69,8 +69,8 @@ export type ReservationReview = {
   deleted_at: string | null
 }
 
-// Contact recorded when the booking was created; later profile edits do not change it.
-export type ReservationBooker = { name: string; phone: string; email: string }
+// Who may use the booking (D6): the booker's contact recorded at creation, or the buyer after a transfer.
+export type ReservationHolder = { name: string; phone: string; email: string }
 
 // Latest payment request of the booking and the latest transfer received for it (detail API only).
 export type ReservationPaymentResult = {
@@ -129,7 +129,9 @@ export type Reservation = {
     // Why a held booking was released, e.g. customer_payment_cancel or payment_deadline.
     release_reason?: string
   } | null
-  booker?: ReservationBooker | null
+  holder?: ReservationHolder | null
+  // The check-in QR value (D5), only for the holder and the venue's operators; renewed by a transfer.
+  check_in_code?: string | null
   payment?: ReservationPaymentResult | null
   attendance?: ReservationAttendance | null
   latest_affected_case?: ReservationAffectedCase | null
@@ -173,8 +175,6 @@ export type HoldReservationPayload = {
   // A public program or a private code, never both (module 3 D17).
   voucher_program_id?: number
   voucher_code?: string
-  // Venue credit paying part or all of expected_total; the rest is paid by QR.
-  venue_credit_amount?: number
 }
 
 // New amounts of a 409 PRICE_CHANGED: nothing was created and the customer must confirm them first.

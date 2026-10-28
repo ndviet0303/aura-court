@@ -48,12 +48,6 @@ export const navGroups: NavGroup[] = [
         icon: 'schedule',
       },
       {
-        id: 'courts-contracts',
-        path: '/admin/contracts',
-        labelKey: 'admin.nav.recurringContracts',
-        icon: 'contract',
-      },
-      {
         id: 'courts-venues',
         path: '/admin/venues',
         labelKey: 'admin.nav.manageVenues',
@@ -161,13 +155,6 @@ export const navGroups: NavGroup[] = [
         icon: 'report',
         capability: 'direct_owner_payments',
       },
-      {
-        id: 'finance-venue-credits',
-        path: '/admin/venue-credits',
-        labelKey: 'admin.nav.venueCredits',
-        icon: 'account_balance_wallet',
-        capability: 'direct_owner_payments',
-      },
       // No capability: AdminLayout shows unlisted paths to platform admins only.
       {
         id: 'finance-platform-fees',
@@ -256,18 +243,16 @@ export const navGroups: NavGroup[] = [
   },
 ]
 
-// Owner-only: courts, contracts, venues, pricing, promotions, membership, organization profile & staff,
+// Owner-only: courts, venues, pricing, promotions, membership, organization profile & staff,
 // payment exceptions, venue packages, finance, customer reviews
 export const OWNER_ONLY_PATHS = [
   '/admin/manage',
-  '/admin/contracts',
   '/admin/pricing',
   '/admin/promotions',
   '/admin/membership',
   '/admin/organization',
   '/admin/staff',
   '/admin/payment-exceptions',
-  '/admin/venue-credits',
   '/admin/packages',
   '/admin/finance',
   '/admin/reviews',

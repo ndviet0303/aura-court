@@ -40,8 +40,8 @@ class MonitoredVenueResource extends JsonResource
                 'description' => $court->description,
                 'images' => $court->images ?? [],
                 'status' => $court->status,
-                'schedule_inherited' => ! $schedules?->has('court:'.$court->id),
-                'service_schedule' => ($schedules?->get('court:'.$court->id) ?? $schedules?->get('venue'))?->weekly_hours,
+                // UC-2.7 A-1: the court's own schedule only, null when not set.
+                'service_schedule' => $schedules?->get('court:'.$court->id)?->weekly_hours,
             ])->values()),
             'suspensions' => VenueSuspensionResource::collection($this->whenLoaded('suspensions')),
         ];

@@ -13,7 +13,7 @@ use Illuminate\Testing\TestResponse;
 use Tests\Feature\Module06\Concerns\OperatesBookings;
 use Tests\TestCase;
 
-/** UC-6.6, FR-108, FR-109, BR-134..BR-137: the owner corrects an operational record and the history keeps it. */
+/** UC-6.7, FR-108, FR-109, BR-134..BR-137: the owner corrects an operational record and the history keeps it. */
 class AttendanceAdjustmentTest extends TestCase
 {
     use OperatesBookings;
@@ -95,7 +95,7 @@ class AttendanceAdjustmentTest extends TestCase
         $this->history($this->staff, $booking)->assertForbidden();
         $elsewhere = $this->openVenue();
         $this->actingAs($this->ownerOf($elsewhere->organization))
-            ->postJson('/api/attendance/adjustments', ['code' => $booking->code, 'status' => 'no_show', 'reason' => 'Sửa'], ['X-Organization-ID' => (string) $elsewhere->organization_id])
+            ->postJson('/api/attendance/adjustments', ['code' => $booking->code, 'status' => 'no_show', 'reason' => 'Sửa', 'expected' => $this->loaded($booking)], ['X-Organization-ID' => (string) $elsewhere->organization_id])
             ->assertNotFound()->assertJsonPath('code', 'BOOKING_NOT_FOUND');
         $this->assertSame(0, BookingAttendance::withoutGlobalScopes()->count() + BookingAttendanceAdjustment::withoutGlobalScopes()->count());
     }
@@ -109,7 +109,7 @@ class AttendanceAdjustmentTest extends TestCase
 
         $this->adjust($this->owner, $held, 'no_show')->assertStatus(422)->assertJsonPath('code', 'BOOKING_NOT_CONFIRMED');
         $this->actingAs($this->owner)->postJson('/api/attendance/adjustments', [
-            'code' => $booking->code, 'status' => 'no_show', 'reason' => 'Khách không đến',
+            'code' => $booking->code, 'status' => 'no_show', 'reason' => 'Khách không đến', 'expected' => $this->loaded($booking),
             'total_amount' => 1, 'court_id' => $other->id, 'status_of_payment' => 'refunded',
         ], ['X-Organization-ID' => (string) $booking->organization_id])->assertCreated();
 
@@ -152,12 +152,46 @@ class AttendanceAdjustmentTest extends TestCase
         $this->adjust($this->owner, $booking, 'no_show')->assertCreated()->assertJsonPath('reservation.attendance.no_show_by', $this->owner->name);
     }
 
-    /** @param  array<string, string>  $times */
-    private function adjust(User $user, Reservation $booking, string $status, array $times = [], string $reason = 'Khách đã đến, nhân viên ghi nhầm'): TestResponse
+    public function test_uc_6_7_e3_data_changed_after_the_owner_loaded_it_is_not_overwritten(): void
     {
-        return $this->actingAs($user)->postJson('/api/attendance/adjustments', ['code' => $booking->code, 'status' => $status, 'reason' => $reason, ...$times], [
-            'X-Organization-ID' => (string) $booking->organization_id,
-        ]);
+        $booking = $this->booking($this->court, $this->at('10:00'));
+        $this->travelTo($this->at('10:00'));
+        $loaded = $this->loaded($booking);
+        $this->attend($this->staff, 'check-in', $booking)->assertCreated();
+
+        $this->travelTo($this->at('10:30'));
+        $this->adjust($this->owner, $booking, 'completed', ['checked_in_at' => '2026-11-03T10:00:00+07:00', 'checked_out_at' => '2026-11-03T10:30:00+07:00'], expected: $loaded)
+            ->assertConflict()->assertJsonPath('code', 'ATTENDANCE_CHANGED');
+        $this->assertSame(BookingAttendance::STATUS_CHECKED_IN, BookingAttendance::withoutGlobalScopes()->sole()->status);
+        $this->assertSame(0, BookingAttendanceAdjustment::withoutGlobalScopes()->count());
+
+        // Reloaded, the same correction goes through.
+        $this->adjust($this->owner, $booking, 'completed', ['checked_in_at' => '2026-11-03T10:00:00+07:00', 'checked_out_at' => '2026-11-03T10:30:00+07:00'])
+            ->assertCreated()->assertJsonPath('adjustment.before.status', 'in_use');
+    }
+
+    /**
+     * @param  array<string, string>  $times
+     * @param  array<string, ?string>|null  $expected  the operational data the owner loaded; the current data by default
+     */
+    private function adjust(User $user, Reservation $booking, string $status, array $times = [], string $reason = 'Khách đã đến, nhân viên ghi nhầm', ?array $expected = null): TestResponse
+    {
+        return $this->actingAs($user)->postJson('/api/attendance/adjustments', [
+            'code' => $booking->code, 'status' => $status, 'reason' => $reason, ...$times, 'expected' => $expected ?? $this->loaded($booking),
+        ], ['X-Organization-ID' => (string) $booking->organization_id]);
+    }
+
+    /** @return array<string, ?string> the booking's operational data as the owner screen shows it */
+    private function loaded(Reservation $booking): array
+    {
+        $attendance = BookingAttendance::withoutGlobalScopes()->where('reservation_id', $booking->id)->first();
+
+        return [
+            'status' => $attendance === null ? 'confirmed' : BookingAttendance::OPERATIONAL_STATUS[$attendance->status],
+            'checked_in_at' => $attendance?->checked_in_at?->toIso8601String(),
+            'checked_out_at' => $attendance?->checked_out_at?->toIso8601String(),
+            'no_show_at' => $attendance?->no_show_at?->toIso8601String(),
+        ];
     }
 
     private function history(User $user, Reservation $booking): TestResponse

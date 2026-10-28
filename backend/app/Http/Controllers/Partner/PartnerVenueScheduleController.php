@@ -60,16 +60,9 @@ class PartnerVenueScheduleController extends Controller
             ->where('venue_id', $venue->id)
             ->where('scope_key', $scopeKey)
             ->first();
-        $inherited = false;
-        if ($courtId !== null && ! $schedule) {
-            $schedule = VenueOperatingSchedule::query()
-                ->where('venue_id', $venue->id)
-                ->where('scope_key', 'venue')
-                ->first();
-            $inherited = $schedule !== null;
-        }
 
-        return response()->json(['data' => $schedule, 'inherited' => $inherited]);
+        // UC-2.7 A-1: a court without its own schedule reads null, not the venue hours.
+        return response()->json(['data' => $schedule]);
     }
 
     public function saveOperatingSchedule(

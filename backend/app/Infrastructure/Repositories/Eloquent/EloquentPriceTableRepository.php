@@ -61,6 +61,13 @@ class EloquentPriceTableRepository implements PriceTableRepositoryInterface
         return $table;
     }
 
+    public function rename(PriceTable $table, string $name): PriceTable
+    {
+        $table->update(['name' => $name]);
+
+        return $table;
+    }
+
     public function findForUpdate(int $id): ?PriceTable
     {
         return PriceTable::query()->whereKey($id)->lockForUpdate()->first();

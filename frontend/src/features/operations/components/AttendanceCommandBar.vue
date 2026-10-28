@@ -2,7 +2,7 @@
 import { ref, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
-import { useBookingQrScanner } from '../composables/useBookingQrScanner'
+import { useQrScanner } from '@/core/composables/useQrScanner'
 
 type DeskCommand = 'check-in' | 'check-out'
 
@@ -19,11 +19,17 @@ const command = ref<DeskCommand>('check-in')
 const mode = ref<'scan' | 'manual'>('manual')
 const code = ref('')
 const video = useTemplateRef<HTMLVideoElement>('video')
+// BR-124, D7: only the customer's booking QR is sent; another QR, such as a payment QR, is refused.
+const BOOKING_QR_PREFIX = 'AURA_BOOKING_'
 const {
   error: scanError,
   start,
   stop,
-} = useBookingQrScanner((scanned) => emit('run', command.value, scanned))
+} = useQrScanner((scanned) => {
+  if (!scanned.startsWith(BOOKING_QR_PREFIX)) return false
+  emit('run', command.value, scanned)
+  return true
+})
 
 watch(mode, (value) => (value === 'scan' && video.value ? start(video.value) : stop()), {
   flush: 'post',

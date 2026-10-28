@@ -169,12 +169,6 @@ parameters:
 			path: app/Domain/Partner/Actions/SubmitPartnerApplication.php
 
 		-
-			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\RecurringSeries\|null given\.$#'
-			identifier: argument.type
-			count: 2
-			path: app/Http/Controllers/Admin/AdminContractController.php
-
-		-
 			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\Venue\|null given\.$#'
 			identifier: argument.type
 			count: 1
@@ -209,12 +203,6 @@ parameters:
 			identifier: match.unhandled
 			count: 1
 			path: app/Http/Controllers/Admin/PartnerReviewController.php
-
-		-
-			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\User\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Booking/AdvancedBookingController.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>organization_id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -1171,120 +1159,6 @@ parameters:
 			path: app/Services/Booking/OrdinaryCheckoutService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$currency\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$event_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$organization_id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$payment_attempt_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$payment_model\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$purpose\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$purpose_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$receiving_connection_evidence_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$receiving_connection_id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$reference\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$transfer_type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:reservation\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Parameter \#1 \$attempt of method App\\Services\\Booking\\RecurringSeriesService\:\:confirmableOccurrencesQuery\(\) expects App\\Models\\OwnerPaymentAttempt, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Parameter \#1 \$attempt of method App\\Services\\Booking\\RecurringSeriesService\:\:hasConfirmablePeriod\(\) expects App\\Models\\OwnerPaymentAttempt, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Right side of && is always true\.$#'
-			identifier: booleanAnd.rightAlwaysTrue
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>metadata" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/Booking/RecurringSeriesService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1818,8 +1692,3 @@ parameters:
 			count: 1
 			path: app/Services/Reservation/SlotSelectionPolicy.php
 
-		-
-			message: '#^Method App\\Services\\Social\\ResalePriceCap\:\:onPage\(\) should return Illuminate\\Pagination\\LengthAwarePaginator\<int, array\<string, mixed\>\> but returns Illuminate\\Pagination\\LengthAwarePaginator\<int, array\{id\?\: int, organization_id\?\: int, user_id\?\: int, court_id\?\: int, price_quote_id\?\: int\|null, code\?\: string, status\?\: string, currency\?\: string, \.\.\.\}\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/Social/ResalePriceCap.php

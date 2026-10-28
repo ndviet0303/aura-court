@@ -32,22 +32,22 @@ class EloquentOwnerFinanceReportRepository implements OwnerFinanceReportReposito
 
     /**
      * R: allocated receipts of booking, split-share and recurring-period payments by their transaction time, adding the amount received.
-     * A recurring receipt pays several occurrences, so each row carries its occurrence amount and the rows add up to the receipt.
+     * A recurring receipt (retired in module 08, kept for past periods) paid several occurrences, so each row carries
+     * its booking's amount; the occurrence is found by the series id the booking keeps in its metadata.
      *
      * @return Builder<Reservation>
      */
     private function received(OwnerFinanceFilterData $filter): Builder
     {
-        return $this->bookings($filter, 'pr.event_at', "case when pa.purpose = 'recurring_period' then ro.amount else pr.amount end")
+        return $this->bookings($filter, 'pr.event_at', "case when pa.purpose = 'recurring_period' then reservations.total_amount else pr.amount end")
             ->leftJoin('split_groups as sg', 'sg.reservation_id', '=', 'reservations.id')
-            ->leftJoin('recurring_occurrences as ro', 'ro.reservation_id', '=', 'reservations.id')
             ->join('owner_payment_allocations as pa', fn (JoinClause $join) => $join
                 ->on('pa.organization_id', '=', 'reservations.organization_id')
                 // The ':' after the id keeps group or series 1 from matching 12.
                 ->where(fn ($target) => $target
                     ->where(fn ($booking) => $booking->where('pa.purpose', 'booking')->whereColumn('pa.purpose_id', 'reservations.code'))
                     ->orWhere(fn ($split) => $split->where('pa.purpose', 'split_share')->whereRaw("pa.purpose_id like 'split_group:' || sg.id || ':%'"))
-                    ->orWhere(fn ($recurring) => $recurring->where('pa.purpose', 'recurring_period')->whereRaw("pa.purpose_id like 'rec_series:' || ro.recurring_series_id || ':%'"))))
+                    ->orWhere(fn ($recurring) => $recurring->where('pa.purpose', 'recurring_period')->whereRaw("pa.purpose_id like 'rec_series:' || (reservations.metadata::jsonb ->> 'series_id') || ':%'"))))
             ->join('owner_payment_receipts as pr', 'pr.id', '=', 'pa.payment_receipt_id')
             ->where('pr.status', OwnerPaymentReceipt::STATUS_ALLOCATED)
             // A recurring receipt confirmed exactly the occurrences it paid, stamping each confirmed_at with its event_at.

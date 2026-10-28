@@ -11,8 +11,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
- * UC-7.29, FR-127, BR-153, BR-154: a random draw of the locked roster into groups or a knockout bracket. It may be redrawn
- * while no result is saved and play has not started; each draw is recorded.
+ * UC-7.29, FR-127, BR-153, BR-154: a random draw of the locked roster into groups or a knockout bracket, only before the
+ * start (PRE-3). It may be redrawn while no result is saved; each draw is recorded.
  */
 class DrawTournament
 {
@@ -27,9 +27,9 @@ class DrawTournament
 
         return DB::transaction(function () use ($tournament, $actor): Tournament {
             $locked = $this->tournaments->lock($tournament);
-            $redraw = $locked->status === Tournament::STATUS_DRAWN && ! $this->play->hasResults($locked) && $locked->starts_at?->isFuture() === true;
-            if ($locked->status !== Tournament::STATUS_ROSTER_LOCKED && ! $redraw) {
-                TournamentAccess::fail('DRAW_NOT_ALLOWED', 'Chỉ bốc thăm sau khi chốt danh sách; bốc lại khi chưa có kết quả và giải chưa bắt đầu.', 409);
+            $redraw = $locked->status === Tournament::STATUS_DRAWN;
+            if (! in_array($locked->status, [Tournament::STATUS_ROSTER_LOCKED, Tournament::STATUS_DRAWN], true) || $locked->hasStarted() || ($redraw && $this->play->hasResults($locked))) {
+                TournamentAccess::fail('DRAW_NOT_ALLOWED', 'Chỉ bốc thăm sau khi chốt danh sách và trước khi giải bắt đầu; bốc lại khi chưa có kết quả trận.', 409);
             }
             $entries = $this->play->entries($locked, [$locked->acceptedStatus()]);
             $ids = Bracket::shuffle($entries->pluck('id')->map(fn ($id): int => (int) $id)->all());

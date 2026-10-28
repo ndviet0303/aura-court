@@ -1,5 +1,5 @@
 import { computed, ref, type Ref } from 'vue'
-import type { Member, TournamentDetailInfo } from '../types/tournament'
+import type { EntryPayload, Member, TournamentDetailInfo } from '../types/tournament'
 import { emptyMember, entryProblem, initialMembers, memberLimits } from '../utils/tournament'
 
 type Shape = Pick<
@@ -31,6 +31,12 @@ export function useEntryForm(tournament: Readonly<Ref<Shape | null>>) {
       : []
   }
 
+  /** UC-7.27 A-2: start from a saved unit to correct it. */
+  function fill(entry: EntryPayload) {
+    name.value = entry.name
+    members.value = entry.members.map((m) => ({ ...m, extra: { ...m.extra } }))
+  }
+
   function addReserve() {
     if (!tournament.value || reserves.value >= limits.value.reserve) return
     members.value.push(emptyMember(tournament.value.athlete_fields, 'reserve'))
@@ -45,5 +51,16 @@ export function useEntryForm(tournament: Readonly<Ref<Shape | null>>) {
     members: members.value.map((m) => ({ ...m, full_name: m.full_name.trim() })),
   })
 
-  return { name, members, limits, reserves, problem, reset, addReserve, removeMember, payload }
+  return {
+    name,
+    members,
+    limits,
+    reserves,
+    problem,
+    reset,
+    fill,
+    addReserve,
+    removeMember,
+    payload,
+  }
 }

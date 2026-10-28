@@ -47,6 +47,7 @@ const bookingItems = computed(() => [
 
 const communityItems = [
   { to: '/resale', icon: 'swap_horiz', key: 'nav.resale' },
+  { to: '/resale/transfers', icon: 'handshake', key: 'nav.resaleTransfers' },
   { to: '/tournaments', icon: 'emoji_events', key: 'nav.tournaments' },
   { to: '/community', icon: 'forum', key: 'nav.communityFeed' },
 ]

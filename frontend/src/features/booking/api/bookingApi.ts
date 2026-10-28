@@ -1,11 +1,6 @@
 import { api } from '@/core/api/client'
 import type { Court, AvailabilitySlot } from '@/features/court/types/court'
-import type {
-  RecurringSeriesPreview,
-  RecurringSeriesPreviewPayload,
-  CreateRecurringSeriesPayload,
-  CreateRecurringSeriesResult,
-} from '../types/recurring'
+import type { RecurringBookingPayload, RecurringOccurrenceResult } from '../types/recurring'
 
 export type ReservationPaymentAttempt = {
   id: number
@@ -36,18 +31,15 @@ export const bookingApi = {
 
   getWalletBalance: () => api.get<{ balance: number; currency?: string }>('/wallet/balance'),
 
-  createRecurringSeries: (payload: CreateRecurringSeriesPayload, key?: string) =>
-    api.post<CreateRecurringSeriesResult>(
-      '/recurring-series',
-      payload,
-      key ? { idempotencyKey: key } : undefined,
-    ),
+  // Module 08: each occurrence of a recurring booking is checked (nothing held) and then submitted as an
+  // ordinary booking; the answer lists the occurrences in the order sent.
+  checkRecurringBookings: (payload: RecurringBookingPayload) =>
+    api.post<{ data: RecurringOccurrenceResult[] }>('/recurring-bookings/check', payload),
 
-  previewRecurringSeries: (payload: RecurringSeriesPreviewPayload) =>
-    api.post<RecurringSeriesPreview>('/recurring-series/preview', payload),
-
-  getRecurringSeries: <T = { data: import('../types/recurring').RecurringSeries[] }>() =>
-    api.get<T>('/recurring-series'),
+  submitRecurringBookings: (payload: RecurringBookingPayload, key: string) =>
+    api.post<{ data: RecurringOccurrenceResult[] }>('/recurring-bookings', payload, {
+      idempotencyKey: key,
+    }),
 
   // Reservations & Quotes
   // The caller's own reservations across every organization (Laravel paginator).
@@ -93,7 +85,7 @@ export const bookingApi = {
 
   createReservationPayment: <
     T = {
-      reservation: { code: string; status: string }
+      reservation: { code: string; status: string; release_reason: string | null }
       payment_attempt: ReservationPaymentAttempt
     },
   >(
@@ -102,7 +94,7 @@ export const bookingApi = {
 
   getReservationPayment: <
     T = {
-      reservation: { code: string; status: string }
+      reservation: { code: string; status: string; release_reason: string | null }
       payment_attempt: ReservationPaymentAttempt | null
     },
   >(

@@ -26,6 +26,9 @@ class AffectedBookingCommandsTest extends TestCase
 
     private const AGREED = ['customer_agreed' => true, 'channel' => 'phone'];
 
+    /** UC-2.18 step 2: a cancellation also records its reason. */
+    private const CANCEL = self::AGREED + ['note' => 'Sân hỏng đèn, khách đồng ý hủy'];
+
     private function openCase(Reservation $booking): AffectedReservationCase
     {
         return AffectedReservationCase::create([
@@ -61,12 +64,27 @@ class AffectedBookingCommandsTest extends TestCase
         $this->assertSame('confirmed', $booking->fresh()->status);
     }
 
+    public function test_uc_2_18_cancelling_an_affected_booking_needs_a_reason(): void
+    {
+        $court = $this->bookableCourt();
+        $booking = $this->booking($court, $this->tomorrowAt(10));
+        $this->openCase($booking);
+        $owner = $this->ownerOf($court->venue->organization);
+
+        $this->command($owner, $booking, 'operator-cancel', self::AGREED + ['note' => '   '])
+            ->assertStatus(422)->assertJsonValidationErrors(['note' => 'Vui lòng nhập lý do hủy đơn.']);
+        $this->assertSame('confirmed', $booking->fresh()->status);
+
+        $this->command($owner, $booking, 'operator-cancel', self::CANCEL)->assertOk();
+        $this->assertSame(['cancelled', 'Sân hỏng đèn, khách đồng ý hủy'], [$booking->fresh()->status, AffectedReservationCase::sole()->note]);
+    }
+
     public function test_br_39_a_command_needs_an_open_case(): void
     {
         $court = $this->bookableCourt();
         $booking = $this->booking($court, $this->tomorrowAt(10));
 
-        $this->command($this->ownerOf($court->venue->organization), $booking, 'operator-cancel', self::AGREED)->assertStatus(409);
+        $this->command($this->ownerOf($court->venue->organization), $booking, 'operator-cancel', self::CANCEL)->assertStatus(409);
         $this->assertSame('confirmed', $booking->fresh()->status);
     }
 
@@ -77,8 +95,8 @@ class AffectedBookingCommandsTest extends TestCase
         $this->openCase($booking);
         $otherVenue = $this->openVenue(['organization_id' => $court->venue->organization_id]);
 
-        $this->command($booking->user, $booking, 'operator-cancel', self::AGREED)->assertForbidden();
-        $this->command($this->staffOf($otherVenue), $booking, 'operator-cancel', self::AGREED)->assertForbidden();
+        $this->command($booking->user, $booking, 'operator-cancel', self::CANCEL)->assertForbidden();
+        $this->command($this->staffOf($otherVenue), $booking, 'operator-cancel', self::CANCEL)->assertForbidden();
         $this->assertSame('pending', AffectedReservationCase::sole()->status);
     }
 
@@ -158,7 +176,7 @@ class AffectedBookingCommandsTest extends TestCase
         $booking = $this->booking($court, $this->tomorrowAt(10), status: 'held');
         $this->openCase($booking);
 
-        $this->command($this->staffOf($court->venue), $booking, 'operator-cancel', self::AGREED)->assertOk();
+        $this->command($this->staffOf($court->venue), $booking, 'operator-cancel', self::CANCEL)->assertOk();
 
         $booking->refresh();
         $this->assertSame('cancelled', $booking->status);
@@ -174,8 +192,8 @@ class AffectedBookingCommandsTest extends TestCase
         $booking = $this->booking($court, $this->tomorrowAt(10));
         $this->openCase($booking);
 
-        $this->command($this->staffOf($court->venue), $booking, 'operator-cancel', self::AGREED + ['refund_note' => 'Chuyển khoản lại'])->assertForbidden();
-        $this->command($this->ownerOf($court->venue->organization), $booking, 'operator-cancel', self::AGREED + ['refund_note' => 'Chuyển khoản lại'])->assertOk();
+        $this->command($this->staffOf($court->venue), $booking, 'operator-cancel', self::CANCEL + ['refund_note' => 'Chuyển khoản lại'])->assertForbidden();
+        $this->command($this->ownerOf($court->venue->organization), $booking, 'operator-cancel', self::CANCEL + ['refund_note' => 'Chuyển khoản lại'])->assertOk();
 
         $this->assertSame('cancelled', $booking->fresh()->status);
         $this->assertSame('operator_affected_booking', data_get($booking->fresh()->metadata, 'release_reason'));
@@ -191,7 +209,7 @@ class AffectedBookingCommandsTest extends TestCase
         $this->actingAs($owner)->postJson("/api/admin/courts/{$court->id}/pause", [
             'reason' => 'Sự cố mất điện cần sửa', 'kind' => 'maintenance', 'acknowledge_affected' => true,
         ])->assertOk();
-        $this->command($owner, $booking, 'operator-cancel', self::AGREED)->assertOk();
+        $this->command($owner, $booking, 'operator-cancel', self::CANCEL)->assertOk();
 
         $this->actingAs($owner)->postJson("/api/admin/courts/{$court->id}/resume")->assertOk();
 

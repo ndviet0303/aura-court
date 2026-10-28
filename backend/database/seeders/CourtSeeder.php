@@ -7,6 +7,7 @@ use App\Models\Court;
 use App\Models\CourtPriceTableLink;
 use App\Models\PriceTable;
 use App\Models\Venue;
+use App\Models\VenueOperatingSchedule;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
@@ -323,6 +324,7 @@ class CourtSeeder extends Seeder
             }
         }
 
+        $venueHours = VenueOperatingSchedule::query()->where('scope_key', 'venue')->get()->keyBy('venue_id');
         $courtIdsByPrice = [];
         foreach ($courtDefs as $def) {
             if (! isset($venues[$def['venue_slug']])) {
@@ -340,6 +342,15 @@ class CourtSeeder extends Seeder
                     'status' => Court::STATUS_ACTIVE,
                 ]
             );
+
+            // UC-2.7 A-1: a court has its own service schedule, here the venue's demo hours; it never inherits them.
+            $hours = $venueHours->get($venue->id);
+            if ($hours) {
+                VenueOperatingSchedule::firstOrCreate(
+                    ['venue_id' => $venue->id, 'scope_key' => 'court:'.$court->id],
+                    ['court_id' => $court->id, 'version' => 1, 'timezone' => $hours->timezone, 'weekly_hours' => $hours->weekly_hours],
+                );
+            }
 
             $courtIdsByPrice[$venue->id][$def['base_price']][] = $court->id;
         }

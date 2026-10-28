@@ -10,7 +10,6 @@ import BookingAgreement from '@/features/booking/components/BookingAgreement.vue
 import { useSelectionQuote } from '@/features/booking/composables/useSelectionQuote'
 import {
   bookingErrorMessage,
-  creditOrganizationOf,
   formatDuration,
   validBookerPhone,
 } from '@/features/booking/utils/reservation'
@@ -103,7 +102,6 @@ async function submit(agreedTotal?: number) {
           :quote-error="quote.error"
           :price-change="store.priceChange"
           :busy="loading"
-          :organization-id="creditOrganizationOf(store.courts.find((c) => c.id === props.courtId))"
           @confirm-price="store.confirmPrice"
           @retry-quote="quote.retry"
         />

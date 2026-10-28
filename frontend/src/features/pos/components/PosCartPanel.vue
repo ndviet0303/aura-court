@@ -4,8 +4,6 @@ import { useI18n } from 'vue-i18n'
 import type { CartItem, CustomerProfile, CourtReservation, VatBreakdown } from '../types/pos'
 import type { PosPaymentMethod } from '../types/pos'
 import SelectDropdown from '@/shared/components/forms/SelectDropdown.vue'
-import type { PosVenueCredit } from '../composables/usePosVenueCredit'
-import PosCreditTender from './PosCreditTender.vue'
 
 const props = defineProps<{
   cart: CartItem[]
@@ -29,8 +27,6 @@ const props = defineProps<{
   activeTab?: any
   hideQr?: boolean
   hideWallet?: boolean
-  // The selected customer's venue credit; the tender shows only with a balance.
-  credit?: PosVenueCredit
 }>()
 
 const emit = defineEmits<{
@@ -59,7 +55,6 @@ const tenders = computed(() =>
       ['qr', 'qr_code_scanner', 'admin.pos.payQr', !props.hideQr],
       ['wallet', 'account_balance_wallet', 'admin.pos.payWallet', !props.hideWallet],
       ['court_tab', 'sports_tennis', 'admin.pos.payCourtTab', true],
-      ['credit', 'redeem', 'admin.pos.payCredit', !!props.credit?.balance],
     ] as const
   ).filter(([, , , shown]) => shown),
 )
@@ -321,13 +316,6 @@ function handleCourtChange(val: string | number) {
           <span class="method-text">{{ t(label) }}</span>
         </button>
       </div>
-
-      <PosCreditTender
-        v-if="paymentMethod === 'credit' && credit"
-        :credit="credit"
-        :total="grandTotal"
-        :hide-qr="hideQr"
-      />
 
       <!-- Cash Tendered & Quick Suggestions (If Cash Selected) -->
       <div v-if="paymentMethod === 'cash'" class="cash-tendered-section">

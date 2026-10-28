@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * FR-102: what an operator needs to serve a booking (venue, court, booked time, booker, amount) and its recorded
+ * FR-102: what an operator needs to serve a booking (venue, court, booked time, holder, amount) and its recorded
  * check-in, check-out or no-show with who recorded it, plus the FR-104 flag of a booking in use. Staff notes and
  * payment receiver details are not included.
  *
@@ -25,6 +25,8 @@ class OperationalReservationResource extends JsonResource
         return [
             'id' => $this->id,
             'code' => $this->code,
+            // D5: check-in, check-out, no-show and adjustments look a booking up by this code.
+            'check_in_code' => $this->check_in_code,
             'status' => $this->status,
             // D3: the attendance row, not reservations.status, holds the operational state.
             'operational_status' => $attendance ? BookingAttendance::OPERATIONAL_STATUS[$attendance->status] : $this->status,
@@ -36,8 +38,8 @@ class OperationalReservationResource extends JsonResource
             'court' => ['id' => $this->court_id, 'code' => $this->court?->code, 'name' => $this->court?->name],
             'starts_at' => $this->starts_at?->toIso8601String(),
             'ends_at' => $this->ends_at?->toIso8601String(),
-            'customer_name' => $this->booker['name'] ?? $this->user?->name,
-            'customer_phone' => $this->booker['phone'] ?? $this->user?->phone,
+            'customer_name' => $this->holder['name'] ?? $this->user?->name,
+            'customer_phone' => $this->holder['phone'] ?? $this->user?->phone,
             'total_amount' => (int) $this->total_amount,
             'currency' => $this->currency,
             'attendance' => $attendance ? [

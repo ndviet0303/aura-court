@@ -2,7 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import type { WeeklyHours } from '../../types/venueDetail'
 
-const props = defineProps<{ weeklyHours?: WeeklyHours | null }>()
+const props = defineProps<{ weeklyHours?: WeeklyHours | null; emptyText?: string }>()
 
 const { t } = useI18n()
 const DAYS = [1, 2, 3, 4, 5, 6, 7]
@@ -24,7 +24,7 @@ function dayHours(day: number): string | null {
       </dd>
     </div>
   </dl>
-  <p v-else class="detail-empty">{{ t('admin.venueDetail.noHours') }}</p>
+  <p v-else class="detail-empty">{{ emptyText ?? t('admin.venueDetail.noHours') }}</p>
 </template>
 
 <style scoped>

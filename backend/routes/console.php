@@ -7,12 +7,10 @@ use App\Domain\Package\Actions\SendPackageExpiryReminders;
 use App\Domain\Venue\Actions\ApplyStartedOperationalStops;
 use App\Jobs\RunDailyReconciliation;
 use App\Models\Organization;
-use App\Services\Booking\RecurringSeriesService;
 use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Infrastructure\ScheduledRecoveryService;
 use App\Services\Payment\SplitPaymentService;
 use App\Services\POS\PosService;
-use App\Services\Social\OwnerCollectedResaleService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
@@ -57,13 +55,6 @@ Schedule::call(function () {
     ->withoutOverlapping(10)
     ->everyMinute()
     ->onFailure($reportScheduleFailure('pos:release-expired-orders'));
-
-// 1d. Owner-collected resale: release lapsed buyer holds, expire their payment requests, withdraw unsold listings past cutoff
-Schedule::call(fn () => app(OwnerCollectedResaleService::class)->sweep())
-    ->name('marketplace:sweep-resale-locks')
-    ->withoutOverlapping(10)
-    ->everyMinute()
-    ->onFailure($reportScheduleFailure('marketplace:sweep-resale-locks'));
 
 // 1e. Venue packages: store expired on overdue payment requests (D7) and send expiry reminders (D11)
 Schedule::call(fn () => app(ExpirePackagePaymentRequests::class)->execute())
@@ -127,19 +118,6 @@ Schedule::call(function () {
     ->withoutOverlapping(60)
     ->dailyAt('01:00')
     ->onFailure($reportScheduleFailure('finance:daily-reconciliation'));
-
-// 4. Invoicing schedules with overlap protection
-Schedule::call(fn () => app(RecurringSeriesService::class)->notifyUpcomingInvoices())
-    ->name('invoices:notify-upcoming')
-    ->withoutOverlapping(30)
-    ->daily()
-    ->onFailure($reportScheduleFailure('invoices:notify-upcoming'));
-
-Schedule::call(fn () => app(RecurringSeriesService::class)->markOverdueAndReleaseFuture())
-    ->name('invoices:mark-overdue')
-    ->withoutOverlapping(30)
-    ->hourly()
-    ->onFailure($reportScheduleFailure('invoices:mark-overdue'));
 
 // 4b. Loyalty point expiry: append-only reversals for lots past their book-ahead expiry
 Schedule::command('loyalty:expire-points')

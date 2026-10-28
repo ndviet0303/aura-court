@@ -22,11 +22,18 @@ const termOptions = computed<DropdownOption[]>(() =>
   PACKAGE_TERMS.map((days) => ({ value: days, label: termLabel(days) })),
 )
 
+// UC-5.2 vs UC-5.3: a term with neither an applicable nor a scheduled price gets its initial price.
+const initial = computed(() => {
+  const row = terms.value.find((item) => item.term_days === term.value)
+  return !!row && !row.current_price && !row.next_price
+})
+
 async function submit() {
   const saved = await schedule({
     term_days: term.value,
     amount: amount.value,
     effective_at: effectiveAt.value ? venueInstant(effectiveAt.value) : undefined,
+    initial: initial.value,
   })
   if (saved) {
     amount.value = null

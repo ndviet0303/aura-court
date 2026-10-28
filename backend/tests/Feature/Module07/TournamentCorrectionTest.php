@@ -57,6 +57,7 @@ class TournamentCorrectionTest extends TestCase
         $this->getJson("/api/managed/tournaments/{$this->tournament->uuid}")->assertJsonPath('events.0.type', 'result.corrected');
     }
 
+    /** UC-7.33 E-1: the fixtures already played that take the result are listed. */
     public function test_br_157_a_result_whose_next_fixture_was_played_is_not_corrected(): void
     {
         $this->actingAs($this->owner);
@@ -67,7 +68,7 @@ class TournamentCorrectionTest extends TestCase
         $this->postJson("/api/tournament-fixtures/{$final->id}/result", ['games' => [[21, 10], [21, 12]]])->assertOk()->assertJsonPath('tournament.status', 'finished');
 
         $this->postJson("/api/tournament-fixtures/{$this->semi(1)->id}/correction", ['games' => [[10, 21], [12, 21]], 'reason' => 'Sai'])
-            ->assertConflict()->assertJsonPath('code', 'CORRECTION_BLOCKED');
+            ->assertConflict()->assertJsonPath('code', 'CORRECTION_BLOCKED')->assertJsonPath('fixture_ids', [$final->id]);
         $this->postJson("/api/tournament-fixtures/{$final->id}/correction", ['games' => [[10, 21], [12, 21]], 'reason' => 'Sai'])->assertOk();
     }
 

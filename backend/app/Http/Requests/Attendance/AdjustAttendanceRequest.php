@@ -31,6 +31,12 @@ class AdjustAttendanceRequest extends FormRequest
             'checked_out_at' => ['bail', Rule::prohibitedIf($status !== 'completed'), Rule::requiredIf($status === 'completed'), 'nullable', 'date',
                 'before_or_equal:now', Rule::when($checkedIn && is_string($this->input('checked_in_at')), 'after_or_equal:checked_in_at')],
             'reason' => ['required', 'string', 'max:1000'],
+            // UC-6.7 E-3: the operational data the owner loaded; a change since then is not overwritten.
+            'expected' => ['required', 'array'],
+            'expected.status' => ['required', 'string', Rule::in(self::STATUSES)],
+            'expected.checked_in_at' => ['nullable', 'date'],
+            'expected.checked_out_at' => ['nullable', 'date'],
+            'expected.no_show_at' => ['nullable', 'date'],
         ];
     }
 
@@ -46,6 +52,8 @@ class AdjustAttendanceRequest extends FormRequest
             'checked_out_at.before_or_equal' => 'Thời điểm check-out không được sau hiện tại.',
             'checked_out_at.after_or_equal' => 'Thời điểm check-out không được trước check-in.',
             'reason.required' => 'Vui lòng nhập lý do điều chỉnh.',
+            'expected.required' => 'Thiếu dữ liệu vận hành đã tải; vui lòng tải lại đơn.',
+            'expected.status.required' => 'Thiếu dữ liệu vận hành đã tải; vui lòng tải lại đơn.',
         ];
     }
 }

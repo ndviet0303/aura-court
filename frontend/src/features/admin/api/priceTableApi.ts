@@ -6,6 +6,7 @@ import type {
   PriceTable,
   PriceTableDetail,
   PriceTableKind,
+  RetirePriceTablePayload,
 } from '../types/priceTable'
 
 export const priceTableApi = {
@@ -23,8 +24,10 @@ export const priceTableApi = {
       `/admin/courts/${courtId}/price-table-links/end`,
       payload,
     ),
-  retire: (tableId: number) =>
-    api.post<{ data: PriceTableDetail }>(`/admin/price-tables/${tableId}/retire`),
+  rename: (tableId: number, payload: { name: string }) =>
+    api.patch<{ data: PriceTableDetail }>(`/admin/price-tables/${tableId}`, payload),
+  retire: (tableId: number, payload: RetirePriceTablePayload = {}) =>
+    api.post<{ data: PriceTableDetail }>(`/admin/price-tables/${tableId}/retire`, payload),
   coverage: (courtId: number) =>
     api.get<{
       data: { court_id: number; covered: boolean; missing_items: PriceCoverageMissingItem[] }

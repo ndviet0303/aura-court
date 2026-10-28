@@ -116,6 +116,23 @@ class RosterImportTest extends TestCase
         $this->post("/api/managed/tournaments/{$this->tournament->uuid}/roster/preview", ['file' => $this->sheet([])])->assertConflict()->assertJsonPath('code', 'ROSTER_LOCKED');
     }
 
+    public function test_uc_7_27_a2_a_unit_is_corrected_until_the_roster_is_locked(): void
+    {
+        $this->actingAs($this->representative);
+        $entry = $this->entry($this->tournament, TournamentEntry::STATUS_CONFIRMED, members: 2);
+        $this->entry($this->tournament, TournamentEntry::STATUS_CONFIRMED, members: 2);
+        $body = ['name' => 'Cặp Kế toán', 'members' => [$this->athlete('C', extra: ['Phòng ban' => 'Kế toán']), $this->athlete('D', extra: ['Phòng ban' => 'Kế toán'])]];
+
+        $this->putJson("/api/tournament-entries/{$entry->id}", ['name' => 'Thiếu', 'members' => [$this->athlete('C', extra: ['Phòng ban' => 'X'])]])
+            ->assertUnprocessable()->assertJsonValidationErrors('members');
+        $this->putJson("/api/tournament-entries/{$entry->id}", $body)->assertOk()
+            ->assertJsonPath('entry.name', 'Cặp Kế toán')->assertJsonPath('entry.members.1.full_name', 'D')->assertJsonCount(2, 'entry.members');
+        $this->assertSame(['C', 'D'], $entry->members()->orderBy('position')->pluck('full_name')->all());
+
+        $this->postJson("/api/managed/tournaments/{$this->tournament->uuid}/lock-roster")->assertOk();
+        $this->putJson("/api/tournament-entries/{$entry->id}", $body)->assertConflict()->assertJsonPath('code', 'ROSTER_LOCKED');
+    }
+
     public function test_fr_126_only_those_running_the_tournament_manage_its_roster(): void
     {
         $this->actingAs(User::factory()->create())->get("/api/managed/tournaments/{$this->tournament->uuid}/roster/template")->assertForbidden();

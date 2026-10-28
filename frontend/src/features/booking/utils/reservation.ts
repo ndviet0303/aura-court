@@ -2,16 +2,12 @@ import type { ApiError } from '@/core/types/api'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { i18n } from '@/i18n'
 import type { PriceQuote, Reservation } from '../types/reservation'
-import type { Court } from '@/features/court/types/court'
-
-// Venue credit pays only at direct-owner venues, so only those offer it at checkout (venue-credit spec).
-export const creditOrganizationOf = (court?: Court | null): number | null =>
-  court?.venue?.payment_model === 'direct_owner_v1' ? (court.venue.organization_id ?? null) : null
 
 type Displayable = Pick<Reservation, 'code' | 'status' | 'legacy_mapping' | 'metadata'>
 
 // A mirrored legacy booking is stored as `LEGACY-<code>`; customers only ever see the original code.
-export const displayCode = (r: Displayable): string => r.legacy_mapping?.[0]?.legacy_code ?? r.code
+export const displayCode = (r: Pick<Reservation, 'code' | 'legacy_mapping'>): string =>
+  r.legacy_mapping?.[0]?.legacy_code ?? r.code
 
 // Check-in, check-out and no-show are written to metadata.operational_status while status stays confirmed.
 export const displayStatus = (r: Displayable): string => {
@@ -40,13 +36,27 @@ export const statusLabel = (r: Displayable, t: (key: string) => string): string 
   if (status === 'cancelled' && r.metadata?.release_reason === 'operator_affected_booking') {
     return t('booking.statusOperatorCancelled')
   }
+  // BR-87: a new price ended the pending request (UC-4.10 A-3).
+  if (status === 'expired' && r.metadata?.release_reason === 'price_changed') {
+    return t('booking.statusPriceChanged')
+  }
   const key = STATUS_LABELS[status]
   return key ? t(`booking.${key}`) : status
 }
 
-// The order QR is shown for check-in and check-out only (report FR-80).
-export const showsQr = (r: Displayable): boolean =>
-  ['confirmed', 'in_use'].includes(displayStatus(r))
+// The order QR is shown for check-in and check-out only (report FR-80), built from check_in_code (D5).
+export const showsQr = (r: Displayable & Pick<Reservation, 'check_in_code'>): boolean =>
+  !!r.check_in_code && ['confirmed', 'in_use'].includes(displayStatus(r))
+
+// UC-9.1: a confirmed booking that has not started yet may be offered for transfer; the server gives the
+// exact reason (2-hour cutoff, incident, already transferred) on the listing form.
+export const canOfferTransfer = (
+  r: Displayable & Pick<Reservation, 'slots'>,
+  now = Date.now(),
+): boolean => {
+  const starts = r.slots?.map((slot) => new Date(slot.starts_at).getTime()) ?? []
+  return displayStatus(r) === 'confirmed' && starts.length > 0 && Math.min(...starts) > now
+}
 
 const REVIEW_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
 type Reviewable = Displayable & Pick<Reservation, 'review' | 'attendance'>
@@ -103,6 +113,7 @@ const BOOKING_ERROR_KEYS: Record<string, string> = {
   PHONE_REQUIRED: 'reservations.messages.phoneRequired',
   PAYMENT_WINDOW_CLOSED: 'reservations.messages.paymentWindowClosed',
   RESERVATION_NOT_PENDING: 'reservations.messages.notPending',
+  VOUCHER_CODE_SHARED: 'reservations.messages.voucherCodeShared',
 }
 
 // Booking refusals with their own copy; any other failure reads as the shared error message.

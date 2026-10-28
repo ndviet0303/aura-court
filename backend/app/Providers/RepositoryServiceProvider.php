@@ -7,6 +7,8 @@ use App\Contracts\Repositories\AffectedReservationCaseRepositoryInterface;
 use App\Contracts\Repositories\AuditLogRepositoryInterface;
 use App\Contracts\Repositories\BookingAttendanceAdjustmentRepositoryInterface;
 use App\Contracts\Repositories\BookingAttendanceRepositoryInterface;
+use App\Contracts\Repositories\BookingTransferListingRepositoryInterface;
+use App\Contracts\Repositories\BookingTransferRepositoryInterface;
 use App\Contracts\Repositories\CommunityFeedRepositoryInterface;
 use App\Contracts\Repositories\ContentModerationRepositoryInterface;
 use App\Contracts\Repositories\ConversationRepositoryInterface;
@@ -30,7 +32,6 @@ use App\Contracts\Repositories\PlatformFeeVenueRepositoryInterface;
 use App\Contracts\Repositories\PriceTableRepositoryInterface;
 use App\Contracts\Repositories\PromotionProgramRepositoryInterface;
 use App\Contracts\Repositories\ReconciliationRepositoryInterface;
-use App\Contracts\Repositories\RecurringContractRepositoryInterface;
 use App\Contracts\Repositories\ReservationRepositoryInterface;
 use App\Contracts\Repositories\ReviewRepositoryInterface;
 use App\Contracts\Repositories\StockTransferRepositoryInterface;
@@ -52,6 +53,8 @@ use App\Infrastructure\Repositories\Eloquent\EloquentAffectedReservationCaseRepo
 use App\Infrastructure\Repositories\Eloquent\EloquentAuditLogRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentBookingAttendanceAdjustmentRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentBookingAttendanceRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentBookingTransferListingRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentBookingTransferRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentCommunityFeedRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentContentModerationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentConversationRepository;
@@ -75,7 +78,6 @@ use App\Infrastructure\Repositories\Eloquent\EloquentPlatformFeeVenueRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPriceTableRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentPromotionProgramRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReconciliationRepository;
-use App\Infrastructure\Repositories\Eloquent\EloquentRecurringContractRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReservationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentReviewRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentStockTransferRepository;
@@ -114,10 +116,11 @@ class RepositoryServiceProvider extends ServiceProvider
         PaymentRepositoryInterface::class => EloquentPaymentRepository::class,
         FinanceExceptionRepositoryInterface::class => EloquentFinanceExceptionRepository::class,
         AuditLogRepositoryInterface::class => EloquentAuditLogRepository::class,
+        BookingTransferRepositoryInterface::class => EloquentBookingTransferRepository::class,
+        BookingTransferListingRepositoryInterface::class => EloquentBookingTransferListingRepository::class,
         HostKycRepositoryInterface::class => EloquentHostKycRepository::class,
         ReconciliationRepositoryInterface::class => EloquentReconciliationRepository::class,
         DisputeRepositoryInterface::class => EloquentDisputeRepository::class,
-        RecurringContractRepositoryInterface::class => EloquentRecurringContractRepository::class,
         TenantMembershipPlanRepositoryInterface::class => EloquentTenantMembershipPlanRepository::class,
         LoyaltyRuleRepositoryInterface::class => EloquentLoyaltyRuleRepository::class,
         FileStorageServiceInterface::class => FileStorageService::class,

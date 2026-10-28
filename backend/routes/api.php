@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Admin\AdminContractController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminDisputeController;
 use App\Http\Controllers\Admin\AdminKycController;
@@ -22,8 +21,10 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\SocialEmailController;
 use App\Http\Controllers\Booking\AdvancedBookingController;
 use App\Http\Controllers\Booking\AvailabilityController;
-use App\Http\Controllers\Booking\ResaleListingController;
+use App\Http\Controllers\Booking\RecurringBookingController;
 use App\Http\Controllers\Booking\WaitlistController;
+use App\Http\Controllers\BookingTransfer\BookingTransferController;
+use App\Http\Controllers\BookingTransfer\BookingTransferListingController;
 use App\Http\Controllers\Chat\ConversationController;
 use App\Http\Controllers\Community\ContentReportController;
 use App\Http\Controllers\Community\FeedCommentController;
@@ -36,8 +37,6 @@ use App\Http\Controllers\Finance\FinanceController;
 use App\Http\Controllers\Finance\FinanceExceptionController;
 use App\Http\Controllers\Finance\FinancialReconciliationController;
 use App\Http\Controllers\Finance\OwnerPaymentExceptionController;
-use App\Http\Controllers\Finance\OwnerVenueCreditController;
-use App\Http\Controllers\Finance\VenueCreditController;
 use App\Http\Controllers\Loyalty\LoyaltyController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Organization\InvitationResponseController;
@@ -56,7 +55,6 @@ use App\Http\Controllers\Partner\VenueSuspensionController;
 use App\Http\Controllers\POS\PosController;
 use App\Http\Controllers\POS\ServiceTabController;
 use App\Http\Controllers\POS\StockTransferController;
-use App\Http\Controllers\POS\VenueCreditCashOutController;
 use App\Http\Controllers\Pricing\CourtPricingController;
 use App\Http\Controllers\Pricing\PriceTableController;
 use App\Http\Controllers\Promotion\PromotionProgramController;
@@ -166,6 +164,21 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
     Route::post('conversations/{conversation}/messages', [ConversationController::class, 'send']);
     Route::post('conversations/{conversation}/vouchers', [ConversationController::class, 'gift']);
     Route::get('venues/{venue}/gift-vouchers', [ConversationController::class, 'giftableVouchers']);
+    // Module 08.2 D10: one transfer market for every organization; each booking checks its own organization's flag.
+    Route::get('booking-transfers/candidates', [BookingTransferListingController::class, 'candidates']);
+    Route::get('booking-transfers/listings', [BookingTransferListingController::class, 'index']);
+    Route::get('booking-transfers/listings/{listing}', [BookingTransferListingController::class, 'show'])->whereNumber('listing');
+    Route::get('booking-transfers', [BookingTransferController::class, 'index']);
+    Route::get('booking-transfers/{transfer}', [BookingTransferController::class, 'show'])->whereNumber('transfer');
+    Route::middleware('verified')->group(function () {
+        Route::post('booking-transfers/listings', [BookingTransferListingController::class, 'store']);
+        Route::post('booking-transfers/listings/{listing}/withdraw', [BookingTransferListingController::class, 'withdraw'])->whereNumber('listing');
+        Route::post('booking-transfers/listings/{listing}/contact', [BookingTransferListingController::class, 'contact'])
+            ->whereNumber('listing')->name('booking-transfers.listings.contact');
+        Route::post('booking-transfers', [BookingTransferController::class, 'store']);
+        Route::post('booking-transfers/{transfer}/confirm', [BookingTransferController::class, 'confirm'])->whereNumber('transfer');
+        Route::post('booking-transfers/{transfer}/cancel', [BookingTransferController::class, 'cancel'])->whereNumber('transfer');
+    });
     // Module 07 FR-112..FR-117, FR-132: feed, reviews and reports cross organizations too; only authors change their content.
     Route::post('uploads/community-images', [ContentReportController::class, 'uploadImage'])->middleware('throttle:30,1');
     Route::post('social/feed', [FeedPostController::class, 'store']);
@@ -200,6 +213,7 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
     Route::post('managed/tournaments/{tournament}/roster/preview', [TournamentRosterController::class, 'preview']);
     Route::post('managed/tournaments/{tournament}/roster/confirm', [TournamentRosterController::class, 'confirm']);
     Route::post('managed/tournaments/{tournament}/roster/entries', [TournamentRosterController::class, 'store']);
+    Route::put('tournament-entries/{entry}', [TournamentRosterController::class, 'update']);
     Route::put('tournament-fixtures/{fixture}/schedule', [TournamentFixtureController::class, 'schedule']);
     Route::post('tournament-fixtures/{fixture}/result', [TournamentFixtureController::class, 'result']);
     Route::post('tournament-fixtures/{fixture}/walkover', [TournamentFixtureController::class, 'result'])->name('tournament-fixtures.walkover');
@@ -457,10 +471,6 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
             Route::post('courts/{court}/close', [CourtLifecycleController::class, 'close']);
             Route::post('courts/{court}/pause/preview', [CourtLifecycleController::class, 'previewPause']);
             Route::post('courts/{court}/close/preview', [CourtLifecycleController::class, 'previewClose']);
-            Route::get('contracts', [AdminContractController::class, 'index']);
-            Route::get('contracts/{id}', [AdminContractController::class, 'show']);
-            Route::post('contracts/{id}/cancel', [AdminContractController::class, 'cancel']);
-            Route::get('contracts.csv', [AdminContractController::class, 'exportCsv']);
             Route::post('upload', [AdminController::class, 'upload']);
         });
     });
@@ -480,8 +490,6 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
         // controller delegates to IdempotencyService and persists its outcome.
         Route::get('reservations', [ReservationController::class, 'index']);
         Route::get('me/reservations', MyReservationController::class);
-        Route::get('me/venue-credits', [VenueCreditController::class, 'index']);
-        Route::post('me/venue-credits/{organization}/cash-out-codes', [VenueCreditController::class, 'storeCashOutCode'])->middleware('verified');
         Route::get('admin/reservations', AdminReservationController::class)->middleware('venue_admin');
         Route::get('admin/affected-reservations', [AffectedReservationCaseController::class, 'index'])->middleware('venue_admin');
         Route::patch('admin/affected-reservations/{case}', [AffectedReservationCaseController::class, 'update'])->middleware('venue_admin');
@@ -523,24 +531,14 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::post('service-tabs/{tab}/cancel', [ServiceTabController::class, 'cancel']);
         });
 
-        Route::get('recurring-series', [AdvancedBookingController::class, 'series']);
-        Route::post('recurring-series', [AdvancedBookingController::class, 'createSeries'])->middleware('verified');
-        Route::post('recurring-series/preview', [AdvancedBookingController::class, 'previewSeries'])->middleware('verified');
-        Route::get('monthly-invoices/{invoice}', [AdvancedBookingController::class, 'invoice']);
+        // Module 08: a recurring booking checks and submits each occurrence as an ordinary booking.
+        Route::post('recurring-bookings/check', [RecurringBookingController::class, 'check'])->middleware(['verified', 'throttle:recurring-booking']);
+        Route::post('recurring-bookings', [RecurringBookingController::class, 'store'])->middleware(['verified', 'throttle:recurring-booking']);
         Route::middleware('feature:marketplace_split_payments')->group(function () {
             Route::post('reservations/{reservation}/split', [AdvancedBookingController::class, 'createSplit']);
             Route::get('split-groups/{split}', [AdvancedBookingController::class, 'split']);
             Route::post('split-shares/{share}/pay', [AdvancedBookingController::class, 'paySplitShare']);
             Route::post('split-groups/{split}/cover-shortfall', [AdvancedBookingController::class, 'coverSplit']);
-        });
-
-        Route::middleware('feature:marketplace_slot_resale')->group(function () {
-            Route::get('marketplace/listings', [AdvancedBookingController::class, 'listings']);
-            Route::post('marketplace/entitlements/{entitlement}/list', [ResaleListingController::class, 'store']);
-            Route::get('marketplace/listings/{listing}', [ResaleListingController::class, 'show']);
-            Route::post('marketplace/listings/{listing}/checkout', [ResaleListingController::class, 'lock'])->middleware('verified');
-            Route::post('marketplace/listings/{listing}/release', [ResaleListingController::class, 'release']);
-            Route::post('marketplace/listings/{listing}/withdraw', [AdvancedBookingController::class, 'withdrawListing']);
         });
 
         Route::middleware('feature:tenant_pos_and_wallet')->group(function () {
@@ -566,9 +564,6 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::post('pos/shifts', [PosController::class, 'openShift'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
             Route::post('pos/shifts/{shift}/close', [PosController::class, 'closeShift'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
             Route::post('pos/shifts/{shift}/cash-movement', [PosController::class, 'recordCashMovement'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
-            Route::get('pos/venue-credits/customers/{user}', [VenueCreditCashOutController::class, 'customer'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
-            Route::post('pos/shifts/{shift}/venue-credit-cash-outs/lookup', [VenueCreditCashOutController::class, 'lookup'])->middleware([RequireOrganizationRole::class.':organization_owner,staff', 'throttle:venue-credit-lookup']);
-            Route::post('pos/shifts/{shift}/venue-credit-cash-outs', [VenueCreditCashOutController::class, 'store'])->middleware(RequireOrganizationRole::class.':organization_owner,staff');
             Route::post('pos/shifts/{shift}/review', [PosController::class, 'reviewReconciliation'])->middleware(RequireOrganizationRole::class.':organization_owner');
             Route::get('memberships/plans', [PosController::class, 'membershipPlans']);
             Route::get('memberships/benefits', [PosController::class, 'benefits']);
@@ -582,7 +577,8 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
         // A direct-owner payment interface, so it follows direct_owner_payments rather than the payouts group below.
         Route::get('owner-payment-exceptions', [OwnerPaymentExceptionController::class, 'index'])
             ->middleware([RequireOrganizationRole::class.':organization_owner', 'feature:direct_owner_payments']);
-        Route::get('owner-venue-credits', [OwnerVenueCreditController::class, 'index'])
+        Route::get('owner-payment-exceptions/{exception}', [OwnerPaymentExceptionController::class, 'show'])
+            ->whereNumber('exception')
             ->middleware([RequireOrganizationRole::class.':organization_owner', 'feature:direct_owner_payments']);
 
         Route::middleware([RequireOrganizationRole::class.':organization_owner', 'feature:marketplace_payouts'])->group(function () {
@@ -648,6 +644,7 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
             Route::get('venues/{venue}/price-tables', [PriceTableController::class, 'index']);
             Route::post('venues/{venue}/price-tables', [PriceTableController::class, 'store']);
             Route::get('price-tables/{table}', [PriceTableController::class, 'show']);
+            Route::patch('price-tables/{table}', [PriceTableController::class, 'update']);
             Route::post('price-tables/{table}/versions', [PriceTableController::class, 'publishVersion']);
             Route::post('price-tables/{table}/links', [PriceTableController::class, 'applyLinks']);
             Route::post('price-tables/{table}/retire', [PriceTableController::class, 'retire']);

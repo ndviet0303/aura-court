@@ -29,16 +29,10 @@ const { t } = useI18n()
           loading="lazy"
         />
       </div>
-      <p class="admin-detail-muted">
-        {{
-          t(
-            court.schedule_inherited
-              ? 'admin.monitoring.scheduleInherited'
-              : 'admin.monitoring.scheduleOwn',
-          )
-        }}
-      </p>
-      <WeeklyHoursList :weekly-hours="court.service_schedule" />
+      <WeeklyHoursList
+        :weekly-hours="court.service_schedule"
+        :empty-text="t('admin.venueDetail.noServiceSchedule')"
+      />
     </details>
   </section>
 </template>

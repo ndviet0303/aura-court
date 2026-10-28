@@ -6,12 +6,12 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['conversation_id', 'sender_user_id', 'sender_side', 'body', 'image_url', 'voucher'])]
+#[Fillable(['conversation_id', 'sender_user_id', 'sender_side', 'body', 'image_url', 'voucher', 'transfer'])]
 class ConversationMessage extends Model
 {
     protected function casts(): array
     {
-        return ['voucher' => 'array'];
+        return ['voucher' => 'array', 'transfer' => 'array'];
     }
 
     /** @return BelongsTo<Conversation, $this> */

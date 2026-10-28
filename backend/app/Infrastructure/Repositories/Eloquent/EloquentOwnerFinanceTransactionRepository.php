@@ -12,7 +12,7 @@ class EloquentOwnerFinanceTransactionRepository implements OwnerFinanceTransacti
 {
     private const TENANT_SCOPE = 'tenant_isolation';
 
-    /** Purposes paid for court bookings; POS orders and tournament fees are not booking payments. */
+    /** Purposes paid for court bookings (recurring_period: past monthly invoices); POS orders and tournament fees are not. */
     private const BOOKING_PURPOSES = ['booking', 'recurring_period', 'split_share'];
 
     private const TRANSACTION_AT = 'coalesce(owner_payment_receipts.event_at, owner_payment_receipts.received_at)';

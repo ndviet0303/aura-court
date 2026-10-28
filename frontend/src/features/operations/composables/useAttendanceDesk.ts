@@ -1,5 +1,6 @@
 import { computed, ref, type Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import type { ApiError } from '@/core/types/api'
 import { errorMessage } from '@/core/utils/errorMessage'
 import { useOwnerCheck } from '@/features/admin/composables/useLifecycleCommands'
 import { operationsApi } from '../api/operationsApi'
@@ -63,10 +64,15 @@ export function useAttendanceDesk(
     try {
       const { reservation, duplicate } = await work()
       notice.value = duplicate ? t('operations.duplicate') : done
-      if (selected.value?.code === reservation.code) await open(reservation.code)
+      if (selected.value?.check_in_code === reservation.check_in_code)
+        await open(reservation.check_in_code)
       await onChanged()
       return true
     } catch (e) {
+      // UC-6.7 E-3: the booking changed since it was opened, so the latest data replaces the stale form.
+      if ((e as ApiError | null)?.code === 'ATTENDANCE_CHANGED' && selected.value) {
+        await open(selected.value.code)
+      }
       failure.value = errorMessage(e, t('operations.commandError'))
       return false
     } finally {

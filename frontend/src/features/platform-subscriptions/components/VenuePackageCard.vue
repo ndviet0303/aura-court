@@ -16,7 +16,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'request', termDays: PackageTermDays): void
+  (e: 'request', termDays: PackageTermDays, expectedAmount: number): void
   (e: 'open-payment', code: string): void
   (e: 'terminate'): void
 }>()
@@ -140,7 +140,7 @@ const termOptions = computed<DropdownOption[]>(() =>
         :icon="renewal ? 'autorenew' : 'shopping_cart'"
         :disabled="busy || !price"
         :data-testid="`venue-package-submit-${venue.venue_id}`"
-        @click="emit('request', term)"
+        @click="price && emit('request', term, price.amount)"
       >
         {{ renewal ? t('admin.packages.buy.renew') : t('admin.packages.buy.submit') }}
       </AuraButton>

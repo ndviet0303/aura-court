@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { posApi } from '../api/posApi'
@@ -8,7 +8,6 @@ import type { Product, CustomerProfile, CourtReservation, Draft, OrderReceipt } 
 import { usePosCart } from '../composables/usePosCart'
 import { usePosProducts } from '../composables/usePosProducts'
 import { usePosShift } from '../composables/usePosShift'
-import { usePosVenueCredit } from '../composables/usePosVenueCredit'
 
 import PosTopBar from '../components/PosTopBar.vue'
 import PosProductGrid from '../components/PosProductGrid.vue'
@@ -78,7 +77,6 @@ const {
   openShift,
   closeShift,
 } = usePosShift()
-const credit = reactive(usePosVenueCredit(selectedCustomer, paymentMethod, grandTotal))
 
 const isFullscreen = ref(false)
 const notice = ref('')
@@ -330,7 +328,11 @@ async function handleCheckout() {
       reservation_id: selectedReservationId.value,
       discount_amount: discountAmount.value,
     }
-    const payload = { ...order, ...(await credit.payment(order, cashTendered.value)) }
+    const payload = {
+      ...order,
+      payment_method: paymentMethod.value as 'cash' | 'qr' | 'wallet',
+      cash_tendered: paymentMethod.value === 'cash' ? cashTendered.value : undefined,
+    }
     const stableKey = getCheckoutKey()
     const response = await posApi.completeOrder(payload, stableKey)
     const orderObj = response?.order || response
@@ -553,7 +555,6 @@ onUnmounted(() => {
       :error="error || shiftError"
       @open-shift-modal="showShiftModal = true"
       @toggle-fullscreen="toggleFullscreen"
-      @cash-out-done="checkActiveShift"
     />
     <div v-if="capabilityFetchFailed" class="pos-disabled-banner pos-error-banner" role="alert">
       <span class="material-symbols-outlined icon-24">cloud_off</span>
@@ -626,7 +627,6 @@ onUnmounted(() => {
           :disabled="!isPosEnabled"
           :hide-qr="!activeShift?.qr_available"
           :hide-wallet="isEnabled('direct_owner_payments')"
-          :credit="credit"
           @clear-cart="clearCart"
           @checkout="handleCheckout"
           @open-customer-search-modal="showCustomerModal = true"

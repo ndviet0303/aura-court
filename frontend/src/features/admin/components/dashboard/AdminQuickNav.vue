@@ -29,12 +29,6 @@ const navItems: QuickNavItem[] = [
     icon: 'receipt_long',
   },
   {
-    id: 'contracts',
-    labelKey: 'admin.dashboard.quickNavContracts',
-    path: '/admin/contracts',
-    icon: 'contract',
-  },
-  {
     id: 'pricing',
     labelKey: 'admin.dashboard.quickNavPricing',
     path: '/admin/pricing',

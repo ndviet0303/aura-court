@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Reservation } from '../../types/reservation'
 
-// Report FR-79 detail facts: booker, voucher, payment deadline and result, check-in and check-out,
+// Report FR-79 detail facts: who uses the booking (D6), voucher, payment deadline and result, check-in and check-out,
 // incident handling.
 const props = defineProps<{ reservation: Reservation }>()
 const { t, d } = useI18n()
@@ -35,9 +35,9 @@ const incidentText = computed(() => {
 
 const facts = computed(() => {
   const r = props.reservation
-  const booker = r.booker ? [r.booker.name, r.booker.phone, r.booker.email] : []
+  const holder = r.holder ? [r.holder.name, r.holder.phone, r.holder.email] : []
   const rows: [string, string][] = [
-    ['booker', booker.filter(Boolean).join(' · ')],
+    ['holder', holder.filter(Boolean).join(' · ')],
     ['voucher', r.voucher?.code ?? r.voucher?.name ?? r.quote?.benefit_snapshot?.coupon_code ?? ''],
     ['deadline', r.status === 'held' ? time(r.hold_expires_at) : ''],
     ['payment', paymentText.value],

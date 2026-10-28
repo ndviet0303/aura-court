@@ -50,6 +50,7 @@ export function useVenueReviews(venueId: Ref<number | null | undefined>) {
     error,
     hasMore: computed(() => page.value < lastPage.value),
     loadMore: () => load(page.value + 1),
+    reload: () => load(1),
     replace,
   }
 }

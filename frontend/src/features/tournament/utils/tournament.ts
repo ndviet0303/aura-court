@@ -1,6 +1,8 @@
 import { resolveErrorDescriptor } from '@/core/utils/errorMessage'
 import { venueDateTime, venueInstant } from '@/core/utils/venueTime'
 import type {
+  ConflictBooking,
+  Conflicts,
   EntryType,
   Fixture,
   FootballScore,
@@ -69,6 +71,19 @@ export function roundName(round: number, lastRound: number): [string, Record<str
   return ['tournament.bracket.round', { round }]
 }
 
+/**
+ * UC-7.33 step 2: the fixtures that take the result of `fixture`, as the server counts them: a knockout fixture
+ * feeds one fixture of each later round; a group fixture feeds the whole knockout.
+ */
+export function dependentFixtures(fixture: Fixture, fixtures: Fixture[]): Fixture[] {
+  return fixtures.filter((later) => {
+    if (later.stage !== 'knockout') return false
+    if (fixture.stage === 'group') return true
+    const gap = later.round - fixture.round
+    return gap > 0 && Math.ceil(fixture.position / 2 ** gap) === later.position
+  })
+}
+
 /** Scheduled fixtures first by time, then the rest in draw order. */
 export function scheduleOrder(fixtures: Fixture[]): Fixture[] {
   const key = (f: Fixture) => [f.stage === 'group' ? 0 : 1, f.round, f.group ?? '', f.position]
@@ -102,4 +117,10 @@ export const formatMoney = (amount: number) => `${new Intl.NumberFormat('vi-VN')
 export function apiProblem(error: unknown, fallback: string): string {
   const d = resolveErrorDescriptor(error, fallback)
   return d.code === 'VALIDATION_ERROR' && d.details.length ? d.details.join(' ') : d.message
+}
+
+/** The bookings or fixture ids a refused write lists next to its message. */
+export function conflictsOf(error: unknown): Conflicts {
+  const body = (error ?? {}) as { bookings?: ConflictBooking[]; fixture_ids?: number[] }
+  return { bookings: body.bookings ?? [], fixtureIds: body.fixture_ids ?? [] }
 }

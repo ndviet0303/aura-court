@@ -21,7 +21,6 @@ const TABS: { id: ProfileTabType; icon: string; label: string }[] = [
   { id: 'general', icon: 'person', label: 'profile.tabGeneral' },
   { id: 'security', icon: 'lock', label: 'profile.tabSecurity' },
   { id: 'membership', icon: 'workspace_premium', label: 'profile.tabMembership' },
-  { id: 'credit', icon: 'account_balance_wallet', label: 'profile.tabCredit' },
   { id: 'shortcuts', icon: 'grid_view', label: 'profile.tabQuickLinks' },
 ]
 </script>
