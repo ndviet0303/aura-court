@@ -16,8 +16,7 @@ export type ScheduleException = {
   intervals: ServiceInterval[] | null
 }
 
-/** GET partner/organizations/{org}/venues/{venue}/courts/{court}, with the effective schedule. */
+/** GET partner/organizations/{org}/venues/{venue}/courts/{court}; the schedule is null until the court has its own. */
 export type CourtDetail = Court & {
   service_schedule: OperatingSchedule | null
-  service_schedule_inherited: boolean
 }

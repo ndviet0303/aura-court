@@ -40,16 +40,28 @@ trait BuildsVenues
         );
     }
 
-    /** @param  array<string, mixed>  $attributes */
+    /**
+     * UC-2.7 A-1: courts never inherit the venue hours, so each test court gets its own all-day schedule; open time
+     * is then exactly the venue's hours, whatever a test later sets them to.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
     protected function activeCourt(Venue $venue, array $attributes = []): Court
     {
-        return Court::create($attributes + [
+        $court = Court::create($attributes + [
             'venue_id' => $venue->id,
             'code' => 'S'.Str::upper(Str::random(4)),
             'sport_type' => 'badminton',
             'slot_duration' => 60,
             'status' => Court::STATUS_ACTIVE,
         ]);
+        $days = array_fill_keys(array_map('strval', range(1, 7)), ['closed' => false, 'intervals' => [['start' => '00:00', 'end' => '23:59']]]);
+        VenueOperatingSchedule::create([
+            'venue_id' => $venue->id, 'court_id' => $court->id, 'scope_key' => 'court:'.$court->id,
+            'version' => 1, 'timezone' => 'Asia/Ho_Chi_Minh', 'weekly_hours' => $days,
+        ]);
+
+        return $court;
     }
 
     /** An active, priced court of a new open venue. */

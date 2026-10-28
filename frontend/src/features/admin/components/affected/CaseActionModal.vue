@@ -75,8 +75,11 @@ const newEnd = computed(() => {
   return new Date(Date.parse(newStart.value) + duration).toISOString()
 })
 
+// UC-2.18 step 2: a cancellation records its reason, like an outcome its note.
+const noteRequired = computed(() => kind.value === 'outcome' || kind.value === 'operator-cancel')
 const canSubmit = computed(() => {
-  if (kind.value === 'outcome') return note.value.trim().length > 0
+  if (noteRequired.value && !note.value.trim()) return false
+  if (kind.value === 'outcome') return true
   if (kind.value === 'move-court' && courtId.value === null) return false
   if (kind.value === 'change-time' && !newStart.value) return false
   return agreed.value
@@ -186,7 +189,13 @@ function submit() {
 
           <label class="form-group">
             <span class="form-label">
-              {{ t('admin.affected.noteLabel') }}{{ kind === 'outcome' ? ' *' : '' }}
+              {{
+                t(
+                  kind === 'operator-cancel'
+                    ? 'admin.affected.cancelReasonLabel'
+                    : 'admin.affected.noteLabel',
+                )
+              }}{{ noteRequired ? ' *' : '' }}
             </span>
             <textarea v-model="note" rows="2" maxlength="1000" class="form-textarea" />
             <span v-if="fieldError('note')" class="form-error">{{ fieldError('note') }}</span>

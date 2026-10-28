@@ -1829,7 +1829,7 @@ export default {
       title: 'Đơn bị ảnh hưởng',
       subtitle:
         'Đơn đặt bị ảnh hưởng bởi tạm ngừng, đóng cửa hoặc đổi lịch hoạt động. Liên hệ khách và ghi lại kết quả.',
-      empty: 'Không có đơn bị ảnh hưởng nào.',
+      empty: 'Không có đơn đặt bị ảnh hưởng.',
       loadError: 'Không tải được danh sách đơn bị ảnh hưởng.',
       outcomeSaved: 'Đã ghi kết quả liên hệ.',
       commandDone: 'Đã xử lý đơn.',
@@ -1902,6 +1902,7 @@ export default {
       newEnd: 'Kết thúc lúc {end}',
       channelLabel: 'Kênh liên hệ',
       noteLabel: 'Ghi chú',
+      cancelReasonLabel: 'Lý do hủy',
       refundNoteLabel: 'Ghi chú hoàn tiền ngoài nền tảng',
       refundNoteHint: 'Chỉ chủ cơ sở thấy và ghi được.',
       refundNoteShort: 'Hoàn tiền: {note}',
@@ -2011,8 +2012,6 @@ export default {
       hoursTitle: 'Giờ hoạt động',
       courtsTitle: 'Sân',
       noCourts: 'Cơ sở chưa có sân.',
-      scheduleInherited: 'Dùng giờ hoạt động của cơ sở',
-      scheduleOwn: 'Có lịch phục vụ riêng',
       filters: {
         keyword: 'Từ khoá',
         keywordHint: 'Tên, địa chỉ, điện thoại…',
@@ -2098,7 +2097,7 @@ export default {
       surface: 'Mặt sân',
       capacity: 'Sức chứa',
       serviceTitle: 'Lịch phục vụ',
-      inheritedSchedule: 'Theo giờ hoạt động của cơ sở',
+      noServiceSchedule: 'Chưa thiết lập lịch phục vụ',
       ownSchedule: 'Lịch riêng của sân, trong giờ hoạt động của cơ sở',
     },
     venues: {

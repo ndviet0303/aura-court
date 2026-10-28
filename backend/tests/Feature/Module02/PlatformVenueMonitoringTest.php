@@ -42,7 +42,6 @@ class PlatformVenueMonitoringTest extends TestCase
             ->assertJsonPath('data.status', 'active')
             ->assertJsonPath('data.active_suspension', null)
             ->assertJsonPath('data.courts.0.code', $court->code)
-            ->assertJsonPath('data.courts.0.schedule_inherited', true)
             ->assertJsonStructure(['data' => ['address', 'operating_hours', 'suspensions', 'courts' => [['sport_type', 'description', 'images', 'service_schedule', 'status']]]]);
         $this->actingAs($admin)->getJson("/api/admin/monitoring/venues/{$other->id}")->assertOk()
             ->assertJsonPath('data.active_suspension.reason', 'Vi phạm quy định an toàn')
