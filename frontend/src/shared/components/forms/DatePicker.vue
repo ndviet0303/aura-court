@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = withDefaults(
@@ -20,6 +20,8 @@ const emit = defineEmits<{
 const { t, locale } = useI18n()
 const root = ref<HTMLElement | null>(null)
 const open = ref(false)
+const popover = ref<HTMLElement | null>(null)
+const alignStart = ref(false)
 const currentMonth = ref(startOfMonth(parseDate(props.modelValue) || new Date()))
 
 const weekdays = computed(() => {
@@ -125,6 +127,14 @@ watch(
     if (parsed) currentMonth.value = startOfMonth(parsed)
   },
 )
+watch(open, async (isOpen) => {
+  alignStart.value = false
+  if (!isOpen) return
+  await nextTick()
+  // The popover is right-aligned; flip it when that pushes it past the viewport's left edge.
+  alignStart.value = (popover.value?.getBoundingClientRect().left ?? 0) < 0
+})
+
 onMounted(() => document.addEventListener('click', handleOutside))
 onBeforeUnmount(() => document.removeEventListener('click', handleOutside))
 </script>
@@ -143,7 +153,9 @@ onBeforeUnmount(() => document.removeEventListener('click', handleOutside))
     </button>
     <div
       v-if="open"
+      ref="popover"
       class="date-picker-popover"
+      :class="{ 'align-start': alignStart }"
       role="dialog"
       :aria-label="t('schedule.selectDate')"
     >
