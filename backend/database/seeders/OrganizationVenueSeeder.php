@@ -194,11 +194,6 @@ class OrganizationVenueSeeder extends Seeder
                 'min_duration_minutes' => 60,
                 'max_duration_minutes' => 240,
             ],
-            'transfer' => [
-                'cutoff_hours' => 24,
-                'max_consideration_percent' => 100,
-                'free_transfer_allowed' => true,
-            ],
         ];
     }
 }

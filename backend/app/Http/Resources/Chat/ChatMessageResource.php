@@ -35,6 +35,8 @@ class ChatMessageResource extends JsonResource
             'body' => $this->body,
             'image_url' => $this->image_url,
             'voucher' => $this->voucher,
+            // Module 08.2 D11: what the buyer asked about, read only; a transaction never reads it (BR-183).
+            'transfer' => $this->transfer,
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

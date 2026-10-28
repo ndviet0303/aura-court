@@ -119,7 +119,6 @@ class VenueInformationTest extends TestCase
         $url = "/api/partner/organizations/{$venue->organization_id}/venues/{$venue->id}/booking-policy";
         $settings = [
             'booking' => ['max_days_ahead' => 30, 'min_duration_minutes' => 60, 'max_duration_minutes' => 240],
-            'transfer' => ['cutoff_hours' => 24, 'max_consideration_percent' => 0, 'free_transfer_allowed' => true],
         ];
 
         foreach (['hold_ttl_minutes' => 15, 'require_continuity' => true] as $key => $value) {

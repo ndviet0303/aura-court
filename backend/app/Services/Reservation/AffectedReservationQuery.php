@@ -85,8 +85,8 @@ class AffectedReservationQuery
                 'starts_at' => $reservation->starts_at?->toIso8601String(),
                 'ends_at' => $reservation->ends_at?->toIso8601String(),
             ] + ($contacts ? [
-                'customer_name' => $reservation->booker['name'] ?? $reservation->user?->name,
-                'customer_phone' => $reservation->booker['phone'] ?? $reservation->user?->phone,
+                'customer_name' => $reservation->holder['name'] ?? $reservation->user?->name,
+                'customer_phone' => $reservation->holder['phone'] ?? $reservation->user?->phone,
             ] : []))->all(),
         ];
     }

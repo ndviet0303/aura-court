@@ -7,6 +7,7 @@ use App\Domain\Booking\DTOs\RecurringBookingData;
 use App\Models\User;
 use App\Services\Booking\OrdinaryCheckoutService;
 use App\Services\Reservation\ReservationIntake;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -29,6 +30,8 @@ class SubmitRecurringBookings
         abort_if($user->isRestricted(), 403, 'Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.');
         $this->intake->assertBookerPhone($user);
 
+        // Module 08.2 D7: one group per submit, so a transfer can offer every remaining occurrence (BR-179).
+        $group = (string) Str::uuid();
         $rows = [];
         foreach ($data->occurrences as $occurrence) {
             $row = ['starts_at' => $occurrence['starts_at'], 'ends_at' => $occurrence['ends_at']];
@@ -38,6 +41,7 @@ class SubmitRecurringBookings
                     'starts_at' => $occurrence['starts_at'],
                     'ends_at' => $occurrence['ends_at'],
                     'expected_total' => $occurrence['expected_total'],
+                    'metadata' => ['recurring_group' => $group],
                     ...array_filter([
                         'voucher_program_id' => $occurrence['voucher_program_id'] ?? null,
                         'voucher_code' => $occurrence['voucher_code'] ?? null,

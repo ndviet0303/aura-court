@@ -30,15 +30,11 @@ class StoreVenueBookingPolicyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'settings' => ['required', 'array:booking,transfer'],
+            'settings' => ['required', 'array:booking'],
             'settings.booking' => ['required', 'array:max_days_ahead,min_duration_minutes,max_duration_minutes'],
             'settings.booking.max_days_ahead' => ['required', 'integer', 'min:1', 'max:365'],
             'settings.booking.min_duration_minutes' => ['required', 'integer', 'min:15', 'max:1440'],
             'settings.booking.max_duration_minutes' => ['required', 'integer', 'min:15', 'max:1440'],
-            'settings.transfer' => ['required', 'array:cutoff_hours,max_consideration_percent,free_transfer_allowed'],
-            'settings.transfer.cutoff_hours' => ['required', 'integer', 'min:0', 'max:8760'],
-            'settings.transfer.max_consideration_percent' => ['required', 'numeric', 'min:0', 'max:100'],
-            'settings.transfer.free_transfer_allowed' => ['required', 'boolean'],
         ];
     }
 

@@ -20,7 +20,6 @@ use App\Models\Venue;
 use App\Models\WalletAccount;
 use App\Models\WalletTransaction;
 use App\Services\Finance\FinancialPostingService;
-use App\Services\Finance\VenueCreditService;
 use App\Services\Loyalty\LoyaltyPointService;
 use App\Services\Payment\WalletAvailabilityService;
 use App\Services\Reservation\LegacyBookingBackfillService;
@@ -39,7 +38,6 @@ class PosService
         private readonly WalletAvailabilityService $walletAvailability,
         private readonly PosQrPaymentService $posQr,
         private readonly VenueStockRepositoryInterface $stock,
-        private readonly VenueCreditService $credits,
     ) {}
 
     public function createProduct(int $organizationId, array $data, ?User $actor = null): PosProduct
@@ -307,7 +305,7 @@ class PosService
     {
         abort_if((bool) ($data['offline'] ?? false), 409, 'Offline POS drafts cannot finalize payment or inventory.');
         $method = (string) ($data['payment_method'] ?? '');
-        abort_unless(in_array($method, ['cash', 'qr', 'wallet', 'credit', 'mixed'], true), 422, 'Unsupported POS payment method.');
+        abort_unless(in_array($method, ['cash', 'qr', 'wallet', 'mixed'], true), 422, 'Unsupported POS payment method.');
         $this->walletAvailability->assertAvailable($organizationId, in_array('wallet', [$method, ...array_column((array) ($data['tenders'] ?? []), 'method')], true));
 
         $activeShift = CashShift::where('organization_id', $organizationId)
@@ -361,16 +359,12 @@ class PosService
                 foreach ($tenders as $tender) {
                     $tMethod = $tender['method'] ?? '';
                     $tAmount = (int) ($tender['amount'] ?? 0);
-                    abort_unless(in_array($tMethod, ['cash', 'qr', 'wallet', 'credit'], true), 422, "Unsupported tender method: {$tMethod}");
+                    abort_unless(in_array($tMethod, ['cash', 'qr', 'wallet'], true), 422, "Unsupported tender method: {$tMethod}");
                     abort_unless($tAmount > 0, 422, 'Tender amount must be positive.');
                     $tenderSum += $tAmount;
                 }
                 abort_unless($tenderSum === $grandTotal, 422, "Total tender allocations ({$tenderSum}) must equal order total ({$grandTotal}).");
             }
-            // Venue credit of this organization (design D6); an order still awaiting QR only checks the balance and spends it on payment.
-            $creditPart = $method === 'credit' ? $grandTotal : (int) collect($tenders)->where('method', 'credit')->sum('amount');
-            abort_if($creditPart > 0 && empty($data['customer_id']), 422, 'Customer is required for credit payment.');
-            abort_if($creditPart > 0 && $this->credits->balance($organizationId, (int) $data['customer_id']) < $creditPart, 422, 'Số dư credit không đủ.');
 
             // Stock of the sale venue, rows locked in product id order (D4); what tabs and QR orders there hold is not for sale.
             $stocks = [];
@@ -459,9 +453,6 @@ class PosService
                 abort_unless(! empty($data['customer_id']), 422, 'Customer is required for wallet payment.');
                 $this->spendWallet($organizationId, (int) $data['customer_id'], $grandTotal, "pos:{$order->id}");
             }
-            if ($creditPart > 0 && ! $isPendingQr) {
-                $this->credits->spend($organizationId, (int) $data['customer_id'], $creditPart, 'pos_order', $order->id, $cashier->id, $orderCode);
-            }
 
             foreach ($quote['items'] as $item) {
                 $product = $item['product'];
@@ -491,7 +482,7 @@ class PosService
                 foreach ($tenders as $tender) {
                     $tMethod = $tender['method'];
                     $tAmount = (int) $tender['amount'];
-                    $tStatus = $tMethod === 'qr' || ($tMethod === 'credit' && $isPendingQr) ? 'pending' : 'paid';
+                    $tStatus = $tMethod === 'qr' ? 'pending' : 'paid';
 
                     $order->payments()->create([
                         'organization_id' => $organizationId,
@@ -528,9 +519,8 @@ class PosService
             if ($isPendingQr) {
                 $qrAmount = $method === 'mixed' ? (int) collect($tenders)->firstWhere('method', 'qr')['amount'] : $grandTotal;
                 $this->posQr->open($order, $qrConnection, $qrAmount, $expiresAt);
-            } elseif ($method !== 'wallet' && $grandTotal > $creditPart) {
-                // The credit part is revenue through its own venue_credit.spend journal.
-                $this->financials->postPosSale($organizationId, $order->id, $grandTotal - $creditPart, $method, $order->payment_reference);
+            } elseif ($method !== 'wallet') {
+                $this->financials->postPosSale($organizationId, $order->id, $grandTotal, $method, $order->payment_reference);
             }
 
             if (! $isPendingQr && $order->customer_id && $this->loyaltyPoints->getActiveBaseEarnRule($organizationId) !== null) {

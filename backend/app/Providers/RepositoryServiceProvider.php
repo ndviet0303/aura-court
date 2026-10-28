@@ -7,6 +7,8 @@ use App\Contracts\Repositories\AffectedReservationCaseRepositoryInterface;
 use App\Contracts\Repositories\AuditLogRepositoryInterface;
 use App\Contracts\Repositories\BookingAttendanceAdjustmentRepositoryInterface;
 use App\Contracts\Repositories\BookingAttendanceRepositoryInterface;
+use App\Contracts\Repositories\BookingTransferListingRepositoryInterface;
+use App\Contracts\Repositories\BookingTransferRepositoryInterface;
 use App\Contracts\Repositories\CommunityFeedRepositoryInterface;
 use App\Contracts\Repositories\ContentModerationRepositoryInterface;
 use App\Contracts\Repositories\ConversationRepositoryInterface;
@@ -51,6 +53,8 @@ use App\Infrastructure\Repositories\Eloquent\EloquentAffectedReservationCaseRepo
 use App\Infrastructure\Repositories\Eloquent\EloquentAuditLogRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentBookingAttendanceAdjustmentRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentBookingAttendanceRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentBookingTransferListingRepository;
+use App\Infrastructure\Repositories\Eloquent\EloquentBookingTransferRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentCommunityFeedRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentContentModerationRepository;
 use App\Infrastructure\Repositories\Eloquent\EloquentConversationRepository;
@@ -112,6 +116,8 @@ class RepositoryServiceProvider extends ServiceProvider
         PaymentRepositoryInterface::class => EloquentPaymentRepository::class,
         FinanceExceptionRepositoryInterface::class => EloquentFinanceExceptionRepository::class,
         AuditLogRepositoryInterface::class => EloquentAuditLogRepository::class,
+        BookingTransferRepositoryInterface::class => EloquentBookingTransferRepository::class,
+        BookingTransferListingRepositoryInterface::class => EloquentBookingTransferListingRepository::class,
         HostKycRepositoryInterface::class => EloquentHostKycRepository::class,
         ReconciliationRepositoryInterface::class => EloquentReconciliationRepository::class,
         DisputeRepositoryInterface::class => EloquentDisputeRepository::class,

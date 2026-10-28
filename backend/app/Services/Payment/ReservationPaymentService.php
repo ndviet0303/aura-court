@@ -8,7 +8,6 @@ use App\Models\ReceivingConnection;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Venue;
-use App\Services\Finance\VenueCreditService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -65,8 +64,7 @@ class ReservationPaymentService
                 $latestAttempt->forceFill(['status' => OwnerPaymentAttempt::STATUS_EXPIRED])->save();
             }
 
-            // Venue credit reserved at checkout already pays its part, so the QR asks only for the rest (D5).
-            $amount = (int) $lockedReservation->total_amount - app(VenueCreditService::class)->reservedFor($lockedReservation);
+            $amount = (int) $lockedReservation->total_amount;
             abort_unless($lockedReservation->status === 'held', 409, 'This reservation is no longer awaiting payment.');
             abort_unless($lockedReservation->hold_expires_at?->isFuture(), 409, 'The reservation hold has expired.');
             abort_unless($amount > 0, 409, 'No bank payment is required for this reservation.');

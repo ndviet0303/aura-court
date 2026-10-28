@@ -28,7 +28,6 @@ trait ValidatesRecurringOccurrences
             'occurrences.*.ends_at' => ['required', 'date', 'after:occurrences.*.starts_at'],
             'occurrences.*.voucher_program_id' => ['nullable', 'integer', 'prohibits:occurrences.*.voucher_code'],
             'occurrences.*.voucher_code' => ['nullable', 'string', 'max:64'],
-            'venue_credit_amount' => ['prohibited'],
         ];
     }
 
@@ -46,7 +45,6 @@ trait ValidatesRecurringOccurrences
             'occurrences.*.ends_at.date' => 'Giờ kết thúc không hợp lệ.',
             'occurrences.*.ends_at.after' => 'Giờ kết thúc phải sau giờ bắt đầu.',
             'occurrences.*.voucher_program_id.prohibits' => 'Mỗi lượt chỉ dùng một voucher.',
-            'venue_credit_amount.prohibited' => 'Đặt sân định kỳ không dùng số dư tại cơ sở.',
         ];
     }
 }

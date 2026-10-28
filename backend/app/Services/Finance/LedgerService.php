@@ -104,7 +104,6 @@ class LedgerService
             'wallet_liability' => ['name' => 'Tenant wallet liability', 'type' => 'liability'],
             'owner_bank_cash' => ['name' => 'Owner bank cash (direct receipt)', 'type' => 'asset'],
             'owner_direct_revenue' => ['name' => 'Owner direct revenue', 'type' => 'revenue'],
-            'owner_credit_liability' => ['name' => 'Owner venue credit liability', 'type' => 'liability'],
             'platform_bank_cash' => ['name' => 'Platform bank cash', 'type' => 'asset'],
             'platform_subscription_revenue' => ['name' => 'Platform subscription revenue', 'type' => 'revenue'],
         ];

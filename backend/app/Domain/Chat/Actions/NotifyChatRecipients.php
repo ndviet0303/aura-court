@@ -22,6 +22,7 @@ class NotifyChatRecipients
         $from = ChatDisplay::sideName($conversation, $message->sender_side, $message->sender);
         $preview = match (true) {
             $message->voucher !== null => 'đã gửi một voucher',
+            $message->transfer !== null => 'đã hỏi nhận chuyển nhượng booking',
             $message->body !== null => Str::limit($message->body, 80),
             default => 'đã gửi một ảnh',
         };

@@ -17,7 +17,6 @@ use App\Http\Resources\Admin\DisputeCaseResource;
 use App\Models\DisputeCase;
 use App\Models\OrganizationMember;
 use App\Models\Reservation;
-use App\Services\Social\OwnerCollectedResaleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -31,7 +30,6 @@ class AdminDisputeController extends Controller
         private readonly ArbitrateDispute $arbitrateDispute,
         private readonly DisputeRepositoryInterface $disputeRepository,
         private readonly NotifyDisputeFiled $notifyDisputeFiled,
-        private readonly OwnerCollectedResaleService $resale,
     ) {}
 
     public function index(ListDisputeRequest $request): AnonymousResourceCollection
@@ -154,7 +152,7 @@ class AdminDisputeController extends Controller
         }
 
         $disputeCode = 'DSP-'.strtoupper(Str::random(10));
-        $court = $reservation->court ?? (($data['reference_type'] ?? null) === 'marketplace_listing' ? $this->resale->disputeCourt((int) ($data['reference_id'] ?? 0), $user) : null);
+        $court = $reservation?->court;
         $venue = $court?->venue;
         $org = $venue?->organization;
 
