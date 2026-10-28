@@ -73,11 +73,12 @@ class CheckRecurringBookings
      */
     private function flagSharedCodes(array $rows, RecurringBookingData $data): array
     {
-        // Codes are matched after trim and upper case, as VoucherEligibility looks them up.
-        $codes = array_map(fn (array $occurrence): string => strtoupper(trim((string) ($occurrence['voucher_code'] ?? ''))), $data->occurrences);
+        // Codes are matched after trim and upper case, as VoucherEligibility looks them up; a refused occurrence cannot
+        // be booked, so its code counts for nothing.
+        $codes = array_map(fn (array $occurrence, array $row): string => isset($row['refusal']) ? '' : strtoupper(trim((string) ($occurrence['voucher_code'] ?? ''))), $data->occurrences, $rows);
         $counts = array_count_values(array_filter($codes));
         foreach ($rows as $i => $row) {
-            if (($counts[$codes[$i]] ?? 0) > 1 && ! isset($row['refusal'])) {
+            if (($counts[$codes[$i]] ?? 0) > 1) {
                 unset($rows[$i]['code_voucher']);
                 $rows[$i]['code_refusal'] ??= OccurrenceRefusal::codeShared();
             }

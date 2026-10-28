@@ -108,6 +108,7 @@ const BOOKING_ERROR_KEYS: Record<string, string> = {
   PHONE_REQUIRED: 'reservations.messages.phoneRequired',
   PAYMENT_WINDOW_CLOSED: 'reservations.messages.paymentWindowClosed',
   RESERVATION_NOT_PENDING: 'reservations.messages.notPending',
+  VOUCHER_CODE_SHARED: 'reservations.messages.voucherCodeShared',
 }
 
 // Booking refusals with their own copy; any other failure reads as the shared error message.

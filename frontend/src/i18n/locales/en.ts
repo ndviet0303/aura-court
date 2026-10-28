@@ -755,6 +755,8 @@ export default {
       confirmError: 'Unable to confirm reservation.',
       copyNotice: 'Copied {label}',
       phoneRequired: 'Please add a phone number to your profile before booking.',
+      voucherCodeShared:
+        'This voucher code can be used on one occurrence only. Keep it on one and remove it from the others.',
       paymentWindowClosed:
         'There is no time left to pay for this booking. Please choose another time.',
       notPending: 'This booking is no longer pending payment, so it cannot be cancelled.',

@@ -753,6 +753,8 @@ export default {
       confirmError: 'Không thể xác nhận lịch đặt.',
       copyNotice: 'Đã sao chép {label}',
       phoneRequired: 'Vui lòng cập nhật số điện thoại trong hồ sơ trước khi đặt sân.',
+      voucherCodeShared:
+        'Mã voucher chỉ dùng được cho một buổi. Hãy giữ mã ở một buổi và bỏ ở các buổi còn lại.',
       paymentWindowClosed: 'Đã hết thời gian thanh toán cho khung giờ này. Vui lòng chọn giờ khác.',
       notPending: 'Đơn không còn chờ thanh toán nên không thể hủy.',
     },

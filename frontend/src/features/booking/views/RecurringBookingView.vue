@@ -52,7 +52,7 @@ const {
   load,
 } = useRecurringBooking()
 
-const unchecked = computed(() => open.value.filter((row) => !row.check).length)
+const unchecked = computed(() => open.value.filter((row) => row.selected && !row.check).length)
 const bookedCount = computed(() => rows.value.length - open.value.length)
 const picked = computed(() => open.value.filter((row) => row.selected).length)
 

@@ -181,8 +181,34 @@ export function useRecurringBooking() {
   const sentAs = (row: OccurrenceRow) =>
     `${courtId.value}|${row.date}|${row.start}|${row.end}|${row.code.trim()}`
 
-  // FR-136, BR-169: checks the given occurrences (by default every open one not yet checked).
-  async function check(targets = open.value.filter((row) => !row.check)) {
+  // UC-8.6 E-3: a code is checked together with every picked occurrence naming it, so a single-use code named on
+  // several of them shows as a conflict on each. A request carries one code, so each code goes in its own request;
+  // occurrences without a code ride along with the first, and a code on an occurrence not picked is checked alone.
+  const codeOf = (row: OccurrenceRow) => row.code.trim().toUpperCase()
+  const pickedWith = (code: string) =>
+    open.value.filter((other) => other.selected && codeOf(other) === code)
+  function batches(targets: OccurrenceRow[]): OccurrenceRow[][] {
+    const byCode = new Map<string, Set<OccurrenceRow>>()
+    const alone: OccurrenceRow[][] = []
+    const plain: OccurrenceRow[] = []
+    for (const row of targets) {
+      const code = codeOf(row)
+      if (!code) plain.push(row)
+      else if (!row.selected) alone.push([row])
+      else byCode.set(code, new Set([...(byCode.get(code) ?? []), row, ...pickedWith(code)]))
+    }
+    const groups = [...[...byCode.values()].map((group) => [...group]), ...alone]
+    if (groups[0]) groups[0].push(...plain)
+    else groups.push(plain)
+    return groups
+  }
+
+  // FR-136, BR-169: checks the given occurrences (by default every picked one not yet checked).
+  async function check(targets = open.value.filter((row) => row.selected && !row.check)) {
+    for (const batch of batches(targets)) await send(batch)
+  }
+
+  async function send(targets: OccurrenceRow[]) {
     targets = targets.filter((row) => validTimes(row.start, row.end))
     if (!guard(targets)) return
     checking.value = true
@@ -210,7 +236,7 @@ export function useRecurringBooking() {
     }
   }
 
-  // FR-136, BR-171: one occurrence's own time; it alone is checked and priced again.
+  // FR-136, BR-171: one occurrence's own time; it is checked and priced again (with the occurrences sharing its code).
   function setTime(row: OccurrenceRow, startsAt: string, endsAt: string) {
     row.start = startsAt
     row.end = endsAt
@@ -224,22 +250,21 @@ export function useRecurringBooking() {
     row.code = ''
   }
 
-  // UC-8.6 E-3: the occurrences naming one code are checked together, so a single-use code named on several of them
-  // shows as a conflict on each; the ones that named the previous code are checked again too.
-  const codeOf = (row: OccurrenceRow) => row.code.trim().toUpperCase()
-  const checkedWith = (code: string) =>
-    open.value.filter((other) => other.check?.ok && codeOf(other) === code)
+  // UC-8.6 E-3: the occurrences that named the previous code are checked again too.
   async function setCode(row: OccurrenceRow, code: string) {
     const previous = codeOf(row)
     row.code = code
     if (!row.check?.ok) return
-    const now = codeOf(row)
-    await check(now ? checkedWith(now) : [row])
-    if (previous && previous !== now) await check(checkedWith(previous))
+    await check([row])
+    if (previous && previous !== codeOf(row)) await check(pickedWith(previous))
   }
 
+  // A picked occurrence is checked if it never was; dropping one that names a code frees the code for the others.
   function setSelected(row: OccurrenceRow, selected: boolean) {
     row.selected = selected
+    const code = codeOf(row)
+    if (code) void check([row, ...pickedWith(code)])
+    else if (selected && !row.check) void check([row])
   }
 
   let submitKey = { body: '', key: '' }

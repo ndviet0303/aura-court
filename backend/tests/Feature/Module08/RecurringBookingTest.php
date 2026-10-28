@@ -161,6 +161,11 @@ class RecurringBookingTest extends TestCase
         }
         $this->assertNull($rows[1]['code_refusal']);
         $this->assertSame(80000, $check([3 => 'RIENG1'])[0]['code_voucher']['total'], 'On one occurrence the code applies.');
+        // A refused occurrence cannot be booked, so the code it names is no conflict.
+        $this->checkout($this->customer(), $court, '2026-11-04 18:00', '2026-11-04 19:00', 100000)->assertCreated();
+        $rows = $check([3 => 'RIENG1', 4 => 'RIENG1']);
+        $this->assertFalse($rows[1]['ok']);
+        $this->assertSame(80000, $rows[0]['code_voucher']['total']);
         $this->assertSame(0, VoucherUse::count());
     }
 
