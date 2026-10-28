@@ -74,7 +74,7 @@ async function confirmTerminate() {
       :venue="venue"
       :terms="terms"
       :busy="busy"
-      @request="(termDays) => requestPayment(venue.venue_id, termDays)"
+      @request="(termDays, amount) => requestPayment(venue.venue_id, termDays, amount)"
       @open-payment="openPayment"
       @terminate="terminating = venue"
     />

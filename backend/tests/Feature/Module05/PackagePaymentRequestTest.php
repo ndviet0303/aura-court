@@ -32,7 +32,7 @@ class PackagePaymentRequestTest extends TestCase
     {
         $venue = Venue::factory()->withoutPackage()->create();
 
-        $response = $this->actingAs($this->ownerOf($venue->organization))->postJson($this->url($venue), ['term_days' => 180])
+        $response = $this->actingAs($this->ownerOf($venue->organization))->postJson($this->url($venue), ['term_days' => 180, 'expected_amount' => 1500000])
             ->assertCreated()
             ->assertJsonPath('data.venue_id', $venue->id)
             ->assertJsonPath('data.kind', 'purchase')
@@ -56,7 +56,7 @@ class PackagePaymentRequestTest extends TestCase
     {
         $venue = Venue::factory()->withoutPackage()->create();
         $owner = $this->ownerOf($venue->organization);
-        $created = $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 30])->assertCreated()->json('data');
+        $created = $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 30, 'expected_amount' => 300000])->assertCreated()->json('data');
 
         $this->travel(6)->minutes();
         $this->actingAs($owner)->getJson("/api/partner/organizations/{$venue->organization_id}/package-requests/{$created['request_code']}")
@@ -65,7 +65,7 @@ class PackagePaymentRequestTest extends TestCase
             ->assertJsonPath('data.amount', $created['amount'])
             ->assertJsonPath('data.expires_at', $created['expires_at']);
         // Asking again for the same term returns the same request unchanged, not a new 10 minutes.
-        $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 30])
+        $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 30, 'expected_amount' => 300000])
             ->assertOk()
             ->assertJsonPath('data.request_code', $created['request_code'])
             ->assertJsonPath('data.expires_at', $created['expires_at']);
@@ -76,9 +76,9 @@ class PackagePaymentRequestTest extends TestCase
     {
         $venue = Venue::factory()->withoutPackage()->create();
         $owner = $this->ownerOf($venue->organization);
-        $code = $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 30])->json('data.request_code');
+        $code = $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 30, 'expected_amount' => 300000])->json('data.request_code');
 
-        $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 90])
+        $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 90, 'expected_amount' => 800000])
             ->assertConflict()
             ->assertJsonPath('code', 'PACKAGE_REQUEST_PENDING')
             ->assertJsonPath('data.request_code', $code);
@@ -88,7 +88,7 @@ class PackagePaymentRequestTest extends TestCase
     {
         $venue = Venue::factory()->withoutPackage()->create();
         $owner = $this->ownerOf($venue->organization);
-        $code = $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 30])->json('data.request_code');
+        $code = $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 30, 'expected_amount' => 300000])->json('data.request_code');
         $show = "/api/partner/organizations/{$venue->organization_id}/package-requests/{$code}";
 
         $this->travelTo(now()->addMinutes(9)->addSeconds(59));
@@ -102,7 +102,7 @@ class PackagePaymentRequestTest extends TestCase
         $this->assertNull(VenuePackage::query()->where('venue_id', $venue->id)->first());
 
         // A new request, at the price in effect now, can be made at once.
-        $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 90])->assertCreated()->assertJsonPath('data.amount', 800000);
+        $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 90, 'expected_amount' => 800000])->assertCreated()->assertJsonPath('data.amount', 800000);
     }
 
     public function test_fr_90_br_99_an_active_package_is_renewed_only_with_its_own_term(): void
@@ -111,9 +111,9 @@ class PackagePaymentRequestTest extends TestCase
         VenuePackage::factory()->create(['venue_id' => $venue->id, 'term_days' => PackageTerm::Days90, 'starts_at' => now()->subDays(10)]);
         $owner = $this->ownerOf($venue->organization);
 
-        $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 30])
+        $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 30, 'expected_amount' => 300000])
             ->assertConflict()->assertJsonPath('code', 'PACKAGE_TERM_LOCKED');
-        $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 90])
+        $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 90, 'expected_amount' => 800000])
             ->assertCreated()->assertJsonPath('data.kind', 'renewal')->assertJsonPath('data.amount', 800000);
     }
 
@@ -124,17 +124,35 @@ class PackagePaymentRequestTest extends TestCase
         $terminated = Venue::factory()->withoutPackage()->create();
         VenuePackage::factory()->create(['venue_id' => $terminated->id, 'term_days' => PackageTerm::Days30, 'terminated_at' => now()->subDay()]);
 
-        $this->actingAs($this->ownerOf($expired->organization))->postJson($this->url($expired), ['term_days' => 360])
+        $this->actingAs($this->ownerOf($expired->organization))->postJson($this->url($expired), ['term_days' => 360, 'expected_amount' => 2800000])
             ->assertCreated()->assertJsonPath('data.kind', 'purchase');
-        $this->actingAs($this->ownerOf($terminated->organization))->postJson($this->url($terminated), ['term_days' => 180])
+        $this->actingAs($this->ownerOf($terminated->organization))->postJson($this->url($terminated), ['term_days' => 180, 'expected_amount' => 1500000])
             ->assertCreated()->assertJsonPath('data.kind', 'purchase');
+    }
+
+    public function test_uc_5_4_a2_uc_5_8_e1_a_price_changed_since_the_owner_saw_it_is_shown_again_not_charged(): void
+    {
+        $venue = Venue::factory()->withoutPackage()->create();
+        $owner = $this->ownerOf($venue->organization);
+        $this->packagePrice(PackageTerm::Days30, 350000);
+
+        $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 30, 'expected_amount' => 300000])
+            ->assertConflict()
+            ->assertJsonPath('code', 'PACKAGE_PRICE_CHANGED')
+            ->assertJsonPath('current_amount', 350000);
+        $this->assertSame(0, PackagePaymentRequest::query()->count());
+
+        $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 30, 'expected_amount' => 350000])
+            ->assertCreated()->assertJsonPath('data.amount', 350000);
+        $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 30])
+            ->assertUnprocessable()->assertJsonValidationErrors('expected_amount');
     }
 
     public function test_fr_85_the_term_must_be_one_of_the_four(): void
     {
         $venue = Venue::factory()->withoutPackage()->create();
 
-        $this->actingAs($this->ownerOf($venue->organization))->postJson($this->url($venue), ['term_days' => 31])
+        $this->actingAs($this->ownerOf($venue->organization))->postJson($this->url($venue), ['term_days' => 31, 'expected_amount' => 300000])
             ->assertUnprocessable()->assertJsonValidationErrors('term_days');
     }
 
@@ -144,12 +162,12 @@ class PackagePaymentRequestTest extends TestCase
         $other = Venue::factory()->withoutPackage()->create();
         $owner = $this->ownerOf($venue->organization);
 
-        $this->actingAs($this->staffOf($venue))->postJson($this->url($venue), ['term_days' => 30])->assertForbidden();
-        $this->actingAs($this->ownerOf($other->organization))->postJson($this->url($venue), ['term_days' => 30])->assertForbidden();
+        $this->actingAs($this->staffOf($venue))->postJson($this->url($venue), ['term_days' => 30, 'expected_amount' => 300000])->assertForbidden();
+        $this->actingAs($this->ownerOf($other->organization))->postJson($this->url($venue), ['term_days' => 30, 'expected_amount' => 300000])->assertForbidden();
         // A venue of another organization under the owner's own organization path is not found.
-        $this->actingAs($owner)->postJson("/api/partner/organizations/{$venue->organization_id}/venues/{$other->id}/package-requests", ['term_days' => 30])->assertNotFound();
+        $this->actingAs($owner)->postJson("/api/partner/organizations/{$venue->organization_id}/venues/{$other->id}/package-requests", ['term_days' => 30, 'expected_amount' => 300000])->assertNotFound();
 
-        $code = $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 30])->assertCreated()->json('data.request_code');
+        $code = $this->actingAs($owner)->postJson($this->url($venue), ['term_days' => 30, 'expected_amount' => 300000])->assertCreated()->json('data.request_code');
         $this->actingAs($this->staffOf($venue))->getJson("/api/partner/organizations/{$venue->organization_id}/package-requests/{$code}")->assertForbidden();
         $this->actingAs($this->ownerOf($other->organization))->getJson("/api/partner/organizations/{$other->organization_id}/package-requests/{$code}")->assertNotFound();
         $this->actingAs($this->staffOf($venue))->getJson("/api/partner/organizations/{$venue->organization_id}/packages")->assertForbidden();
@@ -160,7 +178,7 @@ class PackagePaymentRequestTest extends TestCase
         config(['services.sepay.account' => null]);
         $venue = Venue::factory()->withoutPackage()->create();
 
-        $this->actingAs($this->ownerOf($venue->organization))->postJson($this->url($venue), ['term_days' => 30])
+        $this->actingAs($this->ownerOf($venue->organization))->postJson($this->url($venue), ['term_days' => 30, 'expected_amount' => 300000])
             ->assertStatus(503)->assertJsonPath('code', 'PACKAGE_PAYMENT_UNAVAILABLE');
         $this->assertSame(0, PackagePaymentRequest::query()->count());
     }
@@ -169,7 +187,7 @@ class PackagePaymentRequestTest extends TestCase
     {
         $venue = Venue::factory()->withoutPackage()->create(['status' => Venue::STATUS_CLOSED]);
 
-        $this->actingAs($this->ownerOf($venue->organization))->postJson($this->url($venue), ['term_days' => 30])
+        $this->actingAs($this->ownerOf($venue->organization))->postJson($this->url($venue), ['term_days' => 30, 'expected_amount' => 300000])
             ->assertUnprocessable()->assertJsonPath('code', 'VENUE_CLOSED');
     }
 

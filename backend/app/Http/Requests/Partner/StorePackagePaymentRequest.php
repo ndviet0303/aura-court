@@ -19,6 +19,8 @@ class StorePackagePaymentRequest extends FormRequest
     {
         return [
             'term_days' => ['required', 'integer', Rule::enum(PackageTerm::class)],
+            // UC-5.4 A-2, UC-5.8 E-1: the price the owner confirmed; a changed price is shown again instead of charged.
+            'expected_amount' => ['required', 'integer', 'min:1'],
         ];
     }
 
@@ -28,6 +30,9 @@ class StorePackagePaymentRequest extends FormRequest
             'term_days.required' => 'Vui lòng chọn kỳ hạn gói.',
             'term_days.integer' => 'Kỳ hạn gói phải là 30, 90, 180 hoặc 360 ngày.',
             'term_days.enum' => 'Kỳ hạn gói phải là 30, 90, 180 hoặc 360 ngày.',
+            'expected_amount.required' => 'Vui lòng xác nhận giá gói trước khi đăng ký.',
+            'expected_amount.integer' => 'Giá gói phải là số nguyên VND lớn hơn 0.',
+            'expected_amount.min' => 'Giá gói phải là số nguyên VND lớn hơn 0.',
         ];
     }
 }

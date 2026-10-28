@@ -18,7 +18,10 @@ export const platformFeeApi = {
   getPrices: () => api.get<{ data: PackageTermPrice[] }>('/admin/platform-fees/prices'),
 
   schedulePrice: (payload: SchedulePackagePricePayload) =>
-    api.post<{ data: PackagePrice; message: string }>('/admin/platform-fees/prices', payload),
+    api.post<{ data: PackagePrice; message: string; notification_failed: boolean }>(
+      '/admin/platform-fees/prices',
+      payload,
+    ),
 
   getRequests: (params: PlatformFeeRequestQuery) =>
     api.get<PlatformFeePage<PlatformFeeRequest>>('/admin/platform-fees/requests', { params }),

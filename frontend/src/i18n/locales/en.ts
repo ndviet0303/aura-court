@@ -109,6 +109,8 @@ export default {
       'This venue has another package payment request that has not expired. Pay it or wait until it expires.',
     packageTermLocked: 'A renewal must use the term of the active package.',
     packagePriceUnavailable: 'This term has no applicable price yet.',
+    packagePriceChanged: 'The price of this term just changed. Check it and confirm again.',
+    packagePriceExists: 'This term already has a price. Reload and use the price update instead.',
     packageNotActive: 'This venue has no active package to terminate.',
     terminationNotConfirmed:
       'Confirm that the remaining time is lost and nothing is refunded before terminating the package.',
@@ -129,6 +131,7 @@ export default {
     venueNotFound: 'No such venue in the organization.',
     affectedCaseOpen: 'The booking has an open affected-booking case, so it cannot be a no-show.',
     adjustmentNoChange: 'The status and times did not change.',
+    attendanceChanged: 'The booking changed meanwhile. Reload and check it before adjusting.',
     customerNotFound: 'This customer has not booked at this venue.',
     conversationForbidden: 'You cannot access this conversation.',
     chatWithSelf: 'You cannot chat with yourself or a venue you run.',
@@ -4344,6 +4347,7 @@ export default {
           amount_mismatch: 'Wrong amount',
           already_paid: 'Request already paid',
           term_conflict: 'Term differs from the current package',
+          account_mismatch: 'Not sent to the AuraCourt account',
         },
       },
       venues: {
@@ -4415,6 +4419,8 @@ export default {
         loadError: 'Could not load package prices.',
         saveError: 'Could not set the package price.',
         saved: 'Package price set. Active venue owners will be notified.',
+        savedWithoutNotice: 'Package price set.',
+        notifyFailed: 'The price change notice could not be sent to venue owners.',
         columns: {
           term: 'Term',
           current: 'Current price',
@@ -4488,6 +4494,8 @@ export default {
         hint: 'Transfer the exact amount with this content before the deadline. The package changes only when the transaction is received.',
         refresh: 'Check status',
         createError: 'Could not create the package payment request.',
+        priceChanged:
+          'The price of this term just changed to {amount}. Check it and confirm again.',
         loadError: 'Could not open the package payment request.',
       },
       kind: {

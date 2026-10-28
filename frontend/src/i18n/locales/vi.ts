@@ -109,6 +109,8 @@ export default {
       'Cơ sở đang có yêu cầu thanh toán gói khác chưa hết hạn. Hãy thanh toán yêu cầu đó hoặc chờ nó hết hạn.',
     packageTermLocked: 'Gia hạn phải cùng kỳ hạn với gói đang dùng.',
     packagePriceUnavailable: 'Kỳ hạn này chưa có giá áp dụng.',
+    packagePriceChanged: 'Giá kỳ hạn này vừa thay đổi. Vui lòng kiểm tra và xác nhận lại.',
+    packagePriceExists: 'Kỳ hạn này đã có giá. Vui lòng tải lại và dùng chức năng cập nhật giá.',
     packageNotActive: 'Cơ sở không có gói đang hoạt động để chấm dứt.',
     terminationNotConfirmed:
       'Vui lòng xác nhận mất thời gian còn lại và không được hoàn tiền trước khi chấm dứt gói.',
@@ -129,6 +131,8 @@ export default {
     venueNotFound: 'Không tìm thấy cơ sở trong tổ chức.',
     affectedCaseOpen: 'Đơn đang có case ảnh hưởng chưa xử lý xong, không thể ghi vắng mặt.',
     adjustmentNoChange: 'Trạng thái và thời điểm không thay đổi.',
+    attendanceChanged:
+      'Dữ liệu vận hành của đơn đã thay đổi. Vui lòng tải lại và kiểm tra trước khi điều chỉnh.',
     customerNotFound: 'Khách hàng chưa đặt sân tại cơ sở này.',
     conversationForbidden: 'Bạn không có quyền truy cập cuộc trò chuyện này.',
     chatWithSelf: 'Không thể trò chuyện với chính mình hoặc cơ sở mình đang quản lý.',
@@ -4325,6 +4329,7 @@ export default {
           amount_mismatch: 'Sai số tiền',
           already_paid: 'Yêu cầu đã thanh toán trước đó',
           term_conflict: 'Không khớp kỳ hạn gói đang dùng',
+          account_mismatch: 'Sai tài khoản nhận AuraCourt',
         },
       },
       venues: {
@@ -4396,6 +4401,8 @@ export default {
         loadError: 'Không tải được bảng giá gói.',
         saveError: 'Không đặt được giá gói.',
         saved: 'Đã đặt giá gói. Chủ sân đang hoạt động sẽ nhận thông báo.',
+        savedWithoutNotice: 'Đã đặt giá gói.',
+        notifyFailed: 'Chưa gửi được thông báo thay đổi giá cho chủ sân.',
         columns: {
           term: 'Kỳ hạn',
           current: 'Giá đang áp dụng',
@@ -4469,6 +4476,7 @@ export default {
         hint: 'Chuyển đúng số tiền và nội dung trước hạn. Gói chỉ đổi khi hệ thống nhận được giao dịch.',
         refresh: 'Kiểm tra trạng thái',
         createError: 'Không tạo được yêu cầu thanh toán gói.',
+        priceChanged: 'Giá kỳ hạn này vừa đổi thành {amount}. Vui lòng kiểm tra và xác nhận lại.',
         loadError: 'Không mở được yêu cầu thanh toán gói.',
       },
       kind: {

@@ -14,6 +14,8 @@ readonly class SchedulePackagePriceData
         public int $amount,
         public ?CarbonInterface $effectiveAt,
         public int $createdBy,
+        /** UC-5.2: an initial price, refused when the term already has one; otherwise an update (UC-5.3). */
+        public bool $initial,
     ) {}
 
     public static function fromRequest(StorePackagePriceRequest $request): self
@@ -26,6 +28,7 @@ readonly class SchedulePackagePriceData
             // A value without an offset is read in the app timezone (VN wall time).
             effectiveAt: $effectiveAt ? Carbon::parse($effectiveAt)->utc() : null,
             createdBy: (int) $request->user()->id,
+            initial: $request->boolean('initial'),
         );
     }
 }

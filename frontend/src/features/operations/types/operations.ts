@@ -72,6 +72,8 @@ export interface AdjustmentForm {
   checked_in_at?: string
   checked_out_at?: string
   reason: string
+  /** UC-6.7 E-3: the data the owner loaded; the server refuses to overwrite a newer record. */
+  expected: AttendanceSnapshot
 }
 
 export interface AttendanceResult {

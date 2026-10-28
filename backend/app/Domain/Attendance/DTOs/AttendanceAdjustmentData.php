@@ -18,6 +18,8 @@ readonly class AttendanceAdjustmentData
         public ?CarbonInterface $checkedInAt,
         public ?CarbonInterface $checkedOutAt,
         public string $reason,
+        /** @var array{status: string, checked_in_at: ?string, checked_out_at: ?string, no_show_at: ?string} the data the owner loaded, shaped as the history snapshot */
+        public array $expected,
     ) {}
 
     public static function fromRequest(AdjustAttendanceRequest $request, int $organizationId): self
@@ -30,6 +32,12 @@ readonly class AttendanceAdjustmentData
             self::wallTime($request->validated('checked_in_at')),
             self::wallTime($request->validated('checked_out_at')),
             (string) $request->validated('reason'),
+            [
+                'status' => (string) $request->validated('expected.status'),
+                'checked_in_at' => self::wallTime($request->validated('expected.checked_in_at'))?->toIso8601String(),
+                'checked_out_at' => self::wallTime($request->validated('expected.checked_out_at'))?->toIso8601String(),
+                'no_show_at' => self::wallTime($request->validated('expected.no_show_at'))?->toIso8601String(),
+            ],
         );
     }
 

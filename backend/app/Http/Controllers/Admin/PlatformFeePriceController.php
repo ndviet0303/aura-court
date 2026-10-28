@@ -27,11 +27,13 @@ class PlatformFeePriceController extends Controller
 
     public function store(StorePackagePriceRequest $request): JsonResponse
     {
-        $price = $this->schedulePrice->execute(SchedulePackagePriceData::fromRequest($request));
+        $result = $this->schedulePrice->execute(SchedulePackagePriceData::fromRequest($request));
 
+        // UC-5.3 E-3: the price is saved either way; a failed notice is reported beside it, not as a failure.
         return response()->json([
-            'data' => PackagePriceResource::make($price),
-            'message' => 'Đã đặt giá gói.',
+            'data' => PackagePriceResource::make($result->price),
+            'notification_failed' => $result->notificationFailed,
+            'message' => $result->notificationFailed ? 'Đã đặt giá gói nhưng chưa gửi được thông báo cho đối tác.' : 'Đã đặt giá gói.',
         ], 201);
     }
 }
