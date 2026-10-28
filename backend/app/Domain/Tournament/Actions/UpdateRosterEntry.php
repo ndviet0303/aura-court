@@ -6,6 +6,7 @@ use App\Contracts\Repositories\TournamentPlayRepositoryInterface;
 use App\Contracts\Repositories\TournamentRepositoryInterface;
 use App\Domain\Tournament\DTOs\EntryData;
 use App\Domain\Tournament\Rules\EntryShape;
+use App\Domain\Tournament\Rules\TournamentAccess;
 use App\Models\TournamentEntry;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -26,8 +27,10 @@ class UpdateRosterEntry
 
         return DB::transaction(function () use ($tournament, $entry, $data): TournamentEntry {
             ImportRoster::assertDraft($this->tournaments->lock($tournament));
+            // The roster may have been re-imported or the unit removed since the request was routed.
+            $locked = $this->play->lockEntry((int) $entry->id) ?? TournamentAccess::fail('ENTRY_NOT_FOUND', 'Đơn vị không còn trong danh sách.', 404);
 
-            return $this->play->updateEntry($entry, ['name' => $data->name], $data->members);
+            return $this->play->updateEntry($locked, ['name' => $data->name], $data->members);
         });
     }
 }
