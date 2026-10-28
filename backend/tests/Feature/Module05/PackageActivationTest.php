@@ -125,6 +125,19 @@ class PackageActivationTest extends TestCase
         $this->assertSame(0, Journal::query()->withoutGlobalScopes()->where('event_type', 'platform.package_fee_receipt')->count());
     }
 
+    public function test_uc_5_6_the_receiving_account_is_compared_digits_only(): void
+    {
+        $venue = Venue::factory()->withoutPackage()->create();
+        $request = $this->pendingRequest($venue, PackageTerm::Days30, 300000);
+        // Same account as the webhook's 0011223344, written with separators in the env.
+        config(['services.sepay.account' => '0011 2233-44']);
+
+        $this->payPackage($request->payment_code, 300000, now())->assertOk();
+
+        $this->assertSame(PackagePaymentReceipt::OUTCOME_APPLIED, PackagePaymentReceipt::query()->sole()->outcome);
+        $this->assertSame(PackagePaymentRequest::STATUS_PAID, $request->refresh()->status);
+    }
+
     public function test_fr_88_br_96_a_payment_recorded_at_or_after_the_deadline_is_late_and_never_completes_the_request(): void
     {
         $venue = Venue::factory()->withoutPackage()->create();

@@ -93,12 +93,15 @@ class ApplyPackagePayment
         };
     }
 
-    /** UC-5.6 step 3: the fee must land in AuraCourt's account; with none configured there is nothing to compare. */
+    /** UC-5.6 step 3: the fee must land in AuraCourt's account (main or SePay virtual sub-account), compared digits only; with none configured there is nothing to compare. */
     private function receivedByAuraCourt(array $data): bool
     {
-        $account = (string) config('services.sepay.account');
+        $digits = fn (mixed $value): string => preg_replace('/\D/', '', (string) $value) ?? '';
+        $account = $digits(config('services.sepay.account'));
 
-        return $account === '' || hash_equals($account, (string) ($data['accountNumber'] ?? ''));
+        return $account === ''
+            || hash_equals($account, $digits($data['accountNumber'] ?? ''))
+            || hash_equals($account, $digits($data['subAccount'] ?? ''));
     }
 
     /** D6.5: an active package of the same term moves its own end; otherwise a new package starts at the payment time. */
