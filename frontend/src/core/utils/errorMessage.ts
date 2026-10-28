@@ -159,6 +159,16 @@ export const ERROR_CODE_MAP: Record<string, { vi: string; en: string; key: strin
     en: 'This term has no applicable price yet.',
     key: 'errors.packagePriceUnavailable',
   },
+  PACKAGE_PRICE_CHANGED: {
+    vi: 'Giá kỳ hạn này vừa thay đổi. Vui lòng kiểm tra và xác nhận lại.',
+    en: 'The price of this term just changed. Check it and confirm again.',
+    key: 'errors.packagePriceChanged',
+  },
+  PACKAGE_PRICE_EXISTS: {
+    vi: 'Kỳ hạn này đã có giá. Vui lòng tải lại và dùng chức năng cập nhật giá.',
+    en: 'This term already has a price. Reload and use the price update instead.',
+    key: 'errors.packagePriceExists',
+  },
   PACKAGE_NOT_ACTIVE: {
     vi: 'Cơ sở không có gói đang hoạt động để chấm dứt.',
     en: 'This venue has no active package to terminate.',
@@ -248,6 +258,11 @@ export const ERROR_CODE_MAP: Record<string, { vi: string; en: string; key: strin
     vi: 'Trạng thái và thời điểm không thay đổi.',
     en: 'The status and times did not change.',
     key: 'errors.adjustmentNoChange',
+  },
+  ATTENDANCE_CHANGED: {
+    vi: 'Dữ liệu vận hành của đơn đã thay đổi. Vui lòng tải lại và kiểm tra trước khi điều chỉnh.',
+    en: 'The booking changed meanwhile. Reload and check it before adjusting.',
+    key: 'errors.attendanceChanged',
   },
   CUSTOMER_NOT_FOUND: {
     vi: 'Khách hàng chưa đặt sân tại cơ sở này.',

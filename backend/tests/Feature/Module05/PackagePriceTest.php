@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Module05;
 
+use App\Contracts\Infrastructure\DurableNotificationServiceInterface;
 use App\Domain\Package\Enums\PackageTerm;
 use App\Models\OutboxMessage;
+use App\Models\PackagePrice;
 use App\Models\Venue;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -68,7 +70,7 @@ class PackagePriceTest extends TestCase
         $venue = Venue::factory()->withoutPackage()->create();
 
         $this->actingAs($this->ownerOf($venue->organization))
-            ->postJson($this->requestUrl($venue), ['term_days' => 90])
+            ->postJson($this->requestUrl($venue), ['term_days' => 90, 'expected_amount' => 800000])
             ->assertUnprocessable()
             ->assertJsonPath('code', 'PACKAGE_PRICE_UNAVAILABLE');
     }
@@ -83,11 +85,11 @@ class PackagePriceTest extends TestCase
 
         $before = Venue::factory()->withoutPackage()->create();
         $after = Venue::factory()->withoutPackage()->create();
-        $old = $this->actingAs($this->ownerOf($before->organization))->postJson($this->requestUrl($before), ['term_days' => 30])->assertCreated();
+        $old = $this->actingAs($this->ownerOf($before->organization))->postJson($this->requestUrl($before), ['term_days' => 30, 'expected_amount' => 300000])->assertCreated();
         $this->assertSame(300000, $old->json('data.amount'));
 
         $this->travelTo(Carbon::parse('2026-11-05 00:00', 'Asia/Ho_Chi_Minh'));
-        $this->actingAs($this->ownerOf($after->organization))->postJson($this->requestUrl($after), ['term_days' => 30])
+        $this->actingAs($this->ownerOf($after->organization))->postJson($this->requestUrl($after), ['term_days' => 30, 'expected_amount' => 350000])
             ->assertCreated()->assertJsonPath('data.amount', 350000);
     }
 
@@ -96,7 +98,7 @@ class PackagePriceTest extends TestCase
         $this->packagePrice(PackageTerm::Days30, 300000, now()->subMonth());
         $venue = Venue::factory()->withoutPackage()->create();
         $owner = $this->ownerOf($venue->organization);
-        $code = $this->actingAs($owner)->postJson($this->requestUrl($venue), ['term_days' => 30])->assertCreated()->json('data.request_code');
+        $code = $this->actingAs($owner)->postJson($this->requestUrl($venue), ['term_days' => 30, 'expected_amount' => 300000])->assertCreated()->json('data.request_code');
 
         $this->actingAs($this->platformAdmin())->postJson('/api/admin/platform-fees/prices', ['term_days' => 30, 'amount' => 999000])->assertCreated();
 
@@ -131,7 +133,7 @@ class PackagePriceTest extends TestCase
 
         $this->actingAs($this->platformAdmin())->postJson('/api/admin/platform-fees/prices', [
             'term_days' => 90, 'amount' => 850000, 'effective_at' => '2026-11-20 08:00:00',
-        ])->assertCreated();
+        ])->assertCreated()->assertJsonPath('notification_failed', false);
 
         $notices = OutboxMessage::query()->withoutGlobalScopes()->where('event_type', 'package.price.set')->get();
         $this->assertEqualsCanonicalizing(array_map(fn ($owner) => $owner->id, $owners), $notices->pluck('payload.user_id')->all());
@@ -144,6 +146,36 @@ class PackagePriceTest extends TestCase
             $this->assertStringContainsString('850.000₫', $notice->payload['body']);
             $this->assertStringContainsString('08:00 20/11/2026', $notice->payload['body']);
         }
+    }
+
+    public function test_uc_5_2_e1_an_initial_price_never_overwrites_a_term_priced_meanwhile(): void
+    {
+        $admin = $this->platformAdmin();
+        $this->actingAs($admin)->postJson('/api/admin/platform-fees/prices', ['term_days' => 30, 'amount' => 300000, 'initial' => true])->assertCreated();
+        $this->actingAs($admin)->postJson('/api/admin/platform-fees/prices', ['term_days' => 90, 'amount' => 800000, 'effective_at' => '2026-12-01 00:00:00'])->assertCreated();
+
+        // A scheduled price counts as a price too.
+        foreach ([30, 90] as $term) {
+            $this->actingAs($admin)->postJson('/api/admin/platform-fees/prices', ['term_days' => $term, 'amount' => 999000, 'initial' => true])
+                ->assertConflict()->assertJsonPath('code', 'PACKAGE_PRICE_EXISTS');
+        }
+        $this->assertSame(2, PackagePrice::query()->count());
+
+        // UC-5.3: the update path still changes it.
+        $this->actingAs($admin)->postJson('/api/admin/platform-fees/prices', ['term_days' => 30, 'amount' => 320000])
+            ->assertCreated()->assertJsonPath('data.amount', 320000);
+    }
+
+    public function test_uc_5_3_e3_a_saved_price_whose_notice_failed_reports_both(): void
+    {
+        $this->ownerOf(Venue::factory()->create()->organization);
+        $this->mock(DurableNotificationServiceInterface::class, fn ($mock) => $mock->shouldReceive('recordOutboxNotification')->andThrow(new \RuntimeException('queue down')));
+
+        $this->actingAs($this->platformAdmin())->postJson('/api/admin/platform-fees/prices', ['term_days' => 30, 'amount' => 300000])
+            ->assertCreated()
+            ->assertJsonPath('data.amount', 300000)
+            ->assertJsonPath('notification_failed', true);
+        $this->assertSame(1, PackagePrice::query()->count());
     }
 
     private function requestUrl(Venue $venue): string

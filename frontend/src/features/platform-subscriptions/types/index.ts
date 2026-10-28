@@ -60,5 +60,11 @@ export type VenuePackagesOverview = {
   terms: PackageTermPrice[]
 }
 
-/** A 409 PACKAGE_REQUEST_PENDING carries the venue's live pending request in `data`. */
-export type PackageRequestError = ApiError & { data?: PackagePaymentRequest }
+/**
+ * A 409 PACKAGE_REQUEST_PENDING carries the venue's live pending request in `data`;
+ * a 409 PACKAGE_PRICE_CHANGED carries the price now in effect in `current_amount`.
+ */
+export type PackageRequestError = ApiError & {
+  data?: PackagePaymentRequest
+  current_amount?: number
+}

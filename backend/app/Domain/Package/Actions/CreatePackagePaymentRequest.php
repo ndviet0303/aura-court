@@ -61,6 +61,10 @@ class CreatePackagePaymentRequest
             if ($price === null) {
                 throw new PackageRuleException(422, 'PACKAGE_PRICE_UNAVAILABLE', 'Kỳ hạn này chưa có giá áp dụng.');
             }
+            if ($price->amount !== $data->expectedAmount) {
+                $amount = number_format($price->amount, 0, ',', '.').'₫';
+                throw new PackageRuleException(409, 'PACKAGE_PRICE_CHANGED', "Giá kỳ hạn này đã đổi thành {$amount}. Vui lòng kiểm tra và xác nhận lại.", currentAmount: $price->amount);
+            }
 
             [$requestCode, $paymentCode] = $this->uniqueCodes();
 

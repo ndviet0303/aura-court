@@ -2,6 +2,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useApiCall } from '@/core/composables/useApiCall'
 import { errorMessage } from '@/core/utils/errorMessage'
+import { formatCurrency } from '@/i18n'
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import type { PackageTermDays } from '@/features/platform-fees/types/platformFee'
 import { platformSubscriptionApi } from '../api/platformSubscriptionApi'
@@ -59,19 +60,28 @@ export function useVenuePackages() {
       await task(orgId)
     } catch (e: unknown) {
       actionError.value = errorMessage(e, t(fallbackKey))
+      const err = e as PackageRequestError | null
       // D4: the 409 carries the venue's pending request, so its payment opens instead.
-      const pending = (e as PackageRequestError | null)?.data
-      if ((e as PackageRequestError | null)?.code === 'PACKAGE_REQUEST_PENDING' && pending) {
-        payment.value = pending
+      if (err?.code === 'PACKAGE_REQUEST_PENDING' && err.data) {
+        payment.value = err.data
+      }
+      // UC-5.4 A-2: the new price is shown and the terms reload, so the owner confirms it again.
+      if (err?.code === 'PACKAGE_PRICE_CHANGED' && err.current_amount !== undefined) {
+        actionError.value = t('admin.packages.payment.priceChanged', {
+          amount: formatCurrency(err.current_amount),
+        })
+        await load()
       }
     } finally {
       busy.value = false
     }
   }
 
-  const requestPayment = (venueId: number, termDays: PackageTermDays) =>
+  const requestPayment = (venueId: number, termDays: PackageTermDays, expectedAmount: number) =>
     act(async (orgId) => {
-      payment.value = (await platformSubscriptionApi.createRequest(orgId, venueId, termDays)).data
+      payment.value = (
+        await platformSubscriptionApi.createRequest(orgId, venueId, termDays, expectedAmount)
+      ).data
       await load()
     }, 'admin.packages.payment.createError')
 

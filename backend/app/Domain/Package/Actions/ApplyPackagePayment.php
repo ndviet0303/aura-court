@@ -63,7 +63,7 @@ class ApplyPackagePayment
             $request = $this->requests->findForUpdate($request->id);
             $current = $this->packages->findCurrentForVenue($request->venue_id);
 
-            $outcome = $this->outcome($request, $receipt->amount, $paidAt, $current);
+            $outcome = $this->outcome($request, $receipt->amount, $paidAt, $current, $this->receivedByAuraCourt($data));
             if ($outcome === PackagePaymentReceipt::OUTCOME_LATE && $request->status === PackagePaymentRequest::STATUS_PENDING) {
                 $this->requests->update($request, ['status' => PackagePaymentRequest::STATUS_EXPIRED]);
             }
@@ -81,15 +81,24 @@ class ApplyPackagePayment
     }
 
     /** D6.4: the first rule that holds wins; activity and term are judged at the payment time, not on arrival. */
-    private function outcome(PackagePaymentRequest $request, int $amount, CarbonInterface $paidAt, ?VenuePackage $current): string
+    private function outcome(PackagePaymentRequest $request, int $amount, CarbonInterface $paidAt, ?VenuePackage $current, bool $toAuraCourt): string
     {
         return match (true) {
+            ! $toAuraCourt => PackagePaymentReceipt::OUTCOME_ACCOUNT_MISMATCH,
             $request->status === PackagePaymentRequest::STATUS_PAID => PackagePaymentReceipt::OUTCOME_ALREADY_PAID,
             $paidAt->gte($request->expires_at) => PackagePaymentReceipt::OUTCOME_LATE,
             $amount !== $request->amount => PackagePaymentReceipt::OUTCOME_AMOUNT_MISMATCH,
             $this->activeForPayment($current, $paidAt) && $current?->term_days !== $request->term_days => PackagePaymentReceipt::OUTCOME_TERM_CONFLICT,
             default => PackagePaymentReceipt::OUTCOME_APPLIED,
         };
+    }
+
+    /** UC-5.6 step 3: the fee must land in AuraCourt's account; with none configured there is nothing to compare. */
+    private function receivedByAuraCourt(array $data): bool
+    {
+        $account = (string) config('services.sepay.account');
+
+        return $account === '' || hash_equals($account, (string) ($data['accountNumber'] ?? ''));
     }
 
     /** D6.5: an active package of the same term moves its own end; otherwise a new package starts at the payment time. */

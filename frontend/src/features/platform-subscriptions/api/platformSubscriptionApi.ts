@@ -9,10 +9,16 @@ export const platformSubscriptionApi = {
   getPackages: (organizationId: number) =>
     api.get<{ data: VenuePackagesOverview }>(`${organization(organizationId)}/packages`),
 
-  createRequest: (organizationId: number, venueId: number, termDays: PackageTermDays) =>
+  // expectedAmount is the price the owner confirmed; a changed price answers 409 PACKAGE_PRICE_CHANGED.
+  createRequest: (
+    organizationId: number,
+    venueId: number,
+    termDays: PackageTermDays,
+    expectedAmount: number,
+  ) =>
     api.post<{ data: PackagePaymentRequest }>(
       `${organization(organizationId)}/venues/${venueId}/package-requests`,
-      { term_days: termDays },
+      { term_days: termDays, expected_amount: expectedAmount },
     ),
 
   getRequest: (organizationId: number, code: string) =>

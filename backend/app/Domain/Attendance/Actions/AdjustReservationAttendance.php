@@ -31,6 +31,9 @@ class AdjustReservationAttendance
             $reservation = AttendanceGuard::confirmed($this->attendances->findByCode($data->code, $data->organizationId, true), $data->owner);
             $attendance = $reservation->attendance;
             $before = $this->snapshot($attendance);
+            if ($before !== $data->expected) {
+                AttendanceGuard::fail('ATTENDANCE_CHANGED', 'Dữ liệu vận hành của đơn đã thay đổi. Vui lòng tải lại và kiểm tra trước khi điều chỉnh.', 409);
+            }
             $now = now();
             $noShowAt = $data->status !== 'no_show' ? null : ($attendance?->status === BookingAttendance::STATUS_NO_SHOW ? $attendance->no_show_at : $now);
             $after = [
