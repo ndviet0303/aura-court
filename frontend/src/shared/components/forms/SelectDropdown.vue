@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 
 export interface DropdownOption {
   value: string | number
@@ -53,9 +53,15 @@ const displayLabel = computed(() => {
   return selectedOption.value?.label || props.placeholder || ''
 })
 
-function toggle() {
+async function toggle() {
   if (props.disabled) return
   open.value = !open.value
+  if (!open.value) return
+  await nextTick()
+  // Scroll containers such as .modal-body clip the absolute menu; reveal it. jsdom lacks scrollIntoView.
+  root.value
+    ?.querySelector<HTMLElement>('.custom-dropdown-menu')
+    ?.scrollIntoView?.({ block: 'nearest' })
 }
 
 function selectOption(val: string | number) {
