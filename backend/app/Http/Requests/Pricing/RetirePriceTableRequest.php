@@ -21,9 +21,9 @@ class RetirePriceTableRequest extends FormRequest
     {
         return [
             'replacement_table_id' => ['nullable', 'integer', 'not_in:'.$this->table()->id],
-            'court_ids' => ['required_with:replacement_table_id', 'list', 'min:1'],
+            'court_ids' => ['required_with:replacement_table_id', 'prohibited_without:replacement_table_id', 'list', 'min:1'],
             'court_ids.*' => ['integer', 'distinct'],
-            'starts_at' => ['nullable', 'date'],
+            'starts_at' => ['nullable', 'prohibited_without:replacement_table_id', 'date'],
         ];
     }
 

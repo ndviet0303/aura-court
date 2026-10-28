@@ -35,6 +35,6 @@ class RetirePriceTable
             }
 
             return $this->priceTables->retire($table);
-        });
+        }, 3);
     }
 }
