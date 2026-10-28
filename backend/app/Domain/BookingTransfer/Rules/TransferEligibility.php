@@ -90,10 +90,10 @@ final class TransferEligibility
     {
         abort_if($user->isRestricted(), 403, 'Tài khoản của bạn đã bị khóa hoặc hạn chế quyền truy cập.');
         if (! $user->hasVerifiedEmail()) {
-            self::fail('EMAIL_UNVERIFIED', 'Vui lòng xác thực email trước khi chuyển nhượng booking.', 403);
+            self::fail('EMAIL_UNVERIFIED', 'Vui lòng xác thực email trước khi sử dụng chức năng chuyển nhượng booking.', 403);
         }
         if (! $user->hasCompleteProfile()) {
-            self::fail('PROFILE_INCOMPLETE', 'Vui lòng cập nhật đầy đủ họ tên và số điện thoại trước khi chuyển nhượng booking.');
+            self::fail('PROFILE_INCOMPLETE', 'Vui lòng cập nhật đầy đủ họ tên và số điện thoại trước khi sử dụng chức năng chuyển nhượng booking.');
         }
     }
 
