@@ -4,6 +4,7 @@ namespace App\Domain\Tournament\Actions;
 
 use App\Contracts\Repositories\TournamentPlayRepositoryInterface;
 use App\Contracts\Repositories\TournamentRepositoryInterface;
+use App\Domain\Tournament\Rules\TournamentAccess;
 use App\Models\TournamentEntry;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +23,7 @@ class RemoveRosterEntry
         ImportRoster::assertOpen($tournament, $actor);
         DB::transaction(function () use ($tournament, $entry): void {
             ImportRoster::assertDraft($this->tournaments->lock($tournament));
-            $this->play->deleteEntry($entry);
+            $this->play->deleteEntry($this->play->lockEntry((int) $entry->id) ?? TournamentAccess::fail('ENTRY_NOT_FOUND', 'Đơn vị không còn trong danh sách.', 404));
         });
     }
 }
