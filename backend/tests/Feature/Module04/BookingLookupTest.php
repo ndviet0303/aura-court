@@ -117,6 +117,39 @@ class BookingLookupTest extends TestCase
         $this->assertSame(1, $this->actingAs($this->ownerOf($other->venue->organization))->getJson('/api/owner-payment-exceptions', $this->tenant($other))->assertOk()->json('meta.total'));
     }
 
+    public function test_uc_4_12_owner_opens_an_exception_with_its_booking_deadline_and_booker_contact(): void
+    {
+        config(['features.flags.marketplace_payouts' => false]);
+        $court = $this->payableCourt();
+        $user = $this->customer();
+        $code = $this->checkout($user, $court, '2026-11-03 18:00', '2026-11-03 19:00', 100000)->assertCreated()->json('reservation.code');
+        $other = $this->payableCourt();
+        $this->transfer($court, $this->paymentCode($code), 90000)->assertOk();
+        $this->transfer($court, 'ACNOSUCHCODE00000001', 100000)->assertOk();
+        $otherCode = $this->checkout($this->customer(), $other, '2026-11-03 18:00', '2026-11-03 19:00', 100000)->assertCreated()->json('reservation.code');
+        $this->transfer($other, $this->paymentCode($otherCode), 1000)->assertOk();
+        $owner = $this->ownerOf($court->venue->organization);
+        $rows = collect($this->actingAs($owner)->getJson('/api/owner-payment-exceptions', $this->tenant($court))->json('data'))->keyBy('code');
+        $otherId = $this->actingAs($this->ownerOf($other->venue->organization))->getJson('/api/owner-payment-exceptions', $this->tenant($other))->json('data.0.id');
+        $booking = Reservation::where('code', $code)->firstOrFail();
+
+        $this->actingAs($owner)->getJson("/api/owner-payment-exceptions/{$rows['partial_amount']['id']}", $this->tenant($court))
+            ->assertOk()
+            ->assertJsonPath('data.amount', 90000)
+            ->assertJsonPath('data.booking.code', $code)
+            ->assertJsonPath('data.booking.status', 'held')
+            ->assertJsonPath('data.booking.total_amount', 100000)
+            ->assertJsonPath('data.booking.payment_deadline', $booking->hold_expires_at->utc()->toIso8601String())
+            ->assertJsonPath('data.booking.court', $court->code)
+            ->assertJsonPath('data.booking.booker', ['name' => $user->name, 'phone' => $user->phone, 'email' => $user->email]);
+        $this->actingAs($owner)->getJson("/api/owner-payment-exceptions/{$rows['unmatched_reference']['id']}", $this->tenant($court))
+            ->assertOk()
+            ->assertJsonPath('data.booking', null);
+        // BR-88: another organization's exception is not found in this one.
+        $this->actingAs($owner)->getJson("/api/owner-payment-exceptions/{$otherId}", $this->tenant($court))->assertNotFound();
+        $this->actingAs($this->staffOf($court->venue))->getJson("/api/owner-payment-exceptions/{$rows['partial_amount']['id']}", $this->tenant($court))->assertForbidden();
+    }
+
     public function test_br_88_staff_customers_and_other_owners_cannot_read_payment_exceptions(): void
     {
         $court = $this->payableCourt();

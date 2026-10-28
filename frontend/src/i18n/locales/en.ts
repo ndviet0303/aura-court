@@ -535,6 +535,7 @@ export default {
     statusCancelled: 'Cancelled',
     statusPaymentCancelled: 'Payment cancelled',
     statusOperatorCancelled: 'Cancelled by the venue',
+    statusPriceChanged: 'Ended by a price change',
     statusExpired: 'Payment expired',
     statusInUse: 'In use',
     statusCompleted: 'Completed',
@@ -733,6 +734,13 @@ export default {
       withoutTotal: 'Without a voucher, the amount payable is {total}.',
       continueWithout: 'Continue without a voucher',
       chooseOther: 'Choose another voucher',
+      scan: 'Scan QR',
+      scanStop: 'Close camera',
+      scanHint: 'Hold the voucher QR code in view; the code is checked as soon as it is read.',
+      scanError: {
+        camera: 'Could not open the camera. Please type the voucher code instead.',
+        unrecognized: 'No voucher code was found in this QR code. Try again or type the code.',
+      },
     },
     agreement: {
       booker: 'Booker',
@@ -777,6 +785,9 @@ export default {
         kept: 'Booking kept as is',
       },
       reopenPayment: 'Reopen payment',
+      priceChangedNote:
+        'The court price changed before you paid, so this request no longer holds the court. Please check the new price and send a new booking request.',
+      priceChangedAction: 'See the new price and book again',
     },
   },
   payment: {
@@ -2434,6 +2445,7 @@ export default {
       courtsCount: '{count} court(s)',
       applyBtn: 'Apply to courts',
       newVersionBtn: 'New version',
+      renameBtn: 'Rename',
       retireBtn: 'Retire table',
       retireConfirm:
         'Retire the price table "{name}"? A retired table cannot be applied to more courts; courts already using it keep its prices until their link is replaced or ended.',
@@ -2456,6 +2468,7 @@ export default {
       appliedNotice: 'Price table applied to the courts.',
       endedNotice: "The court's price table link was ended.",
       retiredNotice: 'Price table retired.',
+      renamedNotice: 'Price table renamed.',
       versionCreatedNotice: 'New version published.',
       form: {
         title: 'Create price table',
@@ -2482,6 +2495,12 @@ export default {
         note: 'A published version cannot be edited. From its effective time, a new version replaces earlier ones, including a scheduled version that has not taken effect yet.',
         nowHint: 'Leave empty to take effect as soon as it is published.',
         submit: 'Publish version',
+      },
+      retire: {
+        title: 'Retire price table "{name}"',
+        noCourts: 'No court uses this table, so no replacement is needed.',
+        replacementLabel: 'Replacement table for the courts using it',
+        noReplacement: 'No replacement; courts keep these prices',
       },
       link: {
         applyTitle: 'Apply "{name}" to courts',
@@ -2570,6 +2589,8 @@ export default {
         colBooking: 'Booking',
         colCustomer: 'Customer',
         colCourtTime: 'Court and time',
+        colStatus: 'Booking status',
+        colRental: 'Rental before discount',
         colDiscount: 'Discount',
         colAt: {
           held: 'Held at',
@@ -2587,7 +2608,7 @@ export default {
         createTitle: 'Create promotion program',
         editTitle: 'Edit program "{name}"',
         immutableHint:
-          'The voucher type, discount type, private codes and number of codes cannot change after issuing. New terms apply to bookings not yet confirmed.',
+          'The voucher type, private codes and number of codes cannot change after issuing. A new discount type, value or terms apply to bookings not yet confirmed; confirmed bookings keep their discount.',
         nameLabel: 'Program name',
         typeLabel: 'Voucher type',
         kindLabel: 'Discount type',
@@ -4247,6 +4268,28 @@ export default {
       prevPage: 'Previous',
       nextPage: 'Next',
       pageOf: 'Page {page}/{last}',
+      detail: {
+        open: 'View details',
+        title: 'Payment exception details',
+        close: 'Close',
+        loadError: 'Could not load this transaction. Go back to the list and try again.',
+        eventAt: 'Transaction time',
+        code: 'Reason',
+        amount: 'Amount received',
+        paymentCode: 'Payment code received',
+        status: 'Handling status',
+        bookingTitle: 'Related booking',
+        noBooking: 'No matching booking was found. Bookings are never matched by amount alone.',
+        bookingCode: 'Booking code',
+        bookingStatus: 'Booking status',
+        totalAmount: 'Amount due',
+        deadline: 'Payment deadline',
+        court: 'Venue · court',
+        playTime: 'Play time',
+        bookerName: 'Booker',
+        bookerPhone: 'Phone',
+        bookerEmail: 'Email',
+      },
     },
     venueCredits: {
       title: 'Venue Credit',
@@ -4967,7 +5010,7 @@ export default {
         "Hold the customer's QR code in view; the action is sent as soon as the code is read.",
       scanError: {
         camera: 'Could not open the camera. Allow camera access or type the code.',
-        'not-booking': 'This QR code is not a booking code.',
+        unrecognized: 'This QR code is not a booking code.',
       },
     },
     grid: {

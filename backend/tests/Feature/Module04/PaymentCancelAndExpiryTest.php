@@ -109,10 +109,11 @@ class PaymentCancelAndExpiryTest extends TestCase
         $this->assertSame(0, app(ExpirePendingBookings::class)->execute());
     }
 
-    public function test_fr_78_br_87_new_price_expires_a_pending_booking_and_tells_the_customer(): void
+    public function test_fr_78_br_87_uc_4_10_a3_new_price_expires_a_pending_booking_and_tells_the_customer(): void
     {
         $court = $this->payableCourt();
-        $code = $this->checkout($this->customer(), $court, '2026-11-03 18:00', '2026-11-03 19:00', 100000)->assertCreated()->json('reservation.code');
+        $customer = $this->customer();
+        $code = $this->checkout($customer, $court, '2026-11-03 18:00', '2026-11-03 19:00', 100000)->assertCreated()->json('reservation.code');
 
         Carbon::setTestNow('2026-11-03 09:02:00');
         $this->republishPrices($court, 120000);
@@ -121,6 +122,10 @@ class PaymentCancelAndExpiryTest extends TestCase
         $this->assertSame('expired', $reservation->status);
         $this->assertSame('price_changed', $reservation->metadata['release_reason']);
         $this->assertSame(1, OutboxMessage::where('event_type', 'booking.price_changed')->count());
+        // The booking detail tells the customer why it ended.
+        $this->actingAs($customer)->getJson("/api/reservations/{$code}")
+            ->assertOk()
+            ->assertJsonPath('reservation.metadata.release_reason', 'price_changed');
 
         // The old payment request no longer books anything.
         Carbon::setTestNow('2026-11-03 09:03:00');

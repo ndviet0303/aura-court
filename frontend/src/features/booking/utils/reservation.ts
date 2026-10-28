@@ -40,6 +40,10 @@ export const statusLabel = (r: Displayable, t: (key: string) => string): string 
   if (status === 'cancelled' && r.metadata?.release_reason === 'operator_affected_booking') {
     return t('booking.statusOperatorCancelled')
   }
+  // BR-87: a new price ended the pending request (UC-4.10 A-3).
+  if (status === 'expired' && r.metadata?.release_reason === 'price_changed') {
+    return t('booking.statusPriceChanged')
+  }
   const key = STATUS_LABELS[status]
   return key ? t(`booking.${key}`) : status
 }

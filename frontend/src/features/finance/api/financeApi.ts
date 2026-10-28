@@ -4,6 +4,7 @@ import type {
   PayoutRecord,
   BeneficiaryAccount,
   FinanceExceptionItem,
+  OwnerPaymentExceptionDetail,
   OwnerPaymentExceptionPage,
   OwnerVenueCreditPage,
 } from '../types/finance'
@@ -67,6 +68,9 @@ export const financeApi = {
 
   getOwnerPaymentExceptions: (page = 1) =>
     api.get<OwnerPaymentExceptionPage>(`/owner-payment-exceptions?page=${page}`),
+
+  getOwnerPaymentException: (id: number) =>
+    api.get<{ data: OwnerPaymentExceptionDetail }>(`/owner-payment-exceptions/${id}`),
 
   getOwnerVenueCredits: (page = 1) =>
     api.get<OwnerVenueCreditPage>(`/owner-venue-credits?page=${page}`),

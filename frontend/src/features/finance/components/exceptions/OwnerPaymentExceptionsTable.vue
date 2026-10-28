@@ -4,6 +4,7 @@ import { formatCurrency } from '@/i18n'
 import type { OwnerPaymentException } from '../../types/finance'
 
 defineProps<{ exceptions: OwnerPaymentException[] }>()
+const emit = defineEmits<{ (e: 'select', id: number): void }>()
 
 const { t, te, d } = useI18n()
 
@@ -41,6 +42,9 @@ function connection(row: OwnerPaymentException): string {
           </th>
           <th scope="col" class="px-4 py-3">{{ t('admin.paymentExceptions.columns.booking') }}</th>
           <th scope="col" class="px-4 py-3">{{ t('admin.paymentExceptions.columns.status') }}</th>
+          <th scope="col" class="px-4 py-3">
+            <span class="sr-only">{{ t('admin.paymentExceptions.detail.open') }}</span>
+          </th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -57,6 +61,16 @@ function connection(row: OwnerPaymentException): string {
             <span v-else>{{ label('purposes', row.purpose) }}</span>
           </td>
           <td class="px-4 py-3">{{ label('statuses', row.status) }}</td>
+          <td class="px-4 py-3">
+            <button
+              type="button"
+              class="text-xs font-medium text-primary underline"
+              :data-testid="`owner-payment-exception-open-${row.id}`"
+              @click="emit('select', row.id)"
+            >
+              {{ t('admin.paymentExceptions.detail.open') }}
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>

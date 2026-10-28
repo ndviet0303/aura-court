@@ -1,10 +1,20 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useOwnerPaymentExceptions } from '../composables/useOwnerPaymentExceptions'
+import { useOwnerPaymentExceptionDetail } from '../composables/useOwnerPaymentExceptionDetail'
 import OwnerPaymentExceptionsTable from '../components/exceptions/OwnerPaymentExceptionsTable.vue'
+import OwnerPaymentExceptionDetailModal from '../components/exceptions/OwnerPaymentExceptionDetailModal.vue'
 
 const { t } = useI18n()
 const { exceptions, page, lastPage, loading, error, load } = useOwnerPaymentExceptions()
+const {
+  openId,
+  detail,
+  loading: detailLoading,
+  error: detailError,
+  open,
+  close,
+} = useOwnerPaymentExceptionDetail()
 </script>
 
 <template>
@@ -55,7 +65,11 @@ const { exceptions, page, lastPage, loading, error, load } = useOwnerPaymentExce
       >
         {{ t('admin.paymentExceptions.empty') }}
       </p>
-      <OwnerPaymentExceptionsTable v-else-if="exceptions.length" :exceptions="exceptions" />
+      <OwnerPaymentExceptionsTable
+        v-else-if="exceptions.length"
+        :exceptions="exceptions"
+        @select="open"
+      />
     </div>
 
     <nav v-if="lastPage > 1" class="flex items-center justify-end gap-3 text-sm">
@@ -67,5 +81,13 @@ const { exceptions, page, lastPage, loading, error, load } = useOwnerPaymentExce
         {{ t('admin.paymentExceptions.nextPage') }}
       </button>
     </nav>
+
+    <OwnerPaymentExceptionDetailModal
+      v-if="openId !== null"
+      :detail="detail"
+      :loading="detailLoading"
+      :error="detailError"
+      @close="close"
+    />
   </div>
 </template>

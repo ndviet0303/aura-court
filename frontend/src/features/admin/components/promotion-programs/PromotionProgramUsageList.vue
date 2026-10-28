@@ -2,6 +2,7 @@
 import { computed, toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuraButton } from '@/shared/components'
+import { statusLabel } from '@/features/booking/utils/reservation'
 import type { PromotionProgram, VoucherUse } from '../../types/promotionProgram'
 import { usePromotionProgramLabels } from '../../composables/usePromotionProgramLabels'
 import { usePromotionProgramUsage } from '../../composables/usePromotionProgramUsage'
@@ -30,6 +31,16 @@ const sections = computed(() => [
   },
 ])
 
+const bookingStatus = ({ reservation: r }: VoucherUse) =>
+  statusLabel(
+    {
+      code: r.code,
+      status: r.status,
+      metadata: { operational_status: r.operational_status ?? undefined },
+    },
+    t,
+  )
+
 function playTime(use: VoucherUse) {
   const { starts_at: from, ends_at: to } = use.reservation
   return from && to ? `${instant(from)}–${d(new Date(to), 'time')}` : ''
@@ -54,6 +65,8 @@ function playTime(use: VoucherUse) {
                 <th>{{ t('admin.promotions.usage.colBooking') }}</th>
                 <th>{{ t('admin.promotions.usage.colCustomer') }}</th>
                 <th>{{ t('admin.promotions.usage.colCourtTime') }}</th>
+                <th>{{ t('admin.promotions.usage.colStatus') }}</th>
+                <th>{{ t('admin.promotions.usage.colRental') }}</th>
                 <th>{{ t('admin.promotions.usage.colDiscount') }}</th>
                 <th>{{ t(`admin.promotions.usage.colAt.${section.key}`) }}</th>
               </tr>
@@ -78,6 +91,8 @@ function playTime(use: VoucherUse) {
                   }}</span>
                   <span class="muted">{{ playTime(use) }}</span>
                 </td>
+                <td>{{ bookingStatus(use) }}</td>
+                <td>{{ use.rental === null ? '—' : money(use.rental) }}</td>
                 <td>{{ money(use.discount) }}</td>
                 <td>{{ instant(section.at(use)) }}</td>
               </tr>

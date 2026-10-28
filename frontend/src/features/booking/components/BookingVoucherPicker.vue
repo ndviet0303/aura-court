@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { onUnmounted, ref, watch } from 'vue'
+import { onUnmounted, ref, useTemplateRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
+import { useQrScanner } from '@/core/composables/useQrScanner'
 import { useBookingStore } from '../stores/bookingStore'
+import { voucherCodeFromQr } from '../utils/voucherQr'
 
 // The booking form's voucher (module 3 D10, D20): public vouchers that apply, a private code, the
 // voucher dropped when the court or time changes, and a VOUCHER_INVALID at checkout. The amounts
@@ -31,6 +33,25 @@ async function applyCode() {
   await store.enterVoucherCode(code.value)
   if (!store.voucherCodeError) code.value = ''
 }
+
+// UC-3.15 A-1, E-2: scan the voucher QR in the app; without a camera the code is typed instead.
+const scanOpen = ref(false)
+const video = useTemplateRef<HTMLVideoElement>('video')
+const {
+  error: scanError,
+  start,
+  stop,
+} = useQrScanner((value) => {
+  const scanned = voucherCodeFromQr(value)
+  if (!scanned) return false
+  scanOpen.value = false
+  code.value = scanned
+  void applyCode()
+  return true
+})
+watch(scanOpen, (open) => (open && video.value ? start(video.value) : stop()), { flush: 'post' })
+// A denied or missing camera closes the scan view; the code input stays for typing.
+watch(scanError, (error) => error === 'camera' && (scanOpen.value = false))
 </script>
 
 <template>
@@ -92,7 +113,25 @@ async function applyCode() {
       <button type="submit" class="voucher-apply" :disabled="!code.trim()">
         {{ t('reservations.voucher.apply') }}
       </button>
+      <button
+        type="button"
+        class="voucher-link"
+        :aria-pressed="scanOpen"
+        data-testid="voucher-scan"
+        @click="scanOpen = !scanOpen"
+      >
+        {{ t(scanOpen ? 'reservations.voucher.scanStop' : 'reservations.voucher.scan') }}
+      </button>
     </form>
+    <div v-show="scanOpen" class="voucher-scan">
+      <video ref="video" class="voucher-video" muted playsinline />
+      <p v-if="!scanError" class="voucher-dropped">
+        {{ t('reservations.voucher.scanHint') }}
+      </p>
+    </div>
+    <p v-if="scanError" class="voucher-error" role="alert">
+      {{ t(`reservations.voucher.scanError.${scanError}`) }}
+    </p>
     <p v-if="store.voucherCodeError" class="voucher-error" role="alert">
       {{ store.voucherCodeError }}
     </p>
@@ -201,6 +240,19 @@ async function applyCode() {
   border: 1px solid var(--outline);
   background: transparent;
   color: var(--ink);
+}
+
+.voucher-scan {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.voucher-video {
+  width: 100%;
+  max-width: 320px;
+  border-radius: 12px;
+  background: #000;
 }
 
 .voucher-dropped,

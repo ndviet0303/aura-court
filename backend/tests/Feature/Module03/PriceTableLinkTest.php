@@ -163,12 +163,31 @@ class PriceTableLinkTest extends TestCase
             ->assertJsonPath('code', 'PRICE_COVERAGE_INCOMPLETE');
         $this->assertSame([[$table->id, '2026-10-18T01:00:00+00:00', null]], $this->links($court));
 
-        // The replacement takes over at the switch time with no gap or overlap.
+        // UC-3.6 A-1: retiring with a replacement switches the courts at the switch time in the same confirmation.
         $replacement = $this->table(130000);
-        $this->actingAs($this->owner)->postJson("/api/admin/price-tables/{$replacement->id}/links", ['court_ids' => [$court->id], 'starts_at' => self::SWITCH_AT])->assertOk();
-        $this->actingAs($this->owner)->postJson("/api/admin/price-tables/{$table->id}/retire")->assertOk();
+        $this->actingAs($this->owner)->postJson("/api/admin/price-tables/{$table->id}/retire", ['replacement_table_id' => $replacement->id, 'court_ids' => [$court->id], 'starts_at' => self::SWITCH_AT])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'retired');
         $this->assertSame([[$table->id, '2026-10-18T01:00:00+00:00', self::SWITCH_AT_UTC], [$replacement->id, self::SWITCH_AT_UTC, null]], $this->links($court));
-        $this->assertSame(1, PriceTable::whereKey($table->id)->where('status', 'retired')->count());
+    }
+
+    public function test_uc_3_6_a1_e1_a_replacement_that_leaves_a_gap_or_is_of_another_venue_retires_nothing(): void
+    {
+        $court = $this->activeCourt($this->venue);
+        $table = $this->priceCourt($court, 100000);
+        $short = PriceTable::create(['venue_id' => $this->venue->id, 'name' => 'Thiếu giờ', 'kind' => PriceTable::KIND_NORMAL, 'status' => PriceTable::STATUS_ACTIVE]);
+        $this->publishPriceVersion($short, [['06:00', '21:00', 90000]], now()->subDay(), now()->subDay());
+        $foreign = $this->priceCourt($this->activeCourt($this->openVenue()), 80000);
+
+        $this->actingAs($this->owner)->postJson("/api/admin/price-tables/{$table->id}/retire", ['replacement_table_id' => $short->id, 'court_ids' => [$court->id], 'starts_at' => self::SWITCH_AT])
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'PRICE_COVERAGE_INCOMPLETE');
+        $this->actingAs($this->owner)->postJson("/api/admin/price-tables/{$table->id}/retire", ['replacement_table_id' => $foreign->id, 'court_ids' => [$court->id]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['replacement_table_id']);
+
+        $this->assertSame(PriceTable::STATUS_ACTIVE, $table->fresh()->status);
+        $this->assertSame([[$table->id, '2026-10-18T01:00:00+00:00', null]], $this->links($court));
     }
 
     public function test_br_57_an_inactive_court_may_keep_a_gap(): void

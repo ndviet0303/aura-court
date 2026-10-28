@@ -114,14 +114,14 @@ class VoucherCheckoutTest extends TestCase
         $this->assertSame(0, Reservation::count());
     }
 
-    public function test_br_70_br_71_fr_68_uc_3_17_a_used_voucher_stays_used_through_program_changes_and_cancellation(): void
+    public function test_br_70_br_71_fr_68_uc_3_12_uc_3_17_a_used_voucher_stays_used_through_program_changes_and_cancellation(): void
     {
         $program = $this->publicProgram($this->court, ['percent_bp' => 1000, 'max_uses' => 5]);
         $this->checkout($this->customer, $this->court, self::START, self::END, 171000, ['voucher_program_id' => $program->id])->assertCreated();
         $reservation = Reservation::sole();
         $owner = $this->ownerOf($this->venue->organization);
 
-        $this->actingAs($owner)->patchJson("/api/admin/promotion-programs/{$program->id}", ['percent' => 50])->assertOk();
+        $this->actingAs($owner)->patchJson("/api/admin/promotion-programs/{$program->id}", ['discount_kind' => 'fixed', 'amount' => 50000])->assertOk();
         $this->actingAs($owner)->postJson("/api/admin/promotion-programs/{$program->id}/stop")->assertOk();
         app(ReservationService::class)->release($reservation, 'cancelled');
 
@@ -134,8 +134,10 @@ class VoucherCheckoutTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.0.status', 'used')
             ->assertJsonPath('data.0.discount', 19000)
+            ->assertJsonPath('data.0.rental', 190000)
             ->assertJsonPath('data.0.reservation.id', $reservation->id)
             ->assertJsonPath('data.0.reservation.status', 'cancelled')
+            ->assertJsonPath('data.0.reservation.operational_status', null)
             ->assertJsonPath('data.0.reservation.court', ['id' => $this->court->id, 'name' => $this->court->code])
             ->assertJsonPath('held', []);
     }

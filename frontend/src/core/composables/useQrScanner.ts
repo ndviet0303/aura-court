@@ -1,17 +1,16 @@
 import jsQR from 'jsqr'
 import { onBeforeUnmount, ref } from 'vue'
 
-export const BOOKING_QR_PREFIX = 'AURA_BOOKING_'
 // The camera sees the same code for many frames; hand it over once per hold.
 const REPEAT_MS = 3000
 
 /**
- * BR-124, D7: reads the customer's booking QR (AURA_BOOKING_<code>) from the camera and hands each code over at once.
- * Any other QR, such as a payment QR, is reported as not a booking code and never sent.
+ * Reads QR codes from the back camera and hands each value to `accept` once per hold. `accept` returns false for a
+ * QR it does not take, which sets error `unrecognized`; a camera that is denied or missing sets error `camera`.
  */
-export function useBookingQrScanner(onCode: (code: string) => void) {
+export function useQrScanner(accept: (value: string) => boolean) {
   const scanning = ref(false)
-  const error = ref<'camera' | 'not-booking' | ''>('')
+  const error = ref<'camera' | 'unrecognized' | ''>('')
   let stream: MediaStream | null = null
   let frame = 0
   let last = { value: '', at: 0 }
@@ -32,10 +31,7 @@ export function useBookingQrScanner(onCode: (code: string) => void) {
       const now = Date.now()
       if (value && (value !== last.value || now - last.at > REPEAT_MS)) {
         last = { value, at: now }
-        if (value.startsWith(BOOKING_QR_PREFIX)) {
-          error.value = ''
-          onCode(value)
-        } else error.value = 'not-booking'
+        error.value = accept(value) ? '' : 'unrecognized'
       }
     }
     frame = requestAnimationFrame(() => read(video, canvas))

@@ -32,4 +32,7 @@ interface ReservationRepositoryInterface
      * @return Collection<int, Reservation>
      */
     public function heldWithVoucherOf(int $programId): Collection;
+
+    /** A booking of the organization by its code, with its court, venue and booker account. */
+    public function findInOrganizationByCode(int $organizationId, string $code): ?Reservation;
 }

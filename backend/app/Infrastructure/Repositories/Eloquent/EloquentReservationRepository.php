@@ -64,6 +64,15 @@ class EloquentReservationRepository implements ReservationRepositoryInterface
             ->get(['id', 'code']);
     }
 
+    public function findInOrganizationByCode(int $organizationId, string $code): ?Reservation
+    {
+        return Reservation::query()->withoutGlobalScope(self::TENANT_SCOPE)
+            ->where('organization_id', $organizationId)
+            ->where('code', $code)
+            ->with(['court.venue', 'user:id,name,phone,email', 'slots' => $this->unscoped()])
+            ->first();
+    }
+
     private function unscoped(): \Closure
     {
         return fn ($query) => $query->withoutGlobalScope(self::TENANT_SCOPE);
