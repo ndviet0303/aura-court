@@ -7,6 +7,7 @@ import type { Reservation } from '../../types/reservation'
 import { displayCode } from '../../utils/reservation'
 import { useDeadlineCountdown } from '../../composables/useDeadlineCountdown'
 import CancelPaymentButton from './CancelPaymentButton.vue'
+import ReservationPaymentInstructions from './ReservationPaymentInstructions.vue'
 
 const props = defineProps<{
   show: boolean
@@ -24,6 +25,7 @@ const loading = ref(false)
 const refreshing = ref(false)
 const error = ref('')
 const reservationStatus = ref('held')
+const releaseReason = ref<string | null>(null)
 const paymentAttempt = ref<ReservationPaymentAttempt | null>(null)
 let pollInterval: ReturnType<typeof setInterval> | undefined
 const countdown = useDeadlineCountdown(() => props.reservation?.hold_expires_at)
@@ -31,9 +33,10 @@ const countdown = useDeadlineCountdown(() => props.reservation?.hold_expires_at)
 const statusText = computed(() => {
   const status = paymentAttempt.value?.status
   const paid = status === 'paid' || reservationStatus.value === 'confirmed'
+  // UC-4.6 A-3: a new price ended the request, which is told apart from a lapsed deadline.
+  if (releaseReason.value === 'price_changed') return t('booking.statusPriceChanged')
   return t(`reservations.payment.${status === 'expired' ? 'expired' : paid ? 'paid' : 'waiting'}`)
 })
-const amountFormat = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 })
 
 function stopPolling() {
   if (pollInterval) clearInterval(pollInterval)
@@ -41,11 +44,12 @@ function stopPolling() {
 }
 
 function acceptStatus(response: {
-  reservation: { status: string }
+  reservation: { status: string; release_reason?: string | null }
   payment_attempt: ReservationPaymentAttempt | null
 }) {
   const wasPaid = paymentAttempt.value?.status === 'paid'
   reservationStatus.value = response.reservation.status
+  releaseReason.value = response.reservation.release_reason ?? null
   paymentAttempt.value = response.payment_attempt
   if (!wasPaid && response.payment_attempt?.status === 'paid') emit('paid')
   if (response.payment_attempt?.status !== 'pending') stopPolling()
@@ -88,6 +92,7 @@ watch(
     stopPolling()
     paymentAttempt.value = null
     reservationStatus.value = 'held'
+    releaseReason.value = null
     error.value = ''
     if (code) void startPayment(code)
   },
@@ -146,39 +151,17 @@ onUnmounted(stopPolling)
             {{ statusText }}
           </div>
 
-          <div v-if="paymentAttempt.status === 'pending'" class="payment-grid">
-            <img
-              :src="paymentAttempt.qr_url"
-              :alt="t('reservations.payment.qrAlt')"
-              class="payment-qr"
-              referrerpolicy="no-referrer"
-              data-testid="reservation-payment-qr"
-            />
-            <dl class="payment-details">
-              <div>
-                <dt>{{ t('reservations.payment.receiver') }}</dt>
-                <dd>{{ paymentAttempt.receiver.bank_code }}</dd>
-              </div>
-              <div>
-                <dt>{{ t('reservations.payment.accountName') }}</dt>
-                <dd>{{ paymentAttempt.receiver.account_name }}</dd>
-              </div>
-              <div>
-                <dt>{{ t('reservations.payment.accountNumber') }}</dt>
-                <dd class="font-mono">{{ paymentAttempt.receiver.account_number }}</dd>
-              </div>
-              <div>
-                <dt>{{ t('reservations.payment.amount') }}</dt>
-                <dd class="font-mono">
-                  {{ amountFormat.format(paymentAttempt.amount) }} {{ paymentAttempt.currency }}
-                </dd>
-              </div>
-              <div>
-                <dt>{{ t('reservations.payment.transferContent') }}</dt>
-                <dd class="font-mono select-all">{{ paymentAttempt.transfer_content }}</dd>
-              </div>
-            </dl>
-          </div>
+          <ReservationPaymentInstructions
+            v-if="paymentAttempt.status === 'pending'"
+            :attempt="paymentAttempt"
+          />
+          <p
+            v-if="releaseReason === 'price_changed'"
+            class="payment-expiry"
+            data-testid="payment-price-changed"
+          >
+            {{ t('reservations.detail.priceChangedNote') }}
+          </p>
 
           <p
             v-if="countdown && paymentAttempt.status === 'pending'"
@@ -332,41 +315,6 @@ onUnmounted(stopPolling)
   background: rgba(198, 40, 40, 0.1);
   font-size: 12px;
 }
-.payment-grid {
-  display: grid;
-  grid-template-columns: 190px 1fr;
-  align-items: center;
-  gap: 18px;
-}
-.payment-qr {
-  width: 190px;
-  aspect-ratio: 1;
-  padding: 7px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: white;
-}
-.payment-details {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin: 0;
-}
-.payment-details div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.payment-details dt {
-  color: var(--muted);
-  font-size: 10px;
-}
-.payment-details dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-  font-size: 12px;
-  font-weight: 700;
-}
 .btn {
   padding: 8px 14px;
   border: 1px solid var(--outline);
@@ -387,14 +335,5 @@ onUnmounted(stopPolling)
 .btn:disabled {
   opacity: 0.55;
   cursor: wait;
-}
-@media (max-width: 520px) {
-  .payment-grid {
-    grid-template-columns: 1fr;
-    justify-items: center;
-  }
-  .payment-details {
-    width: 100%;
-  }
 }
 </style>

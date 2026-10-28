@@ -109,7 +109,7 @@ class PaymentCancelAndExpiryTest extends TestCase
         $this->assertSame(0, app(ExpirePendingBookings::class)->execute());
     }
 
-    public function test_fr_78_br_87_uc_4_10_a3_new_price_expires_a_pending_booking_and_tells_the_customer(): void
+    public function test_fr_78_br_87_uc_4_6_a3_uc_4_10_a3_new_price_expires_a_pending_booking_and_tells_the_customer(): void
     {
         $court = $this->payableCourt();
         $customer = $this->customer();
@@ -126,6 +126,11 @@ class PaymentCancelAndExpiryTest extends TestCase
         $this->actingAs($customer)->getJson("/api/reservations/{$code}")
             ->assertOk()
             ->assertJsonPath('reservation.metadata.release_reason', 'price_changed');
+        $this->actingAs($customer)->getJson("/api/reservations/{$code}/payment")
+            ->assertOk()
+            ->assertJsonPath('reservation.status', 'expired')
+            ->assertJsonPath('reservation.release_reason', 'price_changed')
+            ->assertJsonPath('payment_attempt.status', 'expired');
 
         // The old payment request no longer books anything.
         Carbon::setTestNow('2026-11-03 09:03:00');
