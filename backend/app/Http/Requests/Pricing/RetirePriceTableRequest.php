@@ -4,6 +4,7 @@ namespace App\Http\Requests\Pricing;
 
 use App\Models\PriceTable;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * Retiring a table (design D2), optionally with a replacement table for some of its courts from a switch time, now
@@ -21,9 +22,9 @@ class RetirePriceTableRequest extends FormRequest
     {
         return [
             'replacement_table_id' => ['nullable', 'integer', 'not_in:'.$this->table()->id],
-            'court_ids' => ['required_with:replacement_table_id', 'prohibited_without:replacement_table_id', 'list', 'min:1'],
+            'court_ids' => ['required_with:replacement_table_id', Rule::prohibitedIf(! $this->filled('replacement_table_id')), 'list', 'min:1'],
             'court_ids.*' => ['integer', 'distinct'],
-            'starts_at' => ['nullable', 'prohibited_without:replacement_table_id', 'date'],
+            'starts_at' => ['nullable', Rule::prohibitedIf(! $this->filled('replacement_table_id')), 'date'],
         ];
     }
 
