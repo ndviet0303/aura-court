@@ -82,13 +82,12 @@ onMounted(load)
         <section class="detail-card">
           <h2 class="card-title">{{ t('admin.venueDetail.serviceTitle') }}</h2>
           <p v-if="court.service_schedule" class="schedule-source">
-            {{
-              court.service_schedule_inherited
-                ? t('admin.venueDetail.inheritedSchedule')
-                : t('admin.venueDetail.ownSchedule')
-            }}
+            {{ t('admin.venueDetail.ownSchedule') }}
           </p>
-          <WeeklyHoursList :weekly-hours="court.service_schedule?.weekly_hours" />
+          <WeeklyHoursList
+            :weekly-hours="court.service_schedule?.weekly_hours"
+            :empty-text="t('admin.venueDetail.noServiceSchedule')"
+          />
         </section>
       </div>
     </template>

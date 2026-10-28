@@ -43,7 +43,7 @@ export const adminApi = {
       { settings },
     ),
   getOperatingSchedule: (organizationId: number, venueId: number, courtId?: number) =>
-    api.get<{ data: any; inherited?: boolean }>(
+    api.get<{ data: any }>(
       `/partner/organizations/${organizationId}/venues/${venueId}/operating-schedule`,
       { params: courtId ? { court_id: courtId } : undefined },
     ),

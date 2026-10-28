@@ -86,10 +86,10 @@ class OpenCourt
         return $items;
     }
 
-    /** The effective schedule (the venue hours intersected with the court's own or inherited one) has an interval. */
+    /** The effective schedule (the venue hours intersected with the court's own one, never inherited) has an interval. */
     private function hasServiceTime(Court $court): bool
     {
-        return collect($this->calendar->serviceSchedule($court)['schedule']['weekly_hours'] ?? [])
+        return collect($this->calendar->serviceSchedule($court)['weekly_hours'] ?? [])
             ->contains(fn (array $day): bool => ! $day['closed']);
     }
 

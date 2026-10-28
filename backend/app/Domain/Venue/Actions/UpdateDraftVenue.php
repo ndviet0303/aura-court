@@ -44,9 +44,7 @@ class UpdateDraftVenue
                 abort(409, 'Cơ sở đã ngừng kinh doanh, không thể chỉnh sửa.');
             }
 
-            // D3: status changes only through the open, pause, resume and close commands
-            unset($attributes['status'], $attributes['is_active'], $attributes['published_at']);
-
+            // D3: status changes only through the open, pause, resume and close commands; SaveVenueRequest refuses it.
             $updated = $this->venueRepo->updateVenue($venue, $attributes);
 
             $this->notif->recordAudit(

@@ -60,7 +60,6 @@ class VenueReadAccessTest extends TestCase
             ->assertJsonPath('data.sport_type', 'badminton')
             ->assertJsonPath('data.status', 'active')
             ->assertJsonPath('data.images', ['/courts/a.jpg'])
-            ->assertJsonPath('data.service_schedule_inherited', true)
             ->assertJsonStructure(['data' => ['description', 'service_schedule' => ['weekly_hours']]]);
 
         $foreign = $this->activeCourt($this->openVenue(['organization_id' => $venue->organization_id]));

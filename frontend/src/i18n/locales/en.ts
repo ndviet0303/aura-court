@@ -1914,6 +1914,7 @@ export default {
       newEnd: 'Ends at {end}',
       channelLabel: 'Contact channel',
       noteLabel: 'Note',
+      cancelReasonLabel: 'Cancellation reason',
       refundNoteLabel: 'Off-platform refund note',
       refundNoteHint: 'Only the venue owner sees and records this.',
       refundNoteShort: 'Refund: {note}',
@@ -2023,8 +2024,6 @@ export default {
       hoursTitle: 'Operating hours',
       courtsTitle: 'Courts',
       noCourts: 'This venue has no courts.',
-      scheduleInherited: 'Uses the venue’s operating hours',
-      scheduleOwn: 'Has its own service schedule',
       filters: {
         keyword: 'Keyword',
         keywordHint: 'Name, address, phone…',
@@ -2110,7 +2109,7 @@ export default {
       surface: 'Surface',
       capacity: 'Capacity',
       serviceTitle: 'Service schedule',
-      inheritedSchedule: 'Inherited from the venue hours',
+      noServiceSchedule: 'No service schedule set',
       ownSchedule: 'Court schedule, within the venue hours',
     },
     venues: {

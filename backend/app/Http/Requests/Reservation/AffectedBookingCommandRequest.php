@@ -22,11 +22,17 @@ class AffectedBookingCommandRequest extends FormRequest
             'note' => ['nullable', 'string', 'max:1000'],
         ];
 
-        return $rules + match ($this->route()?->getActionMethod()) {
+        return [...$rules, ...match ($this->route()?->getActionMethod()) {
             'moveCourt' => ['court_id' => ['required', 'integer']],
             'changeTime' => ['starts_at' => ['required', 'date'], 'ends_at' => ['required', 'date', 'after:starts_at']],
-            'cancel' => ['refund_note' => ['nullable', 'string', 'max:1000']],
+            // UC-2.18 step 2: a cancellation records its reason in the note.
+            'cancel' => ['note' => ['required', 'string', 'max:1000'], 'refund_note' => ['nullable', 'string', 'max:1000']],
             default => [],
-        };
+        }];
+    }
+
+    public function messages(): array
+    {
+        return ['note.required' => 'Vui lòng nhập lý do hủy đơn.'];
     }
 }

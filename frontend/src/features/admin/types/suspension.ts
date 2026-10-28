@@ -94,7 +94,6 @@ export type MonitoredVenueDetail = MonitoredVenue & {
     description: string | null
     images: string[]
     status: OperatingStatus
-    schedule_inherited: boolean
     service_schedule: WeeklyHours | null
   }>
   suspensions: Suspension[]

@@ -15,6 +15,9 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class SaveVenueRequest extends FormRequest
 {
+    /** UC-2.4 E-2, POST-2: an update that tries to change these fields is refused for them (422), not ignored. */
+    private const NOT_EDITABLE = ['organization_id', 'status', 'published_at', 'weekly_hours'];
+
     public function authorize(): bool
     {
         if ($this->route('venueId') !== null) {
@@ -48,12 +51,18 @@ class SaveVenueRequest extends FormRequest
             'longitude' => ['nullable', 'numeric', 'between:-180,180', 'required_with:latitude'],
             'images' => ['nullable', 'array', 'max:10'],
             'images.*' => ['string', new StoredImageUrl],
-        ];
+        ] + ($this->route('venueId') === null ? [] : array_fill_keys(self::NOT_EDITABLE, ['prohibited']));
     }
 
     public function messages(): array
     {
-        return VenueInformationRules::messages() + ['images' => 'Mỗi cơ sở tối đa 10 ảnh.'];
+        return VenueInformationRules::messages() + [
+            'images' => 'Mỗi cơ sở tối đa 10 ảnh.',
+            'organization_id.prohibited' => 'Không thể đổi tổ chức sở hữu của cơ sở.',
+            'status.prohibited' => 'Trạng thái cơ sở chỉ đổi qua các thao tác mở, tạm ngừng, khôi phục hoặc ngừng kinh doanh.',
+            'published_at.prohibited' => 'Trạng thái cơ sở chỉ đổi qua các thao tác mở, tạm ngừng, khôi phục hoặc ngừng kinh doanh.',
+            'weekly_hours.prohibited' => 'Giờ hoạt động được cập nhật tại chức năng giờ hoạt động của cơ sở.',
+        ];
     }
 
     private static function isGoogleMapsUrl(string $value): bool
