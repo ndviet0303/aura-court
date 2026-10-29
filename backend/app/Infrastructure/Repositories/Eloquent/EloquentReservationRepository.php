@@ -28,6 +28,7 @@ class EloquentReservationRepository implements ReservationRepositoryInterface
                 'review' => fn ($query) => $query->withoutGlobalScope(SoftDeletingScope::class),
                 'attendance' => fn ($query) => $query->withoutGlobalScope(self::TENANT_SCOPE)->select(['id', 'reservation_id', 'status', 'checked_out_at']),
             ])
+            ->withExists(['splitGroup as has_split_group' => $this->unscoped()])
             ->latest()
             ->paginate($perPage)
             // Module 08.2 D5: the holder's own bookings, so the QR value is theirs to see.

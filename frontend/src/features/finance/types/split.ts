@@ -1,3 +1,5 @@
+import type { ReservationPaymentAttempt } from '@/features/booking/api/bookingApi'
+
 export type SplitGroup = {
   id: number
   reservation_id: number
@@ -22,4 +24,14 @@ export type SplitShare = {
   status: 'pending' | 'paid' | 'expired' | string
   paid_at: string | null
   payment_reference: string | null
+  // Bank-transfer instructions of the share; null when the venue has no verified receiving account.
+  payment_attempt: ReservationPaymentAttempt | null
+}
+
+export type SplitReservation = {
+  id: number
+  code: string
+  status: string
+  total_amount: number
+  hold_expires_at: string | null
 }

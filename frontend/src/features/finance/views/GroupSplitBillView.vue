@@ -1,27 +1,23 @@
 <script setup lang="ts">
-import { watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useGroupSplitBill } from '../composables/useGroupSplitBill'
+import { formatCurrency } from '@/i18n'
+import { splitEvenly, useGroupSplitBill } from '../composables/useGroupSplitBill'
+import SplitShareCard from '../components/split/SplitShareCard.vue'
 
 const route = useRoute()
 const { t, locale } = useI18n()
-const { group, loading, error, stale, loadSplitGroup } = useGroupSplitBill()
-
-watch(
-  () => route.params.code ?? route.query.code,
-  (identifier) => {
-    void loadSplitGroup(typeof identifier === 'string' ? identifier : undefined)
-  },
-  { immediate: true },
+const { reservation, group, loading, creating, error, stale, loadSplit, createSplit } =
+  useGroupSplitBill()
+const code = computed(() => String(route.params.code))
+const people = ref(2)
+const PEOPLE_OPTIONS = [2, 3, 4, 5, 6, 7, 8]
+const preview = computed(() =>
+  reservation.value ? splitEvenly(reservation.value.total_amount, people.value) : [],
 )
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat(locale.value === 'vi' ? 'vi-VN' : 'en-US', {
-    style: 'currency',
-    currency: 'VND',
-  }).format(amount)
-}
+watch(code, (value) => void loadSplit(value), { immediate: true })
 
 function formatExpiry(value: string): string {
   return new Intl.DateTimeFormat(locale.value === 'vi' ? 'vi-VN' : 'en-US', {
@@ -37,12 +33,12 @@ function formatExpiry(value: string): string {
     <nav class="split-nav-bar">
       <RouterLink to="/booking">{{ t('splitBill.backToBookings') }}</RouterLink>
       <button
-        v-if="group"
+        v-if="reservation"
         type="button"
         class="refresh-button"
         data-testid="split-refresh"
         :disabled="loading"
-        @click="loadSplitGroup(String(group.id))"
+        @click="loadSplit(code)"
       >
         {{ t('splitBill.refresh') }}
       </button>
@@ -54,27 +50,27 @@ function formatExpiry(value: string): string {
     </header>
 
     <p v-if="error" class="alert" role="alert" data-testid="split-error">{{ error }}</p>
-    <p v-if="loading && !group" role="status">{{ t('splitBill.loading') }}</p>
+    <p v-if="loading && !reservation" role="status">{{ t('splitBill.loading') }}</p>
 
     <section v-if="group" class="group-card" data-testid="split-group">
       <p v-if="stale" class="alert" data-testid="split-stale">{{ t('splitBill.staleWarning') }}</p>
 
       <dl class="group-details">
         <div>
-          <dt>{{ t('splitBill.groupId') }}</dt>
-          <dd data-testid="split-group-id">{{ group.id }}</dd>
-        </div>
-        <div>
           <dt>{{ t('splitBill.bookingCode') }}</dt>
           <dd>{{ group.reservation.code }}</dd>
         </div>
         <div>
           <dt>{{ t('splitBill.acceptedTotal') }}</dt>
-          <dd>{{ formatMoney(group.expected_amount) }}</dd>
+          <dd>{{ formatCurrency(group.expected_amount) }}</dd>
+        </div>
+        <div>
+          <dt>{{ t('splitBill.paidTotal') }}</dt>
+          <dd data-testid="split-paid-total">{{ formatCurrency(group.paid_amount) }}</dd>
         </div>
         <div>
           <dt>{{ t('splitBill.serverState') }}</dt>
-          <dd data-testid="split-server-state">{{ group.status }}</dd>
+          <dd data-testid="split-server-state">{{ t(`splitBill.status.${group.status}`) }}</dd>
         </div>
         <div>
           <dt>{{ t('splitBill.expiresAt') }}</dt>
@@ -82,30 +78,40 @@ function formatExpiry(value: string): string {
         </div>
       </dl>
 
-      <p class="evidence-warning" data-testid="split-evidence-warning">
-        {{ t('splitBill.evidenceUnavailable') }}
-      </p>
-      <p class="evidence-warning">{{ t('splitBill.actionsUnavailable') }}</p>
       <h2>{{ t('splitBill.shares') }}</h2>
+      <p class="hint">{{ t('splitBill.shareInstructions') }}</p>
       <ol class="shares-list">
-        <li v-for="share in group.shares" :key="share.id" data-testid="split-share">
-          <div>
-            <strong>{{ t('splitBill.shareNumber', { number: share.share_number }) }}</strong>
-            <p>
-              {{
-                share.status === 'expired'
-                  ? t('splitBill.shareExpired')
-                  : t('splitBill.pendingEvidence')
-              }}
-            </p>
-          </div>
-          <strong>{{ formatMoney(share.amount) }}</strong>
-        </li>
+        <SplitShareCard v-for="share in group.shares" :key="share.id" :share="share" />
       </ol>
     </section>
 
-    <p v-else-if="!loading" class="empty-state" data-testid="split-empty">
-      {{ t('splitBill.emptyState') }}
+    <form
+      v-else-if="reservation?.status === 'held'"
+      class="group-card create-form"
+      data-testid="split-create"
+      @submit.prevent="createSplit(people)"
+    >
+      <h2>{{ t('splitBill.createTitle') }}</h2>
+      <p class="hint">{{ t('splitBill.createHint') }}</p>
+      <label>
+        <span>{{ t('splitBill.peopleCount') }}</span>
+        <select v-model.number="people" data-testid="split-people" :disabled="creating">
+          <option v-for="n in PEOPLE_OPTIONS" :key="n" :value="n">{{ n }}</option>
+        </select>
+      </label>
+      <ol class="shares-list">
+        <li v-for="(amount, i) in preview" :key="i" data-testid="split-preview-share">
+          <span>{{ t('splitBill.shareNumber', { number: i + 1 }) }}</span>
+          <strong class="font-mono">{{ formatCurrency(amount) }}</strong>
+        </li>
+      </ol>
+      <button type="submit" class="refresh-button" :disabled="creating" data-testid="split-submit">
+        {{ creating ? t('splitBill.creating') : t('splitBill.createSubmit') }}
+      </button>
+    </form>
+
+    <p v-else-if="reservation" class="empty-state" data-testid="split-not-splittable">
+      {{ t('splitBill.notSplittable') }}
     </p>
   </main>
 </template>
@@ -153,7 +159,7 @@ h2 {
 }
 header p,
 dt,
-li p {
+.hint {
   color: var(--muted, #9e939a);
 }
 
@@ -165,8 +171,7 @@ li p {
   background: var(--surface, #1e191c);
 }
 
-.alert,
-.evidence-warning {
+.alert {
   padding: 12px 16px;
   border-radius: 10px;
   background: rgba(245, 158, 11, 0.12);
@@ -188,7 +193,24 @@ dd {
   list-style: none;
   padding: 0;
 }
-.shares-list li {
+.create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.create-form label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.create-form select {
+  padding: 6px 10px;
+  color: inherit;
+  background: var(--surface, #1e191c);
+  border: 1px solid var(--border, #382f35);
+  border-radius: 8px;
+}
+.create-form .shares-list li {
   display: flex;
   justify-content: space-between;
   gap: 12px;

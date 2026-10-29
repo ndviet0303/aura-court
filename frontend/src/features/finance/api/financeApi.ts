@@ -7,7 +7,7 @@ import type {
   OwnerPaymentExceptionDetail,
   OwnerPaymentExceptionPage,
 } from '../types/finance'
-import type { SplitGroup } from '../types/split'
+import type { SplitGroup, SplitReservation } from '../types/split'
 
 export const financeApi = {
   getBeneficiaries: () => api.get<BeneficiaryAccount[]>('/finance/beneficiaries'),
@@ -71,8 +71,14 @@ export const financeApi = {
   getOwnerPaymentException: (id: number) =>
     api.get<{ data: OwnerPaymentExceptionDetail }>(`/owner-payment-exceptions/${id}`),
 
-  getSplitGroup: (splitId: number) => api.get<{ split: SplitGroup }>(`/split-groups/${splitId}`),
+  // Split groups are looked up by the customer's own booking code; one booking has at most one group.
+  getReservationSplit: (code: string) =>
+    api.get<{ reservation: SplitReservation; split: SplitGroup | null }>(
+      `/reservations/${encodeURIComponent(code)}/split`,
+    ),
 
-  createReservationSplit: <T = unknown>(reservationId: number | string, payload: any) =>
-    api.post<T>(`/reservations/${reservationId}/split`, payload),
+  createReservationSplit: (code: string, amounts: number[]) =>
+    api.post<{ split: SplitGroup }>(`/reservations/${encodeURIComponent(code)}/split`, {
+      shares: amounts.map((amount) => ({ amount })),
+    }),
 }

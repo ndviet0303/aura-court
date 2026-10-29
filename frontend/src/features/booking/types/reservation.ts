@@ -124,6 +124,8 @@ export type Reservation = {
   payment_model?: 'direct_owner_v1' | 'legacy_wallet_v1' | string | null
   legacy_mapping?: LegacyMapping[]
   review?: ReservationReview | null
+  // History list only: the booking already has a split group.
+  has_split_group?: boolean
   metadata?: {
     operational_status?: 'in_use' | 'completed' | 'no_show'
     // Why a held booking was released, e.g. customer_payment_cancel or payment_deadline.

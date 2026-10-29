@@ -8,6 +8,7 @@ import { displayCode } from '../../utils/reservation'
 import { useDeadlineCountdown } from '../../composables/useDeadlineCountdown'
 import CancelPaymentButton from './CancelPaymentButton.vue'
 import ReservationPaymentInstructions from './ReservationPaymentInstructions.vue'
+import SplitBillLink from '../history/SplitBillLink.vue'
 
 const props = defineProps<{
   show: boolean
@@ -184,6 +185,11 @@ onUnmounted(stopPolling)
       </div>
 
       <footer class="modal-footer">
+        <SplitBillLink
+          v-if="reservationStatus === 'held'"
+          :booking="reservation"
+          class="btn btn-secondary"
+        />
         <CancelPaymentButton
           v-if="reservationStatus === 'held'"
           :code="reservation.code"

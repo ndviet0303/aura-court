@@ -4,6 +4,7 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatCurrency } from '@/i18n'
 import { VENUE_TIME_ZONE, venueClockRange } from '@/core/utils/venueTime'
+import SplitBillLink from './SplitBillLink.vue'
 import type { Reservation } from '../../types/reservation'
 import {
   canOfferTransfer,
@@ -161,6 +162,7 @@ const sportLabel = computed(() => t(`sportTypes.${props.booking.court?.sport_typ
           <span class="material-symbols-outlined">qr_code_2</span>
           <span>{{ $t('booking.checkInQrBtn') }}</span>
         </button>
+        <SplitBillLink :booking="booking" class="btn-card-secondary" />
 
         <!-- Review: write (BR-147 window), edit within 7 days, or read it with the venue's reply -->
         <button

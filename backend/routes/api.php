@@ -83,6 +83,7 @@ use App\Http\Middleware\SimulateDemoMutations;
 use App\Models\HostKyc;
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
+use App\Services\Infrastructure\FeatureFlagService;
 use App\Services\Payment\WalletAvailabilityService;
 use App\Services\Payment\WalletPaymentService;
 use Illuminate\Auth\Events\Verified;
@@ -254,6 +255,7 @@ Route::middleware(['auth:sanctum', 'not_restricted'])->group(function () {
                 'has_partner_application' => $latestKyc !== null,
                 'partner_application_status' => $latestKyc?->status,
                 'wallet_enabled' => app(WalletAvailabilityService::class)->enabledFor($user),
+                'split_payments_enabled' => app(FeatureFlagService::class)->enabled('marketplace_split_payments'),
             ],
         ]));
     });
@@ -535,6 +537,7 @@ Route::middleware([ResolveTenantContext::class])->group(function () {
         Route::post('recurring-bookings/check', [RecurringBookingController::class, 'check'])->middleware(['verified', 'throttle:recurring-booking']);
         Route::post('recurring-bookings', [RecurringBookingController::class, 'store'])->middleware(['verified', 'throttle:recurring-booking']);
         Route::middleware('feature:marketplace_split_payments')->group(function () {
+            Route::get('reservations/{reservation}/split', [AdvancedBookingController::class, 'reservationSplit']);
             Route::post('reservations/{reservation}/split', [AdvancedBookingController::class, 'createSplit']);
             Route::get('split-groups/{split}', [AdvancedBookingController::class, 'split']);
             Route::post('split-shares/{share}/pay', [AdvancedBookingController::class, 'paySplitShare']);
