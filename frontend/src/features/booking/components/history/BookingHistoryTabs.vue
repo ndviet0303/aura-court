@@ -228,6 +228,7 @@ const emit = defineEmits<{
 @media (max-width: 768px) {
   .tabs-and-search-container {
     flex-direction: column;
+    flex-wrap: nowrap;
     align-items: stretch;
   }
   .search-input-wrap {
