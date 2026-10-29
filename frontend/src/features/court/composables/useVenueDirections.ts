@@ -30,9 +30,8 @@ export function useVenueDirections() {
     const venueMatch = store.courts.find(
       (c) => c.venue?.slug?.toLowerCase() === lookup || String(c.venue?.id) === lookup,
     )
-    if (venueMatch?.venue) return venueMatch.venue
-
-    return store.courts[0]?.venue || null
+    // An unknown id or slug shows no venue rather than another venue.
+    return venueMatch?.venue || null
   })
 
   const courtsAtVenue = computed<Court[]>(() => {
@@ -85,6 +84,7 @@ export function useVenueDirections() {
           // Ignore
         }
       }
+      if (!venue.value) error.value = 'Không tìm thấy địa điểm được yêu cầu.'
     } catch (cause) {
       error.value = errorMessage(cause, 'Không thể tải thông tin địa điểm.')
     } finally {
