@@ -273,6 +273,23 @@
    Responsive Utility Classes
    ========================================================================== */
 
+/* Admin pages center with margin: 0 auto, which stops flex stretch and lets a wide table widen the page. */
+.admin-main-container .admin-page-content > * {
+  width: 100%;
+}
+
+/* Phones lack room for the navbar user name beside the logo and menu button; keep it for screen readers only. */
+@media (max-width: 480px) {
+  .user-dropdown-trigger .user-meta {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
 /* Table responsive wrapper */
 .table-responsive {
   width: 100%;

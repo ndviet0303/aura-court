@@ -1150,11 +1150,6 @@ const searchResults = computed<SearchResultItem[]>(() => {
   padding: 0;
 }
 
-/* Pages center with margin: 0 auto, which stops flex stretch and lets a wide table widen the page. */
-.admin-page-content > :deep(*) {
-  width: 100%;
-}
-
 .icon-16 {
   font-size: 16px;
 }
