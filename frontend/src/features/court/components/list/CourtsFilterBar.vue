@@ -557,7 +557,7 @@ const activeSortLabel = computed(() => {
     align-items: stretch;
   }
   .search-box {
-    width: 100%;
+    flex: none;
     min-width: 0;
   }
   .filter-dropdowns {
