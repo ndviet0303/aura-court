@@ -1,6 +1,8 @@
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBookingStore } from '@/stores/booking'
+import { errorMessage } from '@/core/utils/errorMessage'
+import { courtApi } from '../api/courtApi'
 import type { Court } from '../types/court'
 
 export function useCourtDetail() {
@@ -9,43 +11,33 @@ export function useCourtDetail() {
 
   const isGalleryOpen = ref(false)
   const loading = ref(false)
-
-  const courtId = computed(() => String(route.params.id || ''))
-  const fetchedCourt = ref<Court | null>(null)
+  const error = ref('')
+  const court = ref<Court | null>(null)
 
   async function loadCourt() {
-    if (bookingStore.courts.length === 0) {
-      loading.value = true
-      try {
-        await bookingStore.loadCourts()
-      } catch {
-        // Handled by store
-      } finally {
-        loading.value = false
-      }
+    const key = String(route.params.id || '')
+    // Show the cached list entry at once; never another court when this id is missing.
+    court.value = bookingStore.courts.find((c) => String(c.id) === key) ?? null
+    loading.value = true
+    error.value = ''
+    try {
+      court.value = await courtApi.getById(key)
+    } catch (cause) {
+      court.value = null
+      error.value = errorMessage(cause, 'Không thể tải sân được yêu cầu.')
+    } finally {
+      loading.value = false
     }
   }
-
-  const court = computed<Court | null>(() => {
-    const key = courtId.value
-    if (!key) return bookingStore.courts[0] || null
-    return (
-      fetchedCourt.value ||
-      bookingStore.courts.find((c) => String(c.id) === key) ||
-      bookingStore.courts[0] ||
-      null
-    )
-  })
 
   // No invented price: a court without a price shows none.
   const basePrice = computed(() => court.value?.from_price ?? null)
 
-  onMounted(() => {
-    loadCourt()
-  })
+  watch(() => route.params.id, loadCourt, { immediate: true })
 
   return {
     loading,
+    error,
     court,
     isGalleryOpen,
     basePrice,

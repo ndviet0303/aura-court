@@ -21,9 +21,12 @@ const {
   filteredCourts,
 } = useCourtsList()
 
+// store.error carries the failure into the error state below.
+const loadCourts = () => store.loadCourts().catch(() => {})
+
 onMounted(async () => {
   if (store.courts.length === 0) {
-    await store.loadCourts()
+    await loadCourts()
   }
 })
 </script>
@@ -63,6 +66,21 @@ onMounted(async () => {
       data-testid="courts-skeleton"
     >
       <SkeletonLoader type="court-card" :count="6" />
+    </div>
+
+    <!-- Load Error State -->
+    <div
+      v-else-if="store.error && store.courts.length === 0"
+      class="empty-state-card"
+      role="alert"
+      data-testid="courts-error-state"
+    >
+      <span class="material-symbols-outlined empty-icon">cloud_off</span>
+      <h3>{{ store.error }}</h3>
+      <button type="button" class="btn-reset-empty" @click="loadCourts">
+        <span class="material-symbols-outlined">refresh</span>
+        <span>{{ $t('errorModal.retry') }}</span>
+      </button>
     </div>
 
     <!-- Empty State -->
