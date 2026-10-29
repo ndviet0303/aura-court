@@ -485,6 +485,18 @@ html.dark .user-dropdown-trigger.is-active {
   min-width: 0;
 }
 
+/* Phones lack room for the name beside the logo and menu button; keep it for screen readers only. */
+@media (max-width: 480px) {
+  .user-meta {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
 .user-name {
   font-size: 13.5px;
   font-weight: 700;
