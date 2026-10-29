@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/features/auth/stores/authStore'
-import { AuraButton } from '@/shared/components'
+import { AuraButton, AuraLoading } from '@/shared/components'
 import { useStartChat } from '@/features/chat/composables/useStartChat'
 import { useCourtDetail } from '../composables/useCourtDetail'
 
@@ -13,7 +13,7 @@ import CourtReviewsSection from '../components/detail/CourtReviewsSection.vue'
 import CourtStickyBookingCard from '../components/detail/CourtStickyBookingCard.vue'
 import CourtGalleryModal from '../components/detail/CourtGalleryModal.vue'
 
-const { court, isGalleryOpen, basePrice } = useCourtDetail()
+const { court, loading, error, isGalleryOpen, basePrice, loadCourt } = useCourtDetail()
 const { t } = useI18n()
 const auth = useAuthStore()
 const startChat = useStartChat()
@@ -59,6 +59,12 @@ async function messageVenue() {
       </div>
     </div>
 
+    <div v-else-if="error" class="detail-load-error" role="alert">
+      <p class="form-error">{{ error }}</p>
+      <AuraButton variant="outline" @click="loadCourt">{{ t('errorModal.retry') }}</AuraButton>
+    </div>
+    <AuraLoading v-else-if="loading" />
+
     <!-- Photo Gallery Modal -->
     <CourtGalleryModal
       v-if="court"
@@ -75,6 +81,14 @@ async function messageVenue() {
   margin: 0 auto;
   padding: 24px 20px;
   color: var(--ink);
+}
+
+.detail-load-error {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 64px 0;
+  text-align: center;
 }
 
 .detail-layout-grid {
