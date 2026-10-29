@@ -341,7 +341,7 @@ const router = createRouter({
       meta: { titleKey: 'seo.communityPostTitle', indexable: false },
     },
     {
-      path: '/split-bill/:code?',
+      path: '/split-bill/:code',
       name: 'split-bill',
       component: () => import('@/features/finance/views/GroupSplitBillView.vue'),
       meta: {

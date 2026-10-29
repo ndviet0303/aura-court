@@ -12,6 +12,10 @@ export const useAuthStore = defineStore('auth', () => {
     const capabilities = user.value?.capabilities
     return !Array.isArray(capabilities) && capabilities?.wallet_enabled === true
   })
+  const splitPaymentsEnabled = computed(() => {
+    const capabilities = user.value?.capabilities
+    return !Array.isArray(capabilities) && capabilities?.split_payments_enabled === true
+  })
 
   let inflight: Promise<User | null> | null = null
 
@@ -119,6 +123,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     loaded,
     walletEnabled,
+    splitPaymentsEnabled,
     load,
     login,
     register,
