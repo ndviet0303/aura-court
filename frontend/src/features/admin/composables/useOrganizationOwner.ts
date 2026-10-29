@@ -143,9 +143,9 @@ export function useOrganizationOwner() {
       }
 
       if (currentOrg.value.id) {
-        const [orgDetailRes, membersRes] = await Promise.allSettled([
+        // show() already returns members for owners and platform admins; the members endpoint is owner-only.
+        const [orgDetailRes] = await Promise.allSettled([
           adminApi.getOrganization<{ organization: Organization }>(currentOrg.value.id),
-          adminApi.getOrgMembers<{ members: OrgMember[] }>(currentOrg.value.id),
         ])
 
         if (orgDetailRes.status === 'fulfilled' && orgDetailRes.value?.organization) {
@@ -154,10 +154,6 @@ export function useOrganizationOwner() {
             ...currentOrg.value,
             ...detail,
           }
-        }
-
-        if (membersRes.status === 'fulfilled' && membersRes.value?.members) {
-          currentOrg.value.members = membersRes.value.members
         }
 
         const orgVenuesList =
