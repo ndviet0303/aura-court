@@ -189,7 +189,7 @@ const isPicked = (startsAt: string) =>
 
 .start-chips {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(92px, 100%), 1fr));
   gap: 8px;
 }
 

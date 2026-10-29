@@ -362,7 +362,7 @@ const disputeTypeOptions = computed<DropdownOption[]>(() => [
   border-radius: 14px;
   padding: 16px 20px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
   gap: 16px;
   align-items: end;
   box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.04));

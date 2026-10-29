@@ -25,7 +25,7 @@ const { t } = useI18n()
 <style scoped>
 .detail-images {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr));
   gap: 10px;
 }
 

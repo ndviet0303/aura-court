@@ -505,7 +505,7 @@ function localizeMemberTier(tier?: string): string {
 
 .filter-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) auto;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)) auto;
   gap: 14px;
   align-items: flex-end;
 }

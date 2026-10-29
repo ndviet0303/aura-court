@@ -176,7 +176,7 @@ const time = (iso: string | null) => (iso ? d(new Date(iso), 'datetime') : '—'
 
 .fields {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
   gap: 10px 16px;
   margin: 0;
 }

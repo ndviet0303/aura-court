@@ -23,7 +23,7 @@ const { t } = useI18n()
 <style scoped>
 .image-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(96px, 100%), 1fr));
   gap: 6px;
 }
 
