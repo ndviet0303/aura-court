@@ -48,14 +48,6 @@ const userShortcuts = [
     color: '#d97706',
   },
   {
-    key: 'SplitBill',
-    nameKey: 'profile.scSplitBillTitle',
-    descKey: 'profile.scSplitBillDesc',
-    path: '/split-bill',
-    icon: 'call_split',
-    color: '#7c3aed',
-  },
-  {
     key: 'PartnerRegistration',
     nameKey: 'profile.scPartnerTitle',
     descKey: 'profile.scPartnerDesc',

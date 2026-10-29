@@ -162,12 +162,6 @@ const sportLabel = computed(() => t(`sportTypes.${props.booking.court?.sport_typ
           <span>{{ $t('booking.checkInQrBtn') }}</span>
         </button>
 
-        <!-- Split Bill with teammates -->
-        <RouterLink :to="`/split-bill/${booking.code}`" class="btn-card-secondary">
-          <span class="material-symbols-outlined">group</span>
-          <span>{{ $t('booking.splitBillBtn') }}</span>
-        </RouterLink>
-
         <!-- Review: write (BR-147 window), edit within 7 days, or read it with the venue's reply -->
         <button
           v-if="canReview(booking) || (booking.review && !booking.review.deleted_at)"

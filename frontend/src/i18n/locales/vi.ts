@@ -543,7 +543,6 @@ export default {
     statusNoShow: 'Không đến',
     loadMore: 'Xem thêm',
     checkInQrBtn: 'Mã Check-in',
-    splitBillBtn: 'Chia Tiền',
     payNowBtn: 'Thanh Toán Ngay',
     reviewBtn: 'Đánh Giá',
     editReviewBtn: 'Sửa đánh giá',
@@ -1064,8 +1063,6 @@ export default {
     scResaleDesc: 'Đăng chuyển nhượng booking không dùng nữa hoặc nhận lại booking từ khách khác.',
     scTournamentsTitle: 'Giải đấu',
     scTournamentsDesc: 'Xem giải, đăng ký và theo dõi hồ sơ tham gia.',
-    scSplitBillTitle: 'Chia Tiền Nhóm (Split Bill)',
-    scSplitBillDesc: 'Tự động tính tiền sân, chia theo người chơi và quét mã QR.',
     scPartnerTitle: 'Đăng Ký Đối Tác Chủ Sân',
     scPartnerDesc:
       'Gia nhập mạng lưới Aura Court, mở rộng tệp khách hàng và tối ưu doanh thu sân bãi.',

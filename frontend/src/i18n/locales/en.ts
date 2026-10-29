@@ -546,7 +546,6 @@ export default {
     statusNoShow: 'No-show',
     loadMore: 'Load more',
     checkInQrBtn: 'Check-In Pass',
-    splitBillBtn: 'Split Bill',
     payNowBtn: 'Pay Now',
     reviewBtn: 'Write Review',
     editReviewBtn: 'Edit review',
@@ -1065,8 +1064,6 @@ export default {
     scResaleDesc: 'List a booking you no longer need or take one over from another customer.',
     scTournamentsTitle: 'Tournaments',
     scTournamentsDesc: 'Browse tournaments, enter and follow your entries.',
-    scSplitBillTitle: 'Group Split Bill',
-    scSplitBillDesc: 'Automate court cost splitting per player with quick QR codes.',
     scPartnerTitle: 'Partner Facility Onboarding',
     scPartnerDesc:
       'Join the Aura Court network to expand player reach and optimize venue utilization.',
