@@ -173,7 +173,7 @@ const total = computed(() => props.program.max_uses ?? props.program.code_count 
 
 .usage-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(110px, 100%), 1fr));
   gap: 8px;
 }
 

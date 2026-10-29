@@ -908,7 +908,7 @@ onUnmounted(() => {
 /* Data types grid */
 .data-types-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
   gap: 16px;
   margin-top: 18px;
 }
@@ -1084,7 +1084,7 @@ onUnmounted(() => {
 /* Contact Cards */
 .contact-card-box {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
   gap: 16px;
   margin-top: 20px;
 }
@@ -1146,7 +1146,7 @@ onUnmounted(() => {
 /* Responsive */
 @media (max-width: 960px) {
   .legal-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 28px;
   }
   .legal-sidebar {

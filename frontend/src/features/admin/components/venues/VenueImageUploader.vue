@@ -99,7 +99,7 @@ function remove(index: number) {
 
 .image-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(84px, 100%), 1fr));
   gap: 8px;
 }
 

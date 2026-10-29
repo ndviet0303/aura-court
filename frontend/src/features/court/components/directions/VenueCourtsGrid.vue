@@ -111,7 +111,7 @@ function getCourtPrice(c: Court): number | null {
 
 .courts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr));
   gap: 14px;
 }
 

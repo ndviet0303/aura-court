@@ -562,7 +562,7 @@ async function handleReviewReconciliation(shiftId: number) {
 
 .shift-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr));
   gap: 10px;
   margin-bottom: 16px;
 }

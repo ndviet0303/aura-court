@@ -241,7 +241,7 @@ function closePanel() {
 
 .filter-bar {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
   align-items: end;
   gap: 12px;
   padding: 16px;

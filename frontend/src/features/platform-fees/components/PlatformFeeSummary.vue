@@ -54,7 +54,7 @@ const [year, monthNumber] = month.from.split('-').map(Number)
 <style scoped>
 .fee-summary {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
   gap: 16px;
 }
 

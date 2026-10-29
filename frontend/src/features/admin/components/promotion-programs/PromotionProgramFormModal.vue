@@ -305,7 +305,7 @@ function submit() {
 <style scoped>
 .form-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
   gap: 0 12px;
 }
 
