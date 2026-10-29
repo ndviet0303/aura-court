@@ -11,6 +11,7 @@ const {
   matchedCourt,
   courtsAtVenue,
   loading,
+  error,
   copied,
   copyAddress,
   openGoogleMaps,
@@ -47,6 +48,8 @@ const {
       <!-- Courts Available at this Location -->
       <VenueCourtsGrid v-if="courtsAtVenue.length > 0" :courts="courtsAtVenue" />
     </div>
+
+    <p v-else-if="error" class="form-error directions-loading-state" role="alert">{{ error }}</p>
   </div>
 </template>
 
