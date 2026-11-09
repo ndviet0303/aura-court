@@ -4,11 +4,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return response()->json([
+    // add-local-api-docs D6: the docs route only exists locally, so only advertise it there.
+    return response()->json(array_filter([
         'name' => 'Aura Court API',
         'status' => 'ok',
-        'docs' => '/api',
-    ]);
+        'docs' => app()->isLocal() ? '/docs/api' : null,
+    ]));
 });
 
 Route::get('/reset-password/{token}', function (Request $request, string $token) {
