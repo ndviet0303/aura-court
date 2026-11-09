@@ -8,6 +8,9 @@ use App\Services\Infrastructure\ObservabilityService;
 use App\Services\Infrastructure\TenantContext;
 use App\Services\Payment\PaymentProviderManager;
 use App\Services\Payment\PayOsPaymentProvider;
+use Dedoc\Scramble\Scramble;
+use Dedoc\Scramble\Support\Generator\OpenApi;
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Events\QueryExecuted;
@@ -43,6 +46,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureRateLimits();
+        $this->configureApiDocs();
         // BR-23: remember when each session signed in, so a later account lock can end it.
         Event::listen(Login::class, function (): void {
             if (app()->bound('session.store') && request()->hasSession()) {
@@ -65,6 +69,22 @@ class AppServiceProvider extends ServiceProvider
             if (str_contains(strtolower($query->sql), 'for update') && $query->time >= (int) config('observability.lock_contention_alert_ms', 500)) {
                 app(ObservabilityService::class)->alert('lock_contention', ['duration_ms' => $query->time, 'query' => $query->sql]);
             }
+        });
+    }
+
+    private function configureApiDocs(): void
+    {
+        // add-local-api-docs D5: Scramble is require-dev, so the production image (--no-dev) has no such class.
+        if (! class_exists(Scramble::class)) {
+            return;
+        }
+        // Building the spec for ~350 routes needs more than the 128M CLI default and minutes when the DB is remote.
+        if (request()->is('docs/api*')) {
+            ini_set('memory_limit', '1G');
+            set_time_limit(0);
+        }
+        Scramble::configure()->withDocumentTransformers(function (OpenApi $openApi): void {
+            $openApi->secure(SecurityScheme::apiKey('header', 'X-XSRF-TOKEN'));
         });
     }
 
